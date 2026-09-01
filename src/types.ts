@@ -8,9 +8,38 @@ export interface ProvenancedAmount {
   history?: { amount: number; retrieved_at: string; quote?: string; source_url?: string }[];
 }
 
+/** A provenanced non-monetary number (points required, durations…). */
+export interface ProvenancedNumber {
+  value: number;
+  unit: "points";
+  source_url: string;
+  quote: string;
+  retrieved_at: string; // YYYY-MM-DD
+  legal_basis?: string;
+  history?: { value: number; retrieved_at: string; quote?: string; source_url?: string }[];
+}
+
+/** One scoring item of a points system: answer value → points awarded. */
+export interface PointsItem {
+  field: string;
+  points: Record<string, number>;
+}
+
+export interface PointsTable {
+  source_url: string;
+  quote: string;
+  retrieved_at: string;
+  legal_basis?: string;
+  items: PointsItem[];
+}
+
 export type Criterion =
   | { field: string; op: "eq"; value: string; note?: string }
-  | { field: string; op: "gte"; threshold: ProvenancedAmount; threshold_label?: string; note?: string };
+  | { field: string; op: "in"; values: string[]; note?: string }
+  | { field: string; op: "gte"; threshold: ProvenancedAmount; threshold_label?: string; note?: string }
+  | { op: "points"; required: ProvenancedNumber; table: PointsTable; note?: string }
+  /** Disjunction: the criterion passes when ANY path's criteria all pass (e.g. §20a "Fachkraft ODER Punktzahl"). */
+  | { op: "any"; label?: string; paths: { label?: string; criteria: Criterion[] }[]; note?: string };
 
 export interface Route {
   id: string;
@@ -67,11 +96,21 @@ export interface Question {
 
 export type Outcome = "pass" | "fail" | "unknown";
 
+export interface PointsBreakdown {
+  scored: number;
+  required: number;
+  /** Only answered items that scored > 0. */
+  items: { field: string; points: number }[];
+}
+
 export interface CriterionResult {
   criterion: Criterion;
   outcome: Outcome;
   /** For a failed gte criterion answered with the band just below: worst-case distance to the threshold. */
   gap_max?: number;
+  /** For a fully answered points criterion that fell short: points still missing. */
+  gap_points?: number;
+  points?: PointsBreakdown;
 }
 
 export type RouteStatus = "met" | "near" | "hold";
@@ -82,6 +121,8 @@ export interface RouteResult {
   status: RouteStatus;
   criteria: CriterionResult[];
   gap_max?: number;
+  gap_points?: number;
+  points?: PointsBreakdown;
   unknown_fields: string[];
 }
 

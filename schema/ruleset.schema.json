@@ -80,6 +80,61 @@
         }
       }
     },
+    "provenancedNumber": {
+      "type": "object",
+      "required": ["value", "unit", "source_url", "quote", "retrieved_at"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "number", "exclusiveMinimum": 0 },
+        "unit": { "enum": ["points"] },
+        "source_url": { "type": "string", "pattern": "^https://" },
+        "quote": { "type": "string", "minLength": 5 },
+        "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "legal_basis": { "type": "string" },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["value", "retrieved_at"],
+            "additionalProperties": false,
+            "properties": {
+              "value": { "type": "number" },
+              "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+              "quote": { "type": "string" },
+              "source_url": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "pointsTable": {
+      "type": "object",
+      "required": ["source_url", "quote", "retrieved_at", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "source_url": { "type": "string", "pattern": "^https://" },
+        "quote": { "type": "string", "minLength": 5 },
+        "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "legal_basis": { "type": "string" },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["field", "points"],
+            "additionalProperties": false,
+            "properties": {
+              "field": { "type": "string" },
+              "points": {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": { "type": "number", "minimum": 0 }
+              }
+            }
+          }
+        }
+      }
+    },
     "criterion": {
       "oneOf": [
         {
@@ -102,6 +157,51 @@
             "op": { "const": "gte" },
             "threshold": { "$ref": "#/$defs/provenancedAmount" },
             "threshold_label": { "type": "string" },
+            "note": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["field", "op", "values"],
+          "additionalProperties": false,
+          "properties": {
+            "field": { "type": "string" },
+            "op": { "const": "in" },
+            "values": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "note": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "required", "table"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "points" },
+            "required": { "$ref": "#/$defs/provenancedNumber" },
+            "table": { "$ref": "#/$defs/pointsTable" },
+            "note": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "paths"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "any" },
+            "label": { "type": "string" },
+            "paths": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "type": "object",
+                "required": ["criteria"],
+                "additionalProperties": false,
+                "properties": {
+                  "label": { "type": "string" },
+                  "criteria": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/criterion" } }
+                }
+              }
+            },
             "note": { "type": "string" }
           }
         }

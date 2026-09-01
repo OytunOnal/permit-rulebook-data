@@ -1,6 +1,6 @@
 import type {
-  Band, Criterion, CriterionResult, Dataset, DatasetMeta, Profile,
-  ProvenancedAmount, Route, RouteResult, RouteStatus,
+  Band, Criterion, CriterionResult, Dataset, DatasetMeta, PointsBreakdown, Profile,
+  Route, RouteResult, RouteStatus,
 } from "./types.js";
 
 export function formatEUR(amount: number): string {
@@ -46,15 +46,72 @@ function fieldDef(dataset: Dataset, id: string) {
   return dataset.fields.find((f) => f.id === id);
 }
 
+/** All field ids a criterion reads (recursing through disjunctions). */
+export function referencedFields(c: Criterion): string[] {
+  if (c.op === "points") return c.table.items.map((i) => i.field);
+  if (c.op === "any") return c.paths.flatMap((p) => p.criteria.flatMap(referencedFields));
+  return [c.field];
+}
+
+function isUnknownAnswer(dataset: Dataset, field: string, answer: string | undefined): boolean {
+  if (answer === undefined) return true;
+  const opt = fieldDef(dataset, field)?.options?.find((o) => o.value === answer);
+  return opt?.is_unknown === true;
+}
+
 function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): CriterionResult {
+  if (c.op === "any") {
+    const pathResults = c.paths.map((p) => p.criteria.map((pc) => evalCriterion(dataset, pc, profile)));
+    // A path passes when all its criteria pass; the disjunction passes with it.
+    const passed = pathResults.find((rs) => rs.every((r) => r.outcome === "pass"));
+    if (passed) {
+      const points = passed.find((r) => r.points)?.points;
+      return points ? { criterion: c, outcome: "pass", points } : { criterion: c, outcome: "pass" };
+    }
+    if (pathResults.every((rs) => rs.some((r) => r.outcome === "fail")))
+      return { criterion: c, outcome: "fail" };
+    // Undecided: surface points progress from a still-open points path, if any.
+    const open = pathResults.find((rs) => !rs.some((r) => r.outcome === "fail") && rs.some((r) => r.points));
+    const points = open?.find((r) => r.points)?.points;
+    return points ? { criterion: c, outcome: "unknown", points } : { criterion: c, outcome: "unknown" };
+  }
+
+  if (c.op === "points") {
+    let scored = 0;
+    let maxRemaining = 0;
+    const items: PointsBreakdown["items"] = [];
+    for (const item of c.table.items) {
+      const answer = profile[item.field];
+      if (isUnknownAnswer(dataset, item.field, answer)) {
+        maxRemaining += Math.max(0, ...Object.values(item.points));
+      } else {
+        const pts = item.points[answer as string] ?? 0;
+        scored += pts;
+        if (pts > 0) items.push({ field: item.field, points: pts });
+      }
+    }
+    const points: PointsBreakdown = { scored, required: c.required.value, items };
+    if (scored >= c.required.value) return { criterion: c, outcome: "pass", points };
+    if (scored + maxRemaining < c.required.value) {
+      // Definitive shortfall. Fully answered → an honest, bounded points gap.
+      const result: CriterionResult = { criterion: c, outcome: "fail", points };
+      if (maxRemaining === 0) result.gap_points = c.required.value - scored;
+      return result;
+    }
+    return { criterion: c, outcome: "unknown", points };
+  }
+
   const answer = profile[c.field];
   if (answer === undefined) return { criterion: c, outcome: "unknown" };
 
   if (c.op === "eq") {
-    const def = fieldDef(dataset, c.field);
-    const opt = def?.options?.find((o) => o.value === answer);
-    if (opt?.is_unknown) return { criterion: c, outcome: "unknown" };
+    if (isUnknownAnswer(dataset, c.field, answer)) return { criterion: c, outcome: "unknown" };
     return { criterion: c, outcome: answer === c.value ? "pass" : "fail" };
+  }
+
+  if (c.op === "in") {
+    if (isUnknownAnswer(dataset, c.field, answer)) return { criterion: c, outcome: "unknown" };
+    return { criterion: c, outcome: c.values.includes(answer) ? "pass" : "fail" };
   }
 
   // gte over a money_band answer
@@ -74,8 +131,8 @@ function routeStatus(criteria: CriterionResult[]): RouteStatus {
   const fails = criteria.filter((r) => r.outcome === "fail");
   const unknowns = criteria.filter((r) => r.outcome === "unknown");
   if (fails.length === 0 && unknowns.length === 0) return "met";
-  if (fails.length > 0 && fails.every((f) => f.gap_max !== undefined) && unknowns.length === 0)
-    return "near";
+  const allFailsGapped = fails.every((f) => f.gap_max !== undefined || f.gap_points !== undefined);
+  if (fails.length > 0 && allFailsGapped && unknowns.length === 0) return "near";
   return "hold";
 }
 
@@ -87,6 +144,39 @@ export function isRouteAlive(dataset: Dataset, route: Route, profile: Profile): 
   return !route.criteria.some((c) => evalCriterion(dataset, c, profile).outcome === "fail");
 }
 
+/** Unanswered fields that can still flip THIS criterion's outcome. */
+function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): string[] {
+  const result = evalCriterion(dataset, c, profile);
+  if (result.outcome !== "unknown") return [];
+  if (c.op === "points")
+    return c.table.items.map((i) => i.field).filter((f) => profile[f] === undefined);
+  if (c.op === "any")
+    // Only paths not yet failed can still be satisfied; their open questions matter.
+    return c.paths
+      .filter((p) => !p.criteria.some((pc) => evalCriterion(dataset, pc, profile).outcome === "fail"))
+      .flatMap((p) => p.criteria.flatMap((pc) => undecidedFieldsOf(dataset, pc, profile)));
+  return profile[c.field] === undefined ? [c.field] : [];
+}
+
+/**
+ * Fields that can still change some live route's outcome. Sharper than "fields
+ * of live routes": a points criterion already passed, a decided criterion, or
+ * a failed disjunction path makes its remaining fields uninformative — asking
+ * them is noise.
+ */
+export function informativeFields(dataset: Dataset, profile: Profile): Set<string> {
+  const fields = new Set<string>();
+  for (const country of dataset.countries) {
+    for (const route of country.routes) {
+      const results = route.criteria.map((c) => evalCriterion(dataset, c, profile));
+      if (results.some((r) => r.outcome === "fail")) continue; // dead route
+      for (const c of route.criteria)
+        for (const f of undecidedFieldsOf(dataset, c, profile)) fields.add(f);
+    }
+  }
+  return fields;
+}
+
 export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
   const results: RouteResult[] = [];
   for (const country of dataset.countries) {
@@ -94,13 +184,22 @@ export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
       const criteria = route.criteria.map((c) => evalCriterion(dataset, c, profile));
       const status = routeStatus(criteria);
       const gaps = criteria.filter((c) => c.gap_max !== undefined).map((c) => c.gap_max as number);
+      const pointsResult = criteria.find((c) => c.points !== undefined);
+      const pointsGaps = criteria.filter((c) => c.gap_points !== undefined).map((c) => c.gap_points as number);
+      const unknown = new Set<string>();
+      for (const cr of criteria)
+        if (cr.outcome === "unknown")
+          for (const f of referencedFields(cr.criterion))
+            if (isUnknownAnswer(dataset, f, profile[f])) unknown.add(f);
       results.push({
         route,
         country: country.code,
         status,
         criteria,
         gap_max: gaps.length ? Math.max(...gaps) : undefined,
-        unknown_fields: criteria.filter((c) => c.outcome === "unknown").map((c) => c.criterion.field),
+        gap_points: pointsGaps.length ? Math.max(...pointsGaps) : undefined,
+        points: pointsResult?.points,
+        unknown_fields: [...unknown],
       });
     }
   }
@@ -108,20 +207,40 @@ export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
   return results.sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
 }
 
-/** All provenanced amounts a route rests on — what the UI must show, quoted and dated. */
-export function routeProvenance(route: Route): { label?: string; value: ProvenancedAmount }[] {
-  return route.criteria
-    .filter((c): c is Extract<Criterion, { op: "gte" }> => c.op === "gte")
-    .map((c) => ({ label: c.threshold_label, value: c.threshold }));
+export interface ProvenanceEntry {
+  label?: string;
+  value: { quote: string; source_url: string; retrieved_at: string; legal_basis?: string };
+  amount?: number;
+}
+
+function provenanceOf(c: Criterion, entries: ProvenanceEntry[]): void {
+  if (c.op === "gte") entries.push({ label: c.threshold_label, value: c.threshold, amount: c.threshold.amount });
+  if (c.op === "points") {
+    entries.push({ label: "points required", value: c.required });
+    if (c.table.source_url !== c.required.source_url || c.table.quote !== c.required.quote)
+      entries.push({ label: "points table", value: c.table });
+  }
+  if (c.op === "any")
+    for (const p of c.paths) for (const pc of p.criteria) provenanceOf(pc, entries);
+}
+
+/** All provenanced values a route rests on — what the UI must show, quoted and dated. */
+export function routeProvenance(route: Route): ProvenanceEntry[] {
+  const entries: ProvenanceEntry[] = [];
+  for (const c of route.criteria) provenanceOf(c, entries);
+  return entries;
 }
 
 export function datasetMeta(dataset: Dataset): DatasetMeta {
   let newest: string | null = null;
+  const consider = (d: string) => { if (!newest || d > newest) newest = d; };
+  const walk = (c: Criterion): void => {
+    if (c.op === "gte") consider(c.threshold.retrieved_at);
+    if (c.op === "points") { consider(c.required.retrieved_at); consider(c.table.retrieved_at); }
+    if (c.op === "any") for (const p of c.paths) p.criteria.forEach(walk);
+  };
   for (const country of dataset.countries)
-    for (const route of country.routes)
-      for (const c of route.criteria)
-        if (c.op === "gte" && (!newest || c.threshold.retrieved_at > newest))
-          newest = c.threshold.retrieved_at;
+    for (const route of country.routes) route.criteria.forEach(walk);
   return {
     schema_version: dataset.schema_version,
     dataset_version: dataset.dataset_version,
