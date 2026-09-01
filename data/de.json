@@ -1,0 +1,110 @@
+{
+  "schema_version": "0.1.0",
+  "dataset_version": "2026.09.01",
+  "fields": [
+    {
+      "id": "citizenship",
+      "label": "Where are you a citizen?",
+      "type": "enum",
+      "options": [
+        { "value": "eu_eea_ch", "label": "EU / EEA / Switzerland" },
+        { "value": "third_country", "label": "Somewhere else (third country)" }
+      ]
+    },
+    {
+      "id": "degree_recognized",
+      "label": "Do you hold a university degree recognised in Germany?",
+      "type": "enum",
+      "options": [
+        { "value": "recognized", "label": "Yes — recognised (or German degree)" },
+        { "value": "not_recognized", "label": "No / not recognised" },
+        { "value": "unknown", "label": "I don't know yet", "is_unknown": true }
+      ]
+    },
+    {
+      "id": "occupation_shortage",
+      "label": "Is your occupation on Germany's shortage list (IT, engineering, health…)?",
+      "type": "enum",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" },
+        { "value": "unknown", "label": "I don't know", "is_unknown": true }
+      ]
+    },
+    {
+      "id": "offer_de",
+      "label": "Do you have a job offer from an employer in Germany?",
+      "type": "enum",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ]
+    },
+    {
+      "id": "salary_eur_year",
+      "label": "Gross annual salary in the offer?",
+      "type": "money_band"
+    }
+  ],
+  "countries": [
+    {
+      "code": "DE",
+      "name": "Germany",
+      "routes": [
+        {
+          "id": "de-blue-card-shortage",
+          "name": "EU Blue Card — shortage occupation",
+          "kind": "res-work",
+          "summary": "Reduced salary threshold for shortage occupations (IT and other Engpassberufe).",
+          "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "degree_recognized", "op": "eq", "value": "recognized" },
+            { "field": "occupation_shortage", "op": "eq", "value": "yes" },
+            { "field": "offer_de", "op": "eq", "value": "yes" },
+            {
+              "field": "salary_eur_year",
+              "op": "gte",
+              "threshold_label": "reduced",
+              "threshold": {
+                "amount": 45934.2,
+                "currency": "EUR",
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                "quote": "kleine Blaue Karte EU: 45.934,20 Euro",
+                "retrieved_at": "2026-09-01",
+                "legal_basis": "§ 18g AufenthG",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "de-blue-card-general",
+          "name": "EU Blue Card — general",
+          "kind": "res-work",
+          "summary": "Standard EU Blue Card salary threshold, any qualified occupation.",
+          "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "degree_recognized", "op": "eq", "value": "recognized" },
+            { "field": "offer_de", "op": "eq", "value": "yes" },
+            {
+              "field": "salary_eur_year",
+              "op": "gte",
+              "threshold_label": "general",
+              "threshold": {
+                "amount": 50700,
+                "currency": "EUR",
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                "quote": "große Blaue Karte EU: 50.700 Euro",
+                "retrieved_at": "2026-09-01",
+                "legal_basis": "§ 18g AufenthG",
+                "history": []
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

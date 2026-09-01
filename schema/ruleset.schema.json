@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://visa-rules.dev/schema/ruleset.schema.json",
+  "title": "Visa Rules dataset",
+  "type": "object",
+  "required": ["schema_version", "dataset_version", "fields", "countries"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "dataset_version": { "type": "string", "minLength": 1 },
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/fieldDef" }
+    },
+    "countries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["code", "name", "routes"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z]{2}$" },
+          "name": { "type": "string", "minLength": 1 },
+          "routes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/route" } }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "fieldDef": {
+      "type": "object",
+      "required": ["id", "label", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "label": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["enum", "money_band"] },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["value", "label"],
+            "additionalProperties": false,
+            "properties": {
+              "value": { "type": "string", "minLength": 1 },
+              "label": { "type": "string", "minLength": 1 },
+              "is_unknown": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "provenancedAmount": {
+      "type": "object",
+      "required": ["amount", "currency", "source_url", "quote", "retrieved_at"],
+      "additionalProperties": false,
+      "properties": {
+        "amount": { "type": "number", "exclusiveMinimum": 0 },
+        "currency": { "enum": ["EUR"] },
+        "source_url": { "type": "string", "pattern": "^https://" },
+        "quote": { "type": "string", "minLength": 5 },
+        "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "legal_basis": { "type": "string" },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["amount", "retrieved_at"],
+            "additionalProperties": false,
+            "properties": {
+              "amount": { "type": "number" },
+              "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+              "quote": { "type": "string" },
+              "source_url": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "criterion": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["field", "op", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "field": { "type": "string" },
+            "op": { "const": "eq" },
+            "value": { "type": "string" },
+            "note": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["field", "op", "threshold"],
+          "additionalProperties": false,
+          "properties": {
+            "field": { "type": "string" },
+            "op": { "const": "gte" },
+            "threshold": { "$ref": "#/$defs/provenancedAmount" },
+            "threshold_label": { "type": "string" },
+            "note": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "route": {
+      "type": "object",
+      "required": ["id", "name", "kind", "criteria", "info_url"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z]{2}(-[a-z0-9]+)+$" },
+        "name": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["res-work", "seek", "self-employed"] },
+        "summary": { "type": "string" },
+        "info_url": { "type": "string", "pattern": "^https://" },
+        "criteria": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/criterion" } }
+      }
+    }
+  }
+}
