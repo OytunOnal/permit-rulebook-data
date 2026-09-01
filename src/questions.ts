@@ -1,5 +1,5 @@
-import { deriveBands } from "./engine.js";
-import type { Dataset, Question } from "./types.js";
+import { deriveBands, isRouteAlive } from "./engine.js";
+import type { Dataset, Profile, Question } from "./types.js";
 
 /**
  * The question set is the union of fields referenced by route criteria —
@@ -24,4 +24,22 @@ export function deriveQuestions(dataset: Dataset): Question[] {
     }
   }
   return questions;
+}
+
+/**
+ * Questions still worth asking given the answers so far: unanswered fields
+ * referenced by at least one *live* route. A question no live route cares
+ * about carries no information — asking it would be noise (e.g. salary after
+ * "no job offer"). Empty result = go straight to the verdict.
+ */
+export function remainingQuestions(dataset: Dataset, profile: Profile): Question[] {
+  const liveFields = new Set<string>();
+  for (const country of dataset.countries)
+    for (const route of country.routes)
+      if (isRouteAlive(dataset, route, profile))
+        for (const c of route.criteria) liveFields.add(c.field);
+
+  return deriveQuestions(dataset).filter(
+    (q) => profile[q.field] === undefined && liveFields.has(q.field),
+  );
 }

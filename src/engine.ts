@@ -79,6 +79,14 @@ function routeStatus(criteria: CriterionResult[]): RouteStatus {
   return "hold";
 }
 
+/**
+ * A route is alive while no answered criterion has definitively failed.
+ * "unknown" answers keep a route alive — an open gap is not a no.
+ */
+export function isRouteAlive(dataset: Dataset, route: Route, profile: Profile): boolean {
+  return !route.criteria.some((c) => evalCriterion(dataset, c, profile).outcome === "fail");
+}
+
 export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
   const results: RouteResult[] = [];
   for (const country of dataset.countries) {

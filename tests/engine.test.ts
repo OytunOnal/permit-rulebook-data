@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { datasetMeta, deriveBands, evaluate, formatEUR, routeProvenance } from "../src/engine.js";
-import { deriveQuestions } from "../src/questions.js";
+import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/de.json", import.meta.url), "utf8")) as Dataset;
@@ -96,6 +96,47 @@ describe("question derivation (questions can never desync from rules)", () => {
     expect(salary.options.map((o) => o.label)).toEqual([
       "under €45,934.20", "€45,934.20 – €52,000", "€52,000 or more",
     ]);
+  });
+});
+
+describe("question pruning (a dead route asks no questions)", () => {
+  it("asks all five questions with no answers yet", () => {
+    expect(remainingQuestions(dataset, {}).length).toBe(5);
+  });
+
+  it("skips salary once 'no job offer' kills every route (user-reported bug)", () => {
+    const remaining = remainingQuestions(dataset, {
+      citizenship: "third_country",
+      degree_recognized: "recognized",
+      occupation_shortage: "yes",
+      offer_de: "no",
+    });
+    expect(remaining.map((q) => q.field)).not.toContain("salary_eur_year");
+    expect(remaining).toEqual([]);
+  });
+
+  it("EU citizenship ends the questionnaire after question one", () => {
+    expect(remainingQuestions(dataset, { citizenship: "eu_eea_ch" })).toEqual([]);
+  });
+
+  it("'I don't know' keeps routes alive, so later questions still come", () => {
+    const remaining = remainingQuestions(dataset, {
+      citizenship: "third_country",
+      degree_recognized: "recognized",
+      occupation_shortage: "unknown",
+      offer_de: "yes",
+    });
+    expect(remaining.map((q) => q.field)).toEqual(["salary_eur_year"]);
+  });
+
+  it("shortage=no kills only the shortage route; salary still asked for the general card", () => {
+    const remaining = remainingQuestions(dataset, {
+      citizenship: "third_country",
+      degree_recognized: "recognized",
+      occupation_shortage: "no",
+      offer_de: "yes",
+    });
+    expect(remaining.map((q) => q.field)).toEqual(["salary_eur_year"]);
   });
 });
 
