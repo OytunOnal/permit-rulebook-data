@@ -6,142 +6,140 @@ import type { Dataset, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/de.json", import.meta.url), "utf8")) as Dataset;
 
-const seedProfile: Profile = {
-  citizenship: "third_country",
-  degree_recognized: "recognized",
-  occupation_shortage: "yes",
-  offer_de: "yes",
-  salary_eur_year: "band_1", // €45,934.20 – €50,700
+// Salary bands: <45,630 / 45,630–45,934.20 / 45,934.20–50,700 / ≥50,700
+const engineer: Profile = {
+  citizenship: "third_country", situation: "offer_de", qualification: "degree",
+  recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
+  salary_eur_year: "band_2",
 };
 
-describe("band derivation (A11: band boundaries are the thresholds)", () => {
-  it("derives exactly the bands the scenario names, from data", () => {
+/** Greedy wizard simulation: always answer the first remaining question. */
+function runFlow(answers: Profile): { asked: string[]; profile: Profile } {
+  const profile: Profile = {};
+  const asked: string[] = [];
+  for (let i = 0; i < 50; i++) {
+    const remaining = remainingQuestions(dataset, profile);
+    if (remaining.length === 0) break;
+    const q = remaining[0];
+    if (answers[q.field] === undefined) throw new Error(`persona has no answer for ${q.field}`);
+    asked.push(q.field);
+    profile[q.field] = answers[q.field];
+  }
+  return { asked, profile };
+}
+
+describe("band derivation across three salary thresholds", () => {
+  it("derives four bands whose edges are exactly the thresholds", () => {
     const bands = deriveBands(dataset, "salary_eur_year");
     expect(bands.map((b) => [b.min, b.max])).toEqual([
-      [undefined, 45934.2],
-      [45934.2, 50700],
-      [50700, undefined],
+      [undefined, 45630], [45630, 45934.2], [45934.2, 50700], [50700, undefined],
     ]);
-    expect(bands[0].label).toBe("under €45,934.20");
-    expect(bands[1].label).toBe("€45,934.20 – €50,700");
-    expect(bands[2].label).toBe("€50,700 or more");
+    expect(bands[2].label).toBe("€45,934.20 – €50,700");
+  });
+
+  it("funds field gets its own independent band set", () => {
+    expect(deriveBands(dataset, "funds_eur_month").map((b) => [b.min, b.max])).toEqual([
+      [undefined, 1091], [1091, undefined],
+    ]);
   });
 });
 
-describe("evaluate — seed profile of scenario S1", () => {
-  const results = evaluate(dataset, seedProfile);
-  const byId = Object.fromEntries(results.map((r) => [r.route.id, r]));
+describe("evaluate — engineer with a German offer", () => {
+  const byId = Object.fromEntries(evaluate(dataset, engineer).map((r) => [r.route.id, r]));
 
-  it("shortage Blue Card: criteria met", () => {
+  it("shortage Blue Card, §18b and §19c all met", () => {
     expect(byId["de-blue-card-shortage"].status).toBe("met");
+    expect(byId["de-skilled-academic"].status).toBe("met");
+    expect(byId["de-experienced-worker"].status).toBe("met");
   });
 
-  it("general Blue Card: within reach with gap up to €4,766", () => {
-    const r = byId["de-blue-card-general"];
-    expect(r.status).toBe("near");
-    expect(r.gap_max).toBeCloseTo(4765.8, 5);
-    expect(formatEUR(Math.round(r.gap_max!))).toBe("€4,766");
+  it("general Blue Card within reach with the €4,766 gap", () => {
+    expect(byId["de-blue-card-general"].status).toBe("near");
+    expect(formatEUR(Math.round(byId["de-blue-card-general"].gap_max!))).toBe("€4,766");
   });
 
-  it("met routes sort before near routes", () => {
-    expect(results[0].route.id).toBe("de-blue-card-shortage");
-  });
-});
-
-describe("evaluate — edge profiles", () => {
-  it("top band clears both thresholds", () => {
-    const results = evaluate(dataset, { ...seedProfile, salary_eur_year: "band_2" });
-    expect(results.every((r) => r.status === "met")).toBe(true);
-  });
-
-  it("bottom band: shortage near (adjacent), general hold (two bands away)", () => {
-    const results = evaluate(dataset, { ...seedProfile, salary_eur_year: "band_0" });
-    const byId = Object.fromEntries(results.map((r) => [r.route.id, r]));
-    expect(byId["de-blue-card-shortage"].status).toBe("near");
-    expect(byId["de-blue-card-general"].status).toBe("hold");
-  });
-
-  it("EU citizen fails citizenship on both routes → hold", () => {
-    const results = evaluate(dataset, { ...seedProfile, citizenship: "eu_eea_ch" });
-    expect(results.every((r) => r.status === "hold")).toBe(true);
-  });
-
-  it("A15: 'I don't know' answers surface as unknown fields, never as met", () => {
-    const results = evaluate(dataset, { ...seedProfile, occupation_shortage: "unknown" });
-    const shortage = results.find((r) => r.route.id === "de-blue-card-shortage")!;
-    expect(shortage.status).toBe("hold");
-    expect(shortage.unknown_fields).toContain("occupation_shortage");
+  it("situational routes (research, ICT, Chancenkarte) are hold", () => {
+    expect(byId["de-researcher"].status).toBe("hold");
+    expect(byId["de-ict-card"].status).toBe("hold");
+    expect(byId["de-chancenkarte"].status).toBe("hold");
   });
 });
 
-describe("question derivation (questions can never desync from rules)", () => {
-  it("derives one question per referenced field, salary options from thresholds", () => {
-    const qs = deriveQuestions(dataset);
-    expect(qs.map((q) => q.field)).toEqual([
-      "citizenship", "degree_recognized", "occupation_shortage", "offer_de", "salary_eur_year",
-    ]);
-    const salary = qs.find((q) => q.field === "salary_eur_year")!;
-    expect(salary.options.map((o) => o.label)).toEqual([
-      "under €45,934.20", "€45,934.20 – €50,700", "€50,700 or more",
-    ]);
+describe("scenario step 4 — personas reach a verdict in few questions", () => {
+  it("P1 engineer with offer: at most 7 questions, occupation_it never asked", () => {
+    const { asked } = runFlow(engineer);
+    expect(asked.length).toBeLessThanOrEqual(7);
+    expect(asked).not.toContain("occupation_it");
+    expect(asked).not.toContain("german"); // Chancenkarte dead → no points ladder
+  });
+
+  it("P2 vocational worker with offer: at most 7 questions, shortage list never asked", () => {
+    const { asked, profile } = runFlow({
+      citizenship: "third_country", situation: "offer_de", qualification: "vocational",
+      recognition_de: "recognized", experience: "y5in7", salary_eur_year: "band_1",
+      occupation_shortage: "no", occupation_it: "no",
+    });
+    expect(asked.length).toBeLessThanOrEqual(7);
+    expect(asked).not.toContain("occupation_shortage"); // only Blue Card wants it, and Blue Card is dead
+    const byId = Object.fromEntries(evaluate(dataset, profile).map((r) => [r.route.id, r]));
+    expect(byId["de-skilled-vocational"].status).toBe("met");
+    expect(byId["de-experienced-worker"].status).toBe("met");
+  });
+
+  it("P3 explorer without offer: only Chancenkarte questions come, salary never asked (A10 measurement)", () => {
+    const { asked, profile } = runFlow({
+      citizenship: "third_country", situation: "none", qualification: "degree",
+      language_base: "yes", funds_eur_month: "band_1", recognition_de: "not_yet",
+      german: "b1", english_c1: "no", experience: "lt2", occupation_shortage: "no",
+      age_band: "u35", de_stay6m: "no", partner_ck: "no",
+    });
+    expect(asked).not.toContain("salary_eur_year");
+    expect(asked.length).toBeGreaterThanOrEqual(8); // honest: the points ladder is long
+    expect(asked.length).toBeLessThanOrEqual(13);
+    const ck = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;
+    expect(ck.status).toBe("near");
+    expect(ck.gap_points).toBe(2); // B1 (2) + age (2) = 4 of 6
+  });
+});
+
+describe("pruning at dataset scale", () => {
+  it("EU citizen: the citizenship answer ends the questionnaire within a few questions", () => {
+    const { asked } = runFlow({
+      citizenship: "eu_eea_ch", situation: "offer_de", qualification: "degree",
+      recognition_de: "recognized", experience: "y2in5",
+    });
+    expect(asked.length).toBeLessThanOrEqual(4);
+    expect(asked).toContain("citizenship");
+  });
+
+  it("fully recognised explorer passes Chancenkarte directly — points ladder skipped", () => {
+    const profile: Profile = {
+      citizenship: "third_country", situation: "none", qualification: "degree",
+      language_base: "yes", funds_eur_month: "band_1", recognition_de: "recognized",
+    };
+    expect(remainingQuestions(dataset, profile)).toEqual([]);
+    const ck = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;
+    expect(ck.status).toBe("met");
+  });
+});
+
+describe("questions derive from rules", () => {
+  it("every dataset field is referenced and becomes a question", () => {
+    expect(deriveQuestions(dataset).length).toBe(dataset.fields.length);
   });
 
   it("scenario step 5: changing a threshold changes the options with no code change", () => {
     const mutated = structuredClone(dataset);
-    const general = mutated.countries[0].routes
-      .find((r) => r.id === "de-blue-card-general")!
-      .criteria.find((c) => c.op === "gte")!;
-    if (general.op === "gte") general.threshold.amount = 52000;
+    for (const route of mutated.countries[0].routes)
+      for (const c of route.criteria)
+        if (c.op === "gte" && c.threshold.amount === 50700) c.threshold.amount = 52000;
     const salary = deriveQuestions(mutated).find((q) => q.field === "salary_eur_year")!;
-    expect(salary.options.map((o) => o.label)).toEqual([
-      "under €45,934.20", "€45,934.20 – €52,000", "€52,000 or more",
-    ]);
-  });
-});
-
-describe("question pruning (a dead route asks no questions)", () => {
-  it("asks all five questions with no answers yet", () => {
-    expect(remainingQuestions(dataset, {}).length).toBe(5);
-  });
-
-  it("skips salary once 'no job offer' kills every route (user-reported bug)", () => {
-    const remaining = remainingQuestions(dataset, {
-      citizenship: "third_country",
-      degree_recognized: "recognized",
-      occupation_shortage: "yes",
-      offer_de: "no",
-    });
-    expect(remaining.map((q) => q.field)).not.toContain("salary_eur_year");
-    expect(remaining).toEqual([]);
-  });
-
-  it("EU citizenship ends the questionnaire after question one", () => {
-    expect(remainingQuestions(dataset, { citizenship: "eu_eea_ch" })).toEqual([]);
-  });
-
-  it("'I don't know' keeps routes alive, so later questions still come", () => {
-    const remaining = remainingQuestions(dataset, {
-      citizenship: "third_country",
-      degree_recognized: "recognized",
-      occupation_shortage: "unknown",
-      offer_de: "yes",
-    });
-    expect(remaining.map((q) => q.field)).toEqual(["salary_eur_year"]);
-  });
-
-  it("shortage=no kills only the shortage route; salary still asked for the general card", () => {
-    const remaining = remainingQuestions(dataset, {
-      citizenship: "third_country",
-      degree_recognized: "recognized",
-      occupation_shortage: "no",
-      offer_de: "yes",
-    });
-    expect(remaining.map((q) => q.field)).toEqual(["salary_eur_year"]);
+    expect(salary.options.map((o) => o.label)).toContain("€45,934.20 – €52,000");
   });
 });
 
 describe("provenance and meta", () => {
-  it("every threshold carries quote + source + retrieval date", () => {
+  it("every provenanced value carries quote + https source + date", () => {
     for (const country of dataset.countries)
       for (const route of country.routes)
         for (const p of routeProvenance(route)) {
@@ -151,11 +149,11 @@ describe("provenance and meta", () => {
         }
   });
 
-  it("meta reports newest retrieved_at for the health line", () => {
+  it("meta reports the newest retrieved_at across all value kinds", () => {
     expect(datasetMeta(dataset)).toEqual({
       schema_version: "0.1.0",
-      dataset_version: "2026.09.01",
-      newest_retrieved_at: "2026-09-01",
+      dataset_version: "2026.09.02",
+      newest_retrieved_at: "2026-09-02",
     });
   });
 });

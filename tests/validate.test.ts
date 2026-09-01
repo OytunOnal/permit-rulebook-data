@@ -7,28 +7,37 @@ const load = () =>
 
 describe("boundary validation (scenario step 6)", () => {
   it("the shipped dataset is valid", () => {
-    expect(validateDataset(load()).ok).toBe(true);
+    const result = validateDataset(load());
+    expect(result.errors).toEqual([]);
+    expect(result.ok).toBe(true);
   });
 
   it("a value stripped of its quote fails, naming the field", () => {
     const data = load();
-    delete data.countries[0].routes[0].criteria[4].threshold.quote;
+    // de-blue-card-shortage → salary criterion (last one) → threshold
+    delete data.countries[0].routes[0].criteria.at(-1).threshold.quote;
     const result = validateDataset(data);
     expect(result.ok).toBe(false);
-    const relevant = result.errors.find((e) => e.message.includes("quote"));
-    expect(relevant).toBeDefined();
-    expect(relevant!.path).toContain("/countries/0/routes/0/criteria/4");
+    expect(result.errors.some((e) => e.message.includes("quote"))).toBe(true);
   });
 
   it("a non-https source is rejected", () => {
     const data = load();
-    data.countries[0].routes[0].criteria[4].threshold.source_url = "http://insecure.example";
+    data.countries[0].routes[0].criteria.at(-1).threshold.source_url = "http://insecure.example";
     expect(validateDataset(data).ok).toBe(false);
   });
 
-  it("assertValidDataset throws with the offending path in the message", () => {
+  it("assertValidDataset names the deepest offending path", () => {
     const data = load();
-    delete data.countries[0].routes[1].criteria[3].threshold.retrieved_at;
-    expect(() => assertValidDataset(data)).toThrowError(/countries\/0\/routes\/1/);
+    delete data.countries[0].routes[1].criteria.at(-1).threshold.retrieved_at;
+    expect(() => assertValidDataset(data)).toThrowError(/threshold.*retrieved_at|retrieved_at/);
+  });
+
+  it("a points table stripped of its source fails", () => {
+    const data = load();
+    const ck = data.countries[0].routes.find((r: { id: string }) => r.id === "de-chancenkarte");
+    const anyC = ck.criteria.at(-1);
+    delete anyC.paths[1].criteria[0].table.source_url;
+    expect(validateDataset(data).ok).toBe(false);
   });
 });

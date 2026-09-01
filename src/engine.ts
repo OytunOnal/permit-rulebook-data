@@ -68,8 +68,26 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
       const points = passed.find((r) => r.points)?.points;
       return points ? { criterion: c, outcome: "pass", points } : { criterion: c, outcome: "pass" };
     }
-    if (pathResults.every((rs) => rs.some((r) => r.outcome === "fail")))
+    if (pathResults.every((rs) => rs.some((r) => r.outcome === "fail"))) {
+      // Every path failed — but if one path failed only by bounded gaps
+      // (salary just below, points just short), that near-miss is the story
+      // the gap analysis must tell. Propagate it upward.
+      for (const rs of pathResults) {
+        const fails = rs.filter((r) => r.outcome === "fail");
+        const undecided = rs.filter((r) => r.outcome === "unknown");
+        if (undecided.length === 0 && fails.every((f) => f.gap_max !== undefined || f.gap_points !== undefined)) {
+          const result: CriterionResult = { criterion: c, outcome: "fail" };
+          const gapsMoney = fails.map((f) => f.gap_max).filter((g): g is number => g !== undefined);
+          const gapsPoints = fails.map((f) => f.gap_points).filter((g): g is number => g !== undefined);
+          if (gapsMoney.length) result.gap_max = Math.max(...gapsMoney);
+          if (gapsPoints.length) result.gap_points = Math.max(...gapsPoints);
+          const pts = rs.find((r) => r.points)?.points;
+          if (pts) result.points = pts;
+          return result;
+        }
+      }
       return { criterion: c, outcome: "fail" };
+    }
     // Undecided: surface points progress from a still-open points path, if any.
     const open = pathResults.find((rs) => !rs.some((r) => r.outcome === "fail") && rs.some((r) => r.points));
     const points = open?.find((r) => r.points)?.points;
@@ -78,12 +96,12 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
 
   if (c.op === "points") {
     let scored = 0;
-    let maxRemaining = 0;
+    let unanswered = 0;
     const items: PointsBreakdown["items"] = [];
     for (const item of c.table.items) {
       const answer = profile[item.field];
       if (isUnknownAnswer(dataset, item.field, answer)) {
-        maxRemaining += Math.max(0, ...Object.values(item.points));
+        unanswered++;
       } else {
         const pts = item.points[answer as string] ?? 0;
         scored += pts;
@@ -92,13 +110,10 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
     }
     const points: PointsBreakdown = { scored, required: c.required.value, items };
     if (scored >= c.required.value) return { criterion: c, outcome: "pass", points };
-    if (scored + maxRemaining < c.required.value) {
-      // Definitive shortfall. Fully answered → an honest, bounded points gap.
-      const result: CriterionResult = { criterion: c, outcome: "fail", points };
-      if (maxRemaining === 0) result.gap_points = c.required.value - scored;
-      return result;
-    }
-    return { criterion: c, outcome: "unknown", points };
+    // Deliberately no early-unreachable death: the full score IS the gap
+    // analysis ("4 of 6"), and the ladder is short. Decide only when complete.
+    if (unanswered > 0) return { criterion: c, outcome: "unknown", points };
+    return { criterion: c, outcome: "fail", points, gap_points: c.required.value - scored };
   }
 
   const answer = profile[c.field];

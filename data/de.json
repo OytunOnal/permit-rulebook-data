@@ -1,6 +1,6 @@
 {
   "schema_version": "0.1.0",
-  "dataset_version": "2026.09.01",
+  "dataset_version": "2026.09.02",
   "fields": [
     {
       "id": "citizenship",
@@ -12,13 +12,45 @@
       ]
     },
     {
-      "id": "degree_recognized",
-      "label": "Do you hold a university degree recognised in Germany?",
+      "id": "situation",
+      "label": "Which best describes your situation?",
       "type": "enum",
       "options": [
-        { "value": "recognized", "label": "Yes — recognised (or German degree)" },
-        { "value": "not_recognized", "label": "No / not recognised" },
+        { "value": "offer_de", "label": "I have (or am about to get) a job offer in Germany" },
+        { "value": "ict", "label": "My employer is transferring me to its German branch" },
+        { "value": "research", "label": "I have (or expect) a hosting agreement with a German research institution" },
+        { "value": "none", "label": "None of these yet — exploring my options" }
+      ]
+    },
+    {
+      "id": "qualification",
+      "label": "Your highest completed qualification?",
+      "type": "enum",
+      "options": [
+        { "value": "none", "label": "No completed qualification" },
+        { "value": "vocational", "label": "Vocational training, 2+ years (state-recognised where completed)" },
+        { "value": "degree", "label": "University degree" }
+      ]
+    },
+    {
+      "id": "recognition_de",
+      "label": "Where does German recognition of your qualification stand?",
+      "type": "enum",
+      "options": [
+        { "value": "recognized", "label": "Fully recognised (or a German qualification)" },
+        { "value": "partial", "label": "Assessed as partial — additional measures required" },
+        { "value": "not_yet", "label": "Not assessed / not recognised" },
         { "value": "unknown", "label": "I don't know yet", "is_unknown": true }
+      ]
+    },
+    {
+      "id": "experience",
+      "label": "Skilled work experience related to your qualification?",
+      "type": "enum",
+      "options": [
+        { "value": "lt2", "label": "Under 2 years" },
+        { "value": "y2in5", "label": "2+ years within the last 5" },
+        { "value": "y5in7", "label": "5+ years within the last 7" }
       ]
     },
     {
@@ -32,8 +64,8 @@
       ]
     },
     {
-      "id": "offer_de",
-      "label": "Do you have a job offer from an employer in Germany?",
+      "id": "occupation_it",
+      "label": "Is your work in information or communications technology?",
       "type": "enum",
       "options": [
         { "value": "yes", "label": "Yes" },
@@ -43,6 +75,68 @@
     {
       "id": "salary_eur_year",
       "label": "Gross annual salary in the offer?",
+      "type": "money_band"
+    },
+    {
+      "id": "language_base",
+      "label": "Do you have at least German A1 or English B2?",
+      "type": "enum",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ]
+    },
+    {
+      "id": "german",
+      "label": "Your German level?",
+      "type": "enum",
+      "options": [
+        { "value": "none", "label": "Below A2" },
+        { "value": "a2", "label": "A2" },
+        { "value": "b1", "label": "B1" },
+        { "value": "b2plus", "label": "B2 or higher" }
+      ]
+    },
+    {
+      "id": "english_c1",
+      "label": "English at C1 or higher?",
+      "type": "enum",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ]
+    },
+    {
+      "id": "age_band",
+      "label": "Your age?",
+      "type": "enum",
+      "options": [
+        { "value": "u35", "label": "35 or younger" },
+        { "value": "a35to40", "label": "36 – 40" },
+        { "value": "o40", "label": "Over 40" }
+      ]
+    },
+    {
+      "id": "de_stay6m",
+      "label": "Lawful, uninterrupted stay of 6+ months in Germany during the last 5 years? (Schengen short visits don't count)",
+      "type": "enum",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ]
+    },
+    {
+      "id": "partner_ck",
+      "label": "Is your spouse or partner also applying for (and eligible for) an Opportunity Card?",
+      "type": "enum",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ]
+    },
+    {
+      "id": "funds_eur_month",
+      "label": "Monthly funds you can evidence for the job-search stay (blocked account or formal obligation)?",
       "type": "money_band"
     }
   ],
@@ -59,9 +153,10 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
-            { "field": "degree_recognized", "op": "eq", "value": "recognized" },
+            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "qualification", "op": "eq", "value": "degree" },
+            { "field": "recognition_de", "op": "eq", "value": "recognized" },
             { "field": "occupation_shortage", "op": "eq", "value": "yes" },
-            { "field": "offer_de", "op": "eq", "value": "yes" },
             {
               "field": "salary_eur_year",
               "op": "gte",
@@ -86,8 +181,9 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
-            { "field": "degree_recognized", "op": "eq", "value": "recognized" },
-            { "field": "offer_de", "op": "eq", "value": "yes" },
+            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "qualification", "op": "eq", "value": "degree" },
+            { "field": "recognition_de", "op": "eq", "value": "recognized" },
             {
               "field": "salary_eur_year",
               "op": "gte",
@@ -101,6 +197,159 @@
                 "legal_basis": "§ 18g AufenthG",
                 "history": []
               }
+            }
+          ]
+        },
+        {
+          "id": "de-skilled-academic",
+          "name": "Skilled worker — academic (§ 18b)",
+          "kind": "res-work",
+          "summary": "Recognised university degree plus a concrete job offer matching the qualification. No fixed salary threshold (age 45+: 55% rule or pension provision).",
+          "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "qualification", "op": "eq", "value": "degree" },
+            { "field": "recognition_de", "op": "eq", "value": "recognized", "note": "BAMF: \"Proof of a German or recognised foreign university degree or a foreign university degree which is comparable to a German university degree\"" }
+          ]
+        },
+        {
+          "id": "de-skilled-vocational",
+          "name": "Skilled worker — vocational (§ 18a)",
+          "kind": "res-work",
+          "summary": "Recognised vocational qualification plus a concrete job offer; German appropriate to the occupation and secured livelihood are also required. No fixed salary threshold (age 45+: 55% rule).",
+          "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Fachkraft/fachkraft-node.html",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "qualification", "op": "eq", "value": "vocational" },
+            { "field": "recognition_de", "op": "eq", "value": "recognized", "note": "BAMF: \"vocational qualifications acquired abroad which are equivalent to qualified German vocational training\"" }
+          ]
+        },
+        {
+          "id": "de-experienced-worker",
+          "name": "Experienced worker (§ 19c / § 6 BeschV)",
+          "kind": "res-work",
+          "summary": "No German recognition needed: 2+ years of recent skilled experience plus either a state-recognised qualification from your home country or IT experience. Salary threshold waived for collectively bound employers.",
+          "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/FachkraefteOhneAusbildung/fachkraefte-ohne-ausbildung-node.html",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "experience", "op": "in", "values": ["y2in5", "y5in7"], "note": "ZAV: \"Innerhalb der letzten fünf Jahren muss eine mindestens zweijährige, einschlägige Berufserfahrung auf dem Niveau einer Fachkraft gesammelt worden sein.\"" },
+            {
+              "op": "any",
+              "label": "qualification or IT experience",
+              "paths": [
+                { "label": "state-recognised qualification", "criteria": [ { "field": "qualification", "op": "in", "values": ["vocational", "degree"], "note": "Recognised by the state where it was acquired — German recognition not required (§ 6 BeschV)." } ] },
+                { "label": "IT specialist", "criteria": [ { "field": "occupation_it", "op": "eq", "value": "yes", "note": "§ 6 BeschV: \"In Berufen auf dem Gebiet der Informations- und Kommunikationstechnologie findet Satz 1 Nummer 3 keine Anwendung\"" } ] }
+              ]
+            },
+            {
+              "field": "salary_eur_year",
+              "op": "gte",
+              "threshold_label": "45% BBG",
+              "threshold": {
+                "amount": 45630,
+                "currency": "EUR",
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/04-2026/berufserfahrene",
+                "quote": "mind. 45.630 Euro im Jahr 2026",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "§ 6 BeschV (45% der Beitragsbemessungsgrenze)",
+                "history": []
+              },
+              "note": "Waived when the employer is collectively bound (tarifgebunden, §§ 3, 5 TVG)."
+            }
+          ]
+        },
+        {
+          "id": "de-researcher",
+          "name": "Researcher (§ 18d)",
+          "kind": "res-work",
+          "summary": "Hosting agreement with a research institution (university through to a company research department); the institution commits to cost coverage. Permit for at least one year; 18-month job-search permit afterwards.",
+          "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "situation", "op": "eq", "value": "research", "note": "BAMF: \"concluded a hosting agreement or corresponding contract with a research facility to carry out a research project\"" }
+          ]
+        },
+        {
+          "id": "de-ict-card",
+          "name": "ICT Card — intra-corporate transfer (§ 19)",
+          "kind": "res-work",
+          "summary": "Transfer of 90+ days as manager, specialist or trainee; 6+ months with the undertaking first; work contract covering the transfer. Up to 3 years (trainees 1).",
+          "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "situation", "op": "eq", "value": "ict", "note": "BAMF: \"you have been employed by the undertaking or group of undertakings for at least six months\" and \"the intra-corporate transfer is to last longer than 90 days\"" }
+          ]
+        },
+        {
+          "id": "de-chancenkarte",
+          "name": "Opportunity Card (Chancenkarte, § 20a)",
+          "kind": "seek",
+          "summary": "One-year job-search card with part-time work (20h/week). Fully recognised skilled workers get it directly; everyone else via the points table (6 points needed). Shown when you don't yet have an offer, transfer or hosting agreement.",
+          "info_url": "https://handbookgermany.de/en/opportunity-card",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "situation", "op": "eq", "value": "none", "note": "The card exists to seek work — with an offer, transfer or hosting agreement the work routes above apply directly." },
+            { "field": "qualification", "op": "in", "values": ["vocational", "degree"], "note": "Embassy: \"einen ausländischen Hochschulabschluss, einen mindestens zweijährigen Berufsabschluss (jeweils im Ausbildungsstaat staatlich anerkannt)\"" },
+            { "field": "language_base", "op": "eq", "value": "yes", "note": "§ 20a: German A1 (\"mindestens einfache deutsche Sprachkenntnisse\") OR English B2." },
+            {
+              "field": "funds_eur_month",
+              "op": "gte",
+              "threshold_label": "livelihood",
+              "threshold": {
+                "amount": 1091,
+                "currency": "EUR",
+                "source_url": "https://kairo.diplo.de/resource/blob/2664804/5e952d2720a91e83a475a3e02452f1cf/250122-deu-merkblatt-chancenkarte-data.pdf",
+                "quote": "Für den Aufenthalt in Deutschland müssen Ihnen monatlich mindestens 1.091 Euro zur Verfügung stehen.",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "§ 20a AufenthG (Lebensunterhalt)",
+                "history": []
+              }
+            },
+            {
+              "op": "any",
+              "label": "skilled worker or points",
+              "paths": [
+                {
+                  "label": "fully recognised (direct)",
+                  "criteria": [ { "field": "recognition_de", "op": "eq", "value": "recognized", "note": "Embassy: \"Drittstaatsangehörige, die eine volle Gleichwertigkeit der ausländischen Qualifikation nachweisen … können die Chancenkarte … ohne weitere besondere Voraussetzungen erhalten.\"" } ]
+                },
+                {
+                  "label": "points route",
+                  "criteria": [
+                    {
+                      "op": "points",
+                      "required": {
+                        "value": 6,
+                        "unit": "points",
+                        "source_url": "https://www.buzer.de/Anlage_AufenthG.htm",
+                        "quote": "Die Mindestpunktzahl beträgt sechs Punkte.",
+                        "retrieved_at": "2026-09-02",
+                        "legal_basis": "Anlage zu § 20a Abs. 3 Nr. 2, § 20b AufenthG",
+                        "history": []
+                      },
+                      "table": {
+                        "source_url": "https://www.buzer.de/Anlage_AufenthG.htm",
+                        "quote": "Die Mindestpunktzahl beträgt sechs Punkte.",
+                        "retrieved_at": "2026-09-02",
+                        "legal_basis": "§ 20b AufenthG + Anlage",
+                        "items": [
+                          { "field": "recognition_de", "points": { "partial": 4 } },
+                          { "field": "german", "points": { "a2": 1, "b1": 2, "b2plus": 3 } },
+                          { "field": "english_c1", "points": { "yes": 1 } },
+                          { "field": "experience", "points": { "y2in5": 2, "y5in7": 3 } },
+                          { "field": "occupation_shortage", "points": { "yes": 1 } },
+                          { "field": "age_band", "points": { "u35": 2, "a35to40": 1 } },
+                          { "field": "de_stay6m", "points": { "yes": 1 } },
+                          { "field": "partner_ck", "points": { "yes": 1 } }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }

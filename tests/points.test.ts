@@ -80,11 +80,14 @@ describe("points criterion", () => {
     expect(r.gap_points).toBe(3); // 6 - (2+1+0)
   });
 
-  it("mathematically unreachable → dead early: max remaining can't reach 6", () => {
-    const [r] = evaluate(fixture, { ...base, experience: "lt2", german: "none" });
-    // scored 0, only age (max 2) left → fail before age is even asked
-    expect(r.status).toBe("hold");
-    expect(remainingQuestions(fixture, { ...base, experience: "lt2", german: "none" })).toEqual([]);
+  it("shortfall decides only when the ladder is complete — full score shown, exact gap", () => {
+    const partial = { ...base, experience: "lt2", german: "none" };
+    // age still unanswered → criterion stays open, age still asked
+    expect(remainingQuestions(fixture, partial).map((q) => q.field)).toEqual(["age"]);
+    const [r] = evaluate(fixture, { ...partial, age: "o40" });
+    expect(r.status).toBe("near");
+    expect(r.gap_points).toBe(6);
+    expect(r.points).toMatchObject({ scored: 0, required: 6 });
   });
 
   it("stops asking point items once the requirement is already met", () => {
@@ -155,8 +158,10 @@ describe("information-gain ordering", () => {
     expect(order.indexOf("citizenship")).toBeLessThan(order.indexOf("experience"));
   });
 
-  it("recomputes adaptively: after unreachable points, nothing remains", () => {
-    const order = remainingQuestions(fixture, { ...base, experience: "lt2", german: "none" });
-    expect(order).toEqual([]);
+  it("recomputes adaptively: the ladder completes, then nothing remains", () => {
+    expect(remainingQuestions(fixture, { ...base, experience: "lt2", german: "none" }).map((q) => q.field))
+      .toEqual(["age"]);
+    expect(remainingQuestions(fixture, { ...base, experience: "lt2", german: "none", age: "o40" }))
+      .toEqual([]);
   });
 });
