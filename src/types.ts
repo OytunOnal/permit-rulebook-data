@@ -86,6 +86,13 @@ export interface FieldDef {
 export interface Unlock {
   field: string;
   option: FieldOption;
+  /**
+   * Set when the step only proves out together with one unanswered attribute
+   * (e.g. "a job offer — in Germany" for a destination=all explorer, where
+   * localization hinges on the never-asked situation_country). The row states
+   * both assumptions; the routes are fully evaluated under both.
+   */
+  qualifier?: { field: string; option: FieldOption };
   routes: RouteResult[];
 }
 

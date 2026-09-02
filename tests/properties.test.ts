@@ -85,6 +85,10 @@ describe("property: unlock rows are SOUND and COMPLETE single-step recommendatio
       const baseline = statusMap(p);
       const rows = unlocks(dataset, p);
 
+      // Qualifier rows are verified separately below; the single-step oracle
+      // applies to the unqualified rows only.
+      const plain = rows.filter((u) => u.qualifier === undefined);
+
       for (const def of dataset.fields) {
         if (def.kind !== "path" && def.kind !== "improvable") continue;
         const current = p[def.id];
@@ -96,7 +100,7 @@ describe("property: unlock rows are SOUND and COMPLETE single-step recommendatio
           ? deriveBands(dataset, def.id).map((b) => ({ value: b.id, is_unknown: false, is_fallback: false }))
           : (def.options ?? []).map((o) => ({ value: o.value, is_unknown: !!o.is_unknown, is_fallback: !!o.is_fallback }));
         for (const cand of candidates) {
-          const row = rows.find((u) => u.field === def.id && u.option.value === cand.value);
+          const row = plain.find((u) => u.field === def.id && u.option.value === cand.value);
           if (cand.value === current || cand.is_unknown || cand.is_fallback) {
             expect(row).toBeUndefined();
             continue;
@@ -111,6 +115,26 @@ describe("property: unlock rows are SOUND and COMPLETE single-step recommendatio
             expect(row!.routes.map((r) => [r.route.id, r.status])).toEqual(opened);
           }
         }
+      }
+
+      // Qualifier rows: SOUND — every listed route is exactly what full
+      // re-evaluation under step + qualifier opens beyond the plain step; the
+      // qualifier is always an unanswered plain attribute, never a second step.
+      for (const u of rows) {
+        if (!u.qualifier) continue;
+        const qdef = dataset.fields.find((f) => f.id === u.qualifier!.field)!;
+        expect(qdef.kind).toBeUndefined();
+        expect(p[u.qualifier.field]).toBeUndefined();
+        const direct = new Set(
+          evaluate(dataset, { ...p, [u.field]: u.option.value })
+            .filter((r) => (r.status === "met" || r.status === "near") && baseline[r.route.id] === "hold")
+            .map((r) => r.route.id),
+        );
+        const opened = evaluate(dataset, { ...p, [u.field]: u.option.value, [u.qualifier.field]: u.qualifier.option.value })
+          .filter((r) => (r.status === "met" || r.status === "near") && baseline[r.route.id] === "hold" && !direct.has(r.route.id))
+          .map((r) => [r.route.id, r.status]);
+        expect(u.routes.map((r) => [r.route.id, r.status])).toEqual(opened);
+        expect(opened.length).toBeGreaterThan(0);
       }
     }
   });

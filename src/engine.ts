@@ -276,10 +276,44 @@ export function unlocks(dataset: Dataset, profile: Profile): import("./types.js"
         : (def.options ?? []);
     for (const opt of candidates) {
       if (opt.value === current || ("is_unknown" in opt && opt.is_unknown) || ("is_fallback" in opt && opt.is_fallback)) continue;
-      const opened = evaluate(dataset, { ...profile, [def.id]: opt.value }).filter(
+      const hypo: Profile = { ...profile, [def.id]: opt.value };
+      const hypoResults = evaluate(dataset, hypo);
+      const opened = hypoResults.filter(
         (r) => (r.status === "met" || r.status === "near") && baseline.get(r.route.id) === "hold",
       );
       if (opened.length) out.push({ field: def.id, option: opt, routes: opened });
+
+      // Qualifier fork: some steps only prove out together with one unanswered
+      // attribute — "a job offer" needs "…in which country?" when the user asked
+      // for all destinations and localization was never asked. For each attribute
+      // enum still blocking a route under the counterfactual, fork per option and
+      // keep only fully-proven openings. Single-step honesty holds: the row
+      // states both assumptions, and both are one decision for the user.
+      if (def.kind !== "path") continue; // qualifiers belong to steps, not skills
+      const directIds = new Set(opened.map((r) => r.route.id));
+      const blockers = new Set<string>();
+      for (const r of hypoResults) {
+        if (baseline.get(r.route.id) !== "hold" || directIds.has(r.route.id)) continue;
+        for (const cr of r.criteria)
+          if (cr.outcome === "unknown")
+            for (const f of referencedFields(cr.criterion))
+              if (hypo[f] === undefined) blockers.add(f);
+      }
+      for (const qf of blockers) {
+        const qdef = fieldDef(dataset, qf);
+        if (!qdef || qdef.kind !== undefined || qdef.type !== "enum") continue; // attributes only
+        for (const qopt of qdef.options ?? []) {
+          if (qopt.is_unknown || qopt.is_fallback) continue;
+          const forked = evaluate(dataset, { ...hypo, [qf]: qopt.value }).filter(
+            (r) =>
+              (r.status === "met" || r.status === "near") &&
+              baseline.get(r.route.id) === "hold" &&
+              !directIds.has(r.route.id),
+          );
+          if (forked.length)
+            out.push({ field: def.id, option: opt, qualifier: { field: qf, option: qopt }, routes: forked });
+        }
+      }
     }
   }
   return out;

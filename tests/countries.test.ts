@@ -155,6 +155,41 @@ describe("unlocks across countries", () => {
     expect(targets).not.toContain("nl-hsm-under30"); // never duplicated: it was never on hold
   });
 
+  it("destination=all explorer: offer/ict steps fork per country via the situation_country qualifier", () => {
+    // Everything a CK-style interview would have asked is answered; salary and
+    // country-specific fields are not — so only qualification-gated routes can prove out.
+    const allExplorer: Profile = {
+      destination: "all", citizenship: "third_country", situation: "none",
+      qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
+      experience: "y2in5", german: "b1", funds_eur_month: "band_1", nl_grad3y: "no",
+    };
+    const rows = unlocks(dataset, allExplorer);
+    const forked = rows.filter((u) => u.qualifier?.field === "situation_country");
+    expect(forked.length).toBeGreaterThan(0);
+    // "a job offer — in Germany" provably opens §18b (no salary threshold).
+    const offerDe = forked.find((u) => u.option.value === "offer" && u.qualifier!.option.value === "de")!;
+    expect(offerDe.routes.map((r) => r.route.id)).toContain("de-skilled-academic");
+    // "an intra-corporate transfer — in Spain" opens es-ict (degree, no threshold).
+    const ictEs = forked.find((u) => u.option.value === "ict" && u.qualifier!.option.value === "es")!;
+    expect(ictEs.routes.map((r) => r.route.id)).toEqual(["es-ict"]);
+    // Salary-gated routes (NL HSM, FR talent, Blue Cards) never appear unproven.
+    for (const u of forked)
+      for (const r of u.routes)
+        expect(["nl-hsm-30plus", "nl-hsm-under30", "nl-blue-card", "fr-talent-qualifie"]).not.toContain(r.route.id);
+  });
+
+  it("destination=de explorer: no qualifier rows — localization passes via destination alone", () => {
+    const deExplorer: Profile = {
+      destination: "de", citizenship: "third_country", situation: "none",
+      qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
+      experience: "y2in5", german: "b1", funds_eur_month: "band_1",
+      salary_eur_year: "band_4",
+    };
+    const rows = unlocks(dataset, deExplorer);
+    expect(rows.some((u) => u.option.value === "offer" && !u.qualifier)).toBe(true);
+    expect(rows.every((u) => u.qualifier === undefined)).toBe(true);
+  });
+
   it("explorer bound for NL: no DE-only unlock suggestions (german never suggested)", () => {
     const nlExplorer: Profile = {
       destination: "nl", citizenship: "third_country", situation: "none", nl_grad3y: "no",
