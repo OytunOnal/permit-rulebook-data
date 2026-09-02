@@ -33,7 +33,8 @@
       "url": "https://www.buzer.de/Anlage_AufenthG.htm",
       "strategy": "html",
       "kind": "value-source",
-      "note": "Backs the points requirement and table (mirror). Official-source re-check tracked by the gesetze human-tier entry."
+      "slice": { "from": "Merkmal nach &sect; 20b Absatz 1 Nummer", "to": "&sect; 107 ←" },
+      "note": "Backs the points requirement and table (mirror). Sliced to the statute table — buzer rotates ad blocks per request (observed 2026-09-02: three page variants, identical legal text). Official-source re-check tracked by the gesetze human-tier entry."
     },
     {
       "id": "gesetze-official-recheck",
@@ -43,6 +44,48 @@
       "max_age_days": 90,
       "last_verified": "2026-09-02",
       "note": "Official statute source blocks automated fetchers but is human-reachable (verified via VPN 2026-09-02). Quarterly human re-verification of all buzer-mirrored quotes."
+    },
+    {
+      "id": "fr-f16922-talent",
+      "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Backs the FR talent thresholds (EUR 39,582 salarié qualifié; EUR 59,373 Blue Card). All talent amounts live in this fiche's accordions."
+    },
+    {
+      "id": "fr-f33952-ict",
+      "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Backs the FR ICT resources floor (EUR 1,867.02/month). SMIC-indexed — will move on SMIC revaluation."
+    },
+    {
+      "id": "es-uge-umbral-pdf",
+      "url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
+      "strategy": "pdf",
+      "kind": "value-source",
+      "note": "Backs the ES Blue Card / PAC nacional thresholds (EUR 41,356.36). Byte-hash only; on change a human reads the PDF. Liferay slugs have churned before — the UGE index sentinel guards the link."
+    },
+    {
+      "id": "es-uge-index",
+      "url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/autorizaciones-y-requisitos",
+      "strategy": "html",
+      "kind": "sentinel",
+      "note": "UGE route index: guards the threshold-PDF slug and per-route page links. INE publishes a new average salary ~May–June; new threshold applies one month after publication (Orden PJC/44/2026 art. 3.2)."
+    },
+    {
+      "id": "nl-ind-required-amounts",
+      "url": "https://ind.nl/en/required-amounts-income-requirements",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Backs all NL amounts (HSM EUR 5,942 / 4,357; Blue Card EUR 5,942; researcher EUR 1,635.90). HSM/Blue Card amounts change every 1 January; most other norms change 1 January AND 1 July."
+    },
+    {
+      "id": "nl-ind-work-index",
+      "url": "https://ind.nl/en/residence-permits/work",
+      "strategy": "html",
+      "kind": "sentinel",
+      "note": "NL route inventory: new/removed routes and slug changes (old slugs 404 rather than redirect)."
     }
   ]
 }

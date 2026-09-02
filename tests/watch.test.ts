@@ -124,6 +124,35 @@ describe("watch pass outcomes", () => {
     expect(res.nextState.entries["page"]).toEqual(nextState.entries["page"]);
   });
 
+  it("slice: rotating chrome outside the markers never flags; a change inside does", async () => {
+    const sliced: Watchlist = { entries: [
+      { id: "p", url: "https://x/p", strategy: "html", kind: "sentinel",
+        slice: { from: "Tabelle", to: "Punkte." } },
+    ] };
+    const ad1 = okFetcher({ "https://x/p": "<p>Anzeige Kaufen!</p><p>Tabelle 1 4 sechs Punkte.</p><p>Footer A</p>" });
+    const ad2 = okFetcher({ "https://x/p": "<p>Promo: Jetzt anmelden</p><p>Tabelle 1 4 sechs Punkte.</p><p>Footer B</p>" });
+    const law = okFetcher({ "https://x/p": "<p>Anzeige</p><p>Tabelle 1 4 sieben Punkte.</p><p>Footer A</p>" });
+    const base = await runWatch(sliced, empty, ad1, "2026-09-02");
+    const quiet = await runWatch(sliced, base.nextState, ad2, "2026-09-03");
+    expect(quiet.reports[0].outcome).toBe("unchanged");
+    const flagged = await runWatch(sliced, base.nextState, law, "2026-09-03");
+    expect(flagged.reports[0].outcome).toBe("changed");
+  });
+
+  it("slice: a missing marker is 'unreachable', never a quiet 'no change'", async () => {
+    const sliced: Watchlist = { entries: [
+      { id: "p", url: "https://x/p", strategy: "html", kind: "sentinel",
+        slice: { from: "Tabelle", to: "Punkte." } },
+    ] };
+    const good = okFetcher({ "https://x/p": "<p>Tabelle 1 4 sechs Punkte.</p>" });
+    const gutted = okFetcher({ "https://x/p": "<p>Seite nicht gefunden</p>" });
+    const base = await runWatch(sliced, empty, good, "2026-09-02");
+    const res = await runWatch(sliced, base.nextState, gutted, "2026-09-03");
+    expect(res.reports[0].outcome).toBe("unreachable");
+    expect(res.reports[0].error).toContain("slice marker missing");
+    expect(res.nextState.entries["p"]).toEqual(base.nextState.entries["p"]);
+  });
+
   it("pdf: byte-identical is quiet, byte-different flags (no text extraction attempted)", async () => {
     const v1 = okFetcher({ "https://x/page": "<p>A</p>", "https://x/doc.pdf": enc("PDFv1") });
     const v2 = okFetcher({ "https://x/page": "<p>A</p>", "https://x/doc.pdf": enc("PDFv2") });

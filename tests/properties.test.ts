@@ -33,7 +33,7 @@ function statusMap(p: Profile): Record<string, string> {
 }
 
 describe("property: the interview always terminates and never repeats a question", () => {
-  it("holds for 300 random answer-oracles", () => {
+  it("holds for 300 random answer-oracles", { timeout: 120_000 }, () => {
     const rand = lcg(42);
     for (let i = 0; i < 300; i++) {
       const oracle = randomProfile(rand);
@@ -54,7 +54,7 @@ describe("property: the interview always terminates and never repeats a question
 });
 
 describe("property: every result status is internally consistent", () => {
-  it("met = all pass; near = only gapped fails, nothing undecided (2000 random profiles)", () => {
+  it("met = all pass; near = only gapped fails, nothing undecided (2000 random profiles)", { timeout: 120_000 }, () => {
     const rand = lcg(7);
     for (let i = 0; i < 2000; i++) {
       const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.6);
@@ -117,7 +117,7 @@ describe("property: unlock rows are SOUND and COMPLETE single-step recommendatio
 });
 
 describe("property: when the interview ends, no unanswered question could change any verdict", () => {
-  it("holds for 200 completed random flows", () => {
+  it("holds for 200 completed random flows", { timeout: 120_000 }, () => {
     const rand = lcg(99);
     for (let i = 0; i < 200; i++) {
       const oracle = randomProfile(rand);

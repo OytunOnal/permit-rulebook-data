@@ -13,6 +13,10 @@ export interface WatchEntry {
    * indexes, official-recheck reminders) are allowed to stand alone. */
   kind: "value-source" | "sentinel";
   note?: string;
+  /** html strategy only: hash just the region between these markers (inclusive),
+   * for pages whose chrome rotates (ads, promos) while the operative text stands
+   * still. A missing marker reports as unreachable — never as "no change". */
+  slice?: { from: string; to: string };
   /** human strategy only */
   max_age_days?: number;
   last_verified?: string; // YYYY-MM-DD
@@ -109,6 +113,13 @@ export async function runWatch(
         hash = sha256(fetched.body);
       } else {
         text = normalize(htmlToText(new TextDecoder("utf-8").decode(fetched.body)));
+        if (entry.slice) {
+          const from = text.indexOf(entry.slice.from);
+          const to = from >= 0 ? text.indexOf(entry.slice.to, from + entry.slice.from.length) : -1;
+          if (from < 0 || to < 0)
+            throw new Error(`slice marker missing: ${from < 0 ? "from" : "to"}`);
+          text = text.slice(from, to + entry.slice.to.length);
+        }
         hash = sha256(text);
       }
     } catch (e) {

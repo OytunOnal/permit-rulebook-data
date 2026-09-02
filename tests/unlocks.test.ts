@@ -12,7 +12,8 @@ const explorer: Profile = {
   recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
   german: "b1", funds_eur_month: "band_1",
   // salary answered so the offer counterfactual can evaluate fully
-  salary_eur_year: "band_2",
+  // (band_4 = €45,934.20 – €50,700: clears shortage BC + §19c, below the general BC)
+  salary_eur_year: "band_4",
 };
 
 describe("unlocks — counterfactual leverage over path fields", () => {
@@ -59,7 +60,7 @@ describe("unlocks — improvable fields (language, funds, recognition…)", () =
   const languageless: Profile = {
     destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
     recognition_de: "not_yet", german: "none", english: "none",
-    experience: "y2in5", occupation_shortage: "yes", age_band: "u35",
+    experience: "y2in5", occupation_shortage: "yes", age_band: "a30to35",
     de_stay6m: "no", partner_ck: "no", funds_eur_month: "band_1",
   };
   const rows = unlocks(dataset, languageless);
@@ -104,7 +105,7 @@ describe("improvable fails keep the interview alive (user-reported: no-language 
 
   it("with the full picture, 'German B2' becomes a provable unlock even with recognition unknown", () => {
     const full: Profile = {
-      ...early, funds_eur_month: "band_1", age_band: "u35",
+      ...early, funds_eur_month: "band_1", age_band: "a30to35",
       de_stay6m: "no", partner_ck: "no",
     };
     const rows2 = unlocks(dataset, full);

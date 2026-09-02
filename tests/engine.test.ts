@@ -6,11 +6,12 @@ import type { Dataset, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
-// Salary bands: <45,630 / 45,630–45,934.20 / 45,934.20–50,700 / ≥50,700
+// Annual salary bands (all four countries' thresholds): <39,582 / 39,582–41,356.36 /
+// 41,356.36–45,630 / 45,630–45,934.20 / 45,934.20–50,700 / 50,700–59,373 / ≥59,373
 const engineer: Profile = {
   destination: "de", citizenship: "third_country", situation: "offer", qualification: "degree",
   recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
-  salary_eur_year: "band_2",
+  salary_eur_year: "band_4",
 };
 
 /** Greedy wizard simulation: always answer the first remaining question. */
@@ -28,13 +29,20 @@ function runFlow(answers: Profile): { asked: string[]; profile: Profile } {
   return { asked, profile };
 }
 
-describe("band derivation across three salary thresholds", () => {
-  it("derives four bands whose edges are exactly the thresholds", () => {
+describe("band derivation across the four countries' salary thresholds", () => {
+  it("derives seven bands whose edges are exactly the thresholds", () => {
     const bands = deriveBands(dataset, "salary_eur_year");
     expect(bands.map((b) => [b.min, b.max])).toEqual([
-      [undefined, 45630], [45630, 45934.2], [45934.2, 50700], [50700, undefined],
+      [undefined, 39582], [39582, 41356.36], [41356.36, 45630], [45630, 45934.2],
+      [45934.2, 50700], [50700, 59373], [59373, undefined],
     ]);
-    expect(bands[2].label).toBe("€45,934.20 – €50,700");
+    expect(bands[4].label).toBe("€45,934.20 – €50,700");
+  });
+
+  it("monthly salary bands include thresholds nested inside any-paths (NL ICT)", () => {
+    expect(deriveBands(dataset, "salary_eur_month").map((b) => [b.min, b.max])).toEqual([
+      [undefined, 1635.9], [1635.9, 1867.02], [1867.02, 4357], [4357, 5942], [5942, undefined],
+    ]);
   });
 
   it("funds field gets its own independent band set", () => {
@@ -76,7 +84,7 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
   it("P2 vocational worker with offer: at most 7 questions, shortage list never asked", () => {
     const { asked, profile } = runFlow({
       destination: "de", citizenship: "third_country", situation: "offer", qualification: "vocational",
-      recognition_de: "recognized", experience: "y5in7", salary_eur_year: "band_1",
+      recognition_de: "recognized", experience: "y5in7", salary_eur_year: "band_3",
       occupation_shortage: "no", occupation_it: "no",
     });
     expect(asked.length).toBeLessThanOrEqual(7);
@@ -91,7 +99,7 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
       destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
       funds_eur_month: "band_1", recognition_de: "not_yet",
       german: "b1", english: "none", experience: "lt2", occupation_shortage: "no",
-      age_band: "u35", de_stay6m: "no", partner_ck: "no",
+      age_band: "a30to35", de_stay6m: "no", partner_ck: "no",
     });
     expect(asked).not.toContain("salary_eur_year");
     expect(asked.length).toBeGreaterThanOrEqual(8); // honest: the points ladder is long
@@ -129,7 +137,7 @@ describe("bounded gaps don't end the interview (user-reported: funds under €1,
       destination: "de", citizenship: "third_country", situation: "none", funds_eur_month: "band_0",
       qualification: "degree", recognition_de: "recognized", german: "a1",
       english: "none", experience: "y2in5", occupation_shortage: "no",
-      age_band: "u35", de_stay6m: "no", partner_ck: "no",
+      age_band: "a30to35", de_stay6m: "no", partner_ck: "no",
     });
     expect(asked).toContain("qualification"); // interview continued past the funds gap
     const ck = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;

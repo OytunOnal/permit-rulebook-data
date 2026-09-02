@@ -113,6 +113,35 @@
       "kind": "improvable"
     },
     {
+      "id": "salary_eur_month",
+      "label": "Gross monthly salary in the offer (or monthly income you can evidence)?",
+      "type": "money_band",
+      "kind": "improvable"
+    },
+    {
+      "id": "fr_degree",
+      "label": "Did you obtain a master's-level degree (or a Grandes Écoles level-1 diploma) in France?",
+      "type": "enum",
+      "options": [
+        { "value": "yes", "label": "Yes", "short": "a French master's-level degree" },
+        { "value": "no", "label": "No" }
+      ]
+    },
+    {
+      "id": "nl_grad3y",
+      "label": "In the last 3 years, did you graduate from (or do research at) a Dutch institution, or graduate from a top-200-ranked foreign university?",
+      "type": "enum",
+      "learn": {
+        "label": "The qualifying institutions and rankings are listed on the IND orientation-year page",
+        "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year"
+      },
+      "options": [
+        { "value": "yes_nl", "label": "Yes — degree, doctorate or research at a Dutch institution" },
+        { "value": "yes_top200", "label": "Yes — degree from a foreign university in the top-200 rankings" },
+        { "value": "no", "label": "No" }
+      ]
+    },
+    {
       "id": "german",
       "label": "Your German level?",
       "type": "enum",
@@ -141,7 +170,8 @@
       "label": "Your age?",
       "type": "enum",
       "options": [
-        { "value": "u35", "label": "35 or younger" },
+        { "value": "u30", "label": "Under 30" },
+        { "value": "a30to35", "label": "30 – 35" },
         { "value": "a35to40", "label": "36 – 40" },
         { "value": "o40", "label": "Over 40" }
       ]
@@ -416,7 +446,7 @@
                           { "field": "english", "points": { "c1": 1 } },
                           { "field": "experience", "points": { "y2in5": 2, "y5in7": 3 } },
                           { "field": "occupation_shortage", "points": { "yes": 1 } },
-                          { "field": "age_band", "points": { "u35": 2, "a35to40": 1 } },
+                          { "field": "age_band", "points": { "u30": 2, "a30to35": 2, "a35to40": 1 } },
                           { "field": "de_stay6m", "points": { "yes": 1 } },
                           { "field": "partner_ck", "points": { "yes": 1 } }
                         ]
@@ -426,6 +456,457 @@
                 }
               ]
             }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "FR",
+      "name": "France",
+      "routes": [
+        {
+          "id": "fr-talent-qualifie",
+          "name": "Talent — qualified employee (salarié qualifié)",
+          "kind": "res-work",
+          "summary": "For master's-level graduates of French institutions with a 3+ month contract. Card valid up to 4 years. Talent family: no labour-market test.",
+          "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["fr", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer", "note": "Fiche F16922: \"Avoir un contrat de travail de plus de 3 mois\"" },
+            { "op": "any", "label": "located in France", "paths": [
+              { "label": "France chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "fr" } ] },
+              { "label": "offer in France", "criteria": [ { "field": "situation_country", "op": "eq", "value": "fr" } ] }
+            ] },
+            { "field": "qualification", "op": "eq", "value": "degree" },
+            { "field": "fr_degree", "op": "eq", "value": "yes", "note": "Fiche F16922: \"Avoir obtenu en France un diplôme au moins équivalent au master ou un diplôme de niveau 1 labellisé par la Conférence des grandes écoles\" — this subtype is the young-graduate track; foreign-degree holders route via the Blue Card." },
+            {
+              "field": "salary_eur_year",
+              "op": "gte",
+              "threshold_label": "talent salarié qualifié",
+              "threshold": {
+                "amount": 39582,
+                "currency": "EUR",
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir un contrat de travail de plus de 3 mois qui prévoit une rémunération brute annuelle supérieure ou égale à 39 582 €.",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "CESEDA — carte de séjour « talent » (fiche F16922)",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "fr-talent-blue-card",
+          "name": "EU Blue Card (talent — carte bleue européenne)",
+          "kind": "res-work",
+          "summary": "6+ month contract; 3-year higher-education diploma or 5 years of comparable experience (3-in-last-7 for professions listed by ministerial order). Card up to 4 years.",
+          "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["fr", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer", "note": "Fiche F16922: \"Avoir un contrat de travail de 6 mois minimum\"" },
+            { "op": "any", "label": "located in France", "paths": [
+              { "label": "France chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "fr" } ] },
+              { "label": "offer in France", "criteria": [ { "field": "situation_country", "op": "eq", "value": "fr" } ] }
+            ] },
+            {
+              "op": "any",
+              "label": "diploma or experience",
+              "note": "Fiche F16922: \"Avoir un diplôme sanctionnant au moins 3 années d'études supérieures ou 5 années d'expérience professionnelle de niveau comparable\" (reduced to 3-in-last-7 years for listed professions — order not yet modeled).",
+              "paths": [
+                { "label": "3-year higher-education diploma", "criteria": [ { "field": "qualification", "op": "eq", "value": "degree" } ] },
+                { "label": "5 years of comparable experience", "criteria": [ { "field": "experience", "op": "eq", "value": "y5in7" } ] }
+              ]
+            },
+            {
+              "field": "salary_eur_year",
+              "op": "gte",
+              "threshold_label": "1.5× reference salary",
+              "threshold": {
+                "amount": 59373,
+                "currency": "EUR",
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir une rémunération annuelle brute supérieure ou égale à 1,5 fois le salaire brut moyen annuel de référence, soit 59 373,00 € brut annuel.",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "CESEDA — carte « talent — carte bleue européenne » (fiche F16922)",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "fr-ict",
+          "name": "ICT — seconded employee (salarié détaché ICT)",
+          "kind": "res-work",
+          "summary": "Intra-group transfer for a 1+ year mission in a senior management or expert role, with 6+ months of group seniority. Card up to 3 years, not renewable.",
+          "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["fr", "all"] },
+            { "field": "situation", "op": "eq", "value": "ict", "note": "Fiche F33952: \"Vous avez une ancienneté d'au moins 6 mois dans le groupe qui vous emploie\" — \"pour effectuer une mission de plus d'1 an\" — \"pour occuper un poste d'encadrement supérieur ou apporter une expertise\"" },
+            { "op": "any", "label": "located in France", "paths": [
+              { "label": "France chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "fr" } ] },
+              { "label": "transfer to France", "criteria": [ { "field": "situation_country", "op": "eq", "value": "fr" } ] }
+            ] },
+            {
+              "field": "salary_eur_month",
+              "op": "gte",
+              "threshold_label": "resources (SMIC level)",
+              "note": "The fiche frames this as a resources proof (« justificatif de ressources »), not a salary threshold; SMIC-indexed, will move on SMIC revaluation.",
+              "threshold": {
+                "amount": 1867.02,
+                "currency": "EUR",
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+                "quote": "Justificatif de ressources supérieures ou égales à 1 867,02 € brut par mois",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "CESEDA — carte « salarié détaché ICT » (fiche F33952)",
+                "history": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "ES",
+      "name": "Spain",
+      "routes": [
+        {
+          "id": "es-blue-card",
+          "name": "EU Blue Card (tarjeta azul-UE)",
+          "kind": "res-work",
+          "summary": "6+ month contract or firm offer; higher-education qualification (3+ years) or 5 years of comparable experience (3-in-last-7 for ICT professionals). UGE fast-track: 20-day decision, positive administrative silence. A reduced threshold (€33,085.09) exists for catalogued shortage occupations and recent graduates — not yet modeled.",
+          "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["es", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer", "note": "Ley 14/2013 art. 71 bis.1.b): \"un contrato de trabajo válido o una oferta firme de empleo de alta cualificación para un período de al menos seis meses\"" },
+            { "op": "any", "label": "located in Spain", "paths": [
+              { "label": "Spain chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "es" } ] },
+              { "label": "offer in Spain", "criteria": [ { "field": "situation_country", "op": "eq", "value": "es" } ] }
+            ] },
+            {
+              "op": "any",
+              "label": "qualification or experience",
+              "note": "Ley 14/2013 art. 71.2.a): \"una cualificación derivada de una formación de enseñanza superior de duración mínima de tres años... o acrediten un mínimo de cinco años de conocimientos, capacidades y competencias avalados por una experiencia profesional que pueda considerarse equiparable\" (ICT professionals: 3-in-last-7 years — not separately modeled).",
+              "paths": [
+                { "label": "higher-education qualification", "criteria": [ { "field": "qualification", "op": "eq", "value": "degree" } ] },
+                { "label": "5 years of comparable experience", "criteria": [ { "field": "experience", "op": "eq", "value": "y5in7" } ] }
+              ]
+            },
+            {
+              "field": "salary_eur_year",
+              "op": "gte",
+              "threshold_label": "general (1.4× INE average)",
+              "note": "Threshold PDF value — flagged for human re-verification per project policy.",
+              "threshold": {
+                "amount": 41356.36,
+                "currency": "EUR",
+                "source_url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
+                "quote": "Nuevos umbrales salariales Tarjeta Azul. – Umbral general: 41.356,36 €",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "Ley 14/2013 art. 71 bis + Orden PJC/44/2026 (1,4× ganancia media INE)",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "es-highly-qualified",
+          "name": "Highly qualified professional (PAC nacional)",
+          "kind": "res-work",
+          "summary": "National fast-track for higher-education professionals or equivalent experience with a qualifying employer (large company, strategic-sector SME or project of general interest). Single threshold, no reduction; 20-day UGE procedure.",
+          "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["es", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer" },
+            { "op": "any", "label": "located in Spain", "paths": [
+              { "label": "Spain chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "es" } ] },
+              { "label": "offer in Spain", "criteria": [ { "field": "situation_country", "op": "eq", "value": "es" } ] }
+            ] },
+            {
+              "op": "any",
+              "label": "qualification or experience",
+              "note": "Ley 14/2013 art. 71.2.b): \"una titulación equiparable al menos al nivel 1 del Marco Español de Cualificaciones para la Educación Superior... o conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos tres años\". The law requires 3 years; the nearest declarable option (5-in-last-7) is used — conservative.",
+              "paths": [
+                { "label": "higher-education qualification", "criteria": [ { "field": "qualification", "op": "eq", "value": "degree" } ] },
+                { "label": "professional experience", "criteria": [ { "field": "experience", "op": "eq", "value": "y5in7" } ] }
+              ]
+            },
+            {
+              "field": "salary_eur_year",
+              "op": "gte",
+              "threshold_label": "single threshold",
+              "note": "Threshold PDF value — flagged for human re-verification per project policy.",
+              "threshold": {
+                "amount": 41356.36,
+                "currency": "EUR",
+                "source_url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
+                "quote": "Se establece un umbral único de 41.356,36 €",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "Ley 14/2013 art. 71.2.b) + UGE threshold publication (June 2026)",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "es-ict",
+          "name": "Intra-company transfer (traslado intraempresarial)",
+          "kind": "res-work",
+          "summary": "Transfer within a group to a Spanish entity as manager, specialist or trainee; 3 months of prior group employment. No salary threshold beyond the applicable collective agreement. Max 3 years (trainees 1).",
+          "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/trabajadores",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["es", "all"] },
+            { "field": "situation", "op": "eq", "value": "ict", "note": "Ley 14/2013 art. 73.2.c): \"La existencia de una relación laboral o profesional, previa y continuada, de 3 meses con una o varias de las empresas del grupo\"" },
+            { "op": "any", "label": "located in Spain", "paths": [
+              { "label": "Spain chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "es" } ] },
+              { "label": "transfer to Spain", "criteria": [ { "field": "situation_country", "op": "eq", "value": "es" } ] }
+            ] },
+            {
+              "op": "any",
+              "label": "qualification or experience",
+              "note": "Ley 14/2013 art. 73.2.b): \"Titulación superior equiparable al menos al nivel 1 del Marco Español de Cualificaciones para la Educación Superior... o conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos 3 años\".",
+              "paths": [
+                { "label": "higher-education qualification", "criteria": [ { "field": "qualification", "op": "eq", "value": "degree" } ] },
+                { "label": "professional experience", "criteria": [ { "field": "experience", "op": "eq", "value": "y5in7" } ] }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "es-researcher",
+          "name": "Researcher (investigación, Ley 14/2013 art. 72)",
+          "kind": "res-work",
+          "summary": "Hosting agreement or contract with a Spanish research entity (universities, R&D centres, business schools). 3-year permit; 12-month post-research job-search stay.",
+          "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/investigadores",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["es", "all"] },
+            { "field": "situation", "op": "eq", "value": "research", "note": "Ley 14/2013 art. 72.2.a): requires \"un convenio de acogida o contrato de trabajo\" with a research body; UGE: \"Extranjeros que desean desarrollar actividades de formación, investigación, desarrollo e innovación en entidades públicas o privadas establecidas en España y que cuentan con una oferta para desarrollar esa actividad.\"" },
+            { "op": "any", "label": "located in Spain", "paths": [
+              { "label": "Spain chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "es" } ] },
+              { "label": "agreement in Spain", "criteria": [ { "field": "situation_country", "op": "eq", "value": "es" } ] }
+            ] }
+          ]
+        }
+      ]
+    },
+    {
+      "code": "NL",
+      "name": "Netherlands",
+      "routes": [
+        {
+          "id": "nl-hsm-30plus",
+          "name": "Highly skilled migrant — 30 or older (kennismigrant)",
+          "kind": "res-work",
+          "summary": "Employment contract with an IND-recognised sponsor; salary at market rate. No degree requirement — the salary criterion substitutes. A reduced criterion (€3,122) exists after a Dutch orientation year — not modeled.",
+          "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["nl", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer", "note": "IND: \"You have an employment contract with an employer or research institution in the Netherlands. This employer is a sponsor recognised by the IND.\"" },
+            { "op": "any", "label": "located in the Netherlands", "paths": [
+              { "label": "Netherlands chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "nl" } ] },
+              { "label": "offer in the Netherlands", "criteria": [ { "field": "situation_country", "op": "eq", "value": "nl" } ] }
+            ] },
+            { "field": "age_band", "op": "in", "values": ["a30to35", "a35to40", "o40"] },
+            {
+              "field": "salary_eur_month",
+              "op": "gte",
+              "threshold_label": "30 or older, 2026",
+              "note": "IND also applies a market-rate test: \"The agreed salary is in line with the market rate.\"",
+              "threshold": {
+                "amount": 5942,
+                "currency": "EUR",
+                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                "quote": "Highly skilled migrants 30 years or older | €5,942.00",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "Dutch highly skilled migrant scheme — required amounts 2026 (change every 1 January)",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "nl-hsm-under30",
+          "name": "Highly skilled migrant — under 30 (kennismigrant)",
+          "kind": "res-work",
+          "summary": "Reduced salary criterion for applicants younger than 30. Employment contract with an IND-recognised sponsor; salary at market rate.",
+          "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["nl", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer" },
+            { "op": "any", "label": "located in the Netherlands", "paths": [
+              { "label": "Netherlands chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "nl" } ] },
+              { "label": "offer in the Netherlands", "criteria": [ { "field": "situation_country", "op": "eq", "value": "nl" } ] }
+            ] },
+            { "field": "age_band", "op": "eq", "value": "u30" },
+            {
+              "field": "salary_eur_month",
+              "op": "gte",
+              "threshold_label": "under 30, 2026",
+              "note": "When changing employer after turning 30, the €5,942.00 amount applies.",
+              "threshold": {
+                "amount": 4357,
+                "currency": "EUR",
+                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                "quote": "Highly skilled migrants younger than 30 years | €4,357.00",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "Dutch highly skilled migrant scheme — required amounts 2026 (change every 1 January)",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "nl-blue-card",
+          "name": "EU Blue Card",
+          "kind": "res-work",
+          "summary": "6+ month contract; sponsor recognition not required. Higher-education diploma (3+ years) or 5 years of relevant experience (IT roles: 3-in-last-7). A reduced criterion (€4,754) for recent graduates — not modeled.",
+          "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["nl", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer", "note": "IND: \"Your employment contract is valid for at least 6 months.\"" },
+            { "op": "any", "label": "located in the Netherlands", "paths": [
+              { "label": "Netherlands chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "nl" } ] },
+              { "label": "offer in the Netherlands", "criteria": [ { "field": "situation_country", "op": "eq", "value": "nl" } ] }
+            ] },
+            {
+              "op": "any",
+              "label": "diploma or experience",
+              "note": "IND: \"you have a diploma of a programme in higher education. This programme was at least 3 years.\" OR \"you have a minimum of 5 years of relevant work experience\" (IT roles: 3-in-last-7 — not separately modeled).",
+              "paths": [
+                { "label": "higher-education diploma", "criteria": [ { "field": "qualification", "op": "eq", "value": "degree" } ] },
+                { "label": "5 years of relevant experience", "criteria": [ { "field": "experience", "op": "eq", "value": "y5in7" } ] }
+              ]
+            },
+            {
+              "field": "salary_eur_month",
+              "op": "gte",
+              "threshold_label": "Blue Card 2026",
+              "threshold": {
+                "amount": 5942,
+                "currency": "EUR",
+                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                "quote": "European Blue Card | €5,942.00",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "EU Blue Card (NL) — required amounts 2026 (change every 1 January)",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "nl-ict",
+          "name": "Intra-corporate transferee (Directive 2014/66/EU)",
+          "kind": "res-work",
+          "summary": "Transfer as manager, specialist or trainee after 3+ months with the company outside the EU. Salary must meet the highly-skilled-migrant criterion for your age. Managers/specialists max 3 years, trainees 1.",
+          "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["nl", "all"] },
+            { "field": "situation", "op": "eq", "value": "ict", "note": "IND: \"You have already worked for the company outside the EU, EEA or Switzerland for at least 3 months.\"" },
+            { "op": "any", "label": "located in the Netherlands", "paths": [
+              { "label": "Netherlands chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "nl" } ] },
+              { "label": "transfer to the Netherlands", "criteria": [ { "field": "situation_country", "op": "eq", "value": "nl" } ] }
+            ] },
+            {
+              "op": "any",
+              "label": "HSM salary criterion for your age",
+              "note": "IND: \"Your salary is in line with the market. The salary is in line with the market if it meets the salary criterion for highly skilled migrants.\"",
+              "paths": [
+                {
+                  "label": "30 or older",
+                  "criteria": [
+                    { "field": "age_band", "op": "in", "values": ["a30to35", "a35to40", "o40"] },
+                    {
+                      "field": "salary_eur_month",
+                      "op": "gte",
+                      "threshold_label": "30 or older, 2026",
+                      "threshold": {
+                        "amount": 5942,
+                        "currency": "EUR",
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "Highly skilled migrants 30 years or older | €5,942.00",
+                        "retrieved_at": "2026-09-02",
+                        "legal_basis": "Dutch highly skilled migrant scheme — required amounts 2026",
+                        "history": []
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "under 30",
+                  "criteria": [
+                    { "field": "age_band", "op": "eq", "value": "u30" },
+                    {
+                      "field": "salary_eur_month",
+                      "op": "gte",
+                      "threshold_label": "under 30, 2026",
+                      "threshold": {
+                        "amount": 4357,
+                        "currency": "EUR",
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "Highly skilled migrants younger than 30 years | €4,357.00",
+                        "retrieved_at": "2026-09-02",
+                        "legal_basis": "Dutch highly skilled migrant scheme — required amounts 2026",
+                        "history": []
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nl-researcher",
+          "name": "Researcher (Directive (EU) 2016/801)",
+          "kind": "res-work",
+          "summary": "Employment contract or host agreement with an IND-recognised research institution; degree giving access to a doctoral programme. Permit up to 5 years.",
+          "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["nl", "all"] },
+            { "field": "situation", "op": "eq", "value": "research", "note": "IND: \"You have an employment contract or a host agreement with your employer\" — the institute must be a recognised sponsor (public register)." },
+            { "op": "any", "label": "located in the Netherlands", "paths": [
+              { "label": "Netherlands chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "nl" } ] },
+              { "label": "agreement in the Netherlands", "criteria": [ { "field": "situation_country", "op": "eq", "value": "nl" } ] }
+            ] },
+            {
+              "field": "salary_eur_month",
+              "op": "gte",
+              "threshold_label": "sufficient income (Jul–Dec 2026)",
+              "note": "Grants, stipends or own savings also count toward sufficient income; the amount is the gross SV salary per month without holiday allowance. Row wording flagged for human re-verification.",
+              "threshold": {
+                "amount": 1635.9,
+                "currency": "EUR",
+                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                "quote": "€1,635.90",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "Researcher (Directive (EU) 2016/801) — required amounts valid 1 July – 31 December 2026",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "nl-orientation-year",
+          "name": "Orientation year (zoekjaar)",
+          "kind": "seek",
+          "summary": "One-year job-search permit — work freely permitted, no work permit (TWV) needed. For those who graduated, obtained a doctorate or did research at a Dutch institution — or graduated from a top-200-ranked foreign university — within the last 3 years. Not extendable; afterwards the reduced highly-skilled-migrant salary criterion (€3,122) applies.",
+          "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+          "criteria": [
+            { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["nl", "all"] },
+            { "field": "situation", "op": "eq", "value": "none", "note": "A job-search permit — with an offer, transfer or hosting agreement the work routes apply directly." },
+            { "field": "nl_grad3y", "op": "in", "values": ["yes_nl", "yes_top200"], "note": "IND: qualifying events within \"the 3 years before the date of application\"; foreign institutions must rank in the top 200 in at least 2 of 3 ranking publishers (Times Higher Education, QS, ShanghaiRanking)." }
           ]
         }
       ]

@@ -16,10 +16,15 @@ export function thresholdsForField(dataset: Dataset, field: string): number[] {
   const amounts = new Set<number>();
   for (const country of dataset.countries)
     for (const route of country.routes)
-      for (const c of route.criteria)
+      forEachCriterion(route.criteria, (c) => {
         if (c.op === "gte" && c.field === field) amounts.add(c.threshold.amount);
+      });
   return [...amounts].sort((a, b) => a - b);
 }
+
+// Bands are pure functions of the dataset; memoized per dataset object because the
+// hot paths (evaluate, question ordering, property tests) re-derive them constantly.
+const bandCache = new WeakMap<Dataset, Map<string, Band[]>>();
 
 /**
  * Band boundaries ARE the thresholds themselves: n thresholds produce n+1 bands.
@@ -27,6 +32,10 @@ export function thresholdsForField(dataset: Dataset, field: string): number[] {
  * answer never straddles a decision boundary.
  */
 export function deriveBands(dataset: Dataset, field: string): Band[] {
+  let perField = bandCache.get(dataset);
+  if (!perField) bandCache.set(dataset, (perField = new Map()));
+  const cached = perField.get(field);
+  if (cached) return cached;
   const ts = thresholdsForField(dataset, field);
   const bands: Band[] = [];
   for (let i = 0; i <= ts.length; i++) {
@@ -39,6 +48,7 @@ export function deriveBands(dataset: Dataset, field: string): Band[] {
     else label = "any amount";
     bands.push({ id: `band_${i}`, min, max, label });
   }
+  perField.set(field, bands);
   return bands;
 }
 
