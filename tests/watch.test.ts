@@ -7,7 +7,7 @@ import {
 } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/de.json", import.meta.url), "utf8")) as Dataset;
+const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 const shippedWatchlist = JSON.parse(readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
 
 const enc = (s: string) => new TextEncoder().encode(s);

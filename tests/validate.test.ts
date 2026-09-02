@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { assertValidDataset, validateDataset } from "../src/validate.js";
 
 const load = () =>
-  JSON.parse(readFileSync(new URL("../data/de.json", import.meta.url), "utf8"));
+  JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8"));
 
 describe("boundary validation (scenario step 6)", () => {
   it("the shipped dataset is valid", () => {

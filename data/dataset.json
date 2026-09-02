@@ -3,6 +3,18 @@
   "dataset_version": "2026.09.02",
   "fields": [
     {
+      "id": "destination",
+      "label": "Where are you looking to go?",
+      "type": "enum",
+      "options": [
+        { "value": "de", "label": "Germany" },
+        { "value": "fr", "label": "France" },
+        { "value": "es", "label": "Spain" },
+        { "value": "nl", "label": "Netherlands" },
+        { "value": "all", "label": "Any of these four — show me everything" }
+      ]
+    },
+    {
       "id": "citizenship",
       "label": "Where are you a citizen?",
       "type": "enum",
@@ -17,10 +29,21 @@
       "type": "enum",
       "kind": "path",
       "options": [
-        { "value": "offer_de", "label": "I have (or am about to get) a job offer in Germany", "short": "a job offer in Germany" },
-        { "value": "ict", "label": "My employer is transferring me to its German branch", "short": "an intra-corporate transfer" },
-        { "value": "research", "label": "I have (or expect) a hosting agreement with a German research institution", "short": "a research hosting agreement" },
+        { "value": "offer", "label": "I have (or am about to get) a job offer there", "short": "a job offer" },
+        { "value": "ict", "label": "My employer is transferring me to a branch there", "short": "an intra-corporate transfer" },
+        { "value": "research", "label": "I have (or expect) a hosting agreement with a research institution there", "short": "a research hosting agreement" },
         { "value": "none", "label": "None of these yet — exploring my options", "is_fallback": true }
+      ]
+    },
+    {
+      "id": "situation_country",
+      "label": "Which country is that offer, transfer or agreement in?",
+      "type": "enum",
+      "options": [
+        { "value": "de", "label": "Germany" },
+        { "value": "fr", "label": "France" },
+        { "value": "es", "label": "Spain" },
+        { "value": "nl", "label": "Netherlands" }
       ]
     },
     {
@@ -161,7 +184,12 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
-            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "destination", "op": "in", "values": ["de", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer" },
+            { "op": "any", "label": "located in Germany", "paths": [
+              { "label": "Germany chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "de" } ] },
+              { "label": "offer in Germany", "criteria": [ { "field": "situation_country", "op": "eq", "value": "de" } ] }
+            ] },
             { "field": "qualification", "op": "eq", "value": "degree" },
             { "field": "recognition_de", "op": "eq", "value": "recognized" },
             { "field": "occupation_shortage", "op": "eq", "value": "yes" },
@@ -189,7 +217,12 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
-            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "destination", "op": "in", "values": ["de", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer" },
+            { "op": "any", "label": "located in Germany", "paths": [
+              { "label": "Germany chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "de" } ] },
+              { "label": "offer in Germany", "criteria": [ { "field": "situation_country", "op": "eq", "value": "de" } ] }
+            ] },
             { "field": "qualification", "op": "eq", "value": "degree" },
             { "field": "recognition_de", "op": "eq", "value": "recognized" },
             {
@@ -216,7 +249,12 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
-            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "destination", "op": "in", "values": ["de", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer" },
+            { "op": "any", "label": "located in Germany", "paths": [
+              { "label": "Germany chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "de" } ] },
+              { "label": "offer in Germany", "criteria": [ { "field": "situation_country", "op": "eq", "value": "de" } ] }
+            ] },
             { "field": "qualification", "op": "eq", "value": "degree" },
             { "field": "recognition_de", "op": "eq", "value": "recognized", "note": "BAMF: \"Proof of a German or recognised foreign university degree or a foreign university degree which is comparable to a German university degree\"" }
           ]
@@ -229,7 +267,12 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Fachkraft/fachkraft-node.html",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
-            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "destination", "op": "in", "values": ["de", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer" },
+            { "op": "any", "label": "located in Germany", "paths": [
+              { "label": "Germany chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "de" } ] },
+              { "label": "offer in Germany", "criteria": [ { "field": "situation_country", "op": "eq", "value": "de" } ] }
+            ] },
             { "field": "qualification", "op": "eq", "value": "vocational" },
             { "field": "recognition_de", "op": "eq", "value": "recognized", "note": "BAMF: \"vocational qualifications acquired abroad which are equivalent to qualified German vocational training\"" }
           ]
@@ -242,7 +285,12 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/FachkraefteOhneAusbildung/fachkraefte-ohne-ausbildung-node.html",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
-            { "field": "situation", "op": "eq", "value": "offer_de" },
+            { "field": "destination", "op": "in", "values": ["de", "all"] },
+            { "field": "situation", "op": "eq", "value": "offer" },
+            { "op": "any", "label": "located in Germany", "paths": [
+              { "label": "Germany chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "de" } ] },
+              { "label": "offer in Germany", "criteria": [ { "field": "situation_country", "op": "eq", "value": "de" } ] }
+            ] },
             { "field": "experience", "op": "in", "values": ["y2in5", "y5in7"], "note": "ZAV: \"Innerhalb der letzten fünf Jahren muss eine mindestens zweijährige, einschlägige Berufserfahrung auf dem Niveau einer Fachkraft gesammelt worden sein.\"" },
             {
               "op": "any",
@@ -277,7 +325,12 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
-            { "field": "situation", "op": "eq", "value": "research", "note": "BAMF: \"concluded a hosting agreement or corresponding contract with a research facility to carry out a research project\"" }
+            { "field": "destination", "op": "in", "values": ["de", "all"] },
+            { "field": "situation", "op": "eq", "value": "research", "note": "BAMF: \"concluded a hosting agreement or corresponding contract with a research facility to carry out a research project\"" },
+            { "op": "any", "label": "located in Germany", "paths": [
+              { "label": "Germany chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "de" } ] },
+              { "label": "agreement in Germany", "criteria": [ { "field": "situation_country", "op": "eq", "value": "de" } ] }
+            ] }
           ]
         },
         {
@@ -288,7 +341,12 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
-            { "field": "situation", "op": "eq", "value": "ict", "note": "BAMF: \"you have been employed by the undertaking or group of undertakings for at least six months\" and \"the intra-corporate transfer is to last longer than 90 days\"" }
+            { "field": "destination", "op": "in", "values": ["de", "all"] },
+            { "field": "situation", "op": "eq", "value": "ict", "note": "BAMF: \"you have been employed by the undertaking or group of undertakings for at least six months\" and \"the intra-corporate transfer is to last longer than 90 days\"" },
+            { "op": "any", "label": "located in Germany", "paths": [
+              { "label": "Germany chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "de" } ] },
+              { "label": "transfer to Germany", "criteria": [ { "field": "situation_country", "op": "eq", "value": "de" } ] }
+            ] }
           ]
         },
         {
@@ -299,6 +357,7 @@
           "info_url": "https://handbookgermany.de/en/opportunity-card",
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
+            { "field": "destination", "op": "in", "values": ["de", "all"] },
             { "field": "situation", "op": "eq", "value": "none", "note": "The card exists to seek work — with an offer, transfer or hosting agreement the work routes above apply directly." },
             { "field": "qualification", "op": "in", "values": ["vocational", "degree"], "note": "Embassy: \"einen ausländischen Hochschulabschluss, einen mindestens zweijährigen Berufsabschluss (jeweils im Ausbildungsstaat staatlich anerkannt)\"" },
             {

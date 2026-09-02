@@ -4,11 +4,11 @@ import { datasetMeta, deriveBands, evaluate, formatEUR, routeProvenance } from "
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/de.json", import.meta.url), "utf8")) as Dataset;
+const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
 // Salary bands: <45,630 / 45,630–45,934.20 / 45,934.20–50,700 / ≥50,700
 const engineer: Profile = {
-  citizenship: "third_country", situation: "offer_de", qualification: "degree",
+  destination: "de", citizenship: "third_country", situation: "offer", qualification: "degree",
   recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
   salary_eur_year: "band_2",
 };
@@ -66,16 +66,16 @@ describe("evaluate — engineer with a German offer", () => {
 });
 
 describe("scenario step 4 — personas reach a verdict in few questions", () => {
-  it("P1 engineer with offer: at most 7 questions, occupation_it never asked", () => {
+  it("P1 engineer with offer: at most 8 questions (destination included), occupation_it never asked", () => {
     const { asked } = runFlow(engineer);
-    expect(asked.length).toBeLessThanOrEqual(7);
+    expect(asked.length).toBeLessThanOrEqual(8);
     expect(asked).not.toContain("occupation_it");
     expect(asked).not.toContain("german"); // Chancenkarte dead → no points ladder
   });
 
   it("P2 vocational worker with offer: at most 7 questions, shortage list never asked", () => {
     const { asked, profile } = runFlow({
-      citizenship: "third_country", situation: "offer_de", qualification: "vocational",
+      destination: "de", citizenship: "third_country", situation: "offer", qualification: "vocational",
       recognition_de: "recognized", experience: "y5in7", salary_eur_year: "band_1",
       occupation_shortage: "no", occupation_it: "no",
     });
@@ -88,7 +88,7 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
 
   it("P3 explorer without offer: only Chancenkarte questions come, salary never asked (A10 measurement)", () => {
     const { asked, profile } = runFlow({
-      citizenship: "third_country", situation: "none", qualification: "degree",
+      destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
       funds_eur_month: "band_1", recognition_de: "not_yet",
       german: "b1", english: "none", experience: "lt2", occupation_shortage: "no",
       age_band: "u35", de_stay6m: "no", partner_ck: "no",
@@ -105,16 +105,16 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
 describe("pruning at dataset scale", () => {
   it("EU citizen: the citizenship answer ends the questionnaire within a few questions", () => {
     const { asked } = runFlow({
-      citizenship: "eu_eea_ch", situation: "offer_de", qualification: "degree",
+      destination: "de", citizenship: "eu_eea_ch", situation: "offer", qualification: "degree",
       recognition_de: "recognized", experience: "y2in5",
     });
-    expect(asked.length).toBeLessThanOrEqual(4);
+    expect(asked.length).toBeLessThanOrEqual(5);
     expect(asked).toContain("citizenship");
   });
 
   it("fully recognised explorer passes Chancenkarte directly — points ladder skipped", () => {
     const profile: Profile = {
-      citizenship: "third_country", situation: "none", qualification: "degree",
+      destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
       german: "a1", funds_eur_month: "band_1", recognition_de: "recognized",
     };
     expect(remainingQuestions(dataset, profile)).toEqual([]);
@@ -126,7 +126,7 @@ describe("pruning at dataset scale", () => {
 describe("bounded gaps don't end the interview (user-reported: funds under €1,091)", () => {
   it("explorer with low funds still gets the full Chancenkarte interview → within reach", () => {
     const { asked, profile } = runFlow({
-      citizenship: "third_country", situation: "none", funds_eur_month: "band_0",
+      destination: "de", citizenship: "third_country", situation: "none", funds_eur_month: "band_0",
       qualification: "degree", recognition_de: "recognized", german: "a1",
       english: "none", experience: "y2in5", occupation_shortage: "no",
       age_band: "u35", de_stay6m: "no", partner_ck: "no",
@@ -139,7 +139,7 @@ describe("bounded gaps don't end the interview (user-reported: funds under €1,
 
   it("a hard fail still ends it: no qualification kills Chancenkarte for real", () => {
     const { profile } = runFlow({
-      citizenship: "third_country", situation: "none", funds_eur_month: "band_0",
+      destination: "de", citizenship: "third_country", situation: "none", funds_eur_month: "band_0",
       qualification: "none",
     });
     const ck = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;

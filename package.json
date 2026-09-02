@@ -8,7 +8,7 @@
   "exports": {
     ".": "./dist/src/index.js",
     "./validate": "./dist/src/validate.js",
-    "./data/de.json": "./data/de.json",
+    "./data/dataset.json": "./data/dataset.json",
     "./schema/ruleset.schema.json": "./schema/ruleset.schema.json"
   },
   "files": [
@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "validate": "node dist/src/cli-validate.js data/de.json",
+    "validate": "node dist/src/cli-validate.js data/dataset.json",
     "watch:sources": "node dist/src/watch/cli-watch.js",
     "watch:coverage": "node dist/src/watch/cli-coverage.js",
     "check": "npm run build && npm run validate && npm run watch:coverage && npm test"

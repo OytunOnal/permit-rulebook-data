@@ -4,7 +4,7 @@ import { deriveBands, evaluate, unlocks } from "../src/engine.js";
 import { remainingQuestions } from "../src/questions.js";
 import type { Dataset, FieldDef, Profile } from "../src/types.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/de.json", import.meta.url), "utf8")) as Dataset;
+const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
 // Deterministic PRNG so every run checks the same profile population.
 function lcg(seed: number) {
