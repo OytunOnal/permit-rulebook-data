@@ -138,6 +138,16 @@ describe("questions derive from rules", () => {
   });
 });
 
+describe("learn sources (s3: 'I don't know' → find out officially)", () => {
+  it("unknown-capable fields carry an official learn link", () => {
+    for (const id of ["recognition_de", "occupation_shortage"]) {
+      const def = dataset.fields.find((f) => f.id === id)!;
+      expect(def.learn?.url).toMatch(/^https:\/\//);
+      expect(def.learn?.label.length).toBeGreaterThan(5);
+    }
+  });
+});
+
 describe("provenance and meta", () => {
   it("every provenanced value carries quote + https source + date", () => {
     for (const country of dataset.countries)

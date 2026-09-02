@@ -37,6 +37,15 @@
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
         "label": { "type": "string", "minLength": 1 },
         "type": { "enum": ["enum", "money_band"] },
+        "learn": {
+          "type": "object",
+          "required": ["label", "url"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string", "minLength": 1 },
+            "url": { "type": "string", "pattern": "^https://" }
+          }
+        },
         "options": {
           "type": "array",
           "minItems": 2,

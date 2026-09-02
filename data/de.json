@@ -36,6 +36,10 @@
       "id": "recognition_de",
       "label": "Where does German recognition of your qualification stand?",
       "type": "enum",
+      "learn": {
+        "label": "Check your degree in the official Anabin database",
+        "url": "https://anabin.kmk.org/anabin.html"
+      },
       "options": [
         { "value": "recognized", "label": "Fully recognised (or a German qualification)" },
         { "value": "partial", "label": "Assessed as partial — additional measures required" },
@@ -57,6 +61,10 @@
       "id": "occupation_shortage",
       "label": "Is your occupation on Germany's shortage list (IT, engineering, health…)?",
       "type": "enum",
+      "learn": {
+        "label": "The official shortage-occupation groups are listed in § 18g AufenthG",
+        "url": "https://www.gesetze-im-internet.de/aufenthg_2004/__18g.html"
+      },
       "options": [
         { "value": "yes", "label": "Yes" },
         { "value": "no", "label": "No" },

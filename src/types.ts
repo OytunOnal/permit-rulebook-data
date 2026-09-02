@@ -67,6 +67,8 @@ export interface FieldDef {
   label: string;
   type: "enum" | "money_band";
   options?: FieldOption[];
+  /** Where a user who answered "I don't know" can find out — an official source. */
+  learn?: { label: string; url: string };
 }
 
 export interface Dataset {
