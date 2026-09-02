@@ -29,6 +29,16 @@ const fetcher: Fetcher = async (url) => {
   }
 };
 
+function remediation(report: WatchReport): string {
+  if (report.outcome === "reminder-due")
+    return "Scheduled human re-verification is due. After verifying, update `last_verified` for this entry in watch/watchlist.json.";
+  if (report.strategy === "pdf")
+    return "PDF changed — a human must read it; no value is extracted automatically.";
+  if (report.kind === "sentinel")
+    return "Sentinel changed — it backs no dataset value directly. Read the source, act on the intent below, and extend the watchlist if new value pages appeared.";
+  return "Update the dataset value(s) with quote + retrieval date; move the old value into history.";
+}
+
 function flagFile(report: WatchReport, today: string) {
   const dir = new URL("../../../watch/flags/", import.meta.url);
   mkdirSync(dir, { recursive: true });
@@ -36,18 +46,19 @@ function flagFile(report: WatchReport, today: string) {
     `# Watch flag: ${report.id} — ${report.outcome}`,
     "",
     `- url: ${report.url}`,
+    `- kind: ${report.kind}`,
     `- date: ${today}`,
     report.old_hash ? `- old: ${report.old_hash}` : "",
     report.new_hash ? `- new: ${report.new_hash}` : "",
+    report.note ? `\nIntent: ${report.note}` : "",
     report.context ? `\n> …${report.context}…` : "",
     "",
-    report.strategy === "pdf"
-      ? "PDF changed — a human must read it; no value is extracted automatically."
-      : report.outcome === "reminder-due"
-        ? "Scheduled human re-verification is due."
-        : "Update the dataset value(s) with quote + retrieval date; move the old value into history.",
+    remediation(report),
   ].filter(Boolean).join("\n");
-  writeFileSync(new URL(`${report.id}-${today}.md`, dir), body + "\n");
+  // Reminders use a stable name (self-overwriting, no daily pile-up);
+  // content changes keep the date so history stays visible.
+  const name = report.outcome === "reminder-due" ? `${report.id}-reminder.md` : `${report.id}-${today}.md`;
+  writeFileSync(new URL(name, dir), body + "\n");
 }
 
 const today = new Date().toISOString().slice(0, 10);

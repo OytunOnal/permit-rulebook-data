@@ -281,34 +281,59 @@ export interface ProvenanceEntry {
   amount?: number;
 }
 
-function provenanceOf(c: Criterion, entries: ProvenanceEntry[]): void {
-  if (c.op === "gte") entries.push({ label: c.threshold_label, value: c.threshold, amount: c.threshold.amount });
-  if (c.op === "points") {
-    entries.push({ label: "points required", value: c.required });
-    if (c.table.source_url !== c.required.source_url || c.table.quote !== c.required.quote)
-      entries.push({ label: "points table", value: c.table });
+/** The one exhaustive walk over the Criterion union. Every consumer of
+ * criterion structure (provenance, meta, watch coverage) goes through here,
+ * so a new op cannot compile without being handled — review finding #5. */
+export function forEachCriterion(criteria: Criterion[], fn: (c: Criterion) => void): void {
+  for (const c of criteria) {
+    fn(c);
+    switch (c.op) {
+      case "eq": case "in": case "gte": case "points":
+        break;
+      case "any":
+        for (const p of c.paths) forEachCriterion(p.criteria, fn);
+        break;
+      default: {
+        const _exhaustive: never = c;
+        throw new Error(`unhandled criterion op: ${JSON.stringify(_exhaustive)}`);
+      }
+    }
   }
-  if (c.op === "any")
-    for (const p of c.paths) for (const pc of p.criteria) provenanceOf(pc, entries);
+}
+
+/** Every provenanced value one criterion node carries (exhaustive by op). */
+export function provenancedValuesOf(c: Criterion): ProvenanceEntry[] {
+  switch (c.op) {
+    case "eq": case "in": case "any":
+      return [];
+    case "gte":
+      return [{ label: c.threshold_label, value: c.threshold, amount: c.threshold.amount }];
+    case "points":
+      return c.table.source_url !== c.required.source_url || c.table.quote !== c.required.quote
+        ? [{ label: "points required", value: c.required }, { label: "points table", value: c.table }]
+        : [{ label: "points required", value: c.required }];
+    default: {
+      const _exhaustive: never = c;
+      throw new Error(`unhandled criterion op: ${JSON.stringify(_exhaustive)}`);
+    }
+  }
 }
 
 /** All provenanced values a route rests on — what the UI must show, quoted and dated. */
 export function routeProvenance(route: Route): ProvenanceEntry[] {
   const entries: ProvenanceEntry[] = [];
-  for (const c of route.criteria) provenanceOf(c, entries);
+  forEachCriterion(route.criteria, (c) => entries.push(...provenancedValuesOf(c)));
   return entries;
 }
 
 export function datasetMeta(dataset: Dataset): DatasetMeta {
   let newest: string | null = null;
-  const consider = (d: string) => { if (!newest || d > newest) newest = d; };
-  const walk = (c: Criterion): void => {
-    if (c.op === "gte") consider(c.threshold.retrieved_at);
-    if (c.op === "points") { consider(c.required.retrieved_at); consider(c.table.retrieved_at); }
-    if (c.op === "any") for (const p of c.paths) p.criteria.forEach(walk);
-  };
   for (const country of dataset.countries)
-    for (const route of country.routes) route.criteria.forEach(walk);
+    for (const route of country.routes)
+      forEachCriterion(route.criteria, (c) => {
+        for (const p of provenancedValuesOf(c))
+          if (!newest || p.value.retrieved_at > newest) newest = p.value.retrieved_at;
+      });
   return {
     schema_version: dataset.schema_version,
     dataset_version: dataset.dataset_version,

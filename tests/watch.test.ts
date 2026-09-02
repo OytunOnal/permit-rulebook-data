@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { htmlToText, normalize } from "../src/watch/normalize.js";
 import {
-  checkCoverage, runWatch, sha256,
+  checkCoverage, datasetSourceUrls, runWatch, sha256,
   type Fetcher, type WatchState, type Watchlist,
 } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
@@ -55,6 +55,25 @@ describe("normalization invariants (property)", () => {
     const text = normalize(htmlToText(html));
     expect(text).toBe("kleine Blaue&Karte 45.934,20 Euro");
     expect(text).not.toContain("evil");
+  });
+
+  it("unknown entities stay literal, so distinct texts never hash equal (review #3)", () => {
+    const ge = normalize(htmlToText("<p>Gehalt &ge; 45.000</p>"));
+    const le = normalize(htmlToText("<p>Gehalt &le; 45.000</p>"));
+    expect(ge).not.toBe(le);
+    expect(sha256(ge)).not.toBe(sha256(le));
+  });
+
+  it("hex numeric entities decode; decimal and hex forms of the same char hash equal", () => {
+    const dec = normalize(htmlToText("<p>Preis: &#8364;100</p>"));
+    const hex = normalize(htmlToText("<p>Preis: &#x20AC;100</p>"));
+    expect(dec).toBe("Preis: €100");
+    expect(hex).toBe(dec);
+  });
+
+  it("an out-of-range code point stays literal instead of throwing (review #7)", () => {
+    expect(() => htmlToText("<p>&#1114112; kaputt</p>")).not.toThrow();
+    expect(normalize(htmlToText("<p>&#1114112; kaputt</p>"))).toContain("&#1114112;");
   });
 });
 
@@ -124,6 +143,15 @@ describe("watch pass outcomes", () => {
     expect(stale.reports[0].outcome).toBe("reminder-due");
   });
 
+  it("a future last_verified (year typo) reads as fresh, not ancient (review #10)", async () => {
+    const neverFetch: Fetcher = async () => { throw new Error("no fetch"); };
+    const typo: Watchlist = { entries: [
+      { id: "law", url: "https://x/law", strategy: "human", kind: "sentinel", max_age_days: 90, last_verified: "2027-09-02" },
+    ] };
+    const res = await runWatch(typo, empty, neverFetch, "2026-09-02");
+    expect(res.reports[0].outcome).toBe("ok");
+  });
+
   it("runWatch never mutates the input state object", async () => {
     const fetcher = okFetcher({ "https://x/page": "<p>A</p>", "https://x/doc.pdf": enc("A") });
     const frozen = JSON.stringify(empty);
@@ -140,11 +168,14 @@ describe("coverage: enforced both ways", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("removing a watch entry surfaces the uncovered dataset source", () => {
-    const crippled: Watchlist = { entries: shippedWatchlist.entries.filter((e) => !e.url.includes("kairo")) };
+  it("removing any covering watch entry surfaces the uncovered dataset source", () => {
+    // Derived, not hard-coded (review #9): pick a real dataset source URL and
+    // drop the entry covering it — robust to any future URL migration.
+    const someSource = [...datasetSourceUrls(dataset)][0];
+    const crippled: Watchlist = { entries: shippedWatchlist.entries.filter((e) => e.url !== someSource) };
     const result = checkCoverage(dataset, crippled);
     expect(result.ok).toBe(false);
-    expect(result.missing_from_watchlist.some((u) => u.includes("kairo"))).toBe(true);
+    expect(result.missing_from_watchlist).toContain(someSource);
   });
 
   it("a value-source entry pointing at nothing in the dataset is an orphan", () => {

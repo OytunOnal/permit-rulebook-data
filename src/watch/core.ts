@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { htmlToText, normalize } from "./normalize.js";
-import type { Criterion, Dataset } from "../types.js";
+import { forEachCriterion, provenancedValuesOf } from "../engine.js";
+import type { Dataset } from "../types.js";
 
 export type WatchStrategy = "html" | "pdf" | "human";
 
@@ -40,6 +41,8 @@ export interface WatchReport {
   id: string;
   url: string;
   strategy: WatchStrategy;
+  kind: "value-source" | "sentinel";
+  note?: string;
   outcome: Outcome;
   old_hash?: string;
   new_hash?: string;
@@ -60,8 +63,11 @@ function diffContext(oldText: string, newText: string, span = 120): string {
   return newText.slice(start, i + span);
 }
 
-function daysBetween(a: string, b: string): number {
-  return Math.abs(new Date(b).getTime() - new Date(a).getTime()) / 86_400_000;
+/** Signed age in days; a future or unparsable last_verified counts as fresh
+ * (0) rather than ancient — a year typo must not fire daily reminders. */
+function daysSince(last: string, today: string): number {
+  const diff = (new Date(today).getTime() - new Date(last).getTime()) / 86_400_000;
+  return Number.isFinite(diff) ? Math.max(0, diff) : Infinity;
 }
 
 /**
@@ -79,12 +85,12 @@ export async function runWatch(
   const nextEntries: Record<string, Snapshot> = { ...state.entries };
 
   for (const entry of watchlist.entries) {
-    const base: Pick<WatchReport, "id" | "url" | "strategy"> = {
-      id: entry.id, url: entry.url, strategy: entry.strategy,
+    const base: Pick<WatchReport, "id" | "url" | "strategy" | "kind" | "note"> = {
+      id: entry.id, url: entry.url, strategy: entry.strategy, kind: entry.kind, note: entry.note,
     };
 
     if (entry.strategy === "human") {
-      const age = entry.last_verified ? daysBetween(entry.last_verified, today) : Infinity;
+      const age = entry.last_verified ? daysSince(entry.last_verified, today) : Infinity;
       reports.push({ ...base, outcome: age > (entry.max_age_days ?? 90) ? "reminder-due" : "ok" });
       continue;
     }
@@ -98,11 +104,17 @@ export async function runWatch(
 
     let hash: string;
     let text: string | undefined;
-    if (entry.strategy === "pdf") {
-      hash = sha256(fetched.body);
-    } else {
-      text = normalize(htmlToText(new TextDecoder("utf-8").decode(fetched.body)));
-      hash = sha256(text);
+    try {
+      if (entry.strategy === "pdf") {
+        hash = sha256(fetched.body);
+      } else {
+        text = normalize(htmlToText(new TextDecoder("utf-8").decode(fetched.body)));
+        hash = sha256(text);
+      }
+    } catch (e) {
+      // One mangled page must not kill the whole pass (review finding #7).
+      reports.push({ ...base, outcome: "unreachable", error: `processing: ${String(e)}` });
+      continue;
     }
 
     const prev = state.entries[entry.id];
@@ -126,16 +138,15 @@ export async function runWatch(
   return { reports, nextState: { entries: nextEntries } };
 }
 
-/** Every provenanced source_url in the dataset. */
+/** Every provenanced source_url in the dataset — via the single exhaustive
+ * criterion walk, so a new op cannot silently escape the coverage gate. */
 export function datasetSourceUrls(dataset: Dataset): Set<string> {
   const urls = new Set<string>();
-  const walk = (c: Criterion): void => {
-    if (c.op === "gte") urls.add(c.threshold.source_url);
-    if (c.op === "points") { urls.add(c.required.source_url); urls.add(c.table.source_url); }
-    if (c.op === "any") for (const p of c.paths) p.criteria.forEach(walk);
-  };
   for (const country of dataset.countries)
-    for (const route of country.routes) route.criteria.forEach(walk);
+    for (const route of country.routes)
+      forEachCriterion(route.criteria, (c) => {
+        for (const p of provenancedValuesOf(c)) urls.add(p.value.source_url);
+      });
   return urls;
 }
 
