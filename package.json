@@ -6,8 +6,8 @@
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
-    ".": "./dist/src/index.js",
-    "./validate": "./dist/src/validate.js",
+    ".": { "types": "./dist/src/index.d.ts", "default": "./dist/src/index.js" },
+    "./validate": { "types": "./dist/src/validate.d.ts", "default": "./dist/src/validate.js" },
     "./data/dataset.json": "./data/dataset.json",
     "./schema/ruleset.schema.json": "./schema/ruleset.schema.json"
   },
@@ -34,3 +34,4 @@
     "vitest": "^3.0.0"
   }
 }
+
