@@ -15,11 +15,12 @@
       "id": "situation",
       "label": "Which best describes your situation?",
       "type": "enum",
+      "kind": "path",
       "options": [
-        { "value": "offer_de", "label": "I have (or am about to get) a job offer in Germany" },
-        { "value": "ict", "label": "My employer is transferring me to its German branch" },
-        { "value": "research", "label": "I have (or expect) a hosting agreement with a German research institution" },
-        { "value": "none", "label": "None of these yet — exploring my options" }
+        { "value": "offer_de", "label": "I have (or am about to get) a job offer in Germany", "short": "a job offer in Germany" },
+        { "value": "ict", "label": "My employer is transferring me to its German branch", "short": "an intra-corporate transfer" },
+        { "value": "research", "label": "I have (or expect) a hosting agreement with a German research institution", "short": "a research hosting agreement" },
+        { "value": "none", "label": "None of these yet — exploring my options", "is_fallback": true }
       ]
     },
     {

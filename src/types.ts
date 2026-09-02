@@ -59,16 +59,32 @@ export interface Country {
 export interface FieldOption {
   value: string;
   label: string;
+  /** Noun-phrase form for prose ("a job offer in Germany"). */
+  short?: string;
   is_unknown?: boolean;
+  /** "None of these"-style absence answers — never a counterfactual target. */
+  is_fallback?: boolean;
 }
 
 export interface FieldDef {
   id: string;
   label: string;
   type: "enum" | "money_band";
+  /**
+   * attribute (default): a fact about the person — never counterfactualed.
+   * path: a step one can take (get an offer, a transfer…) — eligible for
+   * "what would this unlock" analysis.
+   */
+  kind?: "attribute" | "path";
   options?: FieldOption[];
   /** Where a user who answered "I don't know" can find out — an official source. */
   learn?: { label: string; url: string };
+}
+
+export interface Unlock {
+  field: string;
+  option: FieldOption;
+  routes: RouteResult[];
 }
 
 export interface Dataset {

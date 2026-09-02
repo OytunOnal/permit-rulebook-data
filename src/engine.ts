@@ -222,6 +222,30 @@ export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
   return results.sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
 }
 
+/**
+ * Counterfactual leverage: for every answered PATH field, re-evaluate the
+ * profile under each alternative (non-fallback, non-unknown) option and
+ * report the routes that would turn met/near. "How close is an offer" is
+ * unknowable; "what an offer unlocks" is pure arithmetic.
+ */
+export function unlocks(dataset: Dataset, profile: Profile): import("./types.js").Unlock[] {
+  const out: import("./types.js").Unlock[] = [];
+  const baseline = new Map(evaluate(dataset, profile).map((r) => [r.route.id, r.status]));
+  for (const def of dataset.fields) {
+    if (def.kind !== "path") continue;
+    const current = profile[def.id];
+    if (current === undefined) continue;
+    for (const opt of def.options ?? []) {
+      if (opt.value === current || opt.is_unknown || opt.is_fallback) continue;
+      const opened = evaluate(dataset, { ...profile, [def.id]: opt.value }).filter(
+        (r) => (r.status === "met" || r.status === "near") && baseline.get(r.route.id) === "hold",
+      );
+      if (opened.length) out.push({ field: def.id, option: opt, routes: opened });
+    }
+  }
+  return out;
+}
+
 export interface ProvenanceEntry {
   label?: string;
   value: { quote: string; source_url: string; retrieved_at: string; legal_basis?: string };
