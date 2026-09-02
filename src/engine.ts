@@ -48,6 +48,11 @@ export function deriveBands(dataset: Dataset, field: string): Band[] {
     else label = "any amount";
     bands.push({ id: `band_${i}`, min, max, label });
   }
+  // Frozen: the cached array is shared by every caller, and dataset objects
+  // are treated as immutable — clone (structuredClone) before mutating one,
+  // or the cache serves stale edges with no error.
+  for (const b of bands) Object.freeze(b);
+  Object.freeze(bands);
   perField.set(field, bands);
   return bands;
 }
@@ -146,8 +151,11 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
   if (band.min !== undefined && band.min >= c.threshold.amount)
     return { criterion: c, outcome: "pass" };
   const result: CriterionResult = { criterion: c, outcome: "fail" };
-  // Adjacent band just below the threshold → a bounded, honest gap ("up to X").
-  if (band.max !== undefined && band.max === c.threshold.amount)
+  // Any declared band with a finite ceiling below the threshold is a bounded,
+  // honest gap ("up to X"). Adjacency must not matter: band edges are pooled
+  // across all countries, so "one band away" would silently change meaning
+  // whenever an unrelated country's threshold lands nearby (review catch).
+  if (band.max !== undefined && band.max <= c.threshold.amount)
     result.gap_max = c.threshold.amount - (band.min ?? 0);
   return result;
 }
@@ -301,7 +309,11 @@ export function unlocks(dataset: Dataset, profile: Profile): import("./types.js"
       }
       for (const qf of blockers) {
         const qdef = fieldDef(dataset, qf);
-        if (!qdef || qdef.kind !== undefined || qdef.type !== "enum") continue; // attributes only
+        // Only fields the dataset explicitly marks as qualifiers: the answer
+        // must be part of the same real-world decision as the step itself
+        // ("an offer — in which country?"). Admitting any attribute produced
+        // nonsense rows like "a job offer · under 30" (review catch).
+        if (!qdef?.is_qualifier) continue;
         for (const qopt of qdef.options ?? []) {
           if (qopt.is_unknown || qopt.is_fallback) continue;
           const forked = evaluate(dataset, { ...hypo, [qf]: qopt.value }).filter(

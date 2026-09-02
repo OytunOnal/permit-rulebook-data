@@ -81,6 +81,13 @@ export interface FieldDef {
   options?: FieldOption[];
   /** Where a user who answered "I don't know" can find out — an official source. */
   learn?: { label: string; url: string };
+  /** Pinned to the front of the interview regardless of elimination power
+   * (the destination question frames every "there" that follows). */
+  ask_first?: boolean;
+  /** Eligible to qualify a path-step unlock row ("a job offer — in Germany").
+   * Only fields whose answer is part of the same real-world decision as the
+   * step itself belong here; anything else produces nonsense advice. */
+  is_qualifier?: boolean;
 }
 
 export interface Unlock {

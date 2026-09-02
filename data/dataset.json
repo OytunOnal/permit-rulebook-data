@@ -1,11 +1,12 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "dataset_version": "2026.09.02",
   "fields": [
     {
       "id": "destination",
       "label": "Where are you looking to go?",
       "type": "enum",
+      "ask_first": true,
       "options": [
         { "value": "de", "label": "Germany" },
         { "value": "fr", "label": "France" },
@@ -39,6 +40,7 @@
       "id": "situation_country",
       "label": "Which country is that offer, transfer or agreement in?",
       "type": "enum",
+      "is_qualifier": true,
       "options": [
         { "value": "de", "label": "Germany" },
         { "value": "fr", "label": "France" },

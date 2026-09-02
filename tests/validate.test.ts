@@ -40,4 +40,23 @@ describe("boundary validation (scenario step 6)", () => {
     delete anyC.paths[1].criteria[0].table.source_url;
     expect(validateDataset(data).ok).toBe(false);
   });
+
+  it("a duplicate route id across countries fails (review catch: Maps key by id)", () => {
+    const data = load();
+    const clone = structuredClone(data.countries[3].routes[0]);
+    data.countries[1].routes.push(clone); // NL route id smuggled under FR
+    const result = validateDataset(data);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.keyword === "uniqueRouteId")).toBe(true);
+  });
+
+  it("a restated threshold that drifts from its twin fails (review catch: NL ICT restates HSM amounts)", () => {
+    const data = load();
+    const nlIct = data.countries[3].routes.find((r: { id: string }) => r.id === "nl-ict");
+    const anyC = nlIct.criteria.at(-1); // HSM-salary-by-age disjunction
+    anyC.paths[0].criteria[1].threshold.retrieved_at = "2026-01-01"; // one copy updated, twin missed
+    const result = validateDataset(data);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.keyword === "thresholdConsistency")).toBe(true);
+  });
 });

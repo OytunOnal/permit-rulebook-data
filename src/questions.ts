@@ -66,5 +66,9 @@ export function remainingQuestions(dataset: Dataset, profile: Profile): Question
   const candidates = deriveQuestions(dataset).filter(
     (q) => profile[q.field] === undefined && informative.has(q.field),
   );
-  return orderByEliminationPower(dataset, profile, candidates);
+  // ask_first fields (the destination) come before the greedy ordering — the
+  // interview's framing beats a marginal elimination win.
+  const pinned = candidates.filter((q) => dataset.fields.find((f) => f.id === q.field)?.ask_first);
+  const rest = candidates.filter((q) => !pinned.includes(q));
+  return [...pinned, ...orderByEliminationPower(dataset, profile, rest)];
 }

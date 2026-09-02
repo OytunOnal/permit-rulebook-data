@@ -193,7 +193,7 @@ describe("provenance and meta", () => {
 
   it("meta reports the newest retrieved_at across all value kinds", () => {
     expect(datasetMeta(dataset)).toEqual({
-      schema_version: "0.1.0",
+      schema_version: "0.2.0",
       dataset_version: "2026.09.02",
       newest_retrieved_at: "2026-09-02",
     });

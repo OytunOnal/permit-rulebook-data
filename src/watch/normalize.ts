@@ -4,6 +4,10 @@
  * mapping them all to one character would make distinct texts hash equal
  * (`&ge;` vs `&le;` inverted a threshold in review finding #3). */
 
+// CAUTION: watchlist slice markers are written against THIS map's output
+// (e.g. buzer's "&sect; 107" stays literal because &sect; is unmapped).
+// Adding a mapping here can invalidate a marker — the watch then reports
+// "slice marker missing" (unreachable) until the watchlist is updated.
 const ENTITIES: Record<string, string> = {
   "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'",
   "&nbsp;": " ", "&euro;": "€", "&auml;": "ä", "&ouml;": "ö", "&uuml;": "ü",

@@ -40,6 +40,20 @@ describe("scenario s5 — one interview, four countries", () => {
     expect(dataset.countries.map((c) => c.code).sort()).toEqual(["DE", "ES", "FR", "NL"]);
   });
 
+  it("the destination question opens the flow (ask_first pin beats greedy ordering)", () => {
+    expect(remainingQuestions(dataset, {})[0].field).toBe("destination");
+  });
+
+  it("review catch: a €40k German offer is 'near' the €45,630 route even though other countries' thresholds landed in between", () => {
+    const r = byId({
+      destination: "de", citizenship: "third_country", situation: "offer",
+      qualification: "degree", occupation_it: "no", experience: "y2in5",
+      salary_eur_year: "band_1", // €39,582 – €41,356.36 — two pooled bands below €45,630
+    });
+    expect(r["de-experienced-worker"].status).toBe("near");
+    expect(r["de-experienced-worker"].gap_max).toBeCloseTo(45630 - 39582, 2);
+  });
+
   it("NL engineer, 28, €4,500/month offer: under-30 HSM met, 30+ HSM dead, DE routes never asked about", () => {
     const { asked, profile } = runFlow({
       destination: "nl", citizenship: "third_country", situation: "offer",
@@ -62,7 +76,10 @@ describe("scenario s5 — one interview, four countries", () => {
       salary_eur_year: "band_1", // €39,582 – €41,356.36
     });
     expect(r["fr-talent-qualifie"].status).toBe("met");
-    expect(r["fr-talent-blue-card"].status).toBe("hold"); // €59,373 gap unbounded from band_1
+    // Bounded-gap semantics: a declared band with a finite ceiling below the
+    // threshold is "within reach" with an honest gap — never silent hold.
+    expect(r["fr-talent-blue-card"].status).toBe("near");
+    expect(r["fr-talent-blue-card"].gap_max).toBeCloseTo(59373 - 39582, 2);
   });
 
   it("ES offer at €45k with a degree: Blue Card and PAC nacional both met", () => {
@@ -139,20 +156,20 @@ describe("invariant — DE verdicts are country-independent", () => {
 });
 
 describe("unlocks across countries", () => {
-  it("NL under-30 salary gap: the HSM route is already 'near' (strip, not unlock); a higher band unlocks the Blue Card", () => {
+  it("NL under-30 salary shortfall: both routes are 'near' with honest gaps — the strip carries them, unlocks never duplicate", () => {
     const stuck: Profile = {
       destination: "nl", citizenship: "third_country", situation: "offer",
       age_band: "u30", qualification: "degree", experience: "y2in5",
-      salary_eur_month: "band_2", // €1,867.02 – €4,357: adjacent to the under-30 threshold
+      salary_eur_month: "band_2", // €1,867.02 – €4,357: below both NL thresholds
     };
     const baseline = byId(stuck);
-    expect(baseline["nl-hsm-under30"].status).toBe("near"); // bounded gap keeps it on the strip
+    expect(baseline["nl-hsm-under30"].status).toBe("near");
+    expect(baseline["nl-hsm-under30"].gap_max).toBeCloseTo(4357 - 1867.02, 2);
+    expect(baseline["nl-blue-card"].status).toBe("near"); // bounded even two bands down
+    expect(baseline["nl-blue-card"].gap_max).toBeCloseTo(5942 - 1867.02, 2);
+    // Nothing here is on hold, so the salary field must produce no unlock rows.
     const rows = unlocks(dataset, stuck);
-    const salaryRows = rows.filter((u) => u.field === "salary_eur_month");
-    expect(salaryRows.length).toBeGreaterThan(0);
-    const targets = salaryRows.flatMap((u) => u.routes.map((r) => r.route.id));
-    expect(targets).toContain("nl-blue-card"); // hold → provably opened by the salary step
-    expect(targets).not.toContain("nl-hsm-under30"); // never duplicated: it was never on hold
+    expect(rows.filter((u) => u.field === "salary_eur_month")).toEqual([]);
   });
 
   it("destination=all explorer: offer/ict steps fork per country via the situation_country qualifier", () => {

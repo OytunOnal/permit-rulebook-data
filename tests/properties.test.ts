@@ -123,7 +123,7 @@ describe("property: unlock rows are SOUND and COMPLETE single-step recommendatio
       for (const u of rows) {
         if (!u.qualifier) continue;
         const qdef = dataset.fields.find((f) => f.id === u.qualifier!.field)!;
-        expect(qdef.kind).toBeUndefined();
+        expect(qdef.is_qualifier).toBe(true); // only dataset-marked qualifiers, never arbitrary attributes
         expect(p[u.qualifier.field]).toBeUndefined();
         const direct = new Set(
           evaluate(dataset, { ...p, [u.field]: u.option.value })

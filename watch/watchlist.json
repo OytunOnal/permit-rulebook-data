@@ -33,7 +33,7 @@
       "url": "https://www.buzer.de/Anlage_AufenthG.htm",
       "strategy": "html",
       "kind": "value-source",
-      "slice": { "from": "Merkmal nach &sect; 20b Absatz 1 Nummer", "to": "&sect; 107 ←" },
+      "slice": { "from": "Tabelle Anlage hat", "to": "&sect; 107 ←" },
       "note": "Backs the points requirement and table (mirror). Sliced to the statute table — buzer rotates ad blocks per request (observed 2026-09-02: three page variants, identical legal text). Official-source re-check tracked by the gesetze human-tier entry."
     },
     {

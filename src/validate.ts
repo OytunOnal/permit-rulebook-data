@@ -27,7 +27,48 @@ export function validateDataset(data: unknown): ValidationResult {
     message: e.message ?? "invalid",
     keyword: e.keyword,
   }));
-  return { ok, errors };
+  if (ok) errors.push(...semanticErrors(data as Dataset));
+  return { ok: ok && errors.length === 0, errors };
+}
+
+/**
+ * Cross-cutting rules JSON Schema cannot express (review catches):
+ * - route ids must be unique dataset-wide (evaluate/unlocks key Maps by id);
+ * - a threshold restated under the same quote (NL ICT restates the HSM rows
+ *   verbatim) must carry the same amount, source and retrieval date everywhere
+ *   — updating one copy and missing another must fail the build, not silently
+ *   disagree. Distinct quotes may share an amount (ES: "umbral general" and
+ *   "umbral único" both read €41,356.36 — different rows, same number).
+ */
+function semanticErrors(dataset: Dataset): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const seenIds = new Set<string>();
+  const thresholds = new Map<string, { amount: number; source_url: string; retrieved_at: string; route: string }>();
+  for (const country of dataset.countries)
+    for (const route of country.routes) {
+      if (seenIds.has(route.id))
+        errors.push({ path: `/countries/${country.code}/routes/${route.id}`, message: "duplicate route id", keyword: "uniqueRouteId" });
+      seenIds.add(route.id);
+      const walk = (cs: import("./types.js").Criterion[]): void => {
+        for (const c of cs) {
+          if (c.op === "any") { for (const p of c.paths) walk(p.criteria); continue; }
+          if (c.op !== "gte") continue;
+          const key = `${c.field}#${c.threshold.quote}`;
+          const prev = thresholds.get(key);
+          if (!prev) {
+            thresholds.set(key, { amount: c.threshold.amount, source_url: c.threshold.source_url, retrieved_at: c.threshold.retrieved_at, route: route.id });
+          } else if (prev.amount !== c.threshold.amount || prev.source_url !== c.threshold.source_url || prev.retrieved_at !== c.threshold.retrieved_at) {
+            errors.push({
+              path: `/countries/${country.code}/routes/${route.id}`,
+              message: `threshold for ${c.field} restates the quote used in ${prev.route} with a different amount/source/retrieved_at — update every copy together`,
+              keyword: "thresholdConsistency",
+            });
+          }
+        }
+      };
+      walk(route.criteria);
+    }
+  return errors;
 }
 
 export function assertValidDataset(data: unknown): Dataset {

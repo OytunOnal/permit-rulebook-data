@@ -13,7 +13,7 @@ build.
 ## Layout
 
 - `schema/ruleset.schema.json` — the public contract (JSON Schema 2020-12)
-- `data/de.json` — dataset (S1: Germany, EU Blue Card only)
+- `data/dataset.json` — dataset (DE · FR · ES · NL, 21 employment-based routes); `data/exclusions.md` records every researched-but-excluded route with its reason
 - `src/engine.ts` — evaluation: band derivation, met/near/hold, gap analysis
 - `src/questions.ts` — question set derived from rule predicates (never desyncs)
 - `src/validate.ts` — boundary validation
