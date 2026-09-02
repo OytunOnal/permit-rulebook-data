@@ -123,6 +123,30 @@ describe("pruning at dataset scale", () => {
   });
 });
 
+describe("bounded gaps don't end the interview (user-reported: funds under €1,091)", () => {
+  it("explorer with low funds still gets the full Chancenkarte interview → within reach", () => {
+    const { asked, profile } = runFlow({
+      citizenship: "third_country", situation: "none", funds_eur_month: "band_0",
+      qualification: "degree", recognition_de: "recognized", german: "a1",
+      english: "none", experience: "y2in5", occupation_shortage: "no",
+      age_band: "u35", de_stay6m: "no", partner_ck: "no",
+    });
+    expect(asked).toContain("qualification"); // interview continued past the funds gap
+    const ck = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;
+    expect(ck.status).toBe("near");
+    expect(ck.gap_max).toBe(1091);
+  });
+
+  it("a hard fail still ends it: no qualification kills Chancenkarte for real", () => {
+    const { profile } = runFlow({
+      citizenship: "third_country", situation: "none", funds_eur_month: "band_0",
+      qualification: "none",
+    });
+    const ck = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;
+    expect(ck.status).toBe("hold");
+  });
+});
+
 describe("questions derive from rules", () => {
   it("every dataset field is referenced and becomes a question", () => {
     expect(deriveQuestions(dataset).length).toBe(dataset.fields.length);

@@ -152,11 +152,23 @@ function routeStatus(criteria: CriterionResult[]): RouteStatus {
 }
 
 /**
- * A route is alive while no answered criterion has definitively failed.
- * "unknown" answers keep a route alive — an open gap is not a no.
+ * Hard fail = failed with no bounded gap. Bounded shortfalls (adjacent money
+ * band, points a few short) are the gap-analysis story, not a death sentence —
+ * the interview continues so the route can finish as "within reach".
+ */
+function hasHardFail(dataset: Dataset, route: Route, profile: Profile): boolean {
+  return route.criteria.some((c) => {
+    const r = evalCriterion(dataset, c, profile);
+    return r.outcome === "fail" && r.gap_max === undefined && r.gap_points === undefined;
+  });
+}
+
+/**
+ * A route is alive while no answered criterion has HARD-failed.
+ * "unknown" answers and bounded gaps keep a route alive — an open gap is not a no.
  */
 export function isRouteAlive(dataset: Dataset, route: Route, profile: Profile): boolean {
-  return !route.criteria.some((c) => evalCriterion(dataset, c, profile).outcome === "fail");
+  return !hasHardFail(dataset, route, profile);
 }
 
 /** Unanswered fields that can still flip THIS criterion's outcome. */
@@ -183,8 +195,7 @@ export function informativeFields(dataset: Dataset, profile: Profile): Set<strin
   const fields = new Set<string>();
   for (const country of dataset.countries) {
     for (const route of country.routes) {
-      const results = route.criteria.map((c) => evalCriterion(dataset, c, profile));
-      if (results.some((r) => r.outcome === "fail")) continue; // dead route
+      if (hasHardFail(dataset, route, profile)) continue; // dead route
       for (const c of route.criteria)
         for (const f of undecidedFieldsOf(dataset, c, profile)) fields.add(f);
     }
