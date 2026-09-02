@@ -37,7 +37,7 @@
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
         "label": { "type": "string", "minLength": 1 },
         "type": { "enum": ["enum", "money_band"] },
-        "kind": { "enum": ["attribute", "path"] },
+        "kind": { "enum": ["attribute", "path", "improvable"] },
         "learn": {
           "type": "object",
           "required": ["label", "url"],

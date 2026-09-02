@@ -89,8 +89,8 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
   it("P3 explorer without offer: only Chancenkarte questions come, salary never asked (A10 measurement)", () => {
     const { asked, profile } = runFlow({
       citizenship: "third_country", situation: "none", qualification: "degree",
-      language_base: "yes", funds_eur_month: "band_1", recognition_de: "not_yet",
-      german: "b1", english_c1: "no", experience: "lt2", occupation_shortage: "no",
+      funds_eur_month: "band_1", recognition_de: "not_yet",
+      german: "b1", english: "none", experience: "lt2", occupation_shortage: "no",
       age_band: "u35", de_stay6m: "no", partner_ck: "no",
     });
     expect(asked).not.toContain("salary_eur_year");
@@ -115,7 +115,7 @@ describe("pruning at dataset scale", () => {
   it("fully recognised explorer passes Chancenkarte directly — points ladder skipped", () => {
     const profile: Profile = {
       citizenship: "third_country", situation: "none", qualification: "degree",
-      language_base: "yes", funds_eur_month: "band_1", recognition_de: "recognized",
+      german: "a1", funds_eur_month: "band_1", recognition_de: "recognized",
     };
     expect(remainingQuestions(dataset, profile)).toEqual([]);
     const ck = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;

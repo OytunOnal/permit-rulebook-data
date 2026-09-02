@@ -232,11 +232,15 @@ export function unlocks(dataset: Dataset, profile: Profile): import("./types.js"
   const out: import("./types.js").Unlock[] = [];
   const baseline = new Map(evaluate(dataset, profile).map((r) => [r.route.id, r.status]));
   for (const def of dataset.fields) {
-    if (def.kind !== "path") continue;
+    if (def.kind !== "path" && def.kind !== "improvable") continue;
     const current = profile[def.id];
     if (current === undefined) continue;
-    for (const opt of def.options ?? []) {
-      if (opt.value === current || opt.is_unknown || opt.is_fallback) continue;
+    const candidates =
+      def.type === "money_band"
+        ? deriveBands(dataset, def.id).map((b) => ({ value: b.id, label: b.label }))
+        : (def.options ?? []);
+    for (const opt of candidates) {
+      if (opt.value === current || ("is_unknown" in opt && opt.is_unknown) || ("is_fallback" in opt && opt.is_fallback)) continue;
       const opened = evaluate(dataset, { ...profile, [def.id]: opt.value }).filter(
         (r) => (r.status === "met" || r.status === "near") && baseline.get(r.route.id) === "hold",
       );

@@ -37,13 +37,14 @@
       "id": "recognition_de",
       "label": "Where does German recognition of your qualification stand?",
       "type": "enum",
+      "kind": "improvable",
       "learn": {
         "label": "Check your degree in the official Anabin database",
         "url": "https://anabin.kmk.org/anabin.html"
       },
       "options": [
-        { "value": "recognized", "label": "Fully recognised (or a German qualification)" },
-        { "value": "partial", "label": "Assessed as partial — additional measures required" },
+        { "value": "recognized", "label": "Fully recognised (or a German qualification)", "short": "full German recognition" },
+        { "value": "partial", "label": "Assessed as partial — additional measures required", "short": "a partial recognition decision" },
         { "value": "not_yet", "label": "Not assessed / not recognised" },
         { "value": "unknown", "label": "I don't know yet", "is_unknown": true }
       ]
@@ -52,10 +53,11 @@
       "id": "experience",
       "label": "Skilled work experience related to your qualification?",
       "type": "enum",
+      "kind": "improvable",
       "options": [
         { "value": "lt2", "label": "Under 2 years" },
-        { "value": "y2in5", "label": "2+ years within the last 5" },
-        { "value": "y5in7", "label": "5+ years within the last 7" }
+        { "value": "y2in5", "label": "2+ years within the last 5", "short": "2+ years of related experience" },
+        { "value": "y5in7", "label": "5+ years within the last 7", "short": "5+ years of related experience" }
       ]
     },
     {
@@ -84,35 +86,31 @@
     {
       "id": "salary_eur_year",
       "label": "Gross annual salary in the offer?",
-      "type": "money_band"
-    },
-    {
-      "id": "language_base",
-      "label": "Do you have at least German A1 or English B2?",
-      "type": "enum",
-      "options": [
-        { "value": "yes", "label": "Yes" },
-        { "value": "no", "label": "No" }
-      ]
+      "type": "money_band",
+      "kind": "improvable"
     },
     {
       "id": "german",
       "label": "Your German level?",
       "type": "enum",
+      "kind": "improvable",
       "options": [
-        { "value": "none", "label": "Below A2" },
-        { "value": "a2", "label": "A2" },
-        { "value": "b1", "label": "B1" },
-        { "value": "b2plus", "label": "B2 or higher" }
+        { "value": "none", "label": "None / below A1", "is_fallback": true },
+        { "value": "a1", "label": "A1", "short": "German A1" },
+        { "value": "a2", "label": "A2", "short": "German A2" },
+        { "value": "b1", "label": "B1", "short": "German B1" },
+        { "value": "b2plus", "label": "B2 or higher", "short": "German B2" }
       ]
     },
     {
-      "id": "english_c1",
-      "label": "English at C1 or higher?",
+      "id": "english",
+      "label": "Your English level?",
       "type": "enum",
+      "kind": "improvable",
       "options": [
-        { "value": "yes", "label": "Yes" },
-        { "value": "no", "label": "No" }
+        { "value": "none", "label": "Below B2", "is_fallback": true },
+        { "value": "b2", "label": "B2", "short": "English B2" },
+        { "value": "c1", "label": "C1 or higher", "short": "English C1" }
       ]
     },
     {
@@ -146,7 +144,8 @@
     {
       "id": "funds_eur_month",
       "label": "Monthly funds you can evidence for the job-search stay (blocked account or formal obligation)?",
-      "type": "money_band"
+      "type": "money_band",
+      "kind": "improvable"
     }
   ],
   "countries": [
@@ -302,7 +301,15 @@
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "situation", "op": "eq", "value": "none", "note": "The card exists to seek work — with an offer, transfer or hosting agreement the work routes above apply directly." },
             { "field": "qualification", "op": "in", "values": ["vocational", "degree"], "note": "Embassy: \"einen ausländischen Hochschulabschluss, einen mindestens zweijährigen Berufsabschluss (jeweils im Ausbildungsstaat staatlich anerkannt)\"" },
-            { "field": "language_base", "op": "eq", "value": "yes", "note": "§ 20a: German A1 (\"mindestens einfache deutsche Sprachkenntnisse\") OR English B2." },
+            {
+              "op": "any",
+              "label": "base language",
+              "note": "§ 20a: German A1 (\"mindestens einfache deutsche Sprachkenntnisse\") OR English B2.",
+              "paths": [
+                { "label": "German A1+", "criteria": [ { "field": "german", "op": "in", "values": ["a1", "a2", "b1", "b2plus"] } ] },
+                { "label": "English B2+", "criteria": [ { "field": "english", "op": "in", "values": ["b2", "c1"] } ] }
+              ]
+            },
             {
               "field": "funds_eur_month",
               "op": "gte",
@@ -347,7 +354,7 @@
                         "items": [
                           { "field": "recognition_de", "points": { "partial": 4 } },
                           { "field": "german", "points": { "a2": 1, "b1": 2, "b2plus": 3 } },
-                          { "field": "english_c1", "points": { "yes": 1 } },
+                          { "field": "english", "points": { "c1": 1 } },
                           { "field": "experience", "points": { "y2in5": 2, "y5in7": 3 } },
                           { "field": "occupation_shortage", "points": { "yes": 1 } },
                           { "field": "age_band", "points": { "u35": 2, "a35to40": 1 } },

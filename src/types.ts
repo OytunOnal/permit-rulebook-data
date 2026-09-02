@@ -71,11 +71,13 @@ export interface FieldDef {
   label: string;
   type: "enum" | "money_band";
   /**
-   * attribute (default): a fact about the person — never counterfactualed.
-   * path: a step one can take (get an offer, a transfer…) — eligible for
-   * "what would this unlock" analysis.
+   * attribute (default): a fixed fact (age, citizenship) — never counterfactualed.
+   * path: a step one can take (get an offer, a transfer…).
+   * improvable: changeable through effort/time (language, funds, recognition,
+   * experience). path and improvable are both eligible for "what would this
+   * unlock" analysis; useless directions drop out because they open nothing.
    */
-  kind?: "attribute" | "path";
+  kind?: "attribute" | "path" | "improvable";
   options?: FieldOption[];
   /** Where a user who answered "I don't know" can find out — an official source. */
   learn?: { label: string; url: string };

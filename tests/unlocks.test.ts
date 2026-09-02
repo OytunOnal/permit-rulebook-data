@@ -9,7 +9,7 @@ const dataset = JSON.parse(readFileSync(new URL("../data/de.json", import.meta.u
 const explorer: Profile = {
   citizenship: "third_country", situation: "none", qualification: "degree",
   recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
-  language_base: "yes", funds_eur_month: "band_1",
+  german: "b1", funds_eur_month: "band_1",
   // salary answered so the offer counterfactual can evaluate fully
   salary_eur_year: "band_2",
 };
@@ -49,5 +49,41 @@ describe("unlocks — counterfactual leverage over path fields", () => {
 
   it("unanswered path fields produce no rows", () => {
     expect(unlocks(dataset, { citizenship: "third_country" })).toEqual([]);
+  });
+});
+
+describe("unlocks — improvable fields (language, funds, recognition…)", () => {
+  // Fully answered, language-less explorer: base-language any fails on both
+  // paths; points would be 5 of 6 (experience 2 + shortage 1 + age 2).
+  const languageless: Profile = {
+    citizenship: "third_country", situation: "none", qualification: "degree",
+    recognition_de: "not_yet", german: "none", english: "none",
+    experience: "y2in5", occupation_shortage: "yes", age_band: "u35",
+    de_stay6m: "no", partner_ck: "no", funds_eur_month: "band_1",
+  };
+  const rows = unlocks(dataset, languageless);
+  const by = (f: string, v: string) => rows.find((u) => u.field === f && u.option.value === v);
+
+  it("learning German A1 (0 points) still unlocks: base met, points 1 short → near", () => {
+    const u = by("german", "a1")!;
+    expect(u.routes.map((r) => [r.route.id, r.status])).toEqual([["de-chancenkarte", "near"]]);
+    expect(u.routes[0].gap_points).toBe(1);
+  });
+
+  it("German A2 unlocks fully: base met and 6th point scored", () => {
+    expect(by("german", "a2")!.routes[0].status).toBe("met");
+  });
+
+  it("English B2 → near (base only), C1 → met (base + bonus point)", () => {
+    expect(by("english", "b2")!.routes[0].status).toBe("near");
+    expect(by("english", "c1")!.routes[0].status).toBe("met");
+  });
+
+  it("recognition alone shows nothing — base language would still fail (single-step honesty)", () => {
+    expect(rows.some((u) => u.field === "recognition_de")).toBe(false);
+  });
+
+  it("no downgrade rows: salary and funds never suggest a lower band", () => {
+    expect(rows.some((u) => u.field === "funds_eur_month")).toBe(false);
   });
 });
