@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { unlocks } from "../src/engine.js";
+import { remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/de.json", import.meta.url), "utf8")) as Dataset;
@@ -85,5 +86,32 @@ describe("unlocks — improvable fields (language, funds, recognition…)", () =
 
   it("no downgrade rows: salary and funds never suggest a lower band", () => {
     expect(rows.some((u) => u.field === "funds_eur_month")).toBe(false);
+  });
+});
+
+describe("improvable fails keep the interview alive (user-reported: no-language explorer saw no language steps)", () => {
+  // The user's exact shape: degree, recognition unknown, no language at all.
+  const early: Profile = {
+    citizenship: "third_country", situation: "none", qualification: "degree",
+    recognition_de: "unknown", experience: "lt2", occupation_shortage: "yes",
+    german: "none", english: "none",
+  };
+
+  it("funds/age/etc are still asked — the language fail didn't kill Chancenkarte", () => {
+    const remaining = remainingQuestions(dataset, early).map((q) => q.field);
+    expect(remaining).toEqual(expect.arrayContaining(["funds_eur_month", "age_band"]));
+  });
+
+  it("with the full picture, 'German B2' becomes a provable unlock even with recognition unknown", () => {
+    const full: Profile = {
+      ...early, funds_eur_month: "band_1", age_band: "u35",
+      de_stay6m: "no", partner_ck: "no",
+    };
+    const rows2 = unlocks(dataset, full);
+    const b2 = rows2.find((u) => u.field === "german" && u.option.value === "b2plus")!;
+    // shortage 1 + age 2 + German B2 3 = 6 → points pass regardless of the open unknown
+    expect(b2.routes.map((r) => [r.route.id, r.status])).toEqual([["de-chancenkarte", "met"]]);
+    // English C1 alone (1+2+1=4) proves nothing while recognition is unknown → honest absence
+    expect(rows2.some((u) => u.field === "english" && u.option.value === "c1")).toBe(false);
   });
 });

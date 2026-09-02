@@ -151,15 +151,29 @@ function routeStatus(criteria: CriterionResult[]): RouteStatus {
   return "hold";
 }
 
+/** A failed criterion whose referenced fields are ALL improvable (language,
+ * funds, experience…) is a shortfall the person can close — gap story, not
+ * a death sentence. */
+function failsOnlyImprovables(dataset: Dataset, c: Criterion): boolean {
+  const fields = referencedFields(c);
+  return fields.length > 0 &&
+    fields.every((f) => dataset.fields.find((d) => d.id === f)?.kind === "improvable");
+}
+
 /**
- * Hard fail = failed with no bounded gap. Bounded shortfalls (adjacent money
- * band, points a few short) are the gap-analysis story, not a death sentence —
- * the interview continues so the route can finish as "within reach".
+ * Hard fail = failed with no bounded gap AND not purely on improvable fields.
+ * Bounded shortfalls (adjacent money band, points a few short) and improvable
+ * shortfalls (no German yet) keep the interview going so the route can finish
+ * with a complete, actionable picture. Fixed-attribute and path fails
+ * (citizenship, qualification, situation) end it for real.
  */
 function hasHardFail(dataset: Dataset, route: Route, profile: Profile): boolean {
   return route.criteria.some((c) => {
     const r = evalCriterion(dataset, c, profile);
-    return r.outcome === "fail" && r.gap_max === undefined && r.gap_points === undefined;
+    if (r.outcome !== "fail") return false;
+    if (r.gap_max !== undefined || r.gap_points !== undefined) return false;
+    if (failsOnlyImprovables(dataset, c)) return false;
+    return true;
   });
 }
 
