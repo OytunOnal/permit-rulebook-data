@@ -1,0 +1,38 @@
+name: source-watch
+on:
+  schedule:
+    - cron: "17 5 * * *" # daily, 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run build
+      - name: Coverage gate (every dataset source is watched)
+        run: node dist/src/watch/cli-coverage.js
+      - name: Watch sources
+        run: node dist/src/watch/cli-watch.js --commit
+      - name: Open issues for new flags
+        if: hashFiles('watch/flags/*.md') != ''
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          for f in watch/flags/*.md; do
+            title=$(head -n1 "$f" | sed 's/^# //')
+            gh issue create --title "$title" --body-file "$f" --label source-change || true
+          done
+      - name: Persist state + flags
+        run: |
+          git config user.name "visa-rules-watch"
+          git config user.email "watch@users.noreply.github.com"
+          git add watch/state.json watch/flags || true
+          git diff --cached --quiet || git commit -m "watch: state update $(date -u +%F)"
+          git push

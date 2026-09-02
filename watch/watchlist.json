@@ -1,0 +1,48 @@
+{
+  "entries": [
+    {
+      "id": "zav-newsletter-index",
+      "url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss",
+      "strategy": "html",
+      "kind": "sentinel",
+      "note": "DE spike outcome: stable edition index. A new 'Ausgabe' appearing means thresholds may have moved — flag for human read (~quarterly)."
+    },
+    {
+      "id": "zav-blaue-karte-03-2026",
+      "url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Backs both EU Blue Card thresholds (EUR 50,700 / 45,934.20)."
+    },
+    {
+      "id": "zav-berufserfahrene-04-2026",
+      "url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/04-2026/berufserfahrene",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Backs the experienced-worker threshold (EUR 45,630, 45% BBG)."
+    },
+    {
+      "id": "kairo-chancenkarte-merkblatt",
+      "url": "https://kairo.diplo.de/resource/blob/2664804/5e952d2720a91e83a475a3e02452f1cf/250122-deu-merkblatt-chancenkarte-data.pdf",
+      "strategy": "pdf",
+      "kind": "value-source",
+      "note": "Backs the Chancenkarte livelihood amount (EUR 1,091/month). Byte-hash only; on change a human reads the PDF."
+    },
+    {
+      "id": "buzer-anlage-aufenthg",
+      "url": "https://www.buzer.de/Anlage_AufenthG.htm",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Backs the points requirement and table (mirror). Official-source re-check tracked by the gesetze human-tier entry."
+    },
+    {
+      "id": "gesetze-official-recheck",
+      "url": "https://www.gesetze-im-internet.de/aufenthg_2004/anlage.html",
+      "strategy": "human",
+      "kind": "sentinel",
+      "max_age_days": 90,
+      "last_verified": "2026-09-02",
+      "note": "Official statute source blocks automated fetchers but is human-reachable (verified via VPN 2026-09-02). Quarterly human re-verification of all buzer-mirrored quotes."
+    }
+  ]
+}

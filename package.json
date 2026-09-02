@@ -20,7 +20,9 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "validate": "node dist/src/cli-validate.js data/de.json",
-    "check": "npm run build && npm run validate && npm test"
+    "watch:sources": "node dist/src/watch/cli-watch.js",
+    "watch:coverage": "node dist/src/watch/cli-coverage.js",
+    "check": "npm run build && npm run validate && npm run watch:coverage && npm test"
   },
   "license": "MIT",
   "dependencies": {
