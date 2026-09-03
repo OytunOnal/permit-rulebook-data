@@ -17,11 +17,11 @@
     },
     {
       "id": "citizenship",
-      "label": "Where are you a citizen?",
+      "label": "Which passport will you apply with?",
       "type": "enum",
       "options": [
         { "value": "eu_eea_ch", "label": "EU / EEA / Switzerland" },
-        { "value": "third_country", "label": "Somewhere else (third country)" }
+        { "value": "third_country", "label": "Any other country" }
       ]
     },
     {
