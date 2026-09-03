@@ -13,6 +13,10 @@
       "minItems": 1,
       "items": { "$ref": "#/$defs/fieldDef" }
     },
+    "notices": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/notice" }
+    },
     "countries": {
       "type": "array",
       "minItems": 1,
@@ -37,6 +41,7 @@
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
         "label": { "type": "string", "minLength": 1 },
         "type": { "enum": ["enum", "money_band"] },
+        "period": { "enum": ["month", "year"] },
         "kind": { "enum": ["attribute", "path", "improvable"] },
         "ask_first": { "type": "boolean" },
         "is_qualifier": { "type": "boolean" },
@@ -65,6 +70,53 @@
             }
           }
         }
+      }
+    },
+    "provenancedText": {
+      "type": "object",
+      "required": ["source_url", "quote", "retrieved_at"],
+      "additionalProperties": false,
+      "properties": {
+        "source_url": { "type": "string", "pattern": "^https://" },
+        "quote": { "type": "string", "minLength": 5 },
+        "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "legal_basis": { "type": "string" },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["retrieved_at"],
+            "additionalProperties": false,
+            "properties": {
+              "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+              "quote": { "type": "string" },
+              "source_url": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "notice": {
+      "type": "object",
+      "required": ["id", "when", "kind", "title", "body", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+        "when": {
+          "type": "object",
+          "required": ["field", "op"],
+          "additionalProperties": false,
+          "properties": {
+            "field": { "type": "string", "minLength": 1 },
+            "op": { "enum": ["eq", "in"] },
+            "value": { "type": "string", "minLength": 1 },
+            "values": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          }
+        },
+        "kind": { "enum": ["no-permit-needed"] },
+        "title": { "type": "string", "minLength": 1 },
+        "body": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/provenancedText" }
       }
     },
     "provenancedAmount": {
@@ -159,7 +211,8 @@
             "field": { "type": "string" },
             "op": { "const": "eq" },
             "value": { "type": "string" },
-            "note": { "type": "string" }
+            "note": { "type": "string" },
+            "short_reason": { "type": "string", "minLength": 1 }
           }
         },
         {
@@ -171,7 +224,8 @@
             "op": { "const": "gte" },
             "threshold": { "$ref": "#/$defs/provenancedAmount" },
             "threshold_label": { "type": "string" },
-            "note": { "type": "string" }
+            "note": { "type": "string" },
+            "short_reason": { "type": "string", "minLength": 1 }
           }
         },
         {
@@ -182,7 +236,8 @@
             "field": { "type": "string" },
             "op": { "const": "in" },
             "values": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-            "note": { "type": "string" }
+            "note": { "type": "string" },
+            "short_reason": { "type": "string", "minLength": 1 }
           }
         },
         {
@@ -193,7 +248,8 @@
             "op": { "const": "points" },
             "required": { "$ref": "#/$defs/provenancedNumber" },
             "table": { "$ref": "#/$defs/pointsTable" },
-            "note": { "type": "string" }
+            "note": { "type": "string" },
+            "short_reason": { "type": "string", "minLength": 1 }
           }
         },
         {
@@ -216,7 +272,8 @@
                 }
               }
             },
-            "note": { "type": "string" }
+            "note": { "type": "string" },
+            "short_reason": { "type": "string", "minLength": 1 }
           }
         }
       ]
@@ -231,7 +288,8 @@
         "kind": { "enum": ["res-work", "seek", "self-employed"] },
         "summary": { "type": "string" },
         "info_url": { "type": "string", "pattern": "^https://" },
-        "criteria": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/criterion" } }
+        "criteria": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/criterion" } },
+        "preconditions": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
       }
     }
   }

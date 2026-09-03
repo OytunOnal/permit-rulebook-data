@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.2.0",
-  "dataset_version": "2026.09.02",
+  "schema_version": "0.3.0",
+  "dataset_version": "2026.09.03",
   "fields": [
     {
       "id": "destination",
@@ -112,12 +112,14 @@
       "id": "salary_eur_year",
       "label": "Gross annual salary in the offer?",
       "type": "money_band",
+      "period": "year",
       "kind": "improvable"
     },
     {
       "id": "salary_eur_month",
       "label": "Gross monthly salary in the offer (or monthly income you can evidence)?",
       "type": "money_band",
+      "period": "month",
       "kind": "improvable"
     },
     {
@@ -130,17 +132,26 @@
       ]
     },
     {
-      "id": "nl_grad3y",
-      "label": "In the last 3 years, did you graduate from (or do research at) a Dutch institution, or graduate from a top-200-ranked foreign university?",
+      "id": "nl_recent_grad",
+      "label": "In the last 3 years, did you graduate from — or do research at — a Dutch university or research institution?",
+      "type": "enum",
+      "options": [
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" }
+      ]
+    },
+    {
+      "id": "top200_grad",
+      "label": "In the last 3 years, did you graduate from a university ranked in the global top 200?",
       "type": "enum",
       "learn": {
         "label": "The qualifying institutions and rankings are listed on the IND orientation-year page",
         "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year"
       },
       "options": [
-        { "value": "yes_nl", "label": "Yes — degree, doctorate or research at a Dutch institution" },
-        { "value": "yes_top200", "label": "Yes — degree from a foreign university in the top-200 rankings" },
-        { "value": "no", "label": "No" }
+        { "value": "yes", "label": "Yes" },
+        { "value": "no", "label": "No" },
+        { "value": "unknown", "label": "I don't know", "is_unknown": true }
       ]
     },
     {
@@ -200,7 +211,24 @@
       "id": "funds_eur_month",
       "label": "Monthly funds you can evidence for the job-search stay (blocked account or formal obligation)?",
       "type": "money_band",
+      "period": "month",
       "kind": "improvable"
+    }
+  ],
+  "notices": [
+    {
+      "id": "eu-free-movement",
+      "when": { "field": "citizenship", "op": "eq", "value": "eu_eea_ch" },
+      "kind": "no-permit-needed",
+      "title": "No work permit needed",
+      "body": "EU, EEA and Swiss citizens can live and work in Germany, France, Spain and the Netherlands under free movement — the routes on this site are for other passports. Check registration rules after arrival (e.g. Anmeldung in Germany).",
+      "source": {
+        "source_url": "https://europa.eu/youreurope/citizens/work/work-abroad/work-permits/index_en.htm",
+        "quote": "As an EU national you generally don't need a work permit to work anywhere in the EU.",
+        "retrieved_at": "2026-09-03",
+        "legal_basis": "TFEU art. 45 (free movement of workers) — Your Europe",
+        "history": []
+      }
     }
   ],
   "countries": [
@@ -214,6 +242,10 @@
           "kind": "res-work",
           "summary": "Reduced salary threshold for shortage occupations (IT and other Engpassberufe).",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
+          "preconditions": [
+            "Employment contract of at least 6 months",
+            "Regulated professions (health, law…): the professional licence must be in hand"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["de", "all"] },
@@ -247,6 +279,10 @@
           "kind": "res-work",
           "summary": "Standard EU Blue Card salary threshold, any qualified occupation.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
+          "preconditions": [
+            "Employment contract of at least 6 months",
+            "Regulated professions (health, law…): the professional licence must be in hand"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["de", "all"] },
@@ -279,6 +315,9 @@
           "kind": "res-work",
           "summary": "Recognised university degree plus a concrete job offer matching the qualification. No fixed salary threshold (age 45+: 55% rule or pension provision).",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
+          "preconditions": [
+            "The job matches the recognised qualification"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["de", "all"] },
@@ -297,6 +336,10 @@
           "kind": "res-work",
           "summary": "Recognised vocational qualification plus a concrete job offer; German appropriate to the occupation and secured livelihood are also required. No fixed salary threshold (age 45+: 55% rule).",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Fachkraft/fachkraft-node.html",
+          "preconditions": [
+            "German appropriate to the occupation",
+            "Secured livelihood"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["de", "all"] },
@@ -315,6 +358,10 @@
           "kind": "res-work",
           "summary": "No German recognition needed: 2+ years of recent skilled experience plus either a state-recognised qualification from your home country or IT experience. Salary threshold waived for collectively bound employers.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/FachkraefteOhneAusbildung/fachkraefte-ohne-ausbildung-node.html",
+          "preconditions": [
+            "The employer is collectively bound, or the salary threshold applies",
+            "Qualification state-recognised where it was obtained"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["de", "all"] },
@@ -355,6 +402,9 @@
           "kind": "res-work",
           "summary": "Hosting agreement with a research institution (university through to a company research department); the institution commits to cost coverage. Permit for at least one year; 18-month job-search permit afterwards.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
+          "preconditions": [
+            "A signed hosting agreement with a recognised research institution"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["de", "all"] },
@@ -371,6 +421,10 @@
           "kind": "res-work",
           "summary": "Transfer of 90+ days as manager, specialist or trainee; 6+ months with the undertaking first; work contract covering the transfer. Up to 3 years (trainees 1).",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
+          "preconditions": [
+            "At least 6 months with the undertaking before the transfer",
+            "Transfer longer than 90 days, as manager, specialist or trainee"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["de", "all"] },
@@ -387,6 +441,9 @@
           "kind": "seek",
           "summary": "One-year job-search card with part-time work (20h/week). Fully recognised skilled workers get it directly; everyone else via the points table (6 points needed). Shown when you don't yet have an offer, transfer or hosting agreement.",
           "info_url": "https://handbookgermany.de/en/opportunity-card",
+          "preconditions": [
+            "Part-time work limited to 20 hours/week while searching"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["de", "all"] },
@@ -472,6 +529,9 @@
           "kind": "res-work",
           "summary": "For master's-level graduates of French institutions with a 3+ month contract. Card valid up to 4 years. Talent family: no labour-market test.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "preconditions": [
+            "Employment contract of more than 3 months"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["fr", "all"] },
@@ -504,6 +564,9 @@
           "kind": "res-work",
           "summary": "6+ month contract; 3-year higher-education diploma or 5 years of comparable experience (3-in-last-7 for professions listed by ministerial order). Card up to 4 years.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "preconditions": [
+            "Employment contract of at least 6 months"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["fr", "all"] },
@@ -543,6 +606,10 @@
           "kind": "res-work",
           "summary": "Intra-group transfer for a 1+ year mission in a senior management or expert role, with 6+ months of group seniority. Card up to 3 years, not renewable.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+          "preconditions": [
+            "At least 6 months' seniority in the group",
+            "Mission longer than 1 year in a senior-management or expert role"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["fr", "all"] },
@@ -580,6 +647,10 @@
           "kind": "res-work",
           "summary": "6+ month contract or firm offer; higher-education qualification (3+ years) or 5 years of comparable experience (3-in-last-7 for ICT professionals). UGE fast-track: 20-day decision, positive administrative silence. A reduced threshold (€33,085.09) exists for catalogued shortage occupations and recent graduates — not yet modeled.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
+          "preconditions": [
+            "Contract or firm offer of at least 6 months",
+            "Application through the UGE (Unidad de Grandes Empresas)"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["es", "all"] },
@@ -620,6 +691,9 @@
           "kind": "res-work",
           "summary": "National fast-track for higher-education professionals or equivalent experience with a qualifying employer (large company, strategic-sector SME or project of general interest). Single threshold, no reduction; 20-day UGE procedure.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
+          "preconditions": [
+            "Qualifying employer: large company, strategic-sector SME, or a project of general interest (UGE assessment)"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["es", "all"] },
@@ -660,6 +734,10 @@
           "kind": "res-work",
           "summary": "Transfer within a group to a Spanish entity as manager, specialist or trainee; 3 months of prior group employment. No salary threshold beyond the applicable collective agreement. Max 3 years (trainees 1).",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/trabajadores",
+          "preconditions": [
+            "Real business activity of the group",
+            "3 months' prior employment in the group"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["es", "all"] },
@@ -685,6 +763,9 @@
           "kind": "res-work",
           "summary": "Hosting agreement or contract with a Spanish research entity (universities, R&D centres, business schools). 3-year permit; 12-month post-research job-search stay.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/investigadores",
+          "preconditions": [
+            "Hosting agreement (convenio de acogida) or contract with the research entity"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["es", "all"] },
@@ -705,8 +786,13 @@
           "id": "nl-hsm-30plus",
           "name": "Highly skilled migrant — 30 or older (kennismigrant)",
           "kind": "res-work",
-          "summary": "Employment contract with an IND-recognised sponsor; salary at market rate. No degree requirement — the salary criterion substitutes. A reduced criterion (€3,122) exists after a Dutch orientation year — not modeled.",
+          "summary": "No degree requirement — the salary criterion substitutes. A reduced criterion (€3,122) exists after a Dutch orientation year — not modeled.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+          "preconditions": [
+            "The employer is an IND-recognised sponsor",
+            "Salary in line with the market rate (IND assessment)",
+            "Regulated professions (e.g. nurses, doctors): BIG registration"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["nl", "all"] },
@@ -715,7 +801,7 @@
               { "label": "Netherlands chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "nl" } ] },
               { "label": "offer in the Netherlands", "criteria": [ { "field": "situation_country", "op": "eq", "value": "nl" } ] }
             ] },
-            { "field": "age_band", "op": "in", "values": ["a30to35", "a35to40", "o40"] },
+            { "field": "age_band", "op": "in", "values": ["a30to35", "a35to40", "o40"], "short_reason": "for 30 or older" },
             {
               "field": "salary_eur_month",
               "op": "gte",
@@ -737,8 +823,13 @@
           "id": "nl-hsm-under30",
           "name": "Highly skilled migrant — under 30 (kennismigrant)",
           "kind": "res-work",
-          "summary": "Reduced salary criterion for applicants younger than 30. Employment contract with an IND-recognised sponsor; salary at market rate.",
+          "summary": "Reduced salary criterion for applicants younger than 30.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+          "preconditions": [
+            "The employer is an IND-recognised sponsor",
+            "Salary in line with the market rate (IND assessment)",
+            "Regulated professions (e.g. nurses, doctors): BIG registration"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["nl", "all"] },
@@ -747,7 +838,7 @@
               { "label": "Netherlands chosen as destination", "criteria": [ { "field": "destination", "op": "eq", "value": "nl" } ] },
               { "label": "offer in the Netherlands", "criteria": [ { "field": "situation_country", "op": "eq", "value": "nl" } ] }
             ] },
-            { "field": "age_band", "op": "eq", "value": "u30" },
+            { "field": "age_band", "op": "eq", "value": "u30", "short_reason": "for under-30s" },
             {
               "field": "salary_eur_month",
               "op": "gte",
@@ -771,6 +862,10 @@
           "kind": "res-work",
           "summary": "6+ month contract; sponsor recognition not required. Higher-education diploma (3+ years) or 5 years of relevant experience (IT roles: 3-in-last-7). A reduced criterion (€4,754) for recent graduates — not modeled.",
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+          "preconditions": [
+            "Employment contract of at least 6 months",
+            "Regulated professions: BIG registration"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["nl", "all"] },
@@ -810,6 +905,10 @@
           "kind": "res-work",
           "summary": "Transfer as manager, specialist or trainee after 3+ months with the company outside the EU. Salary must meet the highly-skilled-migrant criterion for your age. Managers/specialists max 3 years, trainees 1.",
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
+          "preconditions": [
+            "At least 3 months with the company outside the EU",
+            "Role: manager, specialist or trainee"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["nl", "all"] },
@@ -826,7 +925,7 @@
                 {
                   "label": "30 or older",
                   "criteria": [
-                    { "field": "age_band", "op": "in", "values": ["a30to35", "a35to40", "o40"] },
+                    { "field": "age_band", "op": "in", "values": ["a30to35", "a35to40", "o40"], "short_reason": "for 30 or older" },
                     {
                       "field": "salary_eur_month",
                       "op": "gte",
@@ -846,7 +945,7 @@
                 {
                   "label": "under 30",
                   "criteria": [
-                    { "field": "age_band", "op": "eq", "value": "u30" },
+                    { "field": "age_band", "op": "eq", "value": "u30", "short_reason": "for under-30s" },
                     {
                       "field": "salary_eur_month",
                       "op": "gte",
@@ -873,6 +972,10 @@
           "kind": "res-work",
           "summary": "Employment contract or host agreement with an IND-recognised research institution; degree giving access to a doctoral programme. Permit up to 5 years.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
+          "preconditions": [
+            "The research institution is an IND-recognised sponsor",
+            "Degree giving access to a doctoral programme (or employer-declared equivalent)"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["nl", "all"] },
@@ -904,11 +1007,17 @@
           "kind": "seek",
           "summary": "One-year job-search permit — work freely permitted, no work permit (TWV) needed. For those who graduated, obtained a doctorate or did research at a Dutch institution — or graduated from a top-200-ranked foreign university — within the last 3 years. Not extendable; afterwards the reduced highly-skilled-migrant salary criterion (€3,122) applies.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+          "preconditions": [
+            "Application within 3 years of graduation/research"
+          ],
           "criteria": [
             { "field": "citizenship", "op": "eq", "value": "third_country" },
             { "field": "destination", "op": "in", "values": ["nl", "all"] },
             { "field": "situation", "op": "eq", "value": "none", "note": "A job-search permit — with an offer, transfer or hosting agreement the work routes apply directly." },
-            { "field": "nl_grad3y", "op": "in", "values": ["yes_nl", "yes_top200"], "note": "IND: qualifying events within \"the 3 years before the date of application\"; foreign institutions must rank in the top 200 in at least 2 of 3 ranking publishers (Times Higher Education, QS, ShanghaiRanking)." }
+            { "op": "any", "label": "recent graduate or top-200 graduate", "note": "IND: qualifying events within \"the 3 years before the date of application\"; foreign institutions must rank in the top 200 in at least 2 of 3 ranking publishers (Times Higher Education, QS, ShanghaiRanking).", "paths": [
+              { "label": "Dutch graduate or researcher", "criteria": [ { "field": "nl_recent_grad", "op": "eq", "value": "yes" } ] },
+              { "label": "top-200 graduate", "criteria": [ { "field": "top200_grad", "op": "eq", "value": "yes" } ] }
+            ] }
           ]
         }
       ]

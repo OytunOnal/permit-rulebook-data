@@ -19,6 +19,30 @@ export interface ProvenancedNumber {
   history?: { value: number; retrieved_at: string; quote?: string; source_url?: string }[];
 }
 
+/** The provenance every non-numeric statement carries: the same shape as a
+ * provenanced amount, minus the amount itself. */
+export interface ProvenancedText {
+  source_url: string;
+  quote: string;
+  retrieved_at: string; // YYYY-MM-DD
+  legal_basis?: string;
+  history?: { retrieved_at: string; quote?: string; source_url?: string }[];
+}
+
+/**
+ * A dataset-level statement that answers a profile no route can answer: some
+ * people need no permit at all, and "0 routes look open" would be a lie. It
+ * matches on one declared field and carries provenance like any other value.
+ */
+export interface Notice {
+  id: string;
+  when: { field: string; op: "eq" | "in"; value?: string; values?: string[] };
+  kind: "no-permit-needed";
+  title: string;
+  body: string;
+  source: ProvenancedText;
+}
+
 /** One scoring item of a points system: answer value → points awarded. */
 export interface PointsItem {
   field: string;
@@ -33,13 +57,17 @@ export interface PointsTable {
   items: PointsItem[];
 }
 
+/**
+ * `short_reason`: how this criterion reads in a verdict line ("for 30 or
+ * older") — the field name alone ("age") states a verdict on the person.
+ */
 export type Criterion =
-  | { field: string; op: "eq"; value: string; note?: string }
-  | { field: string; op: "in"; values: string[]; note?: string }
-  | { field: string; op: "gte"; threshold: ProvenancedAmount; threshold_label?: string; note?: string }
-  | { op: "points"; required: ProvenancedNumber; table: PointsTable; note?: string }
+  | { field: string; op: "eq"; value: string; note?: string; short_reason?: string }
+  | { field: string; op: "in"; values: string[]; note?: string; short_reason?: string }
+  | { field: string; op: "gte"; threshold: ProvenancedAmount; threshold_label?: string; note?: string; short_reason?: string }
+  | { op: "points"; required: ProvenancedNumber; table: PointsTable; note?: string; short_reason?: string }
   /** Disjunction: the criterion passes when ANY path's criteria all pass (e.g. §20a "Fachkraft ODER Punktzahl"). */
-  | { op: "any"; label?: string; paths: { label?: string; criteria: Criterion[] }[]; note?: string };
+  | { op: "any"; label?: string; paths: { label?: string; criteria: Criterion[] }[]; note?: string; short_reason?: string };
 
 export interface Route {
   id: string;
@@ -48,6 +76,9 @@ export interface Route {
   summary?: string;
   info_url: string;
   criteria: Criterion[];
+  /** Plain-language conditions the authority applies that the interview does
+   * NOT ask — stated on the card so "criteria met" never overpromises. */
+  preconditions?: string[];
 }
 
 export interface Country {
@@ -70,6 +101,9 @@ export interface FieldDef {
   id: string;
   label: string;
   type: "enum" | "money_band";
+  /** money_band only: the period the amount is stated per, so a headline
+   * number can never read as annual when it is monthly. */
+  period?: "month" | "year";
   /**
    * attribute (default): a fixed fact (age, citizenship) — never counterfactualed.
    * path: a step one can take (get an offer, a transfer…).
@@ -108,6 +142,7 @@ export interface Dataset {
   dataset_version: string;
   fields: FieldDef[];
   countries: Country[];
+  notices?: Notice[];
 }
 
 /** Answers keyed by field id. money_band fields hold a band id (see deriveBands). */
@@ -153,6 +188,8 @@ export interface RouteResult {
   route: Route;
   country: string;
   status: RouteStatus;
+  /** Failed on something no open unknown can rescue (see isRouteAlive). */
+  hard_fail: boolean;
   criteria: CriterionResult[];
   gap_max?: number;
   gap_points?: number;

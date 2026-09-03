@@ -60,3 +60,27 @@ describe("boundary validation (scenario step 6)", () => {
     expect(result.errors.some((e) => e.keyword === "thresholdConsistency")).toBe(true);
   });
 });
+
+describe("s5b — notices and preconditions are data, not prose (schema boundary)", () => {
+  it("a notice stripped of its quote fails", () => {
+    const data = load();
+    delete data.notices[0].source.quote;
+    const result = validateDataset(data);
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.message.includes("quote"))).toBe(true);
+  });
+
+  it("an empty precondition string fails — every line must say something", () => {
+    const data = load();
+    const nl = data.countries[3].routes.find((r: { id: string }) => r.id === "nl-hsm-30plus");
+    nl.preconditions = ["The employer is an IND-recognised sponsor", ""];
+    expect(validateDataset(data).ok).toBe(false);
+  });
+
+  it("preconditions must be strings, not structured objects", () => {
+    const data = load();
+    const nl = data.countries[3].routes.find((r: { id: string }) => r.id === "nl-hsm-30plus");
+    nl.preconditions = [{ text: "BIG registration" }];
+    expect(validateDataset(data).ok).toBe(false);
+  });
+});

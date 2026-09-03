@@ -74,6 +74,13 @@
       "note": "UGE route index: guards the threshold-PDF slug and per-route page links. INE publishes a new average salary ~May–June; new threshold applies one month after publication (Orden PJC/44/2026 art. 3.2)."
     },
     {
+      "id": "eu-your-europe-work-permits",
+      "url": "https://europa.eu/youreurope/citizens/work/work-abroad/work-permits/index_en.htm",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Backs the eu-free-movement notice (EU nationals need no work permit). Your Europe restates the TFEU art. 45 position; a change here changes what the tool tells every EU passport holder."
+    },
+    {
       "id": "nl-ind-required-amounts",
       "url": "https://ind.nl/en/required-amounts-income-requirements",
       "strategy": "html",

@@ -158,6 +158,8 @@ export function datasetSourceUrls(dataset: Dataset): Set<string> {
       forEachCriterion(route.criteria, (c) => {
         for (const p of provenancedValuesOf(c)) urls.add(p.value.source_url);
       });
+  // A notice rests on a quote like every other value — it is watched like one.
+  for (const n of dataset.notices ?? []) urls.add(n.source.source_url);
   return urls;
 }
 

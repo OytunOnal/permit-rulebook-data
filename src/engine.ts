@@ -1,5 +1,5 @@
 import type {
-  Band, Criterion, CriterionResult, Dataset, DatasetMeta, PointsBreakdown, Profile,
+  Band, Criterion, CriterionResult, Dataset, DatasetMeta, Notice, PointsBreakdown, Profile,
   Route, RouteResult, RouteStatus,
 } from "./types.js";
 
@@ -8,6 +8,25 @@ export function formatEUR(amount: number): string {
   return "€" + amount.toLocaleString("en-US", {
     minimumFractionDigits: hasCents ? 2 : 0,
     maximumFractionDigits: 2,
+  });
+}
+
+/** Money with the period it is stated per ("€1,585/month") — a bare amount
+ * reads as annual to one user and monthly to the next (critique #7). */
+export function formatEURPer(amount: number, period?: "month" | "year"): string {
+  return period ? `${formatEUR(amount)}/${period}` : formatEUR(amount);
+}
+
+/**
+ * The notices that apply to this profile. A notice states what no route can
+ * ("you need no permit at all"); it is stated only on an answer the person
+ * actually gave — an unanswered field never matches.
+ */
+export function notices(dataset: Dataset, profile: Profile): Notice[] {
+  return (dataset.notices ?? []).filter((n) => {
+    const answer = profile[n.when.field];
+    if (answer === undefined) return false;
+    return n.when.op === "eq" ? answer === n.when.value : (n.when.values ?? []).includes(answer);
   });
 }
 
@@ -185,14 +204,14 @@ function failsOnlyImprovables(dataset: Dataset, c: Criterion): boolean {
  * with a complete, actionable picture. Fixed-attribute and path fails
  * (citizenship, qualification, situation) end it for real.
  */
+function isHardFail(dataset: Dataset, r: CriterionResult): boolean {
+  if (r.outcome !== "fail") return false;
+  if (r.gap_max !== undefined || r.gap_points !== undefined) return false;
+  return !failsOnlyImprovables(dataset, r.criterion);
+}
+
 function hasHardFail(dataset: Dataset, route: Route, profile: Profile): boolean {
-  return route.criteria.some((c) => {
-    const r = evalCriterion(dataset, c, profile);
-    if (r.outcome !== "fail") return false;
-    if (r.gap_max !== undefined || r.gap_points !== undefined) return false;
-    if (failsOnlyImprovables(dataset, c)) return false;
-    return true;
-  });
+  return route.criteria.some((c) => isHardFail(dataset, evalCriterion(dataset, c, profile)));
 }
 
 /**
@@ -253,6 +272,9 @@ export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
         route,
         country: country.code,
         status,
+        // Same predicate that retires a route mid-interview: the UI needs it to
+        // tell "an unknown still binds here" from "nothing can save this".
+        hard_fail: criteria.some((cr) => isHardFail(dataset, cr)),
         criteria,
         gap_max: gaps.length ? Math.max(...gaps) : undefined,
         gap_points: pointsGaps.length ? Math.max(...pointsGaps) : undefined,
@@ -390,6 +412,9 @@ export function datasetMeta(dataset: Dataset): DatasetMeta {
         for (const p of provenancedValuesOf(c))
           if (!newest || p.value.retrieved_at > newest) newest = p.value.retrieved_at;
       });
+  // Notices are provenanced statements too — a fresher notice is a fresher dataset.
+  for (const n of dataset.notices ?? [])
+    if (!newest || n.source.retrieved_at > newest) newest = n.source.retrieved_at;
   return {
     schema_version: dataset.schema_version,
     dataset_version: dataset.dataset_version,

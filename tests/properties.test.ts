@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, unlocks } from "../src/engine.js";
+import { deriveBands, evaluate, isRouteAlive, notices, unlocks } from "../src/engine.js";
 import { remainingQuestions } from "../src/questions.js";
 import type { Dataset, FieldDef, Profile } from "../src/types.js";
 
@@ -158,6 +158,33 @@ describe("property: when the interview ends, no unanswered question could change
           expect(statusMap({ ...profile, [def.id]: v })).toEqual(finalStatuses);
         }
       }
+    }
+  });
+});
+
+describe("property: a notice is stated only on an answer that was actually given", () => {
+  it("non-empty exactly when the notice's field carries its matching value (500 random profiles)", () => {
+    const rand = lcg(2026);
+    for (let i = 0; i < 500; i++) {
+      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.6);
+      const matched = notices(dataset, p);
+      for (const n of dataset.notices ?? []) {
+        const answer = p[n.when.field];
+        const applies = answer !== undefined &&
+          (n.when.op === "eq" ? answer === n.when.value : (n.when.values ?? []).includes(answer));
+        expect(matched.some((m) => m.id === n.id), `${n.id} @ ${JSON.stringify(p[n.when.field])}`).toBe(applies);
+      }
+    }
+  });
+});
+
+describe("property: hard_fail is exactly the aliveness predicate, inverted", () => {
+  it("holds for every route of 500 random profiles", () => {
+    const rand = lcg(31337);
+    for (let i = 0; i < 500; i++) {
+      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.6);
+      for (const r of evaluate(dataset, p))
+        expect(r.hard_fail, r.route.id).toBe(!isRouteAlive(dataset, r.route, p));
     }
   });
 });

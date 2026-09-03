@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { evaluate, referencedFields, unlocks } from "../src/engine.js";
-import { remainingQuestions } from "../src/questions.js";
+import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -95,7 +95,7 @@ describe("scenario s5 — one interview, four countries", () => {
   it("NL explorer with a fresh top-200 degree: orientation year met without any money question", () => {
     const { asked, profile } = runFlow({
       destination: "nl", citizenship: "third_country", situation: "none",
-      nl_grad3y: "yes_top200",
+      nl_recent_grad: "no", top200_grad: "yes",
     });
     expect(byId(profile)["nl-orientation-year"].status).toBe("met");
     expect(asked).not.toContain("salary_eur_month");
@@ -178,7 +178,8 @@ describe("unlocks across countries", () => {
     const allExplorer: Profile = {
       destination: "all", citizenship: "third_country", situation: "none",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-      experience: "y2in5", german: "b1", funds_eur_month: "band_1", nl_grad3y: "no",
+      experience: "y2in5", german: "b1", funds_eur_month: "band_1",
+      nl_recent_grad: "no", top200_grad: "no",
     };
     const rows = unlocks(dataset, allExplorer);
     const forked = rows.filter((u) => u.qualifier?.field === "situation_country");
@@ -209,9 +210,48 @@ describe("unlocks across countries", () => {
 
   it("explorer bound for NL: no DE-only unlock suggestions (german never suggested)", () => {
     const nlExplorer: Profile = {
-      destination: "nl", citizenship: "third_country", situation: "none", nl_grad3y: "no",
+      destination: "nl", citizenship: "third_country", situation: "none",
+      nl_recent_grad: "no", top200_grad: "no",
     };
     const rows = unlocks(dataset, nlExplorer);
     expect(rows.every((u) => u.field !== "german")).toBe(true);
+  });
+});
+
+describe("the orientation year asks two plain questions (s5b, critique #6)", () => {
+  it("a top-200 degree alone meets the route — the Dutch-graduate answer is not needed", () => {
+    const profile: Profile = {
+      destination: "nl", citizenship: "third_country", situation: "none", top200_grad: "yes",
+    };
+    expect(byId(profile)["nl-orientation-year"].status).toBe("met");
+  });
+
+  it("a Dutch graduate alone meets it too", () => {
+    const profile: Profile = {
+      destination: "nl", citizenship: "third_country", situation: "none", nl_recent_grad: "yes",
+    };
+    expect(byId(profile)["nl-orientation-year"].status).toBe("met");
+  });
+
+  it("\"I don't know\" on the ranking leaves the route undecided, never failed", () => {
+    const r = byId({
+      destination: "nl", citizenship: "third_country", situation: "none",
+      nl_recent_grad: "no", top200_grad: "unknown",
+    })["nl-orientation-year"];
+    expect(r.status).toBe("hold");
+    expect(r.hard_fail).toBe(false);
+    expect(r.unknown_fields).toContain("top200_grad");
+  });
+
+  it("both questions are asked as separate, single-condition questions", () => {
+    const labels = Object.fromEntries(
+      deriveQuestions(dataset).map((q) => [q.field, q.label]),
+    );
+    expect(labels["nl_recent_grad"]).toBe(
+      "In the last 3 years, did you graduate from — or do research at — a Dutch university or research institution?",
+    );
+    expect(labels["top200_grad"]).toBe(
+      "In the last 3 years, did you graduate from a university ranked in the global top 200?",
+    );
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { datasetMeta, deriveBands, evaluate, formatEUR, routeProvenance } from "../src/engine.js";
+import { datasetMeta, deriveBands, evaluate, formatEUR, formatEURPer, isRouteAlive, routeProvenance } from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
@@ -193,9 +193,47 @@ describe("provenance and meta", () => {
 
   it("meta reports the newest retrieved_at across all value kinds", () => {
     expect(datasetMeta(dataset)).toEqual({
-      schema_version: "0.2.0",
-      dataset_version: "2026.09.02",
-      newest_retrieved_at: "2026-09-02",
+      schema_version: "0.3.0",
+      dataset_version: "2026.09.03",
+      newest_retrieved_at: "2026-09-03",
     });
+  });
+});
+
+describe("hard_fail — which unknowns still bind (s5b, critique #4)", () => {
+  // Walk A: engineer with a German offer whose recognition is still unknown.
+  const walkA: Profile = {
+    destination: "de", citizenship: "third_country", situation: "offer", qualification: "degree",
+    recognition_de: "unknown", occupation_shortage: "yes", experience: "y2in5",
+    salary_eur_year: "band_4",
+  };
+  const byId = Object.fromEntries(evaluate(dataset, walkA).map((r) => [r.route.id, r]));
+
+  it("a bounded salary gap is not a hard fail — resolving Anabin can still change the verdict", () => {
+    expect(byId["de-blue-card-general"].hard_fail).toBe(false);
+  });
+
+  it("a qualification mismatch is a hard fail — no unknown can rescue it", () => {
+    expect(byId["de-skilled-vocational"].hard_fail).toBe(true);
+  });
+
+  it("hard_fail agrees with the aliveness predicate on every route", () => {
+    for (const r of evaluate(dataset, walkA))
+      expect(r.hard_fail, r.route.id).toBe(!isRouteAlive(dataset, r.route, walkA));
+  });
+});
+
+describe("money carries its period (s5b, critique #7)", () => {
+  it("formats per month, per year, and bare when no period is known", () => {
+    expect(formatEURPer(1585, "month")).toBe("€1,585/month");
+    expect(formatEURPer(4766, "year")).toBe("€4,766/year");
+    expect(formatEURPer(4766)).toBe("€4,766");
+  });
+
+  it("every money_band field declares its period", () => {
+    for (const id of ["salary_eur_year", "salary_eur_month", "funds_eur_month"]) {
+      const def = dataset.fields.find((f) => f.id === id)!;
+      expect(def.period, id).toBe(id.endsWith("_year") ? "year" : "month");
+    }
   });
 });
