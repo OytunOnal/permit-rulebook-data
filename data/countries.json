@@ -153,7 +153,10 @@
     },
     {
       "code": "BO",
-      "name": "Bolivia"
+      "name": "Bolivia",
+      "aliases": [
+        "Plurinational State of Bolivia"
+      ]
     },
     {
       "code": "BA",
@@ -169,7 +172,10 @@
     },
     {
       "code": "BN",
-      "name": "Brunei"
+      "name": "Brunei",
+      "aliases": [
+        "Brunei Darussalam"
+      ]
     },
     {
       "code": "BG",
@@ -197,7 +203,10 @@
     },
     {
       "code": "CV",
-      "name": "Cape Verde"
+      "name": "Cape Verde",
+      "aliases": [
+        "Cabo Verde"
+      ]
     },
     {
       "code": "CF",
@@ -225,11 +234,19 @@
     },
     {
       "code": "CG",
-      "name": "Congo - Brazzaville"
+      "name": "Congo - Brazzaville",
+      "aliases": [
+        "Republic of the Congo"
+      ]
     },
     {
       "code": "CD",
-      "name": "Congo - Kinshasa"
+      "name": "Congo - Kinshasa",
+      "aliases": [
+        "DRC",
+        "Democratic Republic of the Congo",
+        "Zaire"
+      ]
     },
     {
       "code": "CR",
@@ -237,7 +254,10 @@
     },
     {
       "code": "CI",
-      "name": "Côte d’Ivoire"
+      "name": "Côte d’Ivoire",
+      "aliases": [
+        "Ivory Coast"
+      ]
     },
     {
       "code": "HR",
@@ -253,7 +273,10 @@
     },
     {
       "code": "CZ",
-      "name": "Czechia"
+      "name": "Czechia",
+      "aliases": [
+        "Czech Republic"
+      ]
     },
     {
       "code": "DK",
@@ -297,7 +320,10 @@
     },
     {
       "code": "SZ",
-      "name": "Eswatini"
+      "name": "Eswatini",
+      "aliases": [
+        "Swaziland"
+      ]
     },
     {
       "code": "ET",
@@ -313,7 +339,10 @@
     },
     {
       "code": "FR",
-      "name": "France"
+      "name": "France",
+      "aliases": [
+        "Frankreich"
+      ]
     },
     {
       "code": "GA",
@@ -329,7 +358,10 @@
     },
     {
       "code": "DE",
-      "name": "Germany"
+      "name": "Germany",
+      "aliases": [
+        "Deutschland"
+      ]
     },
     {
       "code": "GH",
@@ -369,7 +401,10 @@
     },
     {
       "code": "HK",
-      "name": "Hong Kong SAR China"
+      "name": "Hong Kong SAR China",
+      "aliases": [
+        "Hong Kong"
+      ]
     },
     {
       "code": "HU",
@@ -389,7 +424,11 @@
     },
     {
       "code": "IR",
-      "name": "Iran"
+      "name": "Iran",
+      "aliases": [
+        "Persia",
+        "Islamic Republic of Iran"
+      ]
     },
     {
       "code": "IQ",
@@ -441,7 +480,10 @@
     },
     {
       "code": "LA",
-      "name": "Laos"
+      "name": "Laos",
+      "aliases": [
+        "Lao PDR"
+      ]
     },
     {
       "code": "LV",
@@ -477,7 +519,11 @@
     },
     {
       "code": "MO",
-      "name": "Macao SAR China"
+      "name": "Macao SAR China",
+      "aliases": [
+        "Macao",
+        "Macau"
+      ]
     },
     {
       "code": "MG",
@@ -525,7 +571,10 @@
     },
     {
       "code": "MD",
-      "name": "Moldova"
+      "name": "Moldova",
+      "aliases": [
+        "Republic of Moldova"
+      ]
     },
     {
       "code": "MC",
@@ -549,7 +598,10 @@
     },
     {
       "code": "MM",
-      "name": "Myanmar (Burma)"
+      "name": "Myanmar (Burma)",
+      "aliases": [
+        "Burma"
+      ]
     },
     {
       "code": "NA",
@@ -565,7 +617,10 @@
     },
     {
       "code": "NL",
-      "name": "Netherlands"
+      "name": "Netherlands",
+      "aliases": [
+        "Holland"
+      ]
     },
     {
       "code": "NZ",
@@ -585,11 +640,19 @@
     },
     {
       "code": "KP",
-      "name": "North Korea"
+      "name": "North Korea",
+      "aliases": [
+        "Democratic People's Republic of Korea",
+        "Korea"
+      ]
     },
     {
       "code": "MK",
-      "name": "North Macedonia"
+      "name": "North Macedonia",
+      "aliases": [
+        "Macedonia",
+        "FYROM"
+      ]
     },
     {
       "code": "NO",
@@ -609,7 +672,12 @@
     },
     {
       "code": "PS",
-      "name": "Palestinian Territories"
+      "name": "Palestinian Territories",
+      "aliases": [
+        "Palestine",
+        "West Bank",
+        "Gaza"
+      ]
     },
     {
       "code": "PA",
@@ -649,7 +717,10 @@
     },
     {
       "code": "RU",
-      "name": "Russia"
+      "name": "Russia",
+      "aliases": [
+        "Russian Federation"
+      ]
     },
     {
       "code": "RW",
@@ -693,7 +764,10 @@
     },
     {
       "code": "SK",
-      "name": "Slovakia"
+      "name": "Slovakia",
+      "aliases": [
+        "Slovak Republic"
+      ]
     },
     {
       "code": "SI",
@@ -713,7 +787,11 @@
     },
     {
       "code": "KR",
-      "name": "South Korea"
+      "name": "South Korea",
+      "aliases": [
+        "Republic of Korea",
+        "Korea"
+      ]
     },
     {
       "code": "SS",
@@ -721,7 +799,10 @@
     },
     {
       "code": "ES",
-      "name": "Spain"
+      "name": "Spain",
+      "aliases": [
+        "España"
+      ]
     },
     {
       "code": "LK",
@@ -753,15 +834,25 @@
     },
     {
       "code": "CH",
-      "name": "Switzerland"
+      "name": "Switzerland",
+      "aliases": [
+        "Helvetia"
+      ]
     },
     {
       "code": "SY",
-      "name": "Syria"
+      "name": "Syria",
+      "aliases": [
+        "Syrian Arab Republic"
+      ]
     },
     {
       "code": "TW",
-      "name": "Taiwan"
+      "name": "Taiwan",
+      "aliases": [
+        "Chinese Taipei",
+        "Formosa"
+      ]
     },
     {
       "code": "TJ",
@@ -769,7 +860,10 @@
     },
     {
       "code": "TZ",
-      "name": "Tanzania"
+      "name": "Tanzania",
+      "aliases": [
+        "United Republic of Tanzania"
+      ]
     },
     {
       "code": "TH",
@@ -777,7 +871,10 @@
     },
     {
       "code": "TL",
-      "name": "Timor-Leste"
+      "name": "Timor-Leste",
+      "aliases": [
+        "East Timor"
+      ]
     },
     {
       "code": "TG",
@@ -797,7 +894,10 @@
     },
     {
       "code": "TR",
-      "name": "Türkiye"
+      "name": "Türkiye",
+      "aliases": [
+        "Turkey"
+      ]
     },
     {
       "code": "TM",
@@ -817,15 +917,33 @@
     },
     {
       "code": "AE",
-      "name": "United Arab Emirates"
+      "name": "United Arab Emirates",
+      "aliases": [
+        "UAE",
+        "Emirates"
+      ]
     },
     {
       "code": "GB",
-      "name": "United Kingdom"
+      "name": "United Kingdom",
+      "aliases": [
+        "UK",
+        "Great Britain",
+        "Britain",
+        "England",
+        "Scotland",
+        "Wales",
+        "Northern Ireland"
+      ]
     },
     {
       "code": "US",
-      "name": "United States"
+      "name": "United States",
+      "aliases": [
+        "USA",
+        "US",
+        "America"
+      ]
     },
     {
       "code": "UY",
@@ -841,11 +959,17 @@
     },
     {
       "code": "VA",
-      "name": "Vatican City"
+      "name": "Vatican City",
+      "aliases": [
+        "Holy See"
+      ]
     },
     {
       "code": "VE",
-      "name": "Venezuela"
+      "name": "Venezuela",
+      "aliases": [
+        "Bolivarian Republic of Venezuela"
+      ]
     },
     {
       "code": "VN",
@@ -864,5 +988,5 @@
       "name": "Zimbabwe"
     }
   ],
-  "note": "The question asks which passport the person will apply with, so this list is passport issuers: sovereign states plus the widely-held non-UN documents (HK, MO, TW, XK, PS). Dependent territories are deliberately absent — a resident of Åland holds a Finnish passport and of Guadeloupe a French one, and listing the territory made the tool answer 'third country' for people who have EU free movement (s5c review). Adding one back means stating, with a source, which passport its residents hold."
+  "note": "The question asks which passport the person will apply with, so this list is passport issuers: sovereign states plus the widely-held non-UN documents (HK, MO, TW, XK, PS). Dependent territories are deliberately absent — a resident of Åland holds a Finnish passport and of Guadeloupe a French one, and listing the territory made the tool answer 'third country' for people who have EU free movement (s5c review). Adding one back means stating, with a source, which passport its residents hold. Some entries carry `aliases`: names people still type (Turkey, Holland, Czech Republic). They are search keys only — the label the tool prints is always the official name."
 }

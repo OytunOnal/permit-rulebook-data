@@ -94,6 +94,9 @@ export interface FieldOption {
   label: string;
   /** Noun-phrase form for prose ("a job offer in Germany"). */
   short?: string;
+  /** Names a person may type that are not the label — former or English names
+   * ("Turkey", "Holland"). Search keys only; never displayed. */
+  aliases?: string[];
   is_unknown?: boolean;
   /** "None of these"-style absence answers — never a counterfactual target. */
   is_fallback?: boolean;

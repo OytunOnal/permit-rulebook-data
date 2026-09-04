@@ -18,7 +18,7 @@ export interface CountryClass {
 export interface CountryVocabulary {
   classes: Record<string, CountryClass>;
   /** ISO 3166-1 alpha-2. A vocabulary, not a rule: no per-country provenance. */
-  countries: { code: string; name: string }[];
+  countries: { code: string; name: string; aliases?: string[] }[];
 }
 
 export interface VocabularyError {
@@ -51,7 +51,13 @@ export function classOfCountry(code: string, vocab: CountryVocabulary = countryV
  * agreement is one line of data.
  */
 const derivedOptions: FieldOption[] = countryVocabulary.countries
-  .map((c) => ({ value: c.code, label: c.name, implies: [classOfCountry(c.code)!] }))
+  .map((c) => ({
+    value: c.code,
+    label: c.name,
+    implies: [classOfCountry(c.code)!],
+    // Names people still type. Search keys only — never displayed.
+    ...(c.aliases?.length ? { aliases: c.aliases } : {}),
+  }))
   .sort((a, b) => a.label.localeCompare(b.label, "en"));
 
 export function countryOptions(): FieldOption[] {
