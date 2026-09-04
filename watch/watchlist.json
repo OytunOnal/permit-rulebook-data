@@ -92,7 +92,8 @@
       "url": "https://ind.nl/en/residence-permits/work",
       "strategy": "html",
       "kind": "sentinel",
-      "note": "NL route inventory: new/removed routes and slug changes (old slugs 404 rather than redirect)."
+      "slice": { "from": "Work Terug", "to": "Study Terug" },
+      "note": "NL route inventory: new/removed routes and slug changes (old slugs 404 rather than redirect). Sliced to the Work block of IND's menu — the whole page also carries every other permit family, and on 2026-09-03 it flagged because an article-8 ECHR item was added to the humanitarian menu. A sentinel that cries wolf gets ignored."
     }
   ]
 }

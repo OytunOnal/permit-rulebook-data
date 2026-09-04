@@ -41,6 +41,11 @@ describe("a notice is data like any other value: sourced and watched", () => {
   });
 
   it("meta's newest read date considers notice sources too", () => {
-    expect(datasetMeta(dataset).newest_retrieved_at).toBe(dataset.notices![0].source.retrieved_at);
+    // Asserted against a notice that IS the newest source, so the test keeps
+    // testing the walk rather than whichever value happened to be read last.
+    const bumped = structuredClone(dataset);
+    bumped.notices![0].source.retrieved_at = "2099-01-01";
+    expect(datasetMeta(bumped).newest_retrieved_at).toBe("2099-01-01");
+    expect(datasetMeta(dataset).newest_retrieved_at! >= dataset.notices![0].source.retrieved_at).toBe(true);
   });
 });

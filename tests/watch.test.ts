@@ -2,13 +2,15 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { htmlToText, normalize } from "../src/watch/normalize.js";
 import {
-  checkCoverage, datasetSourceUrls, runWatch, sha256,
+  checkCoverage, checkQuotes, datasetSourceUrls, runWatch, sha256,
   type Fetcher, type WatchState, type Watchlist,
 } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 const shippedWatchlist = JSON.parse(readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
+
+const shippedState = JSON.parse(readFileSync(new URL("../watch/state.json", import.meta.url), "utf8")) as WatchState;
 
 const enc = (s: string) => new TextEncoder().encode(s);
 const okFetcher = (pages: Record<string, string | Uint8Array>): Fetcher => async (url) => {
@@ -223,5 +225,47 @@ describe("coverage: enforced both ways", () => {
         { id: "idx", url: "https://example.org/index", strategy: "html", kind: "sentinel" }],
     };
     expect(checkCoverage(dataset, withSentinel).orphan_watch_entries).toEqual([]);
+  });
+});
+
+describe("quote fidelity: the sentence is still on the page", () => {
+  it("every shipped quote is found in the snapshot of the source it cites", () => {
+    const r = checkQuotes(dataset, shippedWatchlist, shippedState);
+    expect(r.missing).toEqual([]);
+    expect(r.verified).toBeGreaterThan(0);
+  });
+
+  it("PDF-tier sources are reported unverifiable, never counted as verified", () => {
+    const r = checkQuotes(dataset, shippedWatchlist, shippedState);
+    expect(r.unverifiable.every((u) => /pdf tier|not on the watchlist|human tier/.test(u.reason))).toBe(true);
+    for (const u of r.unverifiable) expect(u.reason.length).toBeGreaterThan(4);
+  });
+
+  it("a quote the page no longer carries fails the gate", () => {
+    const broken = structuredClone(dataset);
+    broken.notices![0].source.quote = "As an EU national you must apply for a work permit.";
+    const r = checkQuotes(broken, shippedWatchlist, shippedState);
+    expect(r.ok).toBe(false);
+    expect(r.missing.map((m) => m.where)).toContain("notice:" + broken.notices![0].id);
+  });
+
+  it("tolerates only our own extraction artifacts, not different words", () => {
+    const state: WatchState = { entries: { p: { hash: "x", retrieved_at: "2026-09-04",
+      text: "muss das Gehalt mindestens 45.630Euro im Jahr 2026 erreichen . Ende", history: [] } } };
+    const list: Watchlist = { entries: [{ id: "p", url: "https://x/p", strategy: "html", kind: "value-source" }] };
+    const ds = structuredClone(dataset);
+    ds.countries = []; ds.notices = [{ ...dataset.notices![0], id: "t",
+      source: { ...dataset.notices![0].source, source_url: "https://x/p",
+        quote: "muss das Gehalt mindestens 45.630 Euro im Jahr 2026 erreichen." } }];
+    expect(checkQuotes(ds, list, state).ok).toBe(true);
+    ds.notices![0].source.quote = "muss das Gehalt mindestens 45.640 Euro im Jahr 2026 erreichen.";
+    expect(checkQuotes(ds, list, state).ok).toBe(false);
+  });
+
+  it("stored snapshots are decoded text, not double-encoded mojibake", () => {
+    // A cp1252 round-trip once turned "beträgt" into "betrÃ¤gt" in state.json:
+    // hashes survived (computed per run) but every flag diff became unreadable.
+    for (const [id, snap] of Object.entries(shippedState.entries))
+      expect(/Ã¤|Ã¶|Ã¼|ÃŸ|â€ž|â‚¬/.test(snap.text ?? ""), id).toBe(false);
   });
 });

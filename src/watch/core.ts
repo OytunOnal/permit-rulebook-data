@@ -169,6 +169,74 @@ export interface CoverageResult {
   orphan_watch_entries: string[];
 }
 
+/** Every quote the dataset ships, with the source it claims to come from. */
+export function datasetQuotes(dataset: Dataset): { quote: string; source_url: string; where: string }[] {
+  const out: { quote: string; source_url: string; where: string }[] = [];
+  for (const country of dataset.countries)
+    for (const route of country.routes)
+      forEachCriterion(route.criteria, (c) => {
+        for (const p of provenancedValuesOf(c))
+          out.push({ quote: p.value.quote, source_url: p.value.source_url, where: route.id });
+      });
+  for (const n of dataset.notices ?? [])
+    out.push({ quote: n.source.quote, source_url: n.source.source_url, where: `notice:${n.id}` });
+  return out;
+}
+
+/**
+ * Compare a quote with page text without letting our own extraction decide the
+ * verdict: tag stripping can swallow a space ("45.630Euro") or add one before
+ * punctuation ("in the EU ."). Everything else must match character for
+ * character — this is the check that keeps a quote a quote.
+ */
+function loose(s: string): string {
+  return s
+    .replace(/​/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/(\d)(?=[A-Za-zÀ-ÿ])/g, "$1 ")
+    .replace(/([A-Za-zÀ-ÿ€])(?=\d)/g, "$1 ")
+    .replace(/\s+([.,;:])/g, "$1")
+    .trim();
+}
+
+export interface QuoteCheckResult {
+  ok: boolean;
+  /** Quotes no longer found in the snapshot of the source they cite. */
+  missing: { where: string; source_url: string; quote: string }[];
+  /** Sources with no text snapshot to check against (pdf tier, human tier,
+   * or never fetched) — reported, never silently counted as verified. */
+  unverifiable: { where: string; source_url: string; reason: string }[];
+  verified: number;
+}
+
+/**
+ * The promise is not "we noticed the page changed" but "this sentence is on
+ * that page". A hash says something moved; only this says the quoted value is
+ * still there — so a reworded page that keeps its bytes-count, or an edit our
+ * curation missed, cannot pass quietly.
+ */
+export function checkQuotes(dataset: Dataset, watchlist: Watchlist, state: WatchState): QuoteCheckResult {
+  const byUrl = new Map(watchlist.entries.map((e) => [e.url, e]));
+  const missing: QuoteCheckResult["missing"] = [];
+  const unverifiable: QuoteCheckResult["unverifiable"] = [];
+  let verified = 0;
+  for (const q of datasetQuotes(dataset)) {
+    const entry = byUrl.get(q.source_url);
+    if (!entry) {
+      unverifiable.push({ ...q, reason: "source not on the watchlist" });
+      continue;
+    }
+    const snapshot = state.entries[entry.id];
+    if (!snapshot?.text) {
+      unverifiable.push({ ...q, reason: `${entry.strategy} tier — no text snapshot` });
+      continue;
+    }
+    if (loose(snapshot.text).includes(loose(q.quote))) verified++;
+    else missing.push(q);
+  }
+  return { ok: missing.length === 0, missing, unverifiable, verified };
+}
+
 /** Coverage is enforced, not promised: every dataset source is watched, and
  * every value-source watch entry still backs a dataset value. */
 export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageResult {

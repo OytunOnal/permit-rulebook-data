@@ -28,10 +28,10 @@ quote, tick the box. Any mismatch → fix dataset + note in DECISIONS.
 
 ## Netherlands — ind.nl (English pages; fetched clean)
 
-- [ ] Required amounts page: "Highly skilled migrants 30 years or older | **€5,942.00**"
+- [ ] Required amounts page, table row: "Highly skilled migrants 30 years or older **€ 5,942.00**"
       https://ind.nl/en/required-amounts-income-requirements
-- [ ] Same page: "Highly skilled migrants younger than 30 years | **€4,357.00**"
-- [ ] Same page: "European Blue Card | **€5,942.00**"
+- [ ] Same page, table row: "Highly skilled migrants younger than 30 years **€ 4,357.00**"
+- [ ] Same page, table row: "European Blue Card **€ 5,942.00**"
 - [ ] Same page, researcher section: **€1,635.90** gross SV/month without holiday allowance, window "1 July – 31 December 2026" — the dataset quote is the bare amount; capture the full row wording and update the quote
 - [ ] HSM page: employer must be an IND-**recognised sponsor**; market-rate salary test wording
       https://ind.nl/en/residence-permits/work/highly-skilled-migrant
@@ -46,3 +46,16 @@ quote, tick the box. Any mismatch → fix dataset + note in DECISIONS.
 
 Fix the value/quote in `data/dataset.json` (move the old value into `history`),
 re-run `npm run check`, and record the catch in the navigator's DECISIONS.md.
+
+## Added 2026-09-04 — quotes now verbatim
+
+The dataset's quotes were rebuilt from the watched snapshots (2026-09-04), so
+each is the sentence the page actually shows. Two German quotes were
+condensations before ("kleine Blaue Karte EU: 45.934,20 Euro") and are now the
+full sentences from the ZAV newsletter; three Dutch quotes were reconstructed
+table rows with a "|" the page does not print. The **numbers are unchanged** —
+only the quoted text. `npm run check` now fails if a shipped quote is no
+longer on its source, so this class cannot come back silently.
+
+- [ ] DE ZAV Blue Card page: both sentences read as quoted (große / kleine)
+- [ ] EU notice: "As an EU national you generally don't need a work permit to work anywhere in the EU." (europa.eu, no VPN needed)

@@ -44,3 +44,4 @@ means an authority weighs evidence rather than checking declarable criteria.
 | Single Permit (GVVA) / paid employment | UWV labour-market test — discretionary. |
 | HSM / Blue Card reduced criteria (€3,122 / €4,754) | Require a declarable "recent Dutch graduation / orientation year" state; the orientation-year route itself is modeled, the reduced follow-up thresholds are a backlog item. |
 | Seasonal work, seafarers, interns, EU-programme work experience, cross-border variants, researcher short-term mobility, International Trade Regulation | Quota, niche, training or derivative schemes — not standard employment-based residence routes. |
+| Recognition as sponsor · Employing a foreign national | Employer-side processes listed under IND's Work menu, not residence routes a person can hold. Sponsor recognition is a precondition on the HSM and researcher routes, stated on those cards. |
