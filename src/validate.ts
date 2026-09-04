@@ -1,5 +1,6 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
 import schema from "../schema/ruleset.schema.json" with { type: "json" };
+import { countryVocabulary, vocabularyErrors } from "./countries.js";
 import type { Dataset } from "./types.js";
 
 export interface ValidationError {
@@ -38,20 +39,50 @@ export function validateDataset(data: unknown): ValidationResult {
  *   verbatim) must carry the same amount, source and retrieval date everywhere
  *   — updating one copy and missing another must fail the build, not silently
  *   disagree. Distinct quotes may share an amount (ES: "umbral general" and
- *   "umbral único" both read €41,356.36 — different rows, same number).
+ *   "umbral único" both read €41,356.36 — different rows, same number);
+ * - a field whose options come from the country vocabulary may only be tested
+ *   against something that vocabulary knows: a country code or a class. A
+ *   criterion or notice naming "schengen_only" would silently never match,
+ *   and a silent never-match on citizenship is a wrong answer, not a bug
+ *   report. The vocabulary's own invariants are checked here too, so
+ *   `countries.json` cannot ship a country with no class or two.
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
-  const errors: ValidationError[] = [];
+  const errors: ValidationError[] = [...vocabularyErrors(countryVocabulary)];
   const seenIds = new Set<string>();
   const thresholds = new Map<string, { amount: number; source_url: string; retrieved_at: string; route: string }>();
+
+  const vocabularyValues = new Set([
+    ...Object.keys(countryVocabulary.classes),
+    ...countryVocabulary.countries.map((c) => c.code),
+  ]);
+  const vocabularyFields = new Set(
+    dataset.fields.filter((f) => f.options_from === "countries").map((f) => f.id),
+  );
+  const checkVocabulary = (path: string, field: string, values: string[]) => {
+    if (!vocabularyFields.has(field)) return;
+    for (const v of values)
+      if (!vocabularyValues.has(v))
+        errors.push({ path, message: `${field} is tested against "${v}", which is neither a country nor a class in countries.json`, keyword: "knownCountryValue" });
+  };
+
   for (const country of dataset.countries)
     for (const route of country.routes) {
+      const path = `/countries/${country.code}/routes/${route.id}`;
       if (seenIds.has(route.id))
-        errors.push({ path: `/countries/${country.code}/routes/${route.id}`, message: "duplicate route id", keyword: "uniqueRouteId" });
+        errors.push({ path, message: "duplicate route id", keyword: "uniqueRouteId" });
       seenIds.add(route.id);
       const walk = (cs: import("./types.js").Criterion[]): void => {
         for (const c of cs) {
           if (c.op === "any") { for (const p of c.paths) walk(p.criteria); continue; }
+          if (c.op === "eq") { checkVocabulary(path, c.field, [c.value]); continue; }
+          if (c.op === "in") { checkVocabulary(path, c.field, c.values); continue; }
+          // Points keys bypass `satisfies` by design, so a vocabulary field
+          // scored by class would silently never match (review).
+          if (c.op === "points") {
+            for (const item of c.table.items) checkVocabulary(path, item.field, Object.keys(item.points));
+            continue;
+          }
           if (c.op !== "gte") continue;
           const key = `${c.field}#${c.threshold.quote}`;
           const prev = thresholds.get(key);
@@ -59,7 +90,7 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
             thresholds.set(key, { amount: c.threshold.amount, source_url: c.threshold.source_url, retrieved_at: c.threshold.retrieved_at, route: route.id });
           } else if (prev.amount !== c.threshold.amount || prev.source_url !== c.threshold.source_url || prev.retrieved_at !== c.threshold.retrieved_at) {
             errors.push({
-              path: `/countries/${country.code}/routes/${route.id}`,
+              path,
               message: `threshold for ${c.field} restates the quote used in ${prev.route} with a different amount/source/retrieved_at — update every copy together`,
               keyword: "thresholdConsistency",
             });
@@ -68,6 +99,10 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
       };
       walk(route.criteria);
     }
+
+  for (const n of dataset.notices ?? [])
+    checkVocabulary(`/notices/${n.id}`, n.when.field, n.when.value !== undefined ? [n.when.value] : (n.when.values ?? []));
+
   return errors;
 }
 

@@ -34,16 +34,7 @@
       "id": "citizenship",
       "label": "Which passport will you apply with?",
       "type": "enum",
-      "options": [
-        {
-          "value": "eu_eea_ch",
-          "label": "EU / EEA / Switzerland"
-        },
-        {
-          "value": "third_country",
-          "label": "Any other country"
-        }
-      ]
+      "options_from": "countries"
     },
     {
       "id": "situation",
@@ -113,6 +104,23 @@
         {
           "value": "degree",
           "label": "University degree"
+        }
+      ]
+    },
+    {
+      "id": "qualification_recent",
+      "label": "Did you graduate, take your doctorate, or did a research permit end, within the last 3 years?",
+      "type": "enum",
+      "kind": "improvable",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes",
+          "short": "a qualification from the last 3 years"
+        },
+        {
+          "value": "no",
+          "label": "No"
         }
       ]
     },
@@ -248,6 +256,46 @@
           "value": "yes",
           "label": "Yes",
           "short": "a French master's-level degree"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    },
+    {
+      "id": "fr_innovative_employer",
+      "label": "Is the French employer a recognised innovative company (jeune entreprise innovante, or recognised by the ministry of the economy)?",
+      "type": "enum",
+      "learn": {
+        "label": "service-public.fr sets out the talent card's innovative-company route",
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922"
+      },
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        },
+        {
+          "value": "unknown",
+          "label": "I don't know",
+          "is_unknown": true
+        }
+      ]
+    },
+    {
+      "id": "fr_local_contract",
+      "label": "Will you have an employment contract with the French entity you are moving to (not only with your employer abroad)?",
+      "type": "enum",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes",
+          "short": "a contract with the French entity"
         },
         {
           "value": "no",
@@ -427,6 +475,24 @@
         "quote": "As an EU national you generally don't need a work permit to work anywhere in the EU.",
         "retrieved_at": "2026-09-03",
         "legal_basis": "TFEU art. 45 (free movement of workers) — Your Europe",
+        "history": []
+      }
+    },
+    {
+      "id": "tr-ankara-rights",
+      "when": {
+        "field": "citizenship",
+        "op": "eq",
+        "value": "TR"
+      },
+      "kind": "extra-rights",
+      "title": "Türkiye: extra rights once you are legally employed",
+      "body": "Your route options are the same as for any other non-EU passport — the EU–Türkiye agreement adds rights after you are working, not different entry criteria.",
+      "source": {
+        "source_url": "https://europa.eu/youreurope/citizens/work/work-abroad/work-permits/index_en.htm",
+        "quote": "As a national of Türkiye, your rights to live and work in an EU country depend entirely on the national rules of that country. When employed legally in the EU, you enjoy the same working conditions as the nationals of that country and you have the following rights: after one year's legal employment you are entitled to a renewal of your work permit for the same employer if a job is available after three years' legal employment you may change employers and respond to any other employment offer within the same professional qualifications after four years' legal employment you enjoy full access to any paid employment in that EU country.",
+        "retrieved_at": "2026-09-04",
+        "legal_basis": "EEC–Turkey Association Agreement, Decision 1/80 art. 6 — Your Europe",
         "history": []
       }
     }
@@ -1407,6 +1473,164 @@
               }
             }
           ]
+        },
+        {
+          "id": "fr-talent-innovante",
+          "name": "Talent — employee of an innovative company",
+          "kind": "res-work",
+          "summary": "Talent card for a hire by a jeune entreprise innovante, or a company the ministry of the economy recognises as innovative, in a role tied to its R&D project. Same threshold as the salarié qualifié subtype; no French degree required.",
+          "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "preconditions": [
+            "Duties directly linked to the company's research and development project",
+            "The employer's innovative status is recognised by the ministry of the economy"
+          ],
+          "criteria": [
+            {
+              "field": "citizenship",
+              "op": "eq",
+              "value": "third_country"
+            },
+            {
+              "field": "destination",
+              "op": "in",
+              "values": [
+                "fr",
+                "all"
+              ]
+            },
+            {
+              "field": "situation",
+              "op": "eq",
+              "value": "offer",
+              "note": "Fiche F16922: \"Avoir des fonctions en lien direct avec le projet de recherche et de développement de cette entreprise\""
+            },
+            {
+              "op": "any",
+              "label": "located in France",
+              "paths": [
+                {
+                  "label": "France chosen as destination",
+                  "criteria": [
+                    {
+                      "field": "destination",
+                      "op": "eq",
+                      "value": "fr"
+                    }
+                  ]
+                },
+                {
+                  "label": "offer in France",
+                  "criteria": [
+                    {
+                      "field": "situation_country",
+                      "op": "eq",
+                      "value": "fr"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "field": "fr_innovative_employer",
+              "op": "eq",
+              "value": "yes",
+              "note": "Fiche F16922: \"Être recruté dans une jeune entreprise innovante ou une entreprise reconnue innovante par le ministère de l'économie\"",
+              "short_reason": "for a recognised innovative employer"
+            },
+            {
+              "field": "salary_eur_year",
+              "op": "gte",
+              "threshold_label": "talent — entreprise innovante",
+              "threshold": {
+                "amount": 39582,
+                "currency": "EUR",
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir un contrat de travail qui prévoit une rémunération brute annuelle supérieure ou égale à 39 582 €.",
+                "retrieved_at": "2026-09-04",
+                "legal_basis": "CESEDA — carte « talent-salarié qualifié », parcours entreprise innovante (fiche F16922)",
+                "history": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "fr-talent-mission",
+          "name": "Talent — employee on assignment (salarié en mission)",
+          "kind": "res-work",
+          "summary": "Talent card for an intra-group move to France where the French entity issues its own employment contract. Distinct from the ICT card: the contract is local, and the salary rule is the talent threshold rather than a resources proof.",
+          "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "preconditions": [
+            "At least 3 months' seniority in the group that employs you",
+            "The move is between establishments of the same company or group"
+          ],
+          "criteria": [
+            {
+              "field": "citizenship",
+              "op": "eq",
+              "value": "third_country"
+            },
+            {
+              "field": "destination",
+              "op": "in",
+              "values": [
+                "fr",
+                "all"
+              ]
+            },
+            {
+              "field": "situation",
+              "op": "eq",
+              "value": "ict",
+              "note": "Fiche F16922: \"Être salarié d'une entreprise établie à l'étranger et venir en France pour exercer une activité salariée dans le cadre d'une mobilité entre établissements d'une même entreprise ou entre entreprises d'un même groupe (mobilité intragroupe)\" — \"Avoir une ancienneté d'au moins 3 mois dans le groupe qui vous emploie\""
+            },
+            {
+              "op": "any",
+              "label": "located in France",
+              "paths": [
+                {
+                  "label": "France chosen as destination",
+                  "criteria": [
+                    {
+                      "field": "destination",
+                      "op": "eq",
+                      "value": "fr"
+                    }
+                  ]
+                },
+                {
+                  "label": "transfer to France",
+                  "criteria": [
+                    {
+                      "field": "situation_country",
+                      "op": "eq",
+                      "value": "fr"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "field": "fr_local_contract",
+              "op": "eq",
+              "value": "yes",
+              "note": "Fiche F16922: \"Avoir un contrat de travail avec l'entreprise qui vous emploie en France\"",
+              "short_reason": "for a contract with the French entity"
+            },
+            {
+              "field": "salary_eur_year",
+              "op": "gte",
+              "threshold_label": "talent — salarié en mission",
+              "threshold": {
+                "amount": 39582,
+                "currency": "EUR",
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Percevoir une rémunération brute annuelle supérieure ou égale à 39 582 €.",
+                "retrieved_at": "2026-09-04",
+                "legal_basis": "CESEDA — carte « talent-salarié qualifié », parcours salarié en mission (fiche F16922)",
+                "history": []
+              }
+            }
+          ]
         }
       ]
     },
@@ -1418,11 +1642,12 @@
           "id": "es-blue-card",
           "name": "EU Blue Card (tarjeta azul-UE)",
           "kind": "res-work",
-          "summary": "6+ month contract or firm offer; higher-education qualification (3+ years) or 5 years of comparable experience (3-in-last-7 for ICT professionals). UGE fast-track: 20-day decision, positive administrative silence. A reduced threshold (€33,085.09) exists for catalogued shortage occupations and recent graduates — not yet modeled.",
+          "summary": "6+ month contract or firm offer; higher-education qualification (3+ years) or 5 years of comparable experience (3-in-last-7 for ICT professionals). UGE fast-track: 20-day decision, positive administrative silence. A reduced threshold (€33,085.09) applies to a qualification obtained within the last 3 years; the shortage-occupation limb is stated as a precondition, not scored.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
           "preconditions": [
             "Contract or firm offer of at least 6 months",
-            "Application through the UGE (Unidad de Grandes Empresas)"
+            "Application through the UGE (Unidad de Grandes Empresas)",
+            "Reduced threshold also applies to shortage occupations in CNO-2011 groups 1–2 (SEPE catalogue) — not checked here"
           ],
           "criteria": [
             {
@@ -1498,19 +1723,56 @@
               ]
             },
             {
-              "field": "salary_eur_year",
-              "op": "gte",
-              "threshold_label": "general (1.4× INE average)",
-              "note": "Threshold PDF value — flagged for human re-verification per project policy. Derivation (UGE PDF, human-read 2026-09-04): \"El Instituto Nacional de Estadística (INE) publicó el pasado 28 de mayo de 2026 el dato actualizado del sueldo medio correspondiente a 2024, fijándolo en 29.540,26 €\" — the threshold moves whenever the INE publishes a new average (Orden PJC/44/2026, art. 3.2: one month after publication).",
-              "threshold": {
-                "amount": 41356.36,
-                "currency": "EUR",
-                "source_url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
-                "quote": "Nuevos umbrales salariales Tarjeta Azul. – Umbral general: 41.356,36 €",
-                "retrieved_at": "2026-09-02",
-                "legal_basis": "Ley 14/2013 art. 71 bis + Orden PJC/44/2026 (1,4× ganancia media INE)",
-                "history": []
-              }
+              "op": "any",
+              "label": "salary criterion",
+              "paths": [
+                {
+                  "label": "full salary criterion",
+                  "criteria": [
+                    {
+                      "field": "salary_eur_year",
+                      "op": "gte",
+                      "threshold_label": "general (1.4× INE average)",
+                      "note": "Threshold PDF value — flagged for human re-verification per project policy. Derivation (UGE PDF, human-read 2026-09-04): \"El Instituto Nacional de Estadística (INE) publicó el pasado 28 de mayo de 2026 el dato actualizado del sueldo medio correspondiente a 2024, fijándolo en 29.540,26 €\" — the threshold moves whenever the INE publishes a new average (Orden PJC/44/2026, art. 3.2: one month after publication).",
+                      "threshold": {
+                        "amount": 41356.36,
+                        "currency": "EUR",
+                        "source_url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
+                        "quote": "Nuevos umbrales salariales Tarjeta Azul. – Umbral general: 41.356,36 €",
+                        "retrieved_at": "2026-09-02",
+                        "legal_basis": "Ley 14/2013 art. 71 bis + Orden PJC/44/2026 (1,4× ganancia media INE)",
+                        "history": []
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "reduced threshold — a qualification from the last 3 years",
+                  "criteria": [
+                    {
+                      "field": "qualification_recent",
+                      "op": "eq",
+                      "value": "yes",
+                      "short_reason": "for a qualification from the last 3 years"
+                    },
+                    {
+                      "field": "salary_eur_year",
+                      "op": "gte",
+                      "threshold_label": "reduced (qualification within 3 years)",
+                      "note": "Threshold PDF value — flagged for human re-verification per project policy. The Orden gives two limbs; only the qualification-within-3-years limb is modelled (see the route's preconditions).",
+                      "threshold": {
+                        "amount": 33085.09,
+                        "currency": "EUR",
+                        "source_url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
+                        "quote": "– Umbral reducido: 33.085,09 €",
+                        "retrieved_at": "2026-09-04",
+                        "legal_basis": "Ley 14/2013 art. 71 bis + Orden PJC/44/2026 (umbral reducido)",
+                        "history": []
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -1764,7 +2026,7 @@
           "id": "nl-hsm-30plus",
           "name": "Highly skilled migrant — 30 or older (kennismigrant)",
           "kind": "res-work",
-          "summary": "No degree requirement — the salary criterion substitutes. A reduced criterion (€3,122) exists after a Dutch orientation year — not modeled.",
+          "summary": "No degree requirement — the salary criterion substitutes. A reduced criterion (€3,122) applies within 3 years of graduation, a doctoral defence or a research permit ending — modelled as a second path on the salary criterion.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
             "The employer is an IND-recognised sponsor",
@@ -1828,19 +2090,56 @@
               "short_reason": "for 30 or older"
             },
             {
-              "field": "salary_eur_month",
-              "op": "gte",
-              "threshold_label": "30 or older, 2026",
-              "note": "IND also applies a market-rate test: \"The agreed salary is in line with the market rate.\"",
-              "threshold": {
-                "amount": 5942,
-                "currency": "EUR",
-                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
-                "quote": "Highly skilled migrants 30 years or older € 5,942.00",
-                "retrieved_at": "2026-09-04",
-                "legal_basis": "Dutch highly skilled migrant scheme — required amounts 2026 (change every 1 January)",
-                "history": []
-              }
+              "op": "any",
+              "label": "salary criterion",
+              "paths": [
+                {
+                  "label": "full salary criterion",
+                  "criteria": [
+                    {
+                      "field": "salary_eur_month",
+                      "op": "gte",
+                      "threshold_label": "30 or older, 2026",
+                      "note": "IND also applies a market-rate test: \"The agreed salary is in line with the market rate.\"",
+                      "threshold": {
+                        "amount": 5942,
+                        "currency": "EUR",
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "Highly skilled migrants 30 years or older € 5,942.00",
+                        "retrieved_at": "2026-09-04",
+                        "legal_basis": "Dutch highly skilled migrant scheme — required amounts 2026 (change every 1 January)",
+                        "history": []
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "reduced criterion — a qualification from the last 3 years",
+                  "criteria": [
+                    {
+                      "field": "qualification_recent",
+                      "op": "eq",
+                      "value": "yes",
+                      "short_reason": "for a qualification from the last 3 years",
+                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The modelled fact is the 3-year window; the orientation-year cases are the same window seen from the permit side."
+                    },
+                    {
+                      "field": "salary_eur_month",
+                      "op": "gte",
+                      "threshold_label": "reduced criterion, 2026",
+                      "threshold": {
+                        "amount": 3122,
+                        "currency": "EUR",
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "Highly skilled migrants reduced salary criterion € 3,122.00",
+                        "retrieved_at": "2026-09-04",
+                        "legal_basis": "Dutch highly skilled migrant scheme — reduced required amount 2026 (change every 1 January)",
+                        "history": []
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -1848,7 +2147,7 @@
           "id": "nl-hsm-under30",
           "name": "Highly skilled migrant — under 30 (kennismigrant)",
           "kind": "res-work",
-          "summary": "Reduced salary criterion for applicants younger than 30.",
+          "summary": "Reduced salary criterion for applicants younger than 30, with a further reduced criterion (€3,122) within 3 years of graduation, a doctoral defence or a research permit ending.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
             "The employer is an IND-recognised sponsor",
@@ -1907,19 +2206,56 @@
               "short_reason": "for under-30s"
             },
             {
-              "field": "salary_eur_month",
-              "op": "gte",
-              "threshold_label": "under 30, 2026",
-              "note": "When changing employer after turning 30, the €5,942.00 amount applies.",
-              "threshold": {
-                "amount": 4357,
-                "currency": "EUR",
-                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
-                "quote": "Highly skilled migrants younger than 30 years € 4,357.00",
-                "retrieved_at": "2026-09-04",
-                "legal_basis": "Dutch highly skilled migrant scheme — required amounts 2026 (change every 1 January)",
-                "history": []
-              }
+              "op": "any",
+              "label": "salary criterion",
+              "paths": [
+                {
+                  "label": "full salary criterion",
+                  "criteria": [
+                    {
+                      "field": "salary_eur_month",
+                      "op": "gte",
+                      "threshold_label": "under 30, 2026",
+                      "note": "When changing employer after turning 30, the €5,942.00 amount applies.",
+                      "threshold": {
+                        "amount": 4357,
+                        "currency": "EUR",
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "Highly skilled migrants younger than 30 years € 4,357.00",
+                        "retrieved_at": "2026-09-04",
+                        "legal_basis": "Dutch highly skilled migrant scheme — required amounts 2026 (change every 1 January)",
+                        "history": []
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "reduced criterion — a qualification from the last 3 years",
+                  "criteria": [
+                    {
+                      "field": "qualification_recent",
+                      "op": "eq",
+                      "value": "yes",
+                      "short_reason": "for a qualification from the last 3 years",
+                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The modelled fact is the 3-year window; the orientation-year cases are the same window seen from the permit side."
+                    },
+                    {
+                      "field": "salary_eur_month",
+                      "op": "gte",
+                      "threshold_label": "reduced criterion, 2026",
+                      "threshold": {
+                        "amount": 3122,
+                        "currency": "EUR",
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "Highly skilled migrants reduced salary criterion € 3,122.00",
+                        "retrieved_at": "2026-09-04",
+                        "legal_basis": "Dutch highly skilled migrant scheme — reduced required amount 2026 (change every 1 January)",
+                        "history": []
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -1927,7 +2263,7 @@
           "id": "nl-blue-card",
           "name": "EU Blue Card",
           "kind": "res-work",
-          "summary": "6+ month contract; sponsor recognition not required. Higher-education diploma (3+ years), or 5 years of relevant experience — 3 years within the last 7 for IT managers and IT professionals. A reduced criterion (€4,754) for recent graduates is not modelled.",
+          "summary": "6+ month contract; sponsor recognition not required. Higher-education diploma (3+ years), or 5 years of relevant experience — 3 years within the last 7 for IT managers and IT professionals. A reduced criterion (€4,754) applies to higher-education graduates within 3 years of graduation or promotion.",
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
           "preconditions": [
             "Employment contract of at least 6 months",
@@ -2023,18 +2359,61 @@
               ]
             },
             {
-              "field": "salary_eur_month",
-              "op": "gte",
-              "threshold_label": "Blue Card 2026",
-              "threshold": {
-                "amount": 5942,
-                "currency": "EUR",
-                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
-                "quote": "European Blue Card € 5,942.00",
-                "retrieved_at": "2026-09-04",
-                "legal_basis": "EU Blue Card (NL) — required amounts 2026 (change every 1 January)",
-                "history": []
-              }
+              "op": "any",
+              "label": "salary criterion",
+              "paths": [
+                {
+                  "label": "full salary criterion",
+                  "criteria": [
+                    {
+                      "field": "salary_eur_month",
+                      "op": "gte",
+                      "threshold_label": "Blue Card 2026",
+                      "threshold": {
+                        "amount": 5942,
+                        "currency": "EUR",
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "European Blue Card € 5,942.00",
+                        "retrieved_at": "2026-09-04",
+                        "legal_basis": "EU Blue Card (NL) — required amounts 2026 (change every 1 January)",
+                        "history": []
+                      }
+                    }
+                  ]
+                },
+                {
+                  "label": "reduced criterion — a higher-education graduate from the last 3 years",
+                  "criteria": [
+                    {
+                      "field": "qualification",
+                      "op": "eq",
+                      "value": "degree",
+                      "short_reason": "for the reduced criterion"
+                    },
+                    {
+                      "field": "qualification_recent",
+                      "op": "eq",
+                      "value": "yes",
+                      "short_reason": "for a qualification from the last 3 years",
+                      "note": "IND: \"The reduced EU Blue Card salary criterion applies to graduates who have completed a higher education programme.\""
+                    },
+                    {
+                      "field": "salary_eur_month",
+                      "op": "gte",
+                      "threshold_label": "reduced Blue Card criterion, 2026",
+                      "threshold": {
+                        "amount": 4754,
+                        "currency": "EUR",
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "Reduced salary criterion European Blue Card € 4,754.00",
+                        "retrieved_at": "2026-09-04",
+                        "legal_basis": "EU Blue Card (NL) — reduced required amount 2026 (change every 1 January)",
+                        "history": []
+                      }
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -2042,7 +2421,7 @@
           "id": "nl-ict",
           "name": "Intra-corporate transferee (Directive 2014/66/EU)",
           "kind": "res-work",
-          "summary": "Transfer as manager, specialist or trainee after 3+ months with the company outside the EU. Salary must meet the highly-skilled-migrant criterion for your age. Managers/specialists max 3 years, trainees 1.",
+          "summary": "Transfer as manager, specialist or trainee after 3+ months with the company outside the EU. Salary must meet the highly-skilled-migrant criterion for your age. Managers/specialists max 3 years, trainees 1. IND restates the highly-skilled-migrant amounts here but states no reduced criterion for this permit, so none is modelled.",
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
           "preconditions": [
             "At least 3 months with the company outside the EU",

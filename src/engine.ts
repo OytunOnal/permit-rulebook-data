@@ -1,6 +1,7 @@
+import { countryOptions } from "./countries.js";
 import type {
-  Band, Criterion, CriterionResult, Dataset, DatasetMeta, Notice, PointsBreakdown, Profile,
-  Route, RouteResult, RouteStatus,
+  Band, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef, FieldOption, Notice,
+  PointsBreakdown, Profile, Route, RouteResult, RouteStatus,
 } from "./types.js";
 
 export function formatEUR(amount: number): string {
@@ -26,7 +27,11 @@ export function notices(dataset: Dataset, profile: Profile): Notice[] {
   return (dataset.notices ?? []).filter((n) => {
     const answer = profile[n.when.field];
     if (answer === undefined) return false;
-    return n.when.op === "eq" ? answer === n.when.value : (n.when.values ?? []).includes(answer);
+    // The SAME predicate the criteria use (see `satisfies`): a country can
+    // never satisfy a route through its class but miss the notice written
+    // against that class.
+    const wanted = n.when.op === "eq" ? (n.when.value === undefined ? [] : [n.when.value]) : (n.when.values ?? []);
+    return satisfies(dataset, n.when.field, answer, wanted);
   });
 }
 
@@ -76,8 +81,57 @@ export function deriveBands(dataset: Dataset, field: string): Band[] {
   return bands;
 }
 
-function fieldDef(dataset: Dataset, id: string) {
-  return dataset.fields.find((f) => f.id === id);
+/**
+ * Field and option lookups, indexed once per dataset. Both are on every hot
+ * path (evaluate, question ordering, property suites) and one of them is now a
+ * 249-entry country list — a linear scan per criterion is a different program
+ * at that size. Dataset objects are treated as immutable; clone before
+ * mutating one, or the index serves stale options with no error.
+ */
+interface FieldIndex {
+  def: FieldDef;
+  options: FieldOption[];
+  byValue: Map<string, FieldOption>;
+}
+const fieldCache = new WeakMap<Dataset, Map<string, FieldIndex>>();
+
+function fieldIndex(dataset: Dataset, id: string): FieldIndex | undefined {
+  let perDataset = fieldCache.get(dataset);
+  if (!perDataset) {
+    perDataset = new Map();
+    for (const def of dataset.fields) {
+      // `options_from` keeps the vocabulary in its own file; the engine expands
+      // it here so every consumer sees one option list, whatever its source.
+      const options = def.options ?? (def.options_from === "countries" ? countryOptions() : []);
+      perDataset.set(def.id, { def, options, byValue: new Map(options.map((o) => [o.value, o])) });
+    }
+    fieldCache.set(dataset, perDataset);
+  }
+  return perDataset.get(id);
+}
+
+function fieldDef(dataset: Dataset, id: string): FieldDef | undefined {
+  return fieldIndex(dataset, id)?.def;
+}
+
+/** Every option of an enum field, with `options_from` lists already expanded. */
+export function fieldOptions(dataset: Dataset, id: string): FieldOption[] {
+  return fieldIndex(dataset, id)?.options ?? [];
+}
+
+/**
+ * The one predicate that decides whether an answer meets a wanted value —
+ * used by `eq`, by `in` and by notice matching. An answer satisfies a value
+ * when it IS that value, or when its option's `implies` list carries it
+ * ("TR" implies "third_country"). Points tables deliberately do NOT go
+ * through here: they key on the raw answer, because a class is not a scoring
+ * bucket. No points item reads a class-bearing field today; if one ever does,
+ * decide the semantics on purpose rather than inheriting them.
+ */
+function satisfies(dataset: Dataset, field: string, answer: string, wanted: string[]): boolean {
+  if (wanted.includes(answer)) return true;
+  const implied = fieldIndex(dataset, field)?.byValue.get(answer)?.implies;
+  return implied !== undefined && wanted.some((v) => implied.includes(v));
 }
 
 /** All field ids a criterion reads (recursing through disjunctions). */
@@ -89,8 +143,22 @@ export function referencedFields(c: Criterion): string[] {
 
 function isUnknownAnswer(dataset: Dataset, field: string, answer: string | undefined): boolean {
   if (answer === undefined) return true;
-  const opt = fieldDef(dataset, field)?.options?.find((o) => o.value === answer);
-  return opt?.is_unknown === true;
+  return fieldIndex(dataset, field)?.byValue.get(answer)?.is_unknown === true;
+}
+
+/**
+ * Which of two fully-gapped disjunction paths is the shorter way through.
+ * Euros and points are not comparable, so a path that closes on one currency
+ * beats one that needs both; within a currency the smaller gap wins. Ties keep
+ * the earlier path, so the dataset's own order stays the tie-break.
+ */
+function isNearerThan(a: CriterionResult, b: CriterionResult): boolean {
+  const currencies = (r: CriterionResult) => (r.gap_max !== undefined ? 1 : 0) + (r.gap_points !== undefined ? 1 : 0);
+  if (currencies(a) !== currencies(b)) return currencies(a) < currencies(b);
+  if (a.gap_max !== undefined && b.gap_max !== undefined && a.gap_max !== b.gap_max) return a.gap_max < b.gap_max;
+  if (a.gap_points !== undefined && b.gap_points !== undefined && a.gap_points !== b.gap_points)
+    return a.gap_points < b.gap_points;
+  return false;
 }
 
 function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): CriterionResult {
@@ -103,24 +171,30 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
       return points ? { criterion: c, outcome: "pass", points } : { criterion: c, outcome: "pass" };
     }
     if (pathResults.every((rs) => rs.some((r) => r.outcome === "fail"))) {
-      // Every path failed — but if one path failed only by bounded gaps
-      // (salary just below, points just short), that near-miss is the story
-      // the gap analysis must tell. Propagate it upward.
+      // Every path failed — but if a path failed only by bounded gaps (salary
+      // just below, points just short), that near-miss is the story the gap
+      // analysis must tell. With two salary paths on one route (full criterion
+      // OR reduced criterion plus the fact that earns it) the honest distance
+      // is the NEAREST reachable path, not whichever was written first: a
+      // graduate under €3,122 is €3,122 away, never €4,357 away. Paths the
+      // profile cannot reach (a flat "no" on the qualifying fact) carry an
+      // ungapped fail and are excluded here, so no gap is ever measured
+      // against a threshold the person cannot get to.
+      let best: CriterionResult | undefined;
       for (const rs of pathResults) {
         const fails = rs.filter((r) => r.outcome === "fail");
         const undecided = rs.filter((r) => r.outcome === "unknown");
-        if (undecided.length === 0 && fails.every((f) => f.gap_max !== undefined || f.gap_points !== undefined)) {
-          const result: CriterionResult = { criterion: c, outcome: "fail" };
-          const gapsMoney = fails.map((f) => f.gap_max).filter((g): g is number => g !== undefined);
-          const gapsPoints = fails.map((f) => f.gap_points).filter((g): g is number => g !== undefined);
-          if (gapsMoney.length) result.gap_max = Math.max(...gapsMoney);
-          if (gapsPoints.length) result.gap_points = Math.max(...gapsPoints);
-          const pts = rs.find((r) => r.points)?.points;
-          if (pts) result.points = pts;
-          return result;
-        }
+        if (undecided.length > 0 || !fails.every((f) => f.gap_max !== undefined || f.gap_points !== undefined)) continue;
+        const result: CriterionResult = { criterion: c, outcome: "fail" };
+        const gapsMoney = fails.map((f) => f.gap_max).filter((g): g is number => g !== undefined);
+        const gapsPoints = fails.map((f) => f.gap_points).filter((g): g is number => g !== undefined);
+        if (gapsMoney.length) result.gap_max = Math.max(...gapsMoney);
+        if (gapsPoints.length) result.gap_points = Math.max(...gapsPoints);
+        const pts = rs.find((r) => r.points)?.points;
+        if (pts) result.points = pts;
+        if (best === undefined || isNearerThan(result, best)) best = result;
       }
-      return { criterion: c, outcome: "fail" };
+      return best ?? { criterion: c, outcome: "fail" };
     }
     // Undecided: surface points progress from a still-open points path, if any.
     const open = pathResults.find((rs) => !rs.some((r) => r.outcome === "fail") && rs.some((r) => r.points));
@@ -155,12 +229,12 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
 
   if (c.op === "eq") {
     if (isUnknownAnswer(dataset, c.field, answer)) return { criterion: c, outcome: "unknown" };
-    return { criterion: c, outcome: answer === c.value ? "pass" : "fail" };
+    return { criterion: c, outcome: satisfies(dataset, c.field, answer, [c.value]) ? "pass" : "fail" };
   }
 
   if (c.op === "in") {
     if (isUnknownAnswer(dataset, c.field, answer)) return { criterion: c, outcome: "unknown" };
-    return { criterion: c, outcome: c.values.includes(answer) ? "pass" : "fail" };
+    return { criterion: c, outcome: satisfies(dataset, c.field, answer, c.values) ? "pass" : "fail" };
   }
 
   // gte over a money_band answer
@@ -254,6 +328,74 @@ export function informativeFields(dataset: Dataset, profile: Profile): Set<strin
   return fields;
 }
 
+/** One representative answer plus the number of options it stands for. */
+export interface OptionClass {
+  value: string;
+  weight: number;
+}
+
+const equivalenceCache = new WeakMap<Dataset, Map<string, OptionClass[]>>();
+
+/**
+ * How an answer looks to every criterion that reads this field: whether it
+ * counts as unknown, whether it satisfies each `eq`/`in` test, and what it
+ * scores on each points item. Two answers with the same fingerprint are
+ * indistinguishable to the rules — every route's outcome, for every profile,
+ * is the same under either. (`gte` never reads an enum field, and enum
+ * criteria never produce bounded gaps, so outcomes are the whole story.)
+ */
+function equivalenceKey(dataset: Dataset, field: string, value: string): string {
+  if (fieldDef(dataset, field)?.type !== "enum") return value; // bands compare numerically
+  const parts: string[] = [isUnknownAnswer(dataset, field, value) ? "?" : "."];
+  for (const country of dataset.countries)
+    for (const route of country.routes)
+      forEachCriterion(route.criteria, (c) => {
+        if (c.op === "eq" && c.field === field) parts.push(satisfies(dataset, field, value, [c.value]) ? "1" : "0");
+        else if (c.op === "in" && c.field === field) parts.push(satisfies(dataset, field, value, c.values) ? "1" : "0");
+        else if (c.op === "points")
+          for (const item of c.table.items)
+            if (item.field === field) parts.push(`p${item.points[value] ?? 0}`);
+      });
+  // Notices are part of what an answer decides, so two answers are only
+  // interchangeable when they draw the same notices too — otherwise a consumer
+  // deduping a dropdown by these classes would drop the Ankara-agreement
+  // notice, which fires for exactly one country (review).
+  for (const n of dataset.notices ?? [])
+    if (n.when.field === field)
+      parts.push(satisfies(dataset, field, value, n.when.value !== undefined ? [n.when.value] : (n.when.values ?? [])) ? `n${n.id}` : "-");
+  return parts.join("|");
+}
+
+/**
+ * The field's options collapsed into classes the rules cannot tell apart, in
+ * option order, each carrying how many options it represents. Question
+ * ordering scores a candidate by averaging the live-route count over its
+ * options; with a country list that was ~249 dataset evaluations per candidate,
+ * on every question of every interview. Scoring one representative per class
+ * and weighting by class size yields the identical average — and therefore the
+ * identical ordering — at the old cost.
+ */
+export function optionEquivalenceClasses(dataset: Dataset, field: string, values: string[]): OptionClass[] {
+  let perField = equivalenceCache.get(dataset);
+  if (!perField) equivalenceCache.set(dataset, (perField = new Map()));
+  // Keyed on the value list too: a caller may ask about a subset, and keying on
+  // the field alone handed back the full-list weights for a two-value request
+  // (review).
+  const cacheKey = `${field} ${values.join(",")}`;
+  const cached = perField.get(cacheKey);
+  if (cached) return cached;
+  const byKey = new Map<string, OptionClass>();
+  for (const value of values) {
+    const key = equivalenceKey(dataset, field, value);
+    const seen = byKey.get(key);
+    if (seen) seen.weight++;
+    else byKey.set(key, { value, weight: 1 });
+  }
+  const classes = [...byKey.values()];
+  perField.set(cacheKey, classes);
+  return classes;
+}
+
 export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
   const results: RouteResult[] = [];
   for (const country of dataset.countries) {
@@ -303,7 +445,7 @@ export function unlocks(dataset: Dataset, profile: Profile): import("./types.js"
     const candidates =
       def.type === "money_band"
         ? deriveBands(dataset, def.id).map((b) => ({ value: b.id, label: b.label }))
-        : (def.options ?? []);
+        : fieldOptions(dataset, def.id);
     for (const opt of candidates) {
       if (opt.value === current || ("is_unknown" in opt && opt.is_unknown) || ("is_fallback" in opt && opt.is_fallback)) continue;
       const hypo: Profile = { ...profile, [def.id]: opt.value };
@@ -336,7 +478,7 @@ export function unlocks(dataset: Dataset, profile: Profile): import("./types.js"
         // ("an offer — in which country?"). Admitting any attribute produced
         // nonsense rows like "a job offer · under 30" (review catch).
         if (!qdef?.is_qualifier) continue;
-        for (const qopt of qdef.options ?? []) {
+        for (const qopt of fieldOptions(dataset, qf)) {
           if (qopt.is_unknown || qopt.is_fallback) continue;
           const forked = evaluate(dataset, { ...hypo, [qf]: qopt.value }).filter(
             (r) =>

@@ -118,6 +118,39 @@
       "max_age_days": 90,
       "last_verified": "2026-09-04",
       "note": "Human tier: same client-rendered shell. Carries the diploma leg and the IT 3-in-7 experience rule the dataset models."
+    },
+    {
+      "id": "eu-countries-list",
+      "url": "https://european-union.europa.eu/principles-countries-history/eu-countries_en",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "EU countries Click on the map and filters below",
+        "to": "This site is managed by:"
+      },
+      "note": "Backs the EU-27 leg of the eu_eea_ch passport class — who needs no work permit at all. Sliced to the country listing; the slice carries 'Pages (27)', so an accession or a withdrawal changes the hash even when the added state lands on page 2."
+    },
+    {
+      "id": "eu-countries-list-page2",
+      "url": "https://european-union.europa.eu/principles-countries-history/eu-countries_en?page=1",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "EU countries Click on the map and filters below",
+        "to": "This site is managed by:"
+      },
+      "note": "Second page of the EU membership list (it paginates at 20 of 27). Backs the passport class together with page 1 — a change here changes who the tool says needs a permit at all."
+    },
+    {
+      "id": "efta-eea-agreement",
+      "url": "https://www.efta.int/eea",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "The Agreement on the European Economic Area, which entered into force on 1 January 1994",
+        "to": "thus leading to an enlargement of the EEA."
+      },
+      "note": "Backs the EEA leg of the eu_eea_ch class (Iceland, Liechtenstein, Norway) and the free movement of persons among the 30 EEA States. EFTA is the secretariat of the EEA EFTA States and publishes the EEA legal texts. Sliced to the main prose block — the page also carries a mega-menu and a rotating annual-report banner."
     }
   ]
 }

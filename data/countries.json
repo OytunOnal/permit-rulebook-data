@@ -1,0 +1,868 @@
+{
+  "classes": {
+    "eu_eea_ch": {
+      "label": "EU, EEA or Switzerland — free movement",
+      "sources": [
+        {
+          "source_url": "https://european-union.europa.eu/principles-countries-history/eu-countries_en",
+          "quote": "Showing results 1 to 20 Austria EU Member State since 1995, Euro area member since 1999, Schengen area member since 1997 and more about Austria’s participation in the EU. Belgium EU Member State since 1958, Euro area member since 1999, Schengen area member since 1995 and more about Belgium’s participation in the EU. Bulgaria EU Member State since 2007, Euro area member since 2026, Schengen area member since 2024 and more about Bulgaria's participation in the EU. Croatia EU Member State since 2013, Euro area member since 2023, Schengen area member since 2023 and more about Croatia’s participation in the EU. Cyprus EU Member State since 2004, Euro area member since 2008, and more about Cyprus’s participation in the EU. Czechia EU Member State since 2004, Schengen area member since 2007 and more about Czechia’s participation in the EU. Denmark EU Member State since 1973, Schengen area member since 2001 and more about Denmark’s participation in the EU. Estonia EU Member State since 2004, Euro area member since 2011, Schengen area member since 2007 and more about Estonia’s participation in the EU. Finland EU Member State since 1995, Euro area member since 1999, Schengen area member since 2001 and more about Finland’s participation in the EU. France EU Member State since 1958, Euro area member since 1999, Schengen area member since 1995 and more about France’s participation in the EU. Germany EU Member State since 1958, Euro area member since 1999, Schengen area member since 1995 and more about Germany’s participation in the EU. Greece EU Member State since 1981, Euro area member since 2001, Schengen area member since 2000 and more about Greece’s participation in the EU. Hungary EU Member State since 2004, Schengen area member since 2007 and more about Hungary’s participation in the EU. Ireland EU Member State since 1973, Euro area member since 1999 and more about Ireland’s participation in the EU. Italy EU Member State since 1958, Euro area member since 1999, Schengen area member since 1997 and more about Italy’s participation in the EU. Latvia EU Member State since 2004, Euro area member since 2014, Schengen area member since 2007 and more about Latvia’s participation in the EU. Lithuania EU Member State since 2004, Euro area member since 2015, Schengen area member since 2007 and more about Lithuania’s participation in the EU. Luxembourg EU Member State since 1958, Euro area member since 1999, Schengen area member since 1995 and more about Luxembourg’s participation in the EU. Malta EU Member State since 2004, Euro area member since 2008, Schengen area member since 2007 and more about Malta’s participation in the EU. Netherlands EU Member State since 1958, Euro area member since 1999, Schengen area member since 1995 and more about Dutch participation in the EU.",
+          "retrieved_at": "2026-09-04",
+          "legal_basis": "EU membership, states 1–20 of 27 (TFEU art. 45 free movement of workers)",
+          "history": []
+        },
+        {
+          "quote": "Showing results 20 to 27 Poland EU Member State since 2004, Schengen area member since 2007 and more about Poland’s participation in the EU. Portugal EU Member State since 1986, Euro area member since 1999, Schengen area member since 1995 and more about Portugal’s participation in the EU. Romania EU Member State since 2007, Schengen area member since 2024 and more about Romania’s participation in the EU. Slovakia EU Member State since 2004, Euro area member since 2009, Schengen area member since 2007 and more about Slovakia’s participation in the EU. Slovenia EU Member State since 2004, Euro area and Schengen area member since 2007 and more about Slovenia’s participation in the EU. Spain EU Member State since 1986, Euro area member since 1999, Schengen area member since 1995 and more about Spain’s participation in the EU. Sweden EU Member State since 1995, Schengen area member since 2001 and more about Sweden’s participation in the EU.",
+          "source_url": "https://european-union.europa.eu/principles-countries-history/eu-countries_en?page=1",
+          "retrieved_at": "2026-09-04",
+          "legal_basis": "EU membership, states 21–27 of 27 (the list paginates at 20)",
+          "history": []
+        },
+        {
+          "source_url": "https://www.efta.int/eea",
+          "quote": "The Agreement on the European Economic Area, which entered into force on 1 January 1994, brings together the EU Member States and the three EEA EFTA States — Iceland, Liechtenstein and Norway — in a single market, referred to as the Internal Market. The EEA Agreement guarantees equal rights and obligations within the Internal Market for individuals and economic operators in the EEA. It provides for the inclusion of EU legislation covering the four freedoms — the free movement of goods, services, persons and capital — throughout the 30 EEA States.",
+          "retrieved_at": "2026-09-04",
+          "legal_basis": "EEA Agreement art. 28 — Iceland, Liechtenstein and Norway",
+          "history": []
+        },
+        {
+          "source_url": "https://europa.eu/youreurope/citizens/work/work-abroad/work-permits/index_en.htm",
+          "quote": "Under the EU-Switzerland agreement on the free movement of persons, Swiss nationals are free to live and work in the EU.",
+          "retrieved_at": "2026-09-04",
+          "legal_basis": "EU–Switzerland agreement on the free movement of persons",
+          "history": []
+        }
+      ],
+      "members": [
+        "AT",
+        "BE",
+        "BG",
+        "CH",
+        "CY",
+        "CZ",
+        "DE",
+        "DK",
+        "EE",
+        "ES",
+        "FI",
+        "FR",
+        "GR",
+        "HR",
+        "HU",
+        "IE",
+        "IS",
+        "IT",
+        "LI",
+        "LT",
+        "LU",
+        "LV",
+        "MT",
+        "NL",
+        "NO",
+        "PL",
+        "PT",
+        "RO",
+        "SE",
+        "SI",
+        "SK"
+      ]
+    },
+    "third_country": {
+      "label": "non-EU passport"
+    }
+  },
+  "countries": [
+    {
+      "code": "AF",
+      "name": "Afghanistan"
+    },
+    {
+      "code": "AL",
+      "name": "Albania"
+    },
+    {
+      "code": "DZ",
+      "name": "Algeria"
+    },
+    {
+      "code": "AD",
+      "name": "Andorra"
+    },
+    {
+      "code": "AO",
+      "name": "Angola"
+    },
+    {
+      "code": "AG",
+      "name": "Antigua & Barbuda"
+    },
+    {
+      "code": "AR",
+      "name": "Argentina"
+    },
+    {
+      "code": "AM",
+      "name": "Armenia"
+    },
+    {
+      "code": "AU",
+      "name": "Australia"
+    },
+    {
+      "code": "AT",
+      "name": "Austria"
+    },
+    {
+      "code": "AZ",
+      "name": "Azerbaijan"
+    },
+    {
+      "code": "BS",
+      "name": "Bahamas"
+    },
+    {
+      "code": "BH",
+      "name": "Bahrain"
+    },
+    {
+      "code": "BD",
+      "name": "Bangladesh"
+    },
+    {
+      "code": "BB",
+      "name": "Barbados"
+    },
+    {
+      "code": "BY",
+      "name": "Belarus"
+    },
+    {
+      "code": "BE",
+      "name": "Belgium"
+    },
+    {
+      "code": "BZ",
+      "name": "Belize"
+    },
+    {
+      "code": "BJ",
+      "name": "Benin"
+    },
+    {
+      "code": "BT",
+      "name": "Bhutan"
+    },
+    {
+      "code": "BO",
+      "name": "Bolivia"
+    },
+    {
+      "code": "BA",
+      "name": "Bosnia & Herzegovina"
+    },
+    {
+      "code": "BW",
+      "name": "Botswana"
+    },
+    {
+      "code": "BR",
+      "name": "Brazil"
+    },
+    {
+      "code": "BN",
+      "name": "Brunei"
+    },
+    {
+      "code": "BG",
+      "name": "Bulgaria"
+    },
+    {
+      "code": "BF",
+      "name": "Burkina Faso"
+    },
+    {
+      "code": "BI",
+      "name": "Burundi"
+    },
+    {
+      "code": "KH",
+      "name": "Cambodia"
+    },
+    {
+      "code": "CM",
+      "name": "Cameroon"
+    },
+    {
+      "code": "CA",
+      "name": "Canada"
+    },
+    {
+      "code": "CV",
+      "name": "Cape Verde"
+    },
+    {
+      "code": "CF",
+      "name": "Central African Republic"
+    },
+    {
+      "code": "TD",
+      "name": "Chad"
+    },
+    {
+      "code": "CL",
+      "name": "Chile"
+    },
+    {
+      "code": "CN",
+      "name": "China"
+    },
+    {
+      "code": "CO",
+      "name": "Colombia"
+    },
+    {
+      "code": "KM",
+      "name": "Comoros"
+    },
+    {
+      "code": "CG",
+      "name": "Congo - Brazzaville"
+    },
+    {
+      "code": "CD",
+      "name": "Congo - Kinshasa"
+    },
+    {
+      "code": "CR",
+      "name": "Costa Rica"
+    },
+    {
+      "code": "CI",
+      "name": "Côte d’Ivoire"
+    },
+    {
+      "code": "HR",
+      "name": "Croatia"
+    },
+    {
+      "code": "CU",
+      "name": "Cuba"
+    },
+    {
+      "code": "CY",
+      "name": "Cyprus"
+    },
+    {
+      "code": "CZ",
+      "name": "Czechia"
+    },
+    {
+      "code": "DK",
+      "name": "Denmark"
+    },
+    {
+      "code": "DJ",
+      "name": "Djibouti"
+    },
+    {
+      "code": "DM",
+      "name": "Dominica"
+    },
+    {
+      "code": "DO",
+      "name": "Dominican Republic"
+    },
+    {
+      "code": "EC",
+      "name": "Ecuador"
+    },
+    {
+      "code": "EG",
+      "name": "Egypt"
+    },
+    {
+      "code": "SV",
+      "name": "El Salvador"
+    },
+    {
+      "code": "GQ",
+      "name": "Equatorial Guinea"
+    },
+    {
+      "code": "ER",
+      "name": "Eritrea"
+    },
+    {
+      "code": "EE",
+      "name": "Estonia"
+    },
+    {
+      "code": "SZ",
+      "name": "Eswatini"
+    },
+    {
+      "code": "ET",
+      "name": "Ethiopia"
+    },
+    {
+      "code": "FJ",
+      "name": "Fiji"
+    },
+    {
+      "code": "FI",
+      "name": "Finland"
+    },
+    {
+      "code": "FR",
+      "name": "France"
+    },
+    {
+      "code": "GA",
+      "name": "Gabon"
+    },
+    {
+      "code": "GM",
+      "name": "Gambia"
+    },
+    {
+      "code": "GE",
+      "name": "Georgia"
+    },
+    {
+      "code": "DE",
+      "name": "Germany"
+    },
+    {
+      "code": "GH",
+      "name": "Ghana"
+    },
+    {
+      "code": "GR",
+      "name": "Greece"
+    },
+    {
+      "code": "GD",
+      "name": "Grenada"
+    },
+    {
+      "code": "GT",
+      "name": "Guatemala"
+    },
+    {
+      "code": "GN",
+      "name": "Guinea"
+    },
+    {
+      "code": "GW",
+      "name": "Guinea-Bissau"
+    },
+    {
+      "code": "GY",
+      "name": "Guyana"
+    },
+    {
+      "code": "HT",
+      "name": "Haiti"
+    },
+    {
+      "code": "HN",
+      "name": "Honduras"
+    },
+    {
+      "code": "HK",
+      "name": "Hong Kong SAR China"
+    },
+    {
+      "code": "HU",
+      "name": "Hungary"
+    },
+    {
+      "code": "IS",
+      "name": "Iceland"
+    },
+    {
+      "code": "IN",
+      "name": "India"
+    },
+    {
+      "code": "ID",
+      "name": "Indonesia"
+    },
+    {
+      "code": "IR",
+      "name": "Iran"
+    },
+    {
+      "code": "IQ",
+      "name": "Iraq"
+    },
+    {
+      "code": "IE",
+      "name": "Ireland"
+    },
+    {
+      "code": "IL",
+      "name": "Israel"
+    },
+    {
+      "code": "IT",
+      "name": "Italy"
+    },
+    {
+      "code": "JM",
+      "name": "Jamaica"
+    },
+    {
+      "code": "JP",
+      "name": "Japan"
+    },
+    {
+      "code": "JO",
+      "name": "Jordan"
+    },
+    {
+      "code": "KZ",
+      "name": "Kazakhstan"
+    },
+    {
+      "code": "KE",
+      "name": "Kenya"
+    },
+    {
+      "code": "KI",
+      "name": "Kiribati"
+    },
+    {
+      "code": "KW",
+      "name": "Kuwait"
+    },
+    {
+      "code": "KG",
+      "name": "Kyrgyzstan"
+    },
+    {
+      "code": "LA",
+      "name": "Laos"
+    },
+    {
+      "code": "LV",
+      "name": "Latvia"
+    },
+    {
+      "code": "LB",
+      "name": "Lebanon"
+    },
+    {
+      "code": "LS",
+      "name": "Lesotho"
+    },
+    {
+      "code": "LR",
+      "name": "Liberia"
+    },
+    {
+      "code": "LY",
+      "name": "Libya"
+    },
+    {
+      "code": "LI",
+      "name": "Liechtenstein"
+    },
+    {
+      "code": "LT",
+      "name": "Lithuania"
+    },
+    {
+      "code": "LU",
+      "name": "Luxembourg"
+    },
+    {
+      "code": "MO",
+      "name": "Macao SAR China"
+    },
+    {
+      "code": "MG",
+      "name": "Madagascar"
+    },
+    {
+      "code": "MW",
+      "name": "Malawi"
+    },
+    {
+      "code": "MY",
+      "name": "Malaysia"
+    },
+    {
+      "code": "MV",
+      "name": "Maldives"
+    },
+    {
+      "code": "ML",
+      "name": "Mali"
+    },
+    {
+      "code": "MT",
+      "name": "Malta"
+    },
+    {
+      "code": "MH",
+      "name": "Marshall Islands"
+    },
+    {
+      "code": "MR",
+      "name": "Mauritania"
+    },
+    {
+      "code": "MU",
+      "name": "Mauritius"
+    },
+    {
+      "code": "MX",
+      "name": "Mexico"
+    },
+    {
+      "code": "FM",
+      "name": "Micronesia"
+    },
+    {
+      "code": "MD",
+      "name": "Moldova"
+    },
+    {
+      "code": "MC",
+      "name": "Monaco"
+    },
+    {
+      "code": "MN",
+      "name": "Mongolia"
+    },
+    {
+      "code": "ME",
+      "name": "Montenegro"
+    },
+    {
+      "code": "MA",
+      "name": "Morocco"
+    },
+    {
+      "code": "MZ",
+      "name": "Mozambique"
+    },
+    {
+      "code": "MM",
+      "name": "Myanmar (Burma)"
+    },
+    {
+      "code": "NA",
+      "name": "Namibia"
+    },
+    {
+      "code": "NR",
+      "name": "Nauru"
+    },
+    {
+      "code": "NP",
+      "name": "Nepal"
+    },
+    {
+      "code": "NL",
+      "name": "Netherlands"
+    },
+    {
+      "code": "NZ",
+      "name": "New Zealand"
+    },
+    {
+      "code": "NI",
+      "name": "Nicaragua"
+    },
+    {
+      "code": "NE",
+      "name": "Niger"
+    },
+    {
+      "code": "NG",
+      "name": "Nigeria"
+    },
+    {
+      "code": "KP",
+      "name": "North Korea"
+    },
+    {
+      "code": "MK",
+      "name": "North Macedonia"
+    },
+    {
+      "code": "NO",
+      "name": "Norway"
+    },
+    {
+      "code": "OM",
+      "name": "Oman"
+    },
+    {
+      "code": "PK",
+      "name": "Pakistan"
+    },
+    {
+      "code": "PW",
+      "name": "Palau"
+    },
+    {
+      "code": "PS",
+      "name": "Palestinian Territories"
+    },
+    {
+      "code": "PA",
+      "name": "Panama"
+    },
+    {
+      "code": "PG",
+      "name": "Papua New Guinea"
+    },
+    {
+      "code": "PY",
+      "name": "Paraguay"
+    },
+    {
+      "code": "PE",
+      "name": "Peru"
+    },
+    {
+      "code": "PH",
+      "name": "Philippines"
+    },
+    {
+      "code": "PL",
+      "name": "Poland"
+    },
+    {
+      "code": "PT",
+      "name": "Portugal"
+    },
+    {
+      "code": "QA",
+      "name": "Qatar"
+    },
+    {
+      "code": "RO",
+      "name": "Romania"
+    },
+    {
+      "code": "RU",
+      "name": "Russia"
+    },
+    {
+      "code": "RW",
+      "name": "Rwanda"
+    },
+    {
+      "code": "WS",
+      "name": "Samoa"
+    },
+    {
+      "code": "SM",
+      "name": "San Marino"
+    },
+    {
+      "code": "ST",
+      "name": "São Tomé & Príncipe"
+    },
+    {
+      "code": "SA",
+      "name": "Saudi Arabia"
+    },
+    {
+      "code": "SN",
+      "name": "Senegal"
+    },
+    {
+      "code": "RS",
+      "name": "Serbia"
+    },
+    {
+      "code": "SC",
+      "name": "Seychelles"
+    },
+    {
+      "code": "SL",
+      "name": "Sierra Leone"
+    },
+    {
+      "code": "SG",
+      "name": "Singapore"
+    },
+    {
+      "code": "SK",
+      "name": "Slovakia"
+    },
+    {
+      "code": "SI",
+      "name": "Slovenia"
+    },
+    {
+      "code": "SB",
+      "name": "Solomon Islands"
+    },
+    {
+      "code": "SO",
+      "name": "Somalia"
+    },
+    {
+      "code": "ZA",
+      "name": "South Africa"
+    },
+    {
+      "code": "KR",
+      "name": "South Korea"
+    },
+    {
+      "code": "SS",
+      "name": "South Sudan"
+    },
+    {
+      "code": "ES",
+      "name": "Spain"
+    },
+    {
+      "code": "LK",
+      "name": "Sri Lanka"
+    },
+    {
+      "code": "KN",
+      "name": "St. Kitts & Nevis"
+    },
+    {
+      "code": "LC",
+      "name": "St. Lucia"
+    },
+    {
+      "code": "VC",
+      "name": "St. Vincent & Grenadines"
+    },
+    {
+      "code": "SD",
+      "name": "Sudan"
+    },
+    {
+      "code": "SR",
+      "name": "Suriname"
+    },
+    {
+      "code": "SE",
+      "name": "Sweden"
+    },
+    {
+      "code": "CH",
+      "name": "Switzerland"
+    },
+    {
+      "code": "SY",
+      "name": "Syria"
+    },
+    {
+      "code": "TW",
+      "name": "Taiwan"
+    },
+    {
+      "code": "TJ",
+      "name": "Tajikistan"
+    },
+    {
+      "code": "TZ",
+      "name": "Tanzania"
+    },
+    {
+      "code": "TH",
+      "name": "Thailand"
+    },
+    {
+      "code": "TL",
+      "name": "Timor-Leste"
+    },
+    {
+      "code": "TG",
+      "name": "Togo"
+    },
+    {
+      "code": "TO",
+      "name": "Tonga"
+    },
+    {
+      "code": "TT",
+      "name": "Trinidad & Tobago"
+    },
+    {
+      "code": "TN",
+      "name": "Tunisia"
+    },
+    {
+      "code": "TR",
+      "name": "Türkiye"
+    },
+    {
+      "code": "TM",
+      "name": "Turkmenistan"
+    },
+    {
+      "code": "TV",
+      "name": "Tuvalu"
+    },
+    {
+      "code": "UG",
+      "name": "Uganda"
+    },
+    {
+      "code": "UA",
+      "name": "Ukraine"
+    },
+    {
+      "code": "AE",
+      "name": "United Arab Emirates"
+    },
+    {
+      "code": "GB",
+      "name": "United Kingdom"
+    },
+    {
+      "code": "US",
+      "name": "United States"
+    },
+    {
+      "code": "UY",
+      "name": "Uruguay"
+    },
+    {
+      "code": "UZ",
+      "name": "Uzbekistan"
+    },
+    {
+      "code": "VU",
+      "name": "Vanuatu"
+    },
+    {
+      "code": "VA",
+      "name": "Vatican City"
+    },
+    {
+      "code": "VE",
+      "name": "Venezuela"
+    },
+    {
+      "code": "VN",
+      "name": "Vietnam"
+    },
+    {
+      "code": "YE",
+      "name": "Yemen"
+    },
+    {
+      "code": "ZM",
+      "name": "Zambia"
+    },
+    {
+      "code": "ZW",
+      "name": "Zimbabwe"
+    }
+  ],
+  "note": "The question asks which passport the person will apply with, so this list is passport issuers: sovereign states plus the widely-held non-UN documents (HK, MO, TW, XK, PS). Dependent territories are deliberately absent — a resident of Åland holds a Finnish passport and of Guadeloupe a French one, and listing the territory made the tool answer 'third country' for people who have EU free movement (s5c review). Adding one back means stating, with a source, which passport its residents hold."
+}

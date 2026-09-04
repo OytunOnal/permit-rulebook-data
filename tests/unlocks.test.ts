@@ -12,8 +12,8 @@ const explorer: Profile = {
   recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
   german: "b1", funds_eur_month: "band_1",
   // salary answered so the offer counterfactual can evaluate fully
-  // (band_4 = €45,934.20 – €50,700: clears shortage BC + §19c, below the general BC)
-  salary_eur_year: "band_4",
+  // (band_5 = €45,934.20 – €50,700: clears shortage BC + §19c, below the general BC)
+  salary_eur_year: "band_5",
 };
 
 describe("unlocks — counterfactual leverage over path fields", () => {

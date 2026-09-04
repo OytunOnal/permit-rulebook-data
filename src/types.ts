@@ -37,7 +37,9 @@ export interface ProvenancedText {
 export interface Notice {
   id: string;
   when: { field: string; op: "eq" | "in"; value?: string; values?: string[] };
-  kind: "no-permit-needed";
+  /** no-permit-needed replaces the results (nothing to compare); extra-rights
+   * sits BESIDE them and never suppresses a verdict the rules computed. */
+  kind: "no-permit-needed" | "extra-rights";
   title: string;
   body: string;
   source: ProvenancedText;
@@ -95,6 +97,11 @@ export interface FieldOption {
   is_unknown?: boolean;
   /** "None of these"-style absence answers — never a counterfactual target. */
   is_fallback?: boolean;
+  /** Values this answer ALSO satisfies: a country implies its class, so
+   * `citizenship eq third_country` keeps passing on an answer of "TR". One
+   * predicate serves criteria and notices alike, so a country can never
+   * satisfy a route but miss a notice. */
+  implies?: string[];
 }
 
 export interface FieldDef {
@@ -113,6 +120,10 @@ export interface FieldDef {
    */
   kind?: "attribute" | "path" | "improvable";
   options?: FieldOption[];
+  /** Options that live in their own file instead of inline: the engine expands
+   * the field into one option per country at derive time, so dataset.json
+   * stays readable and the list can grow without touching a rule. */
+  options_from?: "countries";
   /** Where a user who answered "I don't know" can find out — an official source. */
   learn?: { label: string; url: string };
   /** Pinned to the front of the interview regardless of elimination power

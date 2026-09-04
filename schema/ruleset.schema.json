@@ -3,31 +3,62 @@
   "$id": "https://visa-rules.dev/schema/ruleset.schema.json",
   "title": "Visa Rules dataset",
   "type": "object",
-  "required": ["schema_version", "dataset_version", "fields", "countries"],
+  "required": [
+    "schema_version",
+    "dataset_version",
+    "fields",
+    "countries"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
-    "dataset_version": { "type": "string", "minLength": 1 },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "dataset_version": {
+      "type": "string",
+      "minLength": 1
+    },
     "fields": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/fieldDef" }
+      "items": {
+        "$ref": "#/$defs/fieldDef"
+      }
     },
     "notices": {
       "type": "array",
-      "items": { "$ref": "#/$defs/notice" }
+      "items": {
+        "$ref": "#/$defs/notice"
+      }
     },
     "countries": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["code", "name", "routes"],
+        "required": [
+          "code",
+          "name",
+          "routes"
+        ],
         "additionalProperties": false,
         "properties": {
-          "code": { "type": "string", "pattern": "^[A-Z]{2}$" },
-          "name": { "type": "string", "minLength": 1 },
-          "routes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/route" } }
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "routes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/route"
+            }
+          }
         }
       }
     }
@@ -35,23 +66,67 @@
   "$defs": {
     "fieldDef": {
       "type": "object",
-      "required": ["id", "label", "type"],
+      "required": [
+        "id",
+        "label",
+        "type"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
-        "label": { "type": "string", "minLength": 1 },
-        "type": { "enum": ["enum", "money_band"] },
-        "period": { "enum": ["month", "year"] },
-        "kind": { "enum": ["attribute", "path", "improvable"] },
-        "ask_first": { "type": "boolean" },
-        "is_qualifier": { "type": "boolean" },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "enum",
+            "money_band"
+          ]
+        },
+        "period": {
+          "enum": [
+            "month",
+            "year"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "attribute",
+            "path",
+            "improvable"
+          ]
+        },
+        "options_from": {
+          "enum": [
+            "countries"
+          ]
+        },
+        "ask_first": {
+          "type": "boolean"
+        },
+        "is_qualifier": {
+          "type": "boolean"
+        },
         "learn": {
           "type": "object",
-          "required": ["label", "url"],
+          "required": [
+            "label",
+            "url"
+          ],
           "additionalProperties": false,
           "properties": {
-            "label": { "type": "string", "minLength": 1 },
-            "url": { "type": "string", "pattern": "^https://" }
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "url": {
+              "type": "string",
+              "pattern": "^https://"
+            }
           }
         },
         "options": {
@@ -59,38 +134,120 @@
           "minItems": 2,
           "items": {
             "type": "object",
-            "required": ["value", "label"],
+            "required": [
+              "value",
+              "label"
+            ],
             "additionalProperties": false,
             "properties": {
-              "value": { "type": "string", "minLength": 1 },
-              "label": { "type": "string", "minLength": 1 },
-              "short": { "type": "string", "minLength": 1 },
-              "is_unknown": { "type": "boolean" },
-              "is_fallback": { "type": "boolean" }
+              "value": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "short": {
+                "type": "string",
+                "minLength": 1
+              },
+              "is_unknown": {
+                "type": "boolean"
+              },
+              "is_fallback": {
+                "type": "boolean"
+              },
+              "implies": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
             }
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "enum"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "options"
+                ],
+                "properties": {
+                  "options": true
+                }
+              },
+              {
+                "required": [
+                  "options_from"
+                ],
+                "properties": {
+                  "options_from": true
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "provenancedText": {
       "type": "object",
-      "required": ["source_url", "quote", "retrieved_at"],
+      "required": [
+        "source_url",
+        "quote",
+        "retrieved_at"
+      ],
       "additionalProperties": false,
       "properties": {
-        "source_url": { "type": "string", "pattern": "^https://" },
-        "quote": { "type": "string", "minLength": 5 },
-        "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-        "legal_basis": { "type": "string" },
+        "source_url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 5
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "legal_basis": {
+          "type": "string"
+        },
         "history": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["retrieved_at"],
+            "required": [
+              "retrieved_at"
+            ],
             "additionalProperties": false,
             "properties": {
-              "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-              "quote": { "type": "string" },
-              "source_url": { "type": "string" }
+              "retrieved_at": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "quote": {
+                "type": "string"
+              },
+              "source_url": {
+                "type": "string"
+              }
             }
           }
         }
@@ -98,49 +255,129 @@
     },
     "notice": {
       "type": "object",
-      "required": ["id", "when", "kind", "title", "body", "source"],
+      "required": [
+        "id",
+        "when",
+        "kind",
+        "title",
+        "body",
+        "source"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
         "when": {
           "type": "object",
-          "required": ["field", "op"],
+          "required": [
+            "field",
+            "op"
+          ],
           "additionalProperties": false,
           "properties": {
-            "field": { "type": "string", "minLength": 1 },
-            "op": { "enum": ["eq", "in"] },
-            "value": { "type": "string", "minLength": 1 },
-            "values": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+            "field": {
+              "type": "string",
+              "minLength": 1
+            },
+            "op": {
+              "enum": [
+                "eq",
+                "in"
+              ]
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            },
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
           }
         },
-        "kind": { "enum": ["no-permit-needed"] },
-        "title": { "type": "string", "minLength": 1 },
-        "body": { "type": "string", "minLength": 1 },
-        "source": { "$ref": "#/$defs/provenancedText" }
+        "kind": {
+          "enum": [
+            "no-permit-needed",
+            "extra-rights"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "$ref": "#/$defs/provenancedText"
+        }
       }
     },
     "provenancedAmount": {
       "type": "object",
-      "required": ["amount", "currency", "source_url", "quote", "retrieved_at"],
+      "required": [
+        "amount",
+        "currency",
+        "source_url",
+        "quote",
+        "retrieved_at"
+      ],
       "additionalProperties": false,
       "properties": {
-        "amount": { "type": "number", "exclusiveMinimum": 0 },
-        "currency": { "enum": ["EUR"] },
-        "source_url": { "type": "string", "pattern": "^https://" },
-        "quote": { "type": "string", "minLength": 5 },
-        "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-        "legal_basis": { "type": "string" },
+        "amount": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "currency": {
+          "enum": [
+            "EUR"
+          ]
+        },
+        "source_url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 5
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "legal_basis": {
+          "type": "string"
+        },
         "history": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["amount", "retrieved_at"],
+            "required": [
+              "amount",
+              "retrieved_at"
+            ],
             "additionalProperties": false,
             "properties": {
-              "amount": { "type": "number" },
-              "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-              "quote": { "type": "string" },
-              "source_url": { "type": "string" }
+              "amount": {
+                "type": "number"
+              },
+              "retrieved_at": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "quote": {
+                "type": "string"
+              },
+              "source_url": {
+                "type": "string"
+              }
             }
           }
         }
@@ -148,26 +385,62 @@
     },
     "provenancedNumber": {
       "type": "object",
-      "required": ["value", "unit", "source_url", "quote", "retrieved_at"],
+      "required": [
+        "value",
+        "unit",
+        "source_url",
+        "quote",
+        "retrieved_at"
+      ],
       "additionalProperties": false,
       "properties": {
-        "value": { "type": "number", "exclusiveMinimum": 0 },
-        "unit": { "enum": ["points"] },
-        "source_url": { "type": "string", "pattern": "^https://" },
-        "quote": { "type": "string", "minLength": 5 },
-        "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-        "legal_basis": { "type": "string" },
+        "value": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "unit": {
+          "enum": [
+            "points"
+          ]
+        },
+        "source_url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 5
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "legal_basis": {
+          "type": "string"
+        },
         "history": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["value", "retrieved_at"],
+            "required": [
+              "value",
+              "retrieved_at"
+            ],
             "additionalProperties": false,
             "properties": {
-              "value": { "type": "number" },
-              "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-              "quote": { "type": "string" },
-              "source_url": { "type": "string" }
+              "value": {
+                "type": "number"
+              },
+              "retrieved_at": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "quote": {
+                "type": "string"
+              },
+              "source_url": {
+                "type": "string"
+              }
             }
           }
         }
@@ -175,26 +448,50 @@
     },
     "pointsTable": {
       "type": "object",
-      "required": ["source_url", "quote", "retrieved_at", "items"],
+      "required": [
+        "source_url",
+        "quote",
+        "retrieved_at",
+        "items"
+      ],
       "additionalProperties": false,
       "properties": {
-        "source_url": { "type": "string", "pattern": "^https://" },
-        "quote": { "type": "string", "minLength": 5 },
-        "retrieved_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-        "legal_basis": { "type": "string" },
+        "source_url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 5
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "legal_basis": {
+          "type": "string"
+        },
         "items": {
           "type": "array",
           "minItems": 1,
           "items": {
             "type": "object",
-            "required": ["field", "points"],
+            "required": [
+              "field",
+              "points"
+            ],
             "additionalProperties": false,
             "properties": {
-              "field": { "type": "string" },
+              "field": {
+                "type": "string"
+              },
               "points": {
                 "type": "object",
                 "minProperties": 1,
-                "additionalProperties": { "type": "number", "minimum": 0 }
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0
+                }
               }
             }
           }
@@ -205,91 +502,215 @@
       "oneOf": [
         {
           "type": "object",
-          "required": ["field", "op", "value"],
+          "required": [
+            "field",
+            "op",
+            "value"
+          ],
           "additionalProperties": false,
           "properties": {
-            "field": { "type": "string" },
-            "op": { "const": "eq" },
-            "value": { "type": "string" },
-            "note": { "type": "string" },
-            "short_reason": { "type": "string", "minLength": 1 }
+            "field": {
+              "type": "string"
+            },
+            "op": {
+              "const": "eq"
+            },
+            "value": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "short_reason": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         {
           "type": "object",
-          "required": ["field", "op", "threshold"],
+          "required": [
+            "field",
+            "op",
+            "threshold"
+          ],
           "additionalProperties": false,
           "properties": {
-            "field": { "type": "string" },
-            "op": { "const": "gte" },
-            "threshold": { "$ref": "#/$defs/provenancedAmount" },
-            "threshold_label": { "type": "string" },
-            "note": { "type": "string" },
-            "short_reason": { "type": "string", "minLength": 1 }
+            "field": {
+              "type": "string"
+            },
+            "op": {
+              "const": "gte"
+            },
+            "threshold": {
+              "$ref": "#/$defs/provenancedAmount"
+            },
+            "threshold_label": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "short_reason": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         {
           "type": "object",
-          "required": ["field", "op", "values"],
+          "required": [
+            "field",
+            "op",
+            "values"
+          ],
           "additionalProperties": false,
           "properties": {
-            "field": { "type": "string" },
-            "op": { "const": "in" },
-            "values": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-            "note": { "type": "string" },
-            "short_reason": { "type": "string", "minLength": 1 }
+            "field": {
+              "type": "string"
+            },
+            "op": {
+              "const": "in"
+            },
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              }
+            },
+            "note": {
+              "type": "string"
+            },
+            "short_reason": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         {
           "type": "object",
-          "required": ["op", "required", "table"],
+          "required": [
+            "op",
+            "required",
+            "table"
+          ],
           "additionalProperties": false,
           "properties": {
-            "op": { "const": "points" },
-            "required": { "$ref": "#/$defs/provenancedNumber" },
-            "table": { "$ref": "#/$defs/pointsTable" },
-            "note": { "type": "string" },
-            "short_reason": { "type": "string", "minLength": 1 }
+            "op": {
+              "const": "points"
+            },
+            "required": {
+              "$ref": "#/$defs/provenancedNumber"
+            },
+            "table": {
+              "$ref": "#/$defs/pointsTable"
+            },
+            "note": {
+              "type": "string"
+            },
+            "short_reason": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         },
         {
           "type": "object",
-          "required": ["op", "paths"],
+          "required": [
+            "op",
+            "paths"
+          ],
           "additionalProperties": false,
           "properties": {
-            "op": { "const": "any" },
-            "label": { "type": "string" },
+            "op": {
+              "const": "any"
+            },
+            "label": {
+              "type": "string"
+            },
             "paths": {
               "type": "array",
               "minItems": 2,
               "items": {
                 "type": "object",
-                "required": ["criteria"],
+                "required": [
+                  "criteria"
+                ],
                 "additionalProperties": false,
                 "properties": {
-                  "label": { "type": "string" },
-                  "criteria": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/criterion" } }
+                  "label": {
+                    "type": "string"
+                  },
+                  "criteria": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/$defs/criterion"
+                    }
+                  }
                 }
               }
             },
-            "note": { "type": "string" },
-            "short_reason": { "type": "string", "minLength": 1 }
+            "note": {
+              "type": "string"
+            },
+            "short_reason": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         }
       ]
     },
     "route": {
       "type": "object",
-      "required": ["id", "name", "kind", "criteria", "info_url"],
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "criteria",
+        "info_url"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z]{2}(-[a-z0-9]+)+$" },
-        "name": { "type": "string", "minLength": 1 },
-        "kind": { "enum": ["res-work", "seek", "self-employed"] },
-        "summary": { "type": "string" },
-        "info_url": { "type": "string", "pattern": "^https://" },
-        "criteria": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/criterion" } },
-        "preconditions": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2}(-[a-z0-9]+)+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "res-work",
+            "seek",
+            "self-employed"
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "info_url": {
+          "type": "string",
+          "pattern": "^https://"
+        },
+        "criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/criterion"
+          }
+        },
+        "preconditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
       }
     }
   }

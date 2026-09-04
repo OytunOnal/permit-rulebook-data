@@ -48,7 +48,7 @@ describe("scenario s5 — one interview, four countries", () => {
     const r = byId({
       destination: "de", citizenship: "third_country", situation: "offer",
       qualification: "degree", occupation_it: "no", experience: "y2in5",
-      salary_eur_year: "band_1", // €39,582 – €41,356.36 — two pooled bands below €45,630
+      salary_eur_year: "band_2", // €39,582 – €41,356.36 — three pooled bands below €45,630
     });
     expect(r["de-experienced-worker"].status).toBe("near");
     expect(r["de-experienced-worker"].gap_max).toBeCloseTo(45630 - 39582, 2);
@@ -57,8 +57,8 @@ describe("scenario s5 — one interview, four countries", () => {
   it("NL engineer, 28, €4,500/month offer: under-30 HSM met, 30+ HSM dead, DE routes never asked about", () => {
     const { asked, profile } = runFlow({
       destination: "nl", citizenship: "third_country", situation: "offer",
-      age_band: "u30", salary_eur_month: "band_3", // €4,357 – €5,942
-      qualification: "degree", experience: "y2in5",
+      age_band: "u30", salary_eur_month: "band_4", // €4,357 – €4,754
+      qualification: "degree", qualification_recent: "no", experience: "y2in5",
     });
     const r = byId(profile);
     expect(r["nl-hsm-under30"].status).toBe("met");
@@ -73,7 +73,7 @@ describe("scenario s5 — one interview, four countries", () => {
     const r = byId({
       destination: "fr", citizenship: "third_country", situation: "offer",
       qualification: "degree", fr_degree: "yes",
-      salary_eur_year: "band_1", // €39,582 – €41,356.36
+      salary_eur_year: "band_2", // €39,582 – €41,356.36
     });
     expect(r["fr-talent-qualifie"].status).toBe("met");
     // Bounded-gap semantics: a declared band with a finite ceiling below the
@@ -86,7 +86,7 @@ describe("scenario s5 — one interview, four countries", () => {
     const r = byId({
       destination: "es", citizenship: "third_country", situation: "offer",
       qualification: "degree", experience: "y2in5",
-      salary_eur_year: "band_2", // €41,356.36 – €45,630
+      salary_eur_year: "band_3", // €41,356.36 – €45,630
     });
     expect(r["es-blue-card"].status).toBe("met");
     expect(r["es-highly-qualified"].status).toBe("met");
@@ -118,7 +118,7 @@ describe("NL Blue Card — the IT experience rule (human verification 2026-09-04
   const itPro: Profile = {
     destination: "nl", citizenship: "third_country", situation: "offer",
     qualification: "none", occupation_it: "yes", experience: "y2in5",
-    age_band: "a30to35", salary_eur_month: "band_4",
+    age_band: "a30to35", salary_eur_month: "band_6", // €5,942 or more
   };
 
   it("an IT professional with 3 years in the last 7 meets it without a degree", () => {
@@ -132,8 +132,8 @@ describe("NL Blue Card — the IT experience rule (human verification 2026-09-04
   it("non-IT applicants are never asked the 7-year question", () => {
     const { asked } = runFlow({
       destination: "nl", citizenship: "third_country", situation: "offer",
-      qualification: "degree", age_band: "a30to35", salary_eur_month: "band_4",
-      experience: "y2in5",
+      qualification: "degree", qualification_recent: "no", age_band: "a30to35",
+      salary_eur_month: "band_6", experience: "y2in5",
     });
     expect(asked).not.toContain("experience_7y");
   });
@@ -142,7 +142,7 @@ describe("NL Blue Card — the IT experience rule (human verification 2026-09-04
     const { asked } = runFlow({
       destination: "de", citizenship: "third_country", situation: "offer",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-      experience: "y2in5", salary_eur_year: "band_4",
+      experience: "y2in5", salary_eur_year: "band_5",
     });
     expect(asked).not.toContain("experience_7y");
     expect(asked.length).toBeLessThanOrEqual(8);

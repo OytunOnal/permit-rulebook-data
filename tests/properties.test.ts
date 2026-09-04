@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, isRouteAlive, notices, unlocks } from "../src/engine.js";
+import { deriveBands, evaluate, fieldOptions, isRouteAlive, notices, unlocks } from "../src/engine.js";
 import { remainingQuestions } from "../src/questions.js";
 import type { Dataset, FieldDef, Profile } from "../src/types.js";
 
@@ -14,7 +14,9 @@ function lcg(seed: number) {
 
 function optionValues(def: FieldDef): string[] {
   if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
-  return (def.options ?? []).map((o) => o.value);
+  // Not `def.options`: a field may declare its option list by reference
+  // (`options_from`), and the engine is what expands it.
+  return fieldOptions(dataset, def.id).map((o) => o.value);
 }
 
 function randomProfile(rand: () => number, answerProb = 1): Profile {
@@ -170,8 +172,12 @@ describe("property: a notice is stated only on an answer that was actually given
       const matched = notices(dataset, p);
       for (const n of dataset.notices ?? []) {
         const answer = p[n.when.field];
-        const applies = answer !== undefined &&
-          (n.when.op === "eq" ? answer === n.when.value : (n.when.values ?? []).includes(answer));
+        // s5c: an answer also carries what its option implies, so a country
+        // passport matches the notice written against its class.
+        const carried = answer === undefined ? [] : [answer,
+          ...(fieldOptions(dataset, n.when.field).find((o) => o.value === answer)?.implies ?? [])];
+        const wanted = n.when.op === "eq" ? [n.when.value] : (n.when.values ?? []);
+        const applies = answer !== undefined && wanted.some((v) => v !== undefined && carried.includes(v));
         expect(matched.some((m) => m.id === n.id), `${n.id} @ ${JSON.stringify(p[n.when.field])}`).toBe(applies);
       }
     }

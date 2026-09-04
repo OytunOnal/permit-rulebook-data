@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { htmlToText, normalize } from "./normalize.js";
 import { forEachCriterion, provenancedValuesOf } from "../engine.js";
+import { countryVocabulary } from "../countries.js";
 import type { Dataset } from "../types.js";
 
 export type WatchStrategy = "html" | "pdf" | "human";
@@ -149,6 +150,11 @@ export async function runWatch(
   return { reports, nextState: { entries: nextEntries } };
 }
 
+/** Does this dataset read the country vocabulary at all? */
+function usesCountryVocabulary(dataset: Dataset): boolean {
+  return dataset.fields.some((f) => f.options_from === "countries");
+}
+
 /** Every provenanced source_url in the dataset — via the single exhaustive
  * criterion walk, so a new op cannot silently escape the coverage gate. */
 export function datasetSourceUrls(dataset: Dataset): Set<string> {
@@ -160,6 +166,13 @@ export function datasetSourceUrls(dataset: Dataset): Set<string> {
       });
   // A notice rests on a quote like every other value — it is watched like one.
   for (const n of dataset.notices ?? []) urls.add(n.source.source_url);
+  // So does a passport class: its member list decides who needs a permit at
+  // all, so every leg of that claim is watched like a threshold — but only for
+  // a dataset that reads the vocabulary. Folding it in unconditionally made the
+  // gate fail on a ruleset that never mentions a country (review).
+  if (usesCountryVocabulary(dataset))
+    for (const cls of Object.values(countryVocabulary.classes))
+      for (const source of cls.sources ?? []) urls.add(source.source_url);
   return urls;
 }
 
@@ -180,6 +193,10 @@ export function datasetQuotes(dataset: Dataset): { quote: string; source_url: st
       });
   for (const n of dataset.notices ?? [])
     out.push({ quote: n.source.quote, source_url: n.source.source_url, where: `notice:${n.id}` });
+  if (usesCountryVocabulary(dataset))
+    for (const [id, cls] of Object.entries(countryVocabulary.classes))
+      for (const source of cls.sources ?? [])
+        out.push({ quote: source.quote, source_url: source.source_url, where: `class:${id}` });
   return out;
 }
 

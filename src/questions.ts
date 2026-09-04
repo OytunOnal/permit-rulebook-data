@@ -1,4 +1,6 @@
-import { deriveBands, informativeFields, isRouteAlive, referencedFields } from "./engine.js";
+import {
+  deriveBands, fieldOptions, informativeFields, isRouteAlive, optionEquivalenceClasses, referencedFields,
+} from "./engine.js";
 import type { Dataset, Profile, Question } from "./types.js";
 
 /**
@@ -17,7 +19,9 @@ export function deriveQuestions(dataset: Dataset): Question[] {
   for (const def of dataset.fields) {
     if (!referenced.has(def.id)) continue;
     if (def.type === "enum") {
-      questions.push({ field: def.id, label: def.label, options: def.options ?? [] });
+      // Inline options or a declared vocabulary (`options_from`) — the engine
+      // expands both, so a question never has to know where its list lives.
+      questions.push({ field: def.id, label: def.label, options: fieldOptions(dataset, def.id) });
     } else {
       const options = deriveBands(dataset, def.id).map((b) => ({ value: b.id, label: b.label }));
       questions.push({ field: def.id, label: def.label, options });
@@ -39,12 +43,18 @@ function liveRouteCount(dataset: Dataset, profile: Profile): number {
  * routes still alive after its answer (uniform prior over options). The
  * question that eliminates the most, on average, is asked first. Ties keep
  * dataset field order (sort is stable).
+ *
+ * Options the rules cannot tell apart are scored once and weighted by how many
+ * they stand for: every third-country passport is one class, so the country
+ * list costs two evaluations, not 249. Weights and live-route counts are whole
+ * numbers, so the weighted total is the naive total exactly — the ordering
+ * cannot drift, and a test pins it against the naive computation.
  */
 function orderByEliminationPower(dataset: Dataset, profile: Profile, questions: Question[]): Question[] {
   const score = (q: Question): number => {
     let total = 0;
-    for (const o of q.options)
-      total += liveRouteCount(dataset, { ...profile, [q.field]: o.value });
+    for (const cls of optionEquivalenceClasses(dataset, q.field, q.options.map((o) => o.value)))
+      total += cls.weight * liveRouteCount(dataset, { ...profile, [q.field]: cls.value });
     return total / q.options.length;
   };
   return questions

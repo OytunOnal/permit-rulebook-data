@@ -6,12 +6,13 @@ import type { Dataset, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
-// Annual salary bands (all four countries' thresholds): <39,582 / 39,582–41,356.36 /
-// 41,356.36–45,630 / 45,630–45,934.20 / 45,934.20–50,700 / 50,700–59,373 / ≥59,373
+// Annual salary bands (all four countries' thresholds): <33,085.09 / 33,085.09–39,582 /
+// 39,582–41,356.36 / 41,356.36–45,630 / 45,630–45,934.20 / 45,934.20–50,700 /
+// 50,700–59,373 / ≥59,373
 const engineer: Profile = {
   destination: "de", citizenship: "third_country", situation: "offer", qualification: "degree",
   recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
-  salary_eur_year: "band_4",
+  salary_eur_year: "band_5",
 };
 
 /** Greedy wizard simulation: always answer the first remaining question. */
@@ -30,18 +31,19 @@ function runFlow(answers: Profile): { asked: string[]; profile: Profile } {
 }
 
 describe("band derivation across the four countries' salary thresholds", () => {
-  it("derives seven bands whose edges are exactly the thresholds", () => {
+  it("derives eight bands whose edges are exactly the thresholds", () => {
     const bands = deriveBands(dataset, "salary_eur_year");
     expect(bands.map((b) => [b.min, b.max])).toEqual([
-      [undefined, 39582], [39582, 41356.36], [41356.36, 45630], [45630, 45934.2],
-      [45934.2, 50700], [50700, 59373], [59373, undefined],
+      [undefined, 33085.09], [33085.09, 39582], [39582, 41356.36], [41356.36, 45630],
+      [45630, 45934.2], [45934.2, 50700], [50700, 59373], [59373, undefined],
     ]);
-    expect(bands[4].label).toBe("€45,934.20 – €50,700");
+    expect(bands[5].label).toBe("€45,934.20 – €50,700");
   });
 
   it("monthly salary bands include thresholds nested inside any-paths (NL ICT)", () => {
     expect(deriveBands(dataset, "salary_eur_month").map((b) => [b.min, b.max])).toEqual([
-      [undefined, 1635.9], [1635.9, 1867.02], [1867.02, 4357], [4357, 5942], [5942, undefined],
+      [undefined, 1635.9], [1635.9, 1867.02], [1867.02, 3122], [3122, 4357],
+      [4357, 4754], [4754, 5942], [5942, undefined],
     ]);
   });
 
@@ -84,7 +86,7 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
   it("P2 vocational worker with offer: at most 7 questions, shortage list never asked", () => {
     const { asked, profile } = runFlow({
       destination: "de", citizenship: "third_country", situation: "offer", qualification: "vocational",
-      recognition_de: "recognized", experience: "y5in7", salary_eur_year: "band_3",
+      recognition_de: "recognized", experience: "y5in7", salary_eur_year: "band_4",
       occupation_shortage: "no", occupation_it: "no",
     });
     expect(asked.length).toBeLessThanOrEqual(7);
@@ -205,7 +207,7 @@ describe("hard_fail — which unknowns still bind (s5b, critique #4)", () => {
   const walkA: Profile = {
     destination: "de", citizenship: "third_country", situation: "offer", qualification: "degree",
     recognition_de: "unknown", occupation_shortage: "yes", experience: "y2in5",
-    salary_eur_year: "band_4",
+    salary_eur_year: "band_5",
   };
   const byId = Object.fromEntries(evaluate(dataset, walkA).map((r) => [r.route.id, r]));
 
