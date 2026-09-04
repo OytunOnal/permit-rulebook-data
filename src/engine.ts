@@ -396,6 +396,26 @@ export function optionEquivalenceClasses(dataset: Dataset, field: string, values
   return classes;
 }
 
+/** Fold for search: lower-case, then drop combining marks so "turk" finds
+ * "Türkiye". Letters that carry no mark (ø, ł, đ) do not decompose — those are
+ * covered by aliases, not by folding. */
+export function foldForSearch(s: string): string {
+  return s.toLocaleLowerCase("en").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
+/**
+ * The options a typed needle matches — label or alias, never the value.
+ * Lives here rather than in the page because "can this person find their own
+ * country" is a promise with a permanent check behind it: a Turkish user
+ * typing "turkey" was told to check their spelling (product-critique
+ * 2026-09-04), and the fix has to survive the next control that renders it.
+ */
+export function matchOptions(options: FieldOption[], needle: string): FieldOption[] {
+  const n = foldForSearch(needle.trim());
+  if (!n) return options;
+  return options.filter((o) => foldForSearch([o.label, ...(o.aliases ?? [])].join(" ")).includes(n));
+}
+
 export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
   const results: RouteResult[] = [];
   for (const country of dataset.countries) {
