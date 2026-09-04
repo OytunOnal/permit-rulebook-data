@@ -118,15 +118,25 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
     expect(byId({ ...base, qualification_recent: "no" })["es-blue-card"].status).not.toBe("met");
     // The shortage-occupation limb ships as a precondition, not a number.
     const route = byId(base)["es-blue-card"].route;
-    expect(route.preconditions!.join(" ")).toContain("CNO-2011");
+    expect(route.preconditions!.join(" ").toLowerCase()).toMatch(/shortage occupations/);
     expect(routeProvenance(route).map((p) => p.value.quote)).toContain("– Umbral reducido: 33.085,09 €");
   });
 
   it("NL ICT keeps the full criterion — the reduced one is not evidenced for it", () => {
     const route = dataset.countries.flatMap((c) => c.routes).find((r) => r.id === "nl-ict")!;
     const quotes = routeProvenance(route).map((p) => p.value.quote);
+    // The claim is about the data, not the prose: no reduced amount is modelled
+    // on this route, and its thresholds are the full highly-skilled-migrant ones.
     expect(quotes.some((q) => q.includes("3,122"))).toBe(false);
-    expect(route.summary).toContain("reduced");
+    const amounts: number[] = [];
+    const walk = (cs: Criterion[]): void => {
+      for (const c of cs) {
+        if (c.op === "any") { for (const p of c.paths) walk(p.criteria); continue; }
+        if (c.op === "gte") amounts.push(c.threshold.amount);
+      }
+    };
+    walk(route.criteria);
+    expect(amounts.sort((a, b) => a - b)).toEqual([4357, 5942]);
   });
 });
 
@@ -162,7 +172,9 @@ describe("s5c — the two French talent routes the dataset had excluded", () => 
   it("step 6: an intra-group mission at €40,000 with a French contract meets the route", () => {
     const r = byId(mission)["fr-talent-mission"];
     expect(r.status).toBe("met");
-    expect(r.route.preconditions!.join(" · ")).toMatch(/3 months' seniority/i);
+    const pre = r.route.preconditions!.join(" · ").toLowerCase();
+    expect(pre).toMatch(/three months|3 months/);
+    expect(pre).toContain("group");
     expect(routeProvenance(r.route).map((p) => p.value.quote)).toContain(
       "Percevoir une rémunération brute annuelle supérieure ou égale à 39 582 €.",
     );

@@ -506,11 +506,11 @@
           "id": "de-blue-card-shortage",
           "name": "EU Blue Card — shortage occupation",
           "kind": "res-work",
-          "summary": "Reduced salary threshold for shortage occupations (IT and other Engpassberufe).",
+          "summary": "A lower salary threshold, for occupations on Germany's shortage list — IT, engineering, health and others.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
           "preconditions": [
-            "Employment contract of at least 6 months",
-            "Regulated professions (health, law…): the professional licence must be in hand"
+            "An employment contract of at least six months",
+            "If your profession is regulated (health, law and similar), the professional licence must already be in hand"
           ],
           "criteria": [
             {
@@ -592,11 +592,11 @@
           "id": "de-blue-card-general",
           "name": "EU Blue Card — general",
           "kind": "res-work",
-          "summary": "Standard EU Blue Card salary threshold, any qualified occupation.",
+          "summary": "The standard EU Blue Card: a recognised university degree and a salary above the general threshold, in any qualified job.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
           "preconditions": [
-            "Employment contract of at least 6 months",
-            "Regulated professions (health, law…): the professional licence must be in hand"
+            "An employment contract of at least six months",
+            "If your profession is regulated (health, law and similar), the professional licence must already be in hand"
           ],
           "criteria": [
             {
@@ -673,10 +673,10 @@
           "id": "de-skilled-academic",
           "name": "Skilled worker — academic (§ 18b)",
           "kind": "res-work",
-          "summary": "Recognised university degree plus a concrete job offer matching the qualification. No fixed salary threshold (age 45+: 55% rule or pension provision).",
+          "summary": "Your university degree is recognised in Germany and the job matches it. There is no salary threshold — but from age 45 an extra salary requirement applies, or proof of pension provision.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
           "preconditions": [
-            "The job matches the recognised qualification"
+            "The job matches the qualification that was recognised"
           ],
           "criteria": [
             {
@@ -740,11 +740,11 @@
           "id": "de-skilled-vocational",
           "name": "Skilled worker — vocational (§ 18a)",
           "kind": "res-work",
-          "summary": "Recognised vocational qualification plus a concrete job offer; German appropriate to the occupation and secured livelihood are also required. No fixed salary threshold (age 45+: 55% rule).",
+          "summary": "Your vocational training is recognised in Germany and you have a job offer that matches it. There is no salary threshold — but from age 45 an extra salary requirement applies.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Fachkraft/fachkraft-node.html",
           "preconditions": [
-            "German appropriate to the occupation",
-            "Secured livelihood"
+            "Enough German for the job itself — how much depends on the work",
+            "Enough income to live on without state support, plus health insurance (the salary from the job normally covers this)"
           ],
           "criteria": [
             {
@@ -808,11 +808,11 @@
           "id": "de-experienced-worker",
           "name": "Experienced worker (§ 19c / § 6 BeschV)",
           "kind": "res-work",
-          "summary": "No German recognition needed: 2+ years of recent skilled experience plus either a state-recognised qualification from your home country or IT experience. Salary threshold waived for collectively bound employers.",
+          "summary": "No German recognition needed: two years of recent skilled work in the last five, plus either a qualification your home country officially recognises, or experience in IT.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/FachkraefteOhneAusbildung/fachkraefte-ohne-ausbildung-node.html",
           "preconditions": [
-            "The employer is collectively bound, or the salary threshold applies",
-            "Qualification state-recognised where it was obtained"
+            "The salary threshold applies unless your employer is covered by a collective wage agreement",
+            "Your qualification is officially recognised in the country where you earned it"
           ],
           "criteria": [
             {
@@ -920,7 +920,7 @@
           "id": "de-researcher",
           "name": "Researcher (§ 18d)",
           "kind": "res-work",
-          "summary": "Hosting agreement with a research institution (university through to a company research department); the institution commits to cost coverage. Permit for at least one year; 18-month job-search permit afterwards.",
+          "summary": "A research institution — from a university to a company's research department — has agreed to host you and to cover the costs. The permit runs for at least a year, and you may stay 18 months afterwards to look for work.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
           "preconditions": [
             "A signed hosting agreement with a recognised research institution"
@@ -977,11 +977,11 @@
           "id": "de-ict-card",
           "name": "ICT Card — intra-corporate transfer (§ 19)",
           "kind": "res-work",
-          "summary": "Transfer of 90+ days as manager, specialist or trainee; 6+ months with the undertaking first; work contract covering the transfer. Up to 3 years (trainees 1).",
+          "summary": "Your company moves you to its German branch for more than 90 days, as a manager, specialist or trainee. Up to three years, or one year for trainees.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
           "preconditions": [
-            "At least 6 months with the undertaking before the transfer",
-            "Transfer longer than 90 days, as manager, specialist or trainee"
+            "At least six months with the company before the transfer",
+            "The transfer lasts more than 90 days, in a manager, specialist or trainee role"
           ],
           "criteria": [
             {
@@ -1035,7 +1035,7 @@
           "id": "de-chancenkarte",
           "name": "Opportunity Card (Chancenkarte, § 20a)",
           "kind": "seek",
-          "summary": "One-year job-search card with part-time work (20h/week). Fully recognised skilled workers get it directly; everyone else via the points table (6 points needed). Shown when you don't yet have an offer, transfer or hosting agreement.",
+          "summary": "A one-year card to come and look for work, with part-time work of up to 20 hours a week. If your qualification is fully recognised in Germany you get it directly; otherwise you need six points from the official table. It is shown when you have no offer, transfer or hosting agreement yet.",
           "info_url": "https://handbookgermany.de/en/opportunity-card",
           "criteria": [
             {
@@ -1222,10 +1222,10 @@
           "id": "fr-talent-qualifie",
           "name": "Talent — qualified employee (salarié qualifié)",
           "kind": "res-work",
-          "summary": "For master's-level graduates of French institutions with a 3+ month contract. Card valid up to 4 years. Talent family: no labour-market test.",
+          "summary": "For people who earned a master's-level degree in France and have a contract of more than three months. The card lasts as long as the contract, up to four years, and the job does not have to be advertised first.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "preconditions": [
-            "Employment contract of more than 3 months"
+            "An employment contract of more than three months"
           ],
           "criteria": [
             {
@@ -1304,10 +1304,10 @@
           "id": "fr-talent-blue-card",
           "name": "EU Blue Card (talent — carte bleue européenne)",
           "kind": "res-work",
-          "summary": "6+ month contract; 3-year higher-education diploma or 5 years of comparable experience (3-in-last-7 for professions listed by ministerial order). Card up to 4 years.",
+          "summary": "A contract of at least six months, plus a higher-education diploma of three years or more — or five years of comparable experience. Up to four years, and the job does not have to be advertised first.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "preconditions": [
-            "Employment contract of at least 6 months"
+            "An employment contract of at least six months"
           ],
           "criteria": [
             {
@@ -1402,11 +1402,11 @@
           "id": "fr-ict",
           "name": "ICT — seconded employee (salarié détaché ICT)",
           "kind": "res-work",
-          "summary": "Intra-group transfer for a 1+ year mission in a senior management or expert role, with 6+ months of group seniority. Card up to 3 years, not renewable.",
+          "summary": "Your group moves you to France for an assignment of more than a year, in a senior or expert role. Up to three years, and it cannot be renewed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
           "preconditions": [
-            "At least 6 months' seniority in the group",
-            "Mission longer than 1 year in a senior-management or expert role"
+            "At least six months with the group already",
+            "The assignment lasts more than a year, in a senior or expert role"
           ],
           "criteria": [
             {
@@ -1475,11 +1475,11 @@
           "id": "fr-talent-innovante",
           "name": "Talent — employee of an innovative company",
           "kind": "res-work",
-          "summary": "Talent card for a hire by a jeune entreprise innovante, or a company the ministry of the economy recognises as innovative, in a role tied to its R&D project. Same threshold as the salarié qualifié subtype; no French degree required.",
+          "summary": "For a job at a company France officially recognises as innovative, in work tied to its research and development. The salary threshold is the same as the qualified-employee card, and no French degree is needed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "preconditions": [
-            "Duties directly linked to the company's research and development project",
-            "The employer's innovative status is recognised by the ministry of the economy"
+            "Your work is directly tied to the company's research and development project",
+            "France's ministry of the economy recognises the employer as innovative"
           ],
           "criteria": [
             {
@@ -1554,11 +1554,11 @@
           "id": "fr-talent-mission",
           "name": "Talent — employee on assignment (salarié en mission)",
           "kind": "res-work",
-          "summary": "Talent card for an intra-group move to France where the French entity issues its own employment contract. Distinct from the ICT card: the contract is local, and the salary rule is the talent threshold rather than a resources proof.",
+          "summary": "For an intra-group move to France where the French company issues your contract. Unlike the ICT card, the contract is French and the salary rule is the talent threshold.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "preconditions": [
-            "At least 3 months' seniority in the group that employs you",
-            "The move is between establishments of the same company or group"
+            "At least three months with the group already",
+            "The move is between branches of the same company or group"
           ],
           "criteria": [
             {
@@ -1639,12 +1639,12 @@
           "id": "es-blue-card",
           "name": "EU Blue Card (tarjeta azul-UE)",
           "kind": "res-work",
-          "summary": "6+ month contract or firm offer; higher-education qualification (3+ years) or 5 years of comparable experience (3-in-last-7 for ICT professionals). UGE fast-track: 20-day decision, positive administrative silence. A reduced threshold (€33,085.09) applies to a qualification obtained within the last 3 years; the shortage-occupation limb is stated as a precondition, not scored.",
+          "summary": "A contract or firm offer of at least six months, plus a higher-education qualification of three years or more — or five years of comparable experience. Spain's large-companies unit decides in 20 working days, and if it does not answer in time the application counts as approved. A lower salary applies if you earned your qualification in the last three years.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
           "preconditions": [
-            "Contract or firm offer of at least 6 months",
-            "Application through the UGE (Unidad de Grandes Empresas)",
-            "Reduced threshold also applies to shortage occupations in CNO-2011 groups 1–2 (SEPE catalogue) — not checked here"
+            "A contract or firm offer of at least six months",
+            "The application goes through Spain's large-companies unit (UGE), not a provincial office",
+            "The lower salary also applies to shortage occupations on Spain's official list — we do not check that list"
           ],
           "criteria": [
             {
@@ -1777,10 +1777,10 @@
           "id": "es-highly-qualified",
           "name": "Highly qualified professional (PAC nacional)",
           "kind": "res-work",
-          "summary": "National fast-track for higher-education professionals or equivalent experience with a qualifying employer (large company, strategic-sector SME or project of general interest). Single threshold, no reduction; 20-day UGE procedure.",
+          "summary": "Spain's national fast-track for higher-education professionals, or people with equivalent experience, hired by a qualifying employer. One salary threshold, with no reduced version, decided in 20 working days.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
           "preconditions": [
-            "Qualifying employer: large company, strategic-sector SME, or a project of general interest (UGE assessment)"
+            "Your employer qualifies: a large company, an SME in a strategic sector, or a project of general interest — the unit decides"
           ],
           "criteria": [
             {
@@ -1875,11 +1875,11 @@
           "id": "es-ict",
           "name": "Intra-company transfer (traslado intraempresarial)",
           "kind": "res-work",
-          "summary": "Transfer within a group to a Spanish entity as manager, specialist or trainee; 3 months of prior group employment. No salary threshold beyond the applicable collective agreement. Max 3 years (trainees 1).",
+          "summary": "Your group moves you to its Spanish entity as a manager, specialist or trainee. There is no salary threshold beyond the collective agreement for the job. Up to three years, or one for trainees.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/trabajadores",
           "preconditions": [
-            "Real business activity of the group",
-            "3 months' prior employment in the group"
+            "The group actually trades — not a shell company",
+            "Three months with the group before the move"
           ],
           "criteria": [
             {
@@ -1960,10 +1960,10 @@
           "id": "es-researcher",
           "name": "Researcher (investigación, Ley 14/2013 art. 72)",
           "kind": "res-work",
-          "summary": "Hosting agreement or contract with a Spanish research entity (universities, R&D centres, business schools). 3-year permit; 12-month post-research job-search stay.",
+          "summary": "A Spanish university, R&D centre or business school has agreed to host you. Three years, plus a year afterwards to look for work or start a business.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/investigadores",
           "preconditions": [
-            "Hosting agreement (convenio de acogida) or contract with the research entity"
+            "A hosting agreement or a contract with the research body"
           ],
           "criteria": [
             {
@@ -2023,12 +2023,12 @@
           "id": "nl-hsm-30plus",
           "name": "Highly skilled migrant — 30 or older (kennismigrant)",
           "kind": "res-work",
-          "summary": "No degree requirement — the salary criterion substitutes. A reduced criterion (€3,122) applies within 3 years of graduation, a doctoral defence or a research permit ending — modelled as a second path on the salary criterion.",
+          "summary": "The Dutch highly skilled migrant permit. No degree is needed — the salary is what qualifies you. A lower salary counts within three years of graduating, defending a doctorate, or a research permit ending.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
-            "The employer is an IND-recognised sponsor",
-            "Salary in line with the market rate (IND assessment)",
-            "Regulated professions (e.g. nurses, doctors): BIG registration"
+            "Your employer is on the IND's list of recognised sponsors",
+            "The salary matches what the job normally pays — the IND judges this",
+            "If your profession is regulated (nurses, doctors and similar), you need Dutch BIG registration"
           ],
           "criteria": [
             {
@@ -2144,12 +2144,12 @@
           "id": "nl-hsm-under30",
           "name": "Highly skilled migrant — under 30 (kennismigrant)",
           "kind": "res-work",
-          "summary": "Reduced salary criterion for applicants younger than 30, with a further reduced criterion (€3,122) within 3 years of graduation, a doctoral defence or a research permit ending.",
+          "summary": "The same permit with a lower salary for people under 30 — and lower still within three years of graduating, defending a doctorate, or a research permit ending.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
-            "The employer is an IND-recognised sponsor",
-            "Salary in line with the market rate (IND assessment)",
-            "Regulated professions (e.g. nurses, doctors): BIG registration"
+            "Your employer is on the IND's list of recognised sponsors",
+            "The salary matches what the job normally pays — the IND judges this",
+            "If your profession is regulated (nurses, doctors and similar), you need Dutch BIG registration"
           ],
           "criteria": [
             {
@@ -2260,11 +2260,11 @@
           "id": "nl-blue-card",
           "name": "EU Blue Card",
           "kind": "res-work",
-          "summary": "6+ month contract; sponsor recognition not required. Higher-education diploma (3+ years), or 5 years of relevant experience — 3 years within the last 7 for IT managers and IT professionals. A reduced criterion (€4,754) applies to higher-education graduates within 3 years of graduation or promotion.",
+          "summary": "A contract of at least six months, plus a higher-education diploma of three years or more — or five years of relevant experience, three years if you work in IT. Your employer does not have to be a recognised sponsor. A lower salary counts for graduates within three years.",
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
           "preconditions": [
-            "Employment contract of at least 6 months",
-            "Regulated professions: BIG registration"
+            "An employment contract of at least six months",
+            "If your profession is regulated, you need the Dutch registration for it (BIG in healthcare)"
           ],
           "criteria": [
             {
@@ -2418,12 +2418,12 @@
           "id": "nl-ict",
           "name": "Intra-corporate transferee (Directive 2014/66/EU)",
           "kind": "res-work",
-          "summary": "Transfer as manager, specialist or trainee after 3+ months with the company outside the EU. Salary must meet the highly-skilled-migrant criterion for your age. Managers/specialists max 3 years, trainees 1. IND restates the highly-skilled-migrant amounts here but states no reduced criterion for this permit, so none is modelled.",
+          "summary": "Your company moves you to the Netherlands as a manager, specialist or trainee. The salary has to reach the highly skilled migrant level for your age. Up to three years, or one for trainees.",
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
           "preconditions": [
-            "At least 3 months with the company outside the EU",
-            "Role: manager, specialist or trainee",
-            "Regulated professions (e.g. doctor, architect; BIG registration in healthcare)"
+            "At least three months with the company outside the EU",
+            "You move in a manager, specialist or trainee role",
+            "If your profession is regulated (doctor, architect and similar), you need the Dutch registration for it"
           ],
           "criteria": [
             {
@@ -2538,11 +2538,11 @@
           "id": "nl-researcher",
           "name": "Researcher (Directive (EU) 2016/801)",
           "kind": "res-work",
-          "summary": "Employment contract or host agreement with an IND-recognised research institution; degree giving access to a doctoral programme. Permit up to 5 years.",
+          "summary": "A contract or hosting agreement with a Dutch research institution the IND recognises as a sponsor. Up to five years.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
           "preconditions": [
-            "The research institution is an IND-recognised sponsor",
-            "Degree giving access to a doctoral programme (or employer-declared equivalent)"
+            "The institution is on the IND's list of recognised sponsors",
+            "A degree that would let you start a doctorate, or your employer's statement that your level is equivalent"
           ],
           "criteria": [
             {
@@ -2611,11 +2611,11 @@
           "id": "nl-orientation-year",
           "name": "Orientation year (zoekjaar)",
           "kind": "seek",
-          "summary": "One-year job-search permit — work freely permitted, no work permit (TWV) needed. For those who graduated, obtained a doctorate or did research at a Dutch institution — or graduated from a top-200-ranked foreign university — within the last 3 years. Not extendable; afterwards the reduced highly-skilled-migrant salary criterion (€3,122) applies.",
+          "summary": "A one-year permit to look for work. You may take any job without a separate work permit. It is for people who graduated, took a doctorate or did research in the Netherlands — or graduated from an institution the IND designates abroad — within the last three years. It cannot be extended.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
           "preconditions": [
-            "Application within 3 years of graduation/research",
-            "English proficiency: IELTS 6.0 or an equivalent test, or a programme taught in English or Dutch (foreign-institution graduates)"
+            "You apply within three years of graduating or finishing the research",
+            "If you studied abroad: proof of English (IELTS 6.0 or an equivalent test), or a programme taught in English or Dutch"
           ],
           "criteria": [
             {
