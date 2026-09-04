@@ -1037,9 +1037,6 @@
           "kind": "seek",
           "summary": "One-year job-search card with part-time work (20h/week). Fully recognised skilled workers get it directly; everyone else via the points table (6 points needed). Shown when you don't yet have an offer, transfer or hosting agreement.",
           "info_url": "https://handbookgermany.de/en/opportunity-card",
-          "preconditions": [
-            "Part-time work limited to 20 hours/week while searching"
-          ],
           "criteria": [
             {
               "field": "citizenship",

@@ -58,10 +58,29 @@ describe("cleared blocker: a person with EU free movement is never told they nee
 });
 
 describe("cleared blocker: a card never claims more than the interview checked", () => {
+  // Demanding a line from every route invited a false one: the Chancenkarte
+  // carried "Part-time work limited to 20 hours/week", which is what the card
+  // PERMITS, not something the applicant must satisfy — and it read as a
+  // requirement under "Also required" (human catch 2026-09-04). A route with
+  // no unasked condition we can source says so here, deliberately.
+  const NO_UNASKED_CONDITIONS = ["de-chancenkarte"];
+
   it("every route states the conditions the authority applies but we never ask", () => {
     for (const country of dataset.countries)
-      for (const route of country.routes)
+      for (const route of country.routes) {
+        if (NO_UNASKED_CONDITIONS.includes(route.id)) {
+          expect(route.preconditions, `${route.id} is listed as having none`).toBeUndefined();
+          continue;
+        }
         expect(route.preconditions?.length, `${route.id} has no preconditions line`).toBeGreaterThan(0);
+      }
+  });
+
+  it("a precondition states something the applicant must satisfy, never what the permit allows", () => {
+    for (const country of dataset.countries)
+      for (const route of country.routes)
+        for (const p of route.preconditions ?? [])
+          expect(p, `${route.id}: "${p}"`).not.toMatch(/permitted|allowed|you may work|hours per week|hours\/week|renewable|valid for/i);
   });
 });
 
