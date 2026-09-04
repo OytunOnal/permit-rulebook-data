@@ -114,6 +114,41 @@ describe("scenario s5 — one interview, four countries", () => {
   });
 });
 
+describe("NL Blue Card — the IT experience rule (human verification 2026-09-04)", () => {
+  const itPro: Profile = {
+    destination: "nl", citizenship: "third_country", situation: "offer",
+    qualification: "none", occupation_it: "yes", experience: "y2in5",
+    age_band: "a30to35", salary_eur_month: "band_4",
+  };
+
+  it("an IT professional with 3 years in the last 7 meets it without a degree", () => {
+    expect(byId({ ...itPro, experience_7y: "yes" })["nl-blue-card"].status).toBe("met");
+  });
+
+  it("without that experience the route is honestly held, never assumed", () => {
+    expect(byId({ ...itPro, experience_7y: "no" })["nl-blue-card"].status).toBe("hold");
+  });
+
+  it("non-IT applicants are never asked the 7-year question", () => {
+    const { asked } = runFlow({
+      destination: "nl", citizenship: "third_country", situation: "offer",
+      qualification: "degree", age_band: "a30to35", salary_eur_month: "band_4",
+      experience: "y2in5",
+    });
+    expect(asked).not.toContain("experience_7y");
+  });
+
+  it("a German applicant never sees it either (pruning, not luck)", () => {
+    const { asked } = runFlow({
+      destination: "de", citizenship: "third_country", situation: "offer",
+      qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
+      experience: "y2in5", salary_eur_year: "band_4",
+    });
+    expect(asked).not.toContain("experience_7y");
+    expect(asked.length).toBeLessThanOrEqual(8);
+  });
+});
+
 describe("invariant — destination pruning", () => {
   const cases: Array<[string, string]> = [
     ["de", "DE"], ["fr", "FR"], ["es", "ES"], ["nl", "NL"],
@@ -247,11 +282,14 @@ describe("the orientation year asks two plain questions (s5b, critique #6)", () 
     const labels = Object.fromEntries(
       deriveQuestions(dataset).map((q) => [q.field, q.label]),
     );
-    expect(labels["nl_recent_grad"]).toBe(
-      "In the last 3 years, did you graduate from — or do research at — a Dutch university or research institution?",
-    );
-    expect(labels["top200_grad"]).toBe(
-      "In the last 3 years, did you graduate from a university ranked in the global top 200?",
-    );
+    // The property, not the copy: one institution class per question, so a
+    // reworded label (the IND page frames foreign schools as "designated",
+    // not "top 200" — human check 2026-09-04) doesn't fail the intent.
+    expect(labels["nl_recent_grad"]).toMatch(/Dutch/);
+    expect(labels["nl_recent_grad"]).not.toMatch(/foreign|designated|top 200/i);
+    expect(labels["top200_grad"]).toMatch(/foreign|designated/i);
+    expect(labels["top200_grad"]).not.toMatch(/Dutch/);
+    for (const f of ["nl_recent_grad", "top200_grad"])
+      expect(labels[f]).toMatch(/last 3 years/);
   });
 });

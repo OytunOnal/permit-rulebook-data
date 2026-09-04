@@ -18,7 +18,7 @@ quote, tick the box. Any mismatch → fix dataset + note in DECISIONS.
 
 - [ ] UGE threshold PDF (June 2026): "Umbral general: **41.356,36 €**" and "Umbral reducido: 33.085,09 €" (reduced not modeled)
       https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf
-      (byte-hash in watch state: 3a577351…f543f609 — confirm the PDF you read matches "Junio 2026")
+      (byte-hash in watch state: 3a577351…053f4609 — confirm the PDF you read matches "Junio 2026")
 - [ ] Same PDF: "PAC nacional … umbral único de **41.356,36 €** – No se aplica umbral reducido"
 - [ ] Ley 14/2013 art. 71 bis.1.b (BOE consolidated): contract/offer "de al menos seis meses"
       https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074

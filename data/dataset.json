@@ -170,6 +170,23 @@
       ]
     },
     {
+      "id": "experience_7y",
+      "label": "Do you have at least 3 years of relevant experience within the last 7?",
+      "type": "enum",
+      "kind": "improvable",
+      "options": [
+        {
+          "value": "yes",
+          "label": "Yes",
+          "short": "3+ years of experience in the last 7"
+        },
+        {
+          "value": "no",
+          "label": "No"
+        }
+      ]
+    },
+    {
       "id": "occupation_shortage",
       "label": "Is your occupation on Germany's shortage list (IT, engineering, health…)?",
       "type": "enum",
@@ -255,10 +272,10 @@
     },
     {
       "id": "top200_grad",
-      "label": "In the last 3 years, did you graduate from a university ranked in the global top 200?",
+      "label": "In the last 3 years, did you graduate from a foreign institution that the IND designates for the orientation year?",
       "type": "enum",
       "learn": {
-        "label": "The qualifying institutions and rankings are listed on the IND orientation-year page",
+        "label": "The IND lists the designated foreign educational institutions on the orientation-year page",
         "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year"
       },
       "options": [
@@ -1484,7 +1501,7 @@
               "field": "salary_eur_year",
               "op": "gte",
               "threshold_label": "general (1.4× INE average)",
-              "note": "Threshold PDF value — flagged for human re-verification per project policy.",
+              "note": "Threshold PDF value — flagged for human re-verification per project policy. Derivation (UGE PDF, human-read 2026-09-04): \"El Instituto Nacional de Estadística (INE) publicó el pasado 28 de mayo de 2026 el dato actualizado del sueldo medio correspondiente a 2024, fijándolo en 29.540,26 €\" — the threshold moves whenever the INE publishes a new average (Orden PJC/44/2026, art. 3.2: one month after publication).",
               "threshold": {
                 "amount": 41356.36,
                 "currency": "EUR",
@@ -1582,7 +1599,7 @@
               "field": "salary_eur_year",
               "op": "gte",
               "threshold_label": "single threshold",
-              "note": "Threshold PDF value — flagged for human re-verification per project policy.",
+              "note": "Threshold PDF value — flagged for human re-verification per project policy. Derivation (UGE PDF, human-read 2026-09-04): \"El Instituto Nacional de Estadística (INE) publicó el pasado 28 de mayo de 2026 el dato actualizado del sueldo medio correspondiente a 2024, fijándolo en 29.540,26 €\" — the threshold moves whenever the INE publishes a new average (Orden PJC/44/2026, art. 3.2: one month after publication).",
               "threshold": {
                 "amount": 41356.36,
                 "currency": "EUR",
@@ -1910,7 +1927,7 @@
           "id": "nl-blue-card",
           "name": "EU Blue Card",
           "kind": "res-work",
-          "summary": "6+ month contract; sponsor recognition not required. Higher-education diploma (3+ years) or 5 years of relevant experience (IT roles: 3-in-last-7). A reduced criterion (€4,754) for recent graduates — not modeled.",
+          "summary": "6+ month contract; sponsor recognition not required. Higher-education diploma (3+ years), or 5 years of relevant experience — 3 years within the last 7 for IT managers and IT professionals. A reduced criterion (€4,754) for recent graduates is not modelled.",
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
           "preconditions": [
             "Employment contract of at least 6 months",
@@ -1965,7 +1982,7 @@
             {
               "op": "any",
               "label": "diploma or experience",
-              "note": "IND: \"you have a diploma of a programme in higher education. This programme was at least 3 years.\" OR \"you have a minimum of 5 years of relevant work experience\" (IT roles: 3-in-last-7 — not separately modeled).",
+              "note": "IND: \"you have a diploma of a programme in higher education. This programme was at least 3 years.\" OR \"you have a minimum of 5 years of relevant work experience\". For IT roles: \"Are you an IT manager or IT professional? A minimum of 3 years of relevant work experience is required during the period of 7 years before the application.\" (human-verified on the IND page 2026-09-04; the page body is client-rendered and cannot be machine-read).",
               "paths": [
                 {
                   "label": "higher-education diploma",
@@ -1984,6 +2001,22 @@
                       "field": "experience",
                       "op": "eq",
                       "value": "y5in7"
+                    }
+                  ]
+                },
+                {
+                  "label": "IT role with 3 years in the last 7",
+                  "criteria": [
+                    {
+                      "field": "occupation_it",
+                      "op": "eq",
+                      "value": "yes"
+                    },
+                    {
+                      "field": "experience_7y",
+                      "op": "eq",
+                      "value": "yes",
+                      "note": "IND: a minimum of 3 years of relevant work experience during the 7 years before the application, for IT managers and IT professionals."
                     }
                   ]
                 }
@@ -2013,7 +2046,8 @@
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
           "preconditions": [
             "At least 3 months with the company outside the EU",
-            "Role: manager, specialist or trainee"
+            "Role: manager, specialist or trainee",
+            "Regulated professions (e.g. doctor, architect; BIG registration in healthcare)"
           ],
           "criteria": [
             {
@@ -2189,8 +2223,8 @@
                 "amount": 1635.9,
                 "currency": "EUR",
                 "source_url": "https://ind.nl/en/required-amounts-income-requirements",
-                "quote": "€1,635.90",
-                "retrieved_at": "2026-09-02",
+                "quote": "These amounts are valid from 1 July 2026 up to and including 31 December 2026. Gross SV salary per month without holiday allowance € 1,635.90",
+                "retrieved_at": "2026-09-04",
                 "legal_basis": "Researcher (Directive (EU) 2016/801) — required amounts valid 1 July – 31 December 2026",
                 "history": []
               }
@@ -2204,7 +2238,8 @@
           "summary": "One-year job-search permit — work freely permitted, no work permit (TWV) needed. For those who graduated, obtained a doctorate or did research at a Dutch institution — or graduated from a top-200-ranked foreign university — within the last 3 years. Not extendable; afterwards the reduced highly-skilled-migrant salary criterion (€3,122) applies.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
           "preconditions": [
-            "Application within 3 years of graduation/research"
+            "Application within 3 years of graduation/research",
+            "English proficiency: IELTS 6.0 or an equivalent test, or a programme taught in English or Dutch (foreign-institution graduates)"
           ],
           "criteria": [
             {
@@ -2229,7 +2264,7 @@
             {
               "op": "any",
               "label": "recent graduate or top-200 graduate",
-              "note": "IND: qualifying events within \"the 3 years before the date of application\"; foreign institutions must rank in the top 200 in at least 2 of 3 ranking publishers (Times Higher Education, QS, ShanghaiRanking).",
+              "note": "IND: the qualifying event must fall in \"the 3 years before the date of application\" — a Dutch institution, or \"a designated foreign educational institution\". The designation list is published by the IND; the earlier \"top 200 in 2 of 3 rankings\" reading was not found on the page (human check 2026-09-04) and is no longer asserted.",
               "paths": [
                 {
                   "label": "Dutch graduate or researcher",

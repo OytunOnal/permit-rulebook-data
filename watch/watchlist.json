@@ -33,7 +33,10 @@
       "url": "https://www.buzer.de/Anlage_AufenthG.htm",
       "strategy": "html",
       "kind": "value-source",
-      "slice": { "from": "Tabelle Anlage hat", "to": "&sect; 107 ←" },
+      "slice": {
+        "from": "Tabelle Anlage hat",
+        "to": "&sect; 107 ←"
+      },
       "note": "Backs the points requirement and table (mirror). Sliced to the statute table — buzer rotates ad blocks per request (observed 2026-09-02: three page variants, identical legal text). Official-source re-check tracked by the gesetze human-tier entry."
     },
     {
@@ -92,8 +95,29 @@
       "url": "https://ind.nl/en/residence-permits/work",
       "strategy": "html",
       "kind": "sentinel",
-      "slice": { "from": "Work Terug", "to": "Study Terug" },
+      "slice": {
+        "from": "Work Terug",
+        "to": "Study Terug"
+      },
       "note": "NL route inventory: new/removed routes and slug changes (old slugs 404 rather than redirect). Sliced to the Work block of IND's menu — the whole page also carries every other permit family, and on 2026-09-03 it flagged because an article-8 ECHR item was added to the humanitarian menu. A sentinel that cries wolf gets ignored."
+    },
+    {
+      "id": "nl-ind-orientation-year-human",
+      "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+      "strategy": "human",
+      "kind": "sentinel",
+      "max_age_days": 90,
+      "last_verified": "2026-09-04",
+      "note": "Human tier: IND route pages render client-side (our fetch sees a 1.4 kB shell), so the designated-institution list and the English-proficiency requirement cannot be machine-watched. Re-read quarterly."
+    },
+    {
+      "id": "nl-ind-blue-card-human",
+      "url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+      "strategy": "human",
+      "kind": "sentinel",
+      "max_age_days": 90,
+      "last_verified": "2026-09-04",
+      "note": "Human tier: same client-rendered shell. Carries the diploma leg and the IT 3-in-7 experience rule the dataset models."
     }
   ]
 }
