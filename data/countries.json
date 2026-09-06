@@ -93,7 +93,10 @@
     },
     {
       "code": "AG",
-      "name": "Antigua & Barbuda"
+      "name": "Antigua and Barbuda",
+      "aliases": [
+        "Antigua & Barbuda"
+      ]
     },
     {
       "code": "AR",
@@ -160,7 +163,10 @@
     },
     {
       "code": "BA",
-      "name": "Bosnia & Herzegovina"
+      "name": "Bosnia and Herzegovina",
+      "aliases": [
+        "Bosnia & Herzegovina"
+      ]
     },
     {
       "code": "BW",
@@ -234,18 +240,21 @@
     },
     {
       "code": "CG",
-      "name": "Congo - Brazzaville",
+      "name": "Republic of the Congo",
       "aliases": [
-        "Republic of the Congo"
+        "Congo",
+        "Congo-Brazzaville",
+        "Congo - Brazzaville"
       ]
     },
     {
       "code": "CD",
-      "name": "Congo - Kinshasa",
+      "name": "Democratic Republic of the Congo",
       "aliases": [
         "DRC",
-        "Democratic Republic of the Congo",
-        "Zaire"
+        "Zaire",
+        "Congo-Kinshasa",
+        "Congo - Kinshasa"
       ]
     },
     {
@@ -401,9 +410,9 @@
     },
     {
       "code": "HK",
-      "name": "Hong Kong SAR China",
+      "name": "Hong Kong",
       "aliases": [
-        "Hong Kong"
+        "Hong Kong SAR China"
       ]
     },
     {
@@ -523,10 +532,10 @@
     },
     {
       "code": "MO",
-      "name": "Macao SAR China",
+      "name": "Macao",
       "aliases": [
-        "Macao",
-        "Macau"
+        "Macau",
+        "Macao SAR China"
       ]
     },
     {
@@ -602,9 +611,10 @@
     },
     {
       "code": "MM",
-      "name": "Myanmar (Burma)",
+      "name": "Myanmar",
       "aliases": [
-        "Burma"
+        "Burma",
+        "Myanmar (Burma)"
       ]
     },
     {
@@ -740,7 +750,11 @@
     },
     {
       "code": "ST",
-      "name": "São Tomé & Príncipe"
+      "name": "São Tomé and Príncipe",
+      "aliases": [
+        "Sao Tome",
+        "São Tomé & Príncipe"
+      ]
     },
     {
       "code": "SA",
@@ -814,15 +828,29 @@
     },
     {
       "code": "KN",
-      "name": "St. Kitts & Nevis"
+      "name": "Saint Kitts and Nevis",
+      "aliases": [
+        "St Kitts",
+        "St. Kitts and Nevis",
+        "St. Kitts & Nevis"
+      ]
     },
     {
       "code": "LC",
-      "name": "St. Lucia"
+      "name": "Saint Lucia",
+      "aliases": [
+        "St Lucia",
+        "St. Lucia"
+      ]
     },
     {
       "code": "VC",
-      "name": "St. Vincent & Grenadines"
+      "name": "Saint Vincent and the Grenadines",
+      "aliases": [
+        "St Vincent",
+        "St. Vincent and the Grenadines",
+        "St. Vincent & Grenadines"
+      ]
     },
     {
       "code": "SD",
@@ -890,7 +918,10 @@
     },
     {
       "code": "TT",
-      "name": "Trinidad & Tobago"
+      "name": "Trinidad and Tobago",
+      "aliases": [
+        "Trinidad & Tobago"
+      ]
     },
     {
       "code": "TN",
@@ -992,5 +1023,5 @@
       "name": "Zimbabwe"
     }
   ],
-  "note": "The question asks which passport the person will apply with, so this list is passport issuers: sovereign states plus the widely-held non-UN documents (HK, MO, TW, XK, PS). Dependent territories are deliberately absent — a resident of Åland holds a Finnish passport and of Guadeloupe a French one, and listing the territory made the tool answer 'third country' for people who have EU free movement (s5c review). Adding one back means stating, with a source, which passport its residents hold. Some entries carry `aliases`: names people still type (Turkey, Holland, Czech Republic). They are search keys only — the label the tool prints is always the official name."
+  "note": "The question asks which passport the person will apply with, so this list is passport issuers: sovereign states plus the widely-held non-UN documents (HK, MO, TW, XK, PS). Dependent territories are deliberately absent — a resident of Åland holds a Finnish passport and of Guadeloupe a French one, and listing the territory made the tool answer 'third country' for people who have EU free movement (s5c review). Adding one back means stating, with a source, which passport its residents hold. Labels are hand-written English usage, not CLDR's localisation, which abbreviates (\"St. Kitts & Nevis\") and disambiguates in ways no passport does (\"Congo - Kinshasa\", \"Hong Kong SAR China\"). Some entries carry `aliases`: names people still type (Turkey, Holland, Czech Republic). They are search keys only — the label the tool prints is always the official name."
 }

@@ -400,7 +400,15 @@ export function optionEquivalenceClasses(dataset: Dataset, field: string, values
  * "Türkiye". Letters that carry no mark (ø, ł, đ) do not decompose — those are
  * covered by aliases, not by folding. */
 export function foldForSearch(s: string): string {
-  return s.toLocaleLowerCase("en").normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  // Punctuation is not how anyone remembers a country. The labels carry a
+  // typographic apostrophe (Côte d’Ivoire), hyphens (Guinea-Bissau,
+  // Timor-Leste) and spacing people type differently or not at all, so
+  // everything that is not a letter or a digit comes out before comparing.
+  // Before this, “cote d'ivoire” typed with a straight apostrophe matched
+  // nothing at all.
+  return s.toLocaleLowerCase("en").normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^\p{L}\p{N}]+/gu, "");
 }
 
 /**
@@ -413,7 +421,9 @@ export function foldForSearch(s: string): string {
 export function matchOptions(options: FieldOption[], needle: string): FieldOption[] {
   const n = foldForSearch(needle.trim());
   if (!n) return options;
-  return options.filter((o) => foldForSearch([o.label, ...(o.aliases ?? [])].join(" ")).includes(n));
+  // Each name is folded on its own: joining them first would let a needle
+  // match across the seam between a label and an alias.
+  return options.filter((o) => [o.label, ...(o.aliases ?? [])].some((name) => foldForSearch(name).includes(n)));
 }
 
 export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {

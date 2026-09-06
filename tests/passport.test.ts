@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, fieldOptions, informativeFields, isRouteAlive, notices } from "../src/engine.js";
+import { deriveBands, evaluate, fieldOptions, informativeFields, isRouteAlive, matchOptions, notices } from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
 import { vocabularyErrors, type CountryVocabulary } from "../src/countries.js";
@@ -287,5 +287,53 @@ describe("s5c — the class sources are watched and their quotes verify", () => 
     // The Türkiye notice and the class legs are all machine-watched html.
     expect(check.unverifiable.map((u) => u.where)).not.toContain("notice:tr-ankara-rights");
     for (const q of classQuotes) expect(check.unverifiable.map((u) => u.where)).not.toContain(q.where);
+  });
+});
+
+describe("the labels are hand-written English, not CLDR's localisation", () => {
+  // The list started from Intl.DisplayNames, which abbreviates ("St. Kitts &
+  // Nevis") and disambiguates in ways no passport does ("Congo - Kinshasa",
+  // "Hong Kong SAR China"). A person picking their own country reads the name
+  // they know. The generator is gone and this file is the source of truth, so
+  // this test is what stops a future regeneration restoring those forms.
+  it("no label abbreviates or carries a localisation artefact", () => {
+    for (const c of vocabulary.countries) {
+      expect(c.name, c.code).not.toMatch(/&/);
+      expect(c.name, c.code).not.toMatch(/\bSt\./);
+      expect(c.name, c.code).not.toMatch(/ - /);
+      expect(c.name, c.code).not.toMatch(/SAR China/);
+      expect(c.name, c.code).not.toMatch(/\(.*\)/);
+    }
+  });
+
+  it("punctuation never decides whether someone finds their country", () => {
+    // The label carries a typographic apostrophe; a keyboard types a straight
+    // one. Before the fold dropped punctuation, "cote d'ivoire" returned
+    // nothing at all — the same dead end that "turkey" used to hit.
+    const opts = fieldOptions(dataset, "citizenship", vocabulary);
+    for (const [typed, code] of [
+      ["cote d'ivoire", "CI"], ["Cote dIvoire", "CI"], ["côte d’ivoire", "CI"],
+      ["guinea bissau", "GW"], ["guineabissau", "GW"],
+      ["timor leste", "TL"], ["newzealand", "NZ"],
+    ] as const) {
+      expect(matchOptions(opts, typed).map((o) => o.value), typed).toContain(code);
+    }
+  });
+
+  it("every displaced form still finds its country", () => {
+    const opts = fieldOptions(dataset, "citizenship", vocabulary);
+    for (const [typed, code] of [
+      ["Congo - Kinshasa", "CD"], ["Congo-Kinshasa", "CD"], ["Zaire", "CD"],
+      ["Congo - Brazzaville", "CG"], ["Congo-Brazzaville", "CG"],
+      ["Hong Kong SAR China", "HK"], ["Macao SAR China", "MO"],
+      ["St. Kitts & Nevis", "KN"], ["St Kitts", "KN"],
+      ["St. Lucia", "LC"], ["St. Vincent & Grenadines", "VC"],
+      ["Myanmar (Burma)", "MM"], ["Burma", "MM"],
+      ["Antigua & Barbuda", "AG"], ["Bosnia & Herzegovina", "BA"],
+      ["Trinidad & Tobago", "TT"], ["São Tomé & Príncipe", "ST"],
+    ] as const) {
+      const hits = matchOptions(opts, typed);
+      expect(hits.map((o) => o.value), typed).toContain(code);
+    }
   });
 });
