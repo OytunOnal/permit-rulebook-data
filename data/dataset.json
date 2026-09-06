@@ -2594,7 +2594,7 @@
               "field": "salary_eur_month",
               "op": "gte",
               "threshold_label": "sufficient income (Jul–Dec 2026)",
-              "note": "Grants, stipends or own savings also count toward sufficient income; the amount is the gross SV salary per month without holiday allowance. Row wording flagged for human re-verification.",
+              "note": "Grants, stipends or own savings also count toward sufficient income; the amount is the gross SV salary per month without holiday allowance.",
               "threshold": {
                 "amount": 1635.9,
                 "currency": "EUR",
