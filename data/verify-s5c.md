@@ -101,11 +101,11 @@ again. Doing it surfaced a live search defect: folding ignored diacritics but
 not punctuation, so "cote d'ivoire" typed with a straight apostrophe matched
 nothing. Folding now drops punctuation entirely.
 
-- [ ] Read the twelve new labels in the live control and say they look right:
+- [x] Read the twelve new labels in the live control and say they look right:
       Antigua and Barbuda · Bosnia and Herzegovina · Democratic Republic of the
       Congo · Republic of the Congo · Hong Kong · Macao · Myanmar · Saint Kitts
       and Nevis · Saint Lucia · Saint Vincent and the Grenadines · São Tomé and
       Príncipe · Trinidad and Tobago
-- [ ] While you are there, the rest of the spot-check: "Türkiye", "Czechia",
+- [x] While you are there, the rest of the spot-check: "Türkiye", "Czechia",
       "Eswatini", "North Macedonia", "Côte d'Ivoire", "Kosovo" — and typing the
       old name still finds each of them.
