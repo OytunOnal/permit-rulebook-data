@@ -199,8 +199,8 @@
       "label": "Is your occupation on Germany's shortage list (IT, engineering, health…)?",
       "type": "enum",
       "learn": {
-        "label": "The official shortage-occupation groups are listed in § 18g AufenthG",
-        "url": "https://www.gesetze-im-internet.de/aufenthg_2004/__18g.html"
+        "label": "§ 18g AufenthG lists the shortage groups by ISCO-08 code (132, 133, 134, 21, 221, 222, 225, 226, 23, 25)",
+        "url": "https://www.buzer.de/18g_AufenthG.htm"
       },
       "options": [
         {

@@ -151,6 +151,22 @@
         "to": "thus leading to an enlargement of the EEA."
       },
       "note": "Backs the EEA leg of the eu_eea_ch class (Iceland, Liechtenstein, Norway) and the free movement of persons among the 30 EEA States. EFTA is the secretariat of the EEA EFTA States and publishes the EEA legal texts. Sliced to the main prose block — the page also carries a mega-menu and a rotating annual-report banner."
+    },
+    {
+      "id": "learn-anabin",
+      "url": "https://anabin.kmk.org/anabin.html",
+      "strategy": "link",
+      "kind": "sentinel",
+      "learn_for": "recognition_de",
+      "note": "Learn link for 'where does German recognition stand'. Liveness only: the portal's own text is not our claim. Liveness is checked from wherever the watch runs, which is not where the reader sits: gesetze-im-internet.de answers CI and times out from Türkiye. A source reachable from many places beats a canonical one that is not."
+    },
+    {
+      "id": "learn-18g-aufenthg",
+      "url": "https://www.buzer.de/18g_AufenthG.htm",
+      "strategy": "link",
+      "kind": "sentinel",
+      "learn_for": "occupation_shortage",
+      "note": "Learn link for the shortage-occupation question. buzer.de mirrors the consolidated statute and is reachable where gesetze-im-internet.de times out (human check, 2026-09-06). Liveness is checked from wherever the watch runs, which is not where the reader sits: gesetze-im-internet.de answers CI and times out from Türkiye. A source reachable from many places beats a canonical one that is not."
     }
   ]
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { htmlToText, normalize } from "../src/watch/normalize.js";
 import {
-  checkCoverage, checkQuotes, datasetSourceUrls, runWatch, sha256,
+  checkCoverage, checkQuotes, datasetLearnUrls, datasetQuotes, datasetSourceUrls, runWatch, sha256,
   type Fetcher, type WatchState, type Watchlist,
 } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
@@ -267,5 +267,53 @@ describe("quote fidelity: the sentence is still on the page", () => {
     // hashes survived (computed per run) but every flag diff became unreadable.
     for (const [id, snap] of Object.entries(shippedState.entries))
       expect(/Ã¤|Ã¶|Ã¼|ÃŸ|â€ž|â‚¬/.test(snap.text ?? ""), id).toBe(false);
+  });
+});
+
+
+describe("learn links are watched for liveness, and only for liveness", () => {
+  it("every 'find out yourself' link is on the watchlist", () => {
+    // The link is a promise to the one person who answered "I don't know".
+    // Nothing watched them until a human clicked one and found it dead.
+    const watched = new Set(shippedWatchlist.entries.map((e) => e.url));
+    for (const url of datasetLearnUrls(dataset)) expect([...watched], url).toContain(url);
+  });
+
+  it("coverage fails when a learn link loses its watch entry", () => {
+    const stripped: Watchlist = {
+      entries: shippedWatchlist.entries.filter((e) => e.id !== "learn-anabin"),
+    };
+    const result = checkCoverage(dataset, stripped);
+    expect(result.ok).toBe(false);
+    expect(result.missing_from_watchlist).toContain("https://anabin.kmk.org/anabin.html");
+  });
+
+  it("a watched learn link is never an orphan — it backs no value by design", () => {
+    expect(checkCoverage(dataset, shippedWatchlist).orphan_watch_entries).toEqual([]);
+  });
+
+  it("reports ok while it answers, unreachable when it stops", async () => {
+    const list: Watchlist = { entries: shippedWatchlist.entries.filter((e) => e.strategy === "link") };
+    expect(list.entries.length).toBeGreaterThan(0);
+
+    const alive = await runWatch(list, { entries: {} },
+      async () => ({ ok: true, body: new TextEncoder().encode("<html>anything at all</html>") }),
+      "2026-09-06");
+    expect(alive.reports.map((r) => r.outcome)).toEqual(list.entries.map(() => "ok"));
+    // Liveness only: rewording the page is not news, so nothing is stored.
+    expect(alive.nextState.entries).toEqual({});
+
+    const dead = await runWatch(list, { entries: {} },
+      async () => ({ ok: false, error: "connect ETIMEDOUT" }),
+      "2026-09-06");
+    expect(dead.reports.map((r) => r.outcome)).toEqual(list.entries.map(() => "unreachable"));
+  });
+
+  it("a learn link never claims a quote", () => {
+    // checkQuotes walks value sources; a link tier entry must not appear there
+    // as unverifiable noise that trains us to ignore the list.
+    const quoteUrls = new Set(datasetQuotes(dataset).map((q) => q.source_url));
+    for (const e of shippedWatchlist.entries.filter((x) => x.strategy === "link"))
+      expect([...quoteUrls], e.id).not.toContain(e.url);
   });
 });

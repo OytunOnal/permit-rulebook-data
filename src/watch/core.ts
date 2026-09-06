@@ -4,7 +4,7 @@ import { forEachCriterion, provenancedValuesOf } from "../engine.js";
 import { countryVocabulary } from "../countries.js";
 import type { Dataset } from "../types.js";
 
-export type WatchStrategy = "html" | "pdf" | "human";
+export type WatchStrategy = "html" | "pdf" | "human" | "link";
 
 export interface WatchEntry {
   id: string;
@@ -18,6 +18,9 @@ export interface WatchEntry {
    * for pages whose chrome rotates (ads, promos) while the operative text stands
    * still. A missing marker reports as unreachable — never as "no change". */
   slice?: { from: string; to: string };
+  /** link strategy only: the field whose "find out yourself" link this is,
+   * so a report says which question loses its help when the page goes. */
+  learn_for?: string;
   /** human strategy only */
   max_age_days?: number;
   last_verified?: string; // YYYY-MM-DD
@@ -107,6 +110,16 @@ export async function runWatch(
       continue;
     }
 
+    // A learn link backs no value, so its wording may change freely — what
+    // matters is that a person who clicks it arrives somewhere. Hashing it
+    // would raise a flag every time an unrelated paragraph moved, and the
+    // flag that cries every week is the flag nobody reads. Only silence is
+    // news here, and silence is already reported above.
+    if (entry.strategy === "link") {
+      reports.push({ ...base, outcome: "ok" });
+      continue;
+    }
+
     let hash: string;
     let text: string | undefined;
     try {
@@ -173,6 +186,19 @@ export function datasetSourceUrls(dataset: Dataset): Set<string> {
   if (usesCountryVocabulary(dataset))
     for (const cls of Object.values(countryVocabulary.classes))
       for (const source of cls.sources ?? []) urls.add(source.source_url);
+  return urls;
+}
+
+/**
+ * The "find out yourself" links. They back no value, so the quote gate has
+ * nothing to say about them — but they are a promise to the one person who
+ * answered "I don't know", and a dead one strands exactly them. Verified by
+ * hand once at s3; unwatched until 2026-09-06, when the human found the German
+ * statute link unreachable from Türkiye and nothing had noticed.
+ */
+export function datasetLearnUrls(dataset: Dataset): Set<string> {
+  const urls = new Set<string>();
+  for (const f of dataset.fields) if (f.learn) urls.add(f.learn.url);
   return urls;
 }
 
@@ -259,7 +285,10 @@ export function checkQuotes(dataset: Dataset, watchlist: Watchlist, state: Watch
 export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageResult {
   const datasetUrls = datasetSourceUrls(dataset);
   const watchedUrls = new Set(watchlist.entries.map((e) => e.url));
-  const missing = [...datasetUrls].filter((u) => !watchedUrls.has(u));
+  // Learn links join the required set; they never join the value set, so a
+  // watch entry for one is a sentinel and cannot be orphaned by it.
+  const required = new Set([...datasetUrls, ...datasetLearnUrls(dataset)]);
+  const missing = [...required].filter((u) => !watchedUrls.has(u));
   const orphans = watchlist.entries
     .filter((e) => e.kind === "value-source" && !datasetUrls.has(e.url))
     .map((e) => e.id);
