@@ -24,7 +24,7 @@
     {
       "id": "kairo-chancenkarte-merkblatt",
       "url": "https://kairo.diplo.de/resource/blob/2664804/5e952d2720a91e83a475a3e02452f1cf/250122-deu-merkblatt-chancenkarte-data.pdf",
-      "strategy": "pdf",
+      "strategy": "pdf-text",
       "kind": "value-source",
       "note": "Backs the Chancenkarte livelihood amount (EUR 1,091/month). Byte-hash only; on change a human reads the PDF."
     },
@@ -65,7 +65,7 @@
     {
       "id": "es-uge-umbral-pdf",
       "url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
-      "strategy": "pdf",
+      "strategy": "pdf-text",
       "kind": "value-source",
       "note": "Backs the ES Blue Card / PAC nacional thresholds (EUR 41,356.36). Byte-hash only; on change a human reads the PDF. Liferay slugs have churned before — the UGE index sentinel guards the link."
     },

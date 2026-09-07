@@ -203,6 +203,11 @@
           "short": "2+ years of related experience"
         },
         {
+          "value": "y3in7",
+          "label": "3+ years within the last 7",
+          "short": "3+ years of related experience"
+        },
+        {
           "value": "y5in7",
           "label": "5+ years within the last 7",
           "short": "5+ years of related experience"
@@ -594,10 +599,6 @@
           "kind": "res-work",
           "summary": "A lower salary threshold, for occupations on Germany's shortage list — IT, engineering, health and others.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
-          "preconditions": [
-            "An employment contract of at least six months",
-            "If your profession is regulated (health, law and similar), the professional licence must already be in hand"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -672,6 +673,30 @@
                 "history": []
               }
             }
+          ],
+          "statements": [
+            {
+              "id": "job-offer-of-at-least-six-months",
+              "kind": "precondition",
+              "text": "A concrete job offer from an employer in Germany, for work of at least six months",
+              "source": {
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                "quote": "Eine weitere Voraussetzung für die Blaue Karte EU ist ein konkretes Stellenangebot von einem Arbeitgeber in Deutschland mit einer Beschäftigungsdauer von mindestens sechs Monaten.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "§ 18g AufenthG"
+              }
+            },
+            {
+              "id": "licence-for-a-regulated-profession",
+              "kind": "precondition",
+              "text": "If your profession is regulated, the licence to practise it must already be in hand",
+              "source": {
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                "quote": "Handelt es sich um einen reglementierten Beruf, muss zusätzlich eine Berufsausübungserlaubnis vorliegen.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "§ 18g AufenthG"
+              }
+            }
           ]
         },
         {
@@ -680,10 +705,6 @@
           "kind": "res-work",
           "summary": "The standard EU Blue Card: a recognised university degree and a salary above the general threshold, in any qualified job.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
-          "preconditions": [
-            "An employment contract of at least six months",
-            "If your profession is regulated (health, law and similar), the professional licence must already be in hand"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -753,6 +774,30 @@
                 "history": []
               }
             }
+          ],
+          "statements": [
+            {
+              "id": "job-offer-of-at-least-six-months",
+              "kind": "precondition",
+              "text": "A concrete job offer from an employer in Germany, for work of at least six months",
+              "source": {
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                "quote": "Eine weitere Voraussetzung für die Blaue Karte EU ist ein konkretes Stellenangebot von einem Arbeitgeber in Deutschland mit einer Beschäftigungsdauer von mindestens sechs Monaten.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "§ 18g AufenthG"
+              }
+            },
+            {
+              "id": "licence-for-a-regulated-profession",
+              "kind": "precondition",
+              "text": "If your profession is regulated, the licence to practise it must already be in hand",
+              "source": {
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                "quote": "Handelt es sich um einen reglementierten Beruf, muss zusätzlich eine Berufsausübungserlaubnis vorliegen.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "§ 18g AufenthG"
+              }
+            }
           ]
         },
         {
@@ -761,9 +806,6 @@
           "kind": "res-work",
           "summary": "Your university degree is recognised in Germany and the job matches it. There is no salary threshold — but from age 45 an extra salary requirement applies, or proof of pension provision.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
-          "preconditions": [
-            "The job must match the qualification that was recognised"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -824,6 +866,18 @@
                 "retrieved_at": "2026-09-07"
               }
             }
+          ],
+          "statements": [
+            {
+              "id": "a-job-the-degree-can-do",
+              "kind": "precondition",
+              "text": "A job that can be done with the university qualification you hold",
+              "source": {
+                "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
+                "quote": "Presentation of a concrete job offer or an employment contract for a job that can be performed with this academic qualification.",
+                "retrieved_at": "2026-09-07"
+              }
+            }
           ]
         },
         {
@@ -832,10 +886,6 @@
           "kind": "res-work",
           "summary": "Your vocational training is recognised in Germany and you have a job offer that matches it. There is no salary threshold — but from age 45 an extra salary requirement applies.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Fachkraft/fachkraft-node.html",
-          "preconditions": [
-            "Enough German for the job itself — how much depends on the work",
-            "Enough income to live on without state support, plus health insurance (the salary from the job normally covers this)"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -896,6 +946,16 @@
                 "retrieved_at": "2026-09-07"
               }
             }
+          ],
+          "readings": [
+            {
+              "id": "german-for-the-job-is-our-expectation",
+              "text": "How much German you need depends on the job itself. The page we watch states that condition for Germany’s job-seeking permit, not for this route, so it is our expectation and not the authority’s words."
+            },
+            {
+              "id": "livelihood-and-health-cover-are-our-expectation",
+              "text": "You will also need enough income to live on without state support, and health cover; the salary from the job normally covers both. No page we watch states either condition for this route."
+            }
           ]
         },
         {
@@ -904,9 +964,6 @@
           "kind": "res-work",
           "summary": "No German recognition needed: two years of recent skilled work in the last five, plus either a qualification your home country officially recognises, or experience in IT.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/FachkraefteOhneAusbildung/fachkraefte-ohne-ausbildung-node.html",
-          "preconditions": [
-            "Your qualification must be officially recognised in the country where you earned it"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -1033,6 +1090,17 @@
                 "legal_basis": "§ 6 Beschäftigungsverordnung — collective-agreement exception (§§ 3, 5 Tarifvertragsgesetz)",
                 "history": []
               }
+            },
+            {
+              "id": "qualification-recognised-where-it-was-earned",
+              "kind": "precondition",
+              "text": "Your qualification must be officially recognised in the country where you earned it",
+              "source": {
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/04-2026/berufserfahrene",
+                "quote": "Die Qualifikation muss in dem Staat, in dem sie erworben wurde, staatlich anerkannt sein.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "§ 6 BeschV"
+              }
             }
           ]
         },
@@ -1042,9 +1110,6 @@
           "kind": "res-work",
           "summary": "A research institution — from a university to a company's research department — has agreed to host you and to cover the costs. The permit runs for at least a year, and you may stay 18 months afterwards to look for work.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
-          "preconditions": [
-            "A signed hosting agreement with a recognised research institution"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -1095,6 +1160,19 @@
                 }
               ]
             }
+          ],
+          "statements": [
+            {
+              "id": "hosting-agreement-with-a-research-facility",
+              "kind": "precondition",
+              "text": "A hosting agreement, or an equivalent contract, concluded with a research facility for a research project",
+              "source": {
+                "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
+                "quote": "you will need to have concluded a hosting agreement or corresponding contract with a research facility to carry out a research project",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Section 18d of the Residence Act"
+              }
+            }
           ]
         },
         {
@@ -1103,9 +1181,6 @@
           "kind": "res-work",
           "summary": "Your company moves you to its German branch for more than 90 days, as a manager, specialist or trainee. Up to three years, or one year for trainees.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
-          "preconditions": [
-            "At least six months with the company before the transfer"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -1165,6 +1240,16 @@
               "source": {
                 "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
                 "quote": "the intra-corporate transfer is to last longer than 90 days",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "six-months-with-the-company-before-the-transfer",
+              "kind": "precondition",
+              "text": "At least six months already employed by the company or group, and still with it throughout the transfer",
+              "source": {
+                "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
+                "quote": "you have been employed by the undertaking or group of undertakings for at least six months, and belong to the undertaking uninterruptedly for the period of the transfer,",
                 "retrieved_at": "2026-09-07"
               }
             }
@@ -1386,9 +1471,6 @@
           "kind": "res-work",
           "summary": "For people who earned a master's-level degree in France and have a contract of more than three months. The card lasts as long as the contract, up to four years, and the job does not have to be advertised first.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
-          "preconditions": [
-            "An employment contract of more than three months"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -1476,6 +1558,18 @@
               "id": "foreign-degrees-belong-on-the-blue-card",
               "text": "This is France's track for people who studied in France. With a degree from anywhere else, the European Blue Card is the card that fits — its own page on this site."
             }
+          ],
+          "statements": [
+            {
+              "id": "employment-contract-of-more-than-three-months",
+              "kind": "precondition",
+              "text": "An employment contract of more than three months",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir un contrat de travail de plus de 3 mois",
+                "retrieved_at": "2026-09-07"
+              }
+            }
           ]
         },
         {
@@ -1484,9 +1578,6 @@
           "kind": "res-work",
           "summary": "A contract of at least six months, plus a higher-education diploma of three years or more — or five years of comparable experience. Up to four years, and the job does not have to be advertised first.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
-          "preconditions": [
-            "An employment contract of at least six months"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -1590,6 +1681,18 @@
               "id": "listed-professions-not-modelled",
               "text": "For some listed professions France counts three years of experience in the last seven instead of five. We do not model that list, so this card judges you on the general rule."
             }
+          ],
+          "statements": [
+            {
+              "id": "employment-contract-of-at-least-six-months",
+              "kind": "precondition",
+              "text": "An employment contract of at least six months",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir un contrat de travail de 6 mois minimum",
+                "retrieved_at": "2026-09-07"
+              }
+            }
           ]
         },
         {
@@ -1598,10 +1701,6 @@
           "kind": "res-work",
           "summary": "Your group moves you to France for an assignment of more than a year, in a senior or expert role. Up to three years, and it cannot be renewed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
-          "preconditions": [
-            "At least six months with the group already",
-            "The assignment must last more than a year, in a senior or expert role"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -1672,6 +1771,38 @@
               "id": "resources-proof-tracks-the-minimum-wage",
               "text": "The French page states this figure as proof of resources rather than a salary an employer must pay, and it tracks the French minimum wage — expect it to move when that is revalued."
             }
+          ],
+          "statements": [
+            {
+              "id": "six-months-with-the-group-already",
+              "kind": "precondition",
+              "text": "At least six months with the group that employs you",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+                "quote": "Vous avez une ancienneté d'au moins 6 mois dans le groupe qui vous emploie.",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "an-assignment-of-more-than-a-year",
+              "kind": "precondition",
+              "text": "An assignment lasting more than a year",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+                "quote": "La carte de séjour pluriannuelle salarié détaché ICT permet de séjourner en France pour effectuer une mission de plus d'1 an lors d'un transfert temporaire intragroupe",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "a-senior-or-expert-post",
+              "kind": "precondition",
+              "text": "You must come to fill a senior management post, or to bring specialist expertise",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+                "quote": "Vous venez en France pour occuper un poste d'encadrement supérieur ou apporter une expertise",
+                "retrieved_at": "2026-09-07"
+              }
+            }
           ]
         },
         {
@@ -1680,10 +1811,6 @@
           "kind": "res-work",
           "summary": "For a job at a company France officially recognises as innovative, in work tied to its research and development. The salary threshold is the same as the qualified-employee card, and no French degree is needed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
-          "preconditions": [
-            "Your work must be directly tied to the company's research and development project",
-            "France's ministry of the economy must recognise the employer as innovative"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -1761,6 +1888,28 @@
                 "history": []
               }
             }
+          ],
+          "statements": [
+            {
+              "id": "work-tied-to-the-research-and-development-project",
+              "kind": "precondition",
+              "text": "Work directly tied to that company’s research and development project",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir des fonctions en lien direct avec le projet de recherche et de développement de cette entreprise",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "a-young-innovative-company-or-one-the-ministry-recognises",
+              "kind": "precondition",
+              "text": "The employer must be a young innovative company, or a company France’s ministry of the economy recognises as innovative",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Être recruté dans une jeune entreprise innovante ou une entreprise reconnue innovante par le ministère de l'économie",
+                "retrieved_at": "2026-09-07"
+              }
+            }
           ]
         },
         {
@@ -1769,10 +1918,6 @@
           "kind": "res-work",
           "summary": "For an intra-group move to France where the French company issues your contract. Unlike the ICT card, the contract is French and the salary rule is the talent threshold.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
-          "preconditions": [
-            "At least three months with the group already",
-            "The move must be between branches of the same company or group"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -1850,6 +1995,28 @@
                 "history": []
               }
             }
+          ],
+          "statements": [
+            {
+              "id": "three-months-with-the-group-already",
+              "kind": "precondition",
+              "text": "At least three months with the group that employs you",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir une ancienneté d'au moins 3 mois dans le groupe qui vous emploie",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "a-move-inside-one-company-or-group",
+              "kind": "precondition",
+              "text": "Employment by a company established abroad, and a move between branches of that company or between companies of the same group",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Être salarié d'une entreprise établie à l'étranger et venir en France pour exercer une activité salariée dans le cadre d'une mobilité entre établissements d'une même entreprise ou entre entreprises d'un même groupe (mobilité intragroupe)",
+                "retrieved_at": "2026-09-07"
+              }
+            }
           ]
         }
       ]
@@ -1864,10 +2031,6 @@
           "kind": "res-work",
           "summary": "A contract or firm offer of at least six months, plus a higher-education qualification of three years or more — or five years of comparable experience. Spain's large-companies unit decides in 20 working days, and if it does not answer in time the application counts as approved. A lower salary applies if you earned your qualification in the last three years.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
-          "preconditions": [
-            "A contract or firm offer of at least six months",
-            "The application must go through Spain's large-companies unit (UGE), not a provincial office"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -1972,7 +2135,7 @@
                         "amount": 41356.36,
                         "currency": "EUR",
                         "source_url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
-                        "quote": "Nuevos umbrales salariales Tarjeta Azul. – Umbral general: 41.356,36 €",
+                        "quote": "Nuevos umbrales salariales Tarjeta Azul. - Umbral general: 41.356,36 €",
                         "retrieved_at": "2026-09-02",
                         "legal_basis": "Ley 14/2013 art. 71 bis + Orden PJC/44/2026 (1,4× ganancia media INE)",
                         "history": []
@@ -1997,7 +2160,7 @@
                         "amount": 33085.09,
                         "currency": "EUR",
                         "source_url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
-                        "quote": "– Umbral reducido: 33.085,09 €",
+                        "quote": "- Umbral reducido: 33.085,09 €",
                         "retrieved_at": "2026-09-04",
                         "legal_basis": "Ley 14/2013 art. 71 bis + Orden PJC/44/2026 (umbral reducido)",
                         "history": []
@@ -2015,9 +2178,31 @@
               "text": "The lower salary can also apply to shortage occupations that fall in the managerial and professional groups of Spain’s occupation classification (CNO-2011 groups 1 and 2) — we do not check that list.",
               "source": {
                 "source_url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
-                "quote": "¿Cuándo se aplica el umbral reducido? El umbral reducido podrá aplicarse en los siguientes supuestos: – Ocupaciones de difícil cobertura incluidas en los grupos 1 y 2 de la CNO-2011, conforme a la normativa vigente. – Personas nacionales de terceros países que hayan obtenido la cualificación requerida en los tres años previos a la solicitud de la Tarjeta Azul-UE.",
+                "quote": "¿Cuándo se aplica el umbral reducido? El umbral reducido podrá aplicarse en los siguientes supuestos: - Ocupaciones de difícil cobertura incluidas en los grupos 1 y 2 de la CNO-2011, conforme a la normativa vigente.",
                 "retrieved_at": "2026-09-07",
-                "legal_basis": "Ley 14/2013 art. 71 bis + Orden PJC/44/2026 (supuestos del umbral reducido), as the UGE umbral-salarial PDF states them, edición Junio 2026. Read from that PDF's embedded-font text layer rather than from a web page; its glyph table renders two C's as O (¿Ouándo, PAO nacional) and the quote restores them, and the Junio 2026 page footer, which falls between the two bullets in the text stream, is elided."
+                "legal_basis": "Ley 14/2013 art. 71 bis + Orden PJC/44/2026 (supuestos del umbral reducido), as the UGE umbral-salarial PDF states them, edición Junio 2026."
+              }
+            },
+            {
+              "id": "handled-by-the-large-companies-unit",
+              "kind": "precondition",
+              "text": "The application must be handled by Spain's large-companies unit (UGE), and it is the Directorate-General for Migration that grants it",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "La tramitación de las autorizaciones de residencia previstas en esta sección se efectuará por la Unidad de Grandes Empresas y Colectivos Estratégicos, a través de medios telemáticos y su concesión corresponderá a la Dirección General de Migraciones.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 76.1"
+              }
+            },
+            {
+              "id": "reduced-also-for-a-qualification-earned-in-the-last-three-years",
+              "kind": "caveat",
+              "text": "The lower salary also applies to people from outside the EU who earned the qualification the route asks for in the three years before they applied.",
+              "source": {
+                "source_url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
+                "quote": "- Personas nacionales de terceros países que hayan obtenido la cualificación requerida en los tres años previos a la solicitud de la Tarjeta Azul-UE.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013 art. 71 bis + Orden PJC/44/2026 (supuestos del umbral reducido), as the UGE umbral-salarial PDF states them, edición Junio 2026."
               }
             }
           ],
@@ -2027,8 +2212,8 @@
               "text": "Spain's law gives IT professionals and managers a shorter experience route of their own. We do not model it, so this card judges you on the general rule."
             },
             {
-              "id": "salary-figures-and-their-limits-read-by-a-person",
-              "text": "Both salary figures here were read by a person from a ministry PDF, and so was the question of whether the lower one is limited to qualifications from particular institutions. The June 2026 edition of that PDF answers it: it gives the lower salary to third-country nationals who obtained the required qualification in the three years before applying, and names no institution anywhere. We apply it with no such limit, the wording the law itself uses. No automatic check can confirm any of that between reads."
+              "id": "lower-salary-applied-with-no-institution-limit",
+              "text": "Whether the lower salary is limited to qualifications from particular institutions is a question the ministry’s sheet does not answer: it names no institution anywhere. We apply the lower salary with no such limit, the wording the law itself uses."
             }
           ]
         },
@@ -2038,9 +2223,6 @@
           "kind": "res-work",
           "summary": "Spain's national fast-track for higher-education professionals, or people with equivalent experience, hired by a qualifying employer. One salary threshold, with no reduced version, decided in 20 working days.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
-          "preconditions": [
-            "Your employer must qualify: a large company, an SME in a strategic sector, or a project of general interest — the unit decides"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -2105,8 +2287,12 @@
                   "criteria": [
                     {
                       "field": "experience",
-                      "op": "eq",
-                      "value": "y5in7",
+                      "op": "in",
+                      "values": [
+                        "y3in7",
+                        "y5in7"
+                      ],
+                      "short_reason": "at least three years of related experience",
                       "source": {
                         "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
                         "quote": "conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos tres años que pueda considerarse equiparable a dicha cualificación",
@@ -2139,14 +2325,17 @@
               }
             }
           ],
-          "readings": [
+          "statements": [
             {
-              "id": "experience-answer-is-conservative",
-              "text": "The law counts three years of professional experience here. The nearest answer this interview can offer is five years in the last seven, so a person with three or four years is judged more harshly than Spain would judge them."
-            },
-            {
-              "id": "salary-figure-read-by-a-person",
-              "text": "The salary figure on this route was read by a person from the ministry's PDF. No automatic check can confirm it between reads, so the read date beside it is the age of the number."
+              "id": "handled-by-the-large-companies-unit",
+              "kind": "precondition",
+              "text": "The application must be handled by Spain's large-companies unit (UGE), and it is the Directorate-General for Migration that grants it",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "La tramitación de las autorizaciones de residencia previstas en esta sección se efectuará por la Unidad de Grandes Empresas y Colectivos Estratégicos, a través de medios telemáticos y su concesión corresponderá a la Dirección General de Migraciones.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 76.1"
+              }
             }
           ]
         },
@@ -2156,10 +2345,6 @@
           "kind": "res-work",
           "summary": "Your group moves you to its Spanish entity as a manager, specialist or trainee. There is no salary threshold beyond the collective agreement for the job. Up to three years, or one for trainees.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/trabajadores",
-          "preconditions": [
-            "The group must actually trade — not a shell company",
-            "Three months with the group before the move"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -2249,6 +2434,30 @@
                 "legal_basis": "Ley 14/2013, art. 73.2.b)"
               }
             }
+          ],
+          "statements": [
+            {
+              "id": "a-real-business-behind-the-company",
+              "kind": "precondition",
+              "text": "A real business activity in the company and in any group it belongs to",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "La existencia de una actividad empresarial real y, en su caso, la del grupo empresarial.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 73.2.a)"
+              }
+            },
+            {
+              "id": "three-months-with-the-group-before-the-move",
+              "kind": "precondition",
+              "text": "Three months of prior and unbroken work with one or more companies of the group",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "La existencia de una relación laboral o profesional, previa y continuada, de 3 meses con una o varias de las empresas del grupo.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 73.2.c)"
+              }
+            }
           ]
         },
         {
@@ -2257,9 +2466,6 @@
           "kind": "res-work",
           "summary": "A Spanish university, R&D centre or business school has agreed to host you. Three years, plus a year afterwards to look for work or start a business.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/investigadores",
-          "preconditions": [
-            "A hosting agreement or a contract with the research body"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -2311,6 +2517,19 @@
                 }
               ]
             }
+          ],
+          "statements": [
+            {
+              "id": "hosting-agreement-or-contract-with-the-research-body",
+              "kind": "precondition",
+              "text": "A hosting agreement or an employment contract with the research body",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "el solicitante de una autorización de residencia para investigación UE deberá presentar un convenio de acogida o contrato de trabajo",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 72.2.a)"
+              }
+            }
           ]
         }
       ]
@@ -2325,10 +2544,6 @@
           "kind": "res-work",
           "summary": "The Dutch highly skilled migrant permit. No degree is needed — the salary is what qualifies you. A lower salary counts if, within the last three years, you graduated from a Dutch university or research institution, or from a foreign institution the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
-          "preconditions": [
-            "Your employer must be on the Dutch immigration service's (IND) list of recognised sponsors",
-            "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -2489,6 +2704,26 @@
                 "quote": "The agreed salary is in line with the market rate.",
                 "retrieved_at": "2026-09-07"
               }
+            },
+            {
+              "id": "employer-must-be-a-recognised-sponsor",
+              "kind": "precondition",
+              "text": "Your employer must be a sponsor the Dutch immigration service (IND) recognises, listed in its public register of recognised sponsors",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "This employer is a sponsor recognised by the IND. A recognised sponsor is listed in the public register of recognised sponsors.",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "big-register-for-healthcare-professions",
+              "kind": "precondition",
+              "text": "If you will work in individual healthcare in a profession the Individual Healthcare Professions Act lists, you must be in the BIG register of healthcare professions",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "Are you going to work in individual healthcare? And do you practise a medical profession that is listed in Article 3 and Article 36a of the Individual Healthcare Professions Act (BIG Act)? If so, you must be registered in the BIG register.",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ]
         },
@@ -2498,10 +2733,6 @@
           "kind": "res-work",
           "summary": "The same permit with a lower salary for people under 30 — and lower still if, within the last three years, you graduated from a Dutch university or research institution, or from a foreign institution the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
-          "preconditions": [
-            "Your employer must be on the Dutch immigration service's (IND) list of recognised sponsors",
-            "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -2668,6 +2899,26 @@
                 "quote": "Has the highly skilled migrant changed employers since the first permit was issued? Then this must have happened when the highly skilled migrant was still under the age of 30. Highly skilled migrant is still younger than 30: € 4,357.00 Highly skilled migrant is now 30 years or older: € 5,942.00",
                 "retrieved_at": "2026-09-02"
               }
+            },
+            {
+              "id": "employer-must-be-a-recognised-sponsor",
+              "kind": "precondition",
+              "text": "Your employer must be a sponsor the Dutch immigration service (IND) recognises, listed in its public register of recognised sponsors",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "This employer is a sponsor recognised by the IND. A recognised sponsor is listed in the public register of recognised sponsors.",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "big-register-for-healthcare-professions",
+              "kind": "precondition",
+              "text": "If you will work in individual healthcare in a profession the Individual Healthcare Professions Act lists, you must be in the BIG register of healthcare professions",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "Are you going to work in individual healthcare? And do you practise a medical profession that is listed in Article 3 and Article 36a of the Individual Healthcare Professions Act (BIG Act)? If so, you must be registered in the BIG register.",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ]
         },
@@ -2677,10 +2928,6 @@
           "kind": "res-work",
           "summary": "A contract of at least six months, plus a higher-education diploma of three years or more — or five years of relevant experience, three years if you work in information technology. Your employer does not have to be a recognised sponsor. A lower salary counts for a degree holder who graduated in the last three years from a Dutch institution, or from a foreign one the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
-          "preconditions": [
-            "An employment contract of at least six months",
-            "If your profession is regulated, you must be in the Dutch professional register for it (the BIG register, in healthcare)"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -2883,6 +3130,26 @@
                 "legal_basis": "Dutch immigration service, required amounts — the reduced European Blue Card rows (read from the watched snapshot of 2026-09-02)",
                 "history": []
               }
+            },
+            {
+              "id": "employment-contract-valid-for-six-months",
+              "kind": "precondition",
+              "text": "An employment contract that runs for at least six months",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+                "quote": "Your employment contract is valid for at least 6 months.",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "permission-to-practise-a-regulated-profession",
+              "kind": "precondition",
+              "text": "If your profession is regulated, you must be authorised to practise it in the Netherlands, and in individual healthcare you must be in the BIG register of healthcare professions",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+                "quote": "Do you have a regulated profession, such as doctor or lawyer? Then you must demonstrate that you are allowed to practice this profession in the Netherlands. Are you going to work in individual healthcare? And do you practise a medical profession that is listed in Article 3 and Article 36a of the Individual Healthcare Professions Act (BIG Act)? If so, you must be registered in the BIG register.",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ]
         },
@@ -2892,11 +3159,6 @@
           "kind": "res-work",
           "summary": "Your company moves you to the Netherlands as a manager, specialist or trainee. The salary has to reach the highly skilled migrant level for your age. Up to three years, or one for trainees.",
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
-          "preconditions": [
-            "At least three months with the company outside the EU",
-            "You must move in a manager, specialist or trainee role",
-            "If your profession is regulated (doctor, architect and similar), you need the Dutch registration for it"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -3013,6 +3275,38 @@
                 "retrieved_at": "2026-09-07"
               }
             }
+          ],
+          "statements": [
+            {
+              "id": "three-months-with-the-company-outside-the-union",
+              "kind": "precondition",
+              "text": "At least three months already working for the company outside the European Union, the European Economic Area or Switzerland",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
+                "quote": "You have already worked for the company outside the EU, EEA or Switzerland for at least 3 months.",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "a-manager-specialist-or-trainee-post",
+              "kind": "precondition",
+              "text": "You must come to work in the Netherlands as a manager, specialist or trainee",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
+                "quote": "You are going to work in the Netherlands as a manager, specialist or trainee.",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "permission-to-practise-a-protected-profession",
+              "kind": "precondition",
+              "text": "If yours is a protected profession, such as doctor or architect, you must be authorised to practise it in the Netherlands",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
+                "quote": "Do you have a protected profession such as a doctor or architect? If so, you must show that you are allowed to practise that profession in the Netherlands.",
+                "retrieved_at": "2026-09-07"
+              }
+            }
           ]
         },
         {
@@ -3021,10 +3315,6 @@
           "kind": "res-work",
           "summary": "A contract or hosting agreement with a Dutch research institution the immigration service (IND) recognises as a sponsor. Up to five years.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
-          "preconditions": [
-            "The institution must be on the Dutch immigration service's (IND) list of recognised sponsors",
-            "A degree that would let you start a doctorate, or your employer's statement that your level is equivalent"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -3100,6 +3390,26 @@
                 "quote": "Will you not receive a salary from your Dutch employer? Then you must have other income, for example a grant, stipend or money from a sponsor. Or you have sufficient money in your bank account for the time you are in the Netherlands.",
                 "retrieved_at": "2026-09-07"
               }
+            },
+            {
+              "id": "the-institute-must-be-a-recognised-sponsor",
+              "kind": "precondition",
+              "text": "The research institute must be a sponsor the Dutch immigration service (IND) recognises, listed in the public register of recognised sponsors",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
+                "quote": "This research institute (hereinafter referred to as: employer) is a recognised sponsor. You can check the public register of recognised sponsors whether your employer has been recognised as a sponsor.",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "a-degree-that-opens-a-doctorate",
+              "kind": "precondition",
+              "text": "A higher education degree that gives access to a doctoral programme, or your employer’s declaration that you have the appropriate level",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
+                "quote": "You have a higher education degree. This degree gives you access to the doctoral programme. Your employer determines whether your degree is suitable. Do you not have a suitable degree? Then your employer must declare that you have the appropriate level.",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ]
         },
@@ -3109,10 +3419,6 @@
           "kind": "seek",
           "summary": "A one-year permit to look for work — any job, no separate work permit, and it cannot be extended. The Dutch immigration service (IND) grants it after certain studies, doctorates or research finished in the three years before you apply; its list of qualifying programmes and institutions is longer than the two cases asked about here, so read its own page before ruling yourself out. Having a job offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
-          "preconditions": [
-            "You must apply within three years of graduating, of the doctoral defence, or of finishing the research",
-            "If you studied at a foreign institution the Dutch immigration service designates: proof of English (a score of 6.0 on IELTS or another accepted test), or a programme taught in English or Dutch"
-          ],
           "criteria": [
             {
               "field": "citizenship",
@@ -3192,6 +3498,26 @@
                 "retrieved_at": "2026-09-07",
                 "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements",
                 "history": []
+              }
+            },
+            {
+              "id": "the-research-finished-within-three-years",
+              "kind": "precondition",
+              "text": "The scientific research must have been carried out in the Netherlands in the three years before the date of application",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+                "quote": "You have conducted scientific research in the Netherlands in the 3 years before the date of application.",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "english-where-the-institution-was-abroad",
+              "kind": "precondition",
+              "text": "If you studied at a foreign educational institution the Dutch immigration service (IND) designates, you must also meet one of its further requirements: a score of at least 6.0 on the IELTS English test or another accepted test, or a programme that was taught in English or Dutch",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+                "quote": "If you have completed your course or programme at a designated foreign educational institution, you must also meet one of the following requirements: You obtained a minimum score of 6.0 on a test in the International English Language Testing System (IELTS).",
+                "retrieved_at": "2026-09-07"
               }
             }
           ],

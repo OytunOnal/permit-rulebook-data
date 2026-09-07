@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, formatEURPer, informativeFields, routeProvenance, routeStatements } from "../src/engine.js";
+
+/** Everything a card lists under "Also required — not checked here". Since
+ * s5f every one of them is a statement carrying its quote. */
+const requirementsOf = (route: { statements?: { kind: string; text: string }[] }): string[] =>
+  routeStatements(route as never).filter((s) => s.kind === "precondition").map((s) => s.text);
 import { remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile, RouteResult } from "../src/types.js";
 
@@ -140,7 +145,10 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
     const route = byId(base)["es-blue-card"].route;
     const caveats = routeStatements(route).filter((s) => s.kind === "caveat");
     expect(caveats.map((s) => s.text).join(" ").toLowerCase()).toMatch(/shortage occupation/);
-    expect(routeProvenance(route).map((p) => p.value.quote)).toContain("– Umbral reducido: 33.085,09 €");
+    // The dash moved with s5f: the ministry's PDF encodes a hyphen-minus, and
+    // the en dash was a person's transcription of the rendered page. The quote
+    // is now what the document carries, which is what let the machine find it.
+    expect(routeProvenance(route).map((p) => p.value.quote)).toContain("- Umbral reducido: 33.085,09 €");
   });
 
   it("NL ICT keeps the standard amounts — no lower one is evidenced for it", () => {
@@ -175,8 +183,9 @@ describe("s5c — the two French talent routes the dataset had excluded", () => 
   it("step 5: an innovative-company hire at €40,000 meets the route, with both conditions stated", () => {
     const r = byId(innovante)["fr-talent-innovante"];
     expect(r.status).toBe("met");
-    expect(r.route.preconditions!.join(" · ")).toMatch(/research and development/i);
-    expect(r.route.preconditions!.join(" · ")).toMatch(/ministry of the economy/i);
+    // s5f moved both lines into `statements`, where they carry their quote.
+    expect(requirementsOf(r.route).join(" · ")).toMatch(/research and development/i);
+    expect(requirementsOf(r.route).join(" · ")).toMatch(/ministry of the economy/i);
     expect(routeProvenance(r.route).map((p) => p.value.quote)).toContain(
       "Avoir un contrat de travail qui prévoit une rémunération brute annuelle supérieure ou égale à 39 582 €.",
     );
@@ -193,7 +202,7 @@ describe("s5c — the two French talent routes the dataset had excluded", () => 
   it("step 6: an intra-group mission at €40,000 with a French contract meets the route", () => {
     const r = byId(mission)["fr-talent-mission"];
     expect(r.status).toBe("met");
-    const pre = r.route.preconditions!.join(" · ").toLowerCase();
+    const pre = requirementsOf(r.route).join(" · ").toLowerCase();
     expect(pre).toMatch(/three months|3 months/);
     expect(pre).toContain("group");
     expect(routeProvenance(r.route).map((p) => p.value.quote)).toContain(

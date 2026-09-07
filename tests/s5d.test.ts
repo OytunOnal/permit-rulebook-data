@@ -102,7 +102,8 @@ describe("s5d — the Dutch reduced salary criterion asks where you studied", ()
     for (const id of ["nl-hsm-30plus", "nl-hsm-under30"]) expect(caveats(id), id).toContain("orientation year");
     expect(caveats("nl-blue-card")).toMatch(/extend|change employer/);
     for (const id of NL_REDUCED_ROUTES)
-      expect(routeOf(id).preconditions!.join(" · ").toLowerCase(), id).not.toContain("orientation year");
+      expect(routeStatements(routeOf(id)).filter((s) => s.kind === "precondition")
+        .map((s) => s.text).join(" · ").toLowerCase(), id).not.toContain("orientation year");
   });
 
   it("the exclusion is recorded with its reason and its date", () => {

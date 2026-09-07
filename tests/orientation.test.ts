@@ -106,7 +106,12 @@ describe("the orientation year states what the source states, and no more", () =
     // did and did not model live in `route.readings` since this review, so
     // nothing in this array is ours (review 2026-09-07).
     const statements = routeStatements(route());
-    expect(statements.length).toBe(2);
+    // Two until s5f, four after it: the lines that used to sit in the bare
+    // `preconditions` array joined them, each with its own quote. The
+    // three-year deadline for a study programme is not among them — the
+    // sentence that states it is already quoted by the criterion that asks
+    // which programme, and printing it twice on one card is not provenance.
+    expect(statements.length).toBe(4);
     for (const s of statements) {
       expect(s.source!.source_url, s.id).toBe(SOURCE);
       expect(s.source!.retrieved_at, s.id).toBe("2026-09-07");

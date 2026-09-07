@@ -1,5 +1,21 @@
 # s5e human verification checklist — the quotes no machine here can read (curated 2026-09-07)
 
+> **CLOSED BY THE MACHINE — 2026-09-07 (s5f).** The six quotes below no longer
+> need a person. The watch gained a `pdf-text` strategy that decodes a PDF's
+> text layer through its own embedded fonts, both PDFs were switched to it, and
+> `npm run check` now reports `human_tier: 0` with every one of these six
+> sentences found in the document it cites. Two corrections fell out of the
+> machine read and are recorded where they belong, not here: three quotes said
+> `–` where the document encodes `-`, and the shortage-occupation caveat quoted
+> across a page footer, so it was split into the two bullets it was really
+> making. What the decoder gets wrong on the UGE PDF — two capital C's read as
+> O — is declared by name in `src/watch/pdf-text.ts` and tested, never patched
+> out of the text.
+>
+> This file stays as the record of what the human tier cost and how it closed.
+> Nothing below is a live task.
+
+
 s5e attached a source, a verbatim quote and a read date to every sentence a card
 can render. **78 of those quotes are now machine-verified** on each `npm run
 check`: the gate finds the sentence on the snapshot of the page it cites, or the

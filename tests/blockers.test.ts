@@ -68,16 +68,24 @@ describe("cleared blocker: a card never claims more than the interview checked",
   // PERMITS, not something the applicant must satisfy — and it read as a
   // requirement under "Also required" (human catch 2026-09-04). A route with
   // no unasked condition we can source says so here, deliberately.
-  const NO_UNASKED_CONDITIONS = ["de-chancenkarte"];
+  // de-skilled-vocational joined it in s5f. Its two lines — German at the
+  // level the job needs, and a secured livelihood — matched sentences in the
+  // JOB-SEEKING section of the BAMF page, not this route's, and nothing we
+  // watch mentions health cover at all. They are true and a reader needs
+  // them, so they moved to `readings`, where the card says they are ours.
+  const NO_UNASKED_CONDITIONS = ["de-chancenkarte", "de-skilled-vocational"];
 
   it("every route states the conditions the authority applies but we never ask", () => {
     for (const country of dataset.countries)
       for (const route of country.routes) {
         if (NO_UNASKED_CONDITIONS.includes(route.id)) {
-          expect(route.preconditions, `${route.id} is listed as having none`).toBeUndefined();
+          expect(preconditionsOf(route), `${route.id} is listed as having none`).toEqual([]);
           continue;
         }
-        expect(route.preconditions?.length, `${route.id} has no preconditions line`).toBeGreaterThan(0);
+        // Read through `preconditionsOf` since s5f: the bare string slot is
+        // empty everywhere, because a line stating what the authority demands
+        // now carries the authority's words or is declared ours.
+        expect(preconditionsOf(route).length, `${route.id} has no preconditions line`).toBeGreaterThan(0);
       }
   });
 

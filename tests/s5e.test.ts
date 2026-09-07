@@ -71,7 +71,10 @@ describe("s5e — no sentence a card can render quotes an authority without prov
     // them, and the dataset-level notices. A slot missing here is a slot the
     // gate cannot see.
     expect(paths.some((p) => p.includes("nl-hsm-under30") && p.endsWith("/name"))).toBe(true);
-    expect(paths.some((p) => p.includes("nl-hsm-under30") && p.includes("precondition"))).toBe(true);
+    // The bare `preconditions` slot is walked too (s5f kinds it, and
+    // tests/s5f.test.ts mutates it to prove the gate bites); the shipped
+    // dataset keeps its preconditions where they can carry a quote.
+    expect(paths.some((p) => p.includes("nl-hsm-under30") && p.includes("statements"))).toBe(true);
     expect(paths.some((p) => p.includes("nl-orientation-year") && p.includes("statements"))).toBe(true);
     expect(paths.some((p) => p.includes("nl-orientation-year") && p.includes("readings"))).toBe(true);
     expect(paths.some((p) => p.includes("notices/"))).toBe(true);
@@ -128,7 +131,10 @@ describe("s5e — what is ours is marked as ours", () => {
     expect(proseProvenance(dataset)).toEqual({
       // Sentences an authority is shown to have said: a criterion's own
       // source, plus a statement standing on a quote.
-      with_provenance: 56,
+      // s5f moved 37 bare preconditions in here: a line saying what an
+      // authority demands of an applicant is the authority's position, and it
+      // now carries the authority's words or is declared ours below.
+      with_provenance: 92,
       // Ours, declared as ours and shown to the reader as ours.
       ours: 8,
       // Standing on a declared, dated reason no quote could be found — the one
@@ -418,6 +424,14 @@ describe("s5e — this slice moves prose, not numbers", () => {
     // 400 seeded profiles, digested. A criterion that changed meaning, a
     // threshold that moved or a route that started failing somebody would all
     // change this hex; moving prose cannot.
+    //
+    // It moved once, in s5f, and only for the reason that slice exists: the
+    // `experience` ladder gained a three-year answer, so the seeded profiles
+    // draw from four options where they drew from three, and
+    // `es-highly-qualified` reads the new one. Twenty-six of the 400 profiles
+    // moved, every one of them on that route and every one toward the reader —
+    // the differential is pinned route by route in tests/s5f.test.ts, which is
+    // the check this blanket digest cannot make.
     function lcg(seed: number) {
       let s = seed >>> 0;
       return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
@@ -439,7 +453,7 @@ describe("s5e — this slice moves prose, not numbers", () => {
         lines.push([r.route.id, r.status, r.hard_fail ? 1 : 0, r.gap_max ?? "", r.gap_points ?? "", r.points ? r.points.scored : ""].join("|"));
     }
     expect(createHash("sha256").update(lines.join("\n")).digest("hex"))
-      .toBe("7985e43ce43636135a79fd5b31a1544c01a54e80c9eb27a9535af779c5383ec5");
+      .toBe("26fe7472188c220f3c66a536abc52e63a95ae44f5f8155976ec3fb5886c3868d");
   });
 });
 
@@ -468,7 +482,12 @@ describe("s5e — watch coverage holds both ways", () => {
     const checklist = readFileSync(path, "utf8").replace(/\s+/g, " ");
     const quotes = checkQuotes(dataset, watchlist, state);
     const human = quotes.unverifiable.filter((u) => !u.where.startsWith("class:"));
-    expect(human.length).toBeGreaterThan(0);
+    // Empty since s5f: the six PDF quotes this list was written for are read
+    // by the `pdf-text` strategy now. The rule the list encodes has not been
+    // relaxed — every quote a machine cannot check must still be written down,
+    // one by one, with its page and its sentence — so the loop stays and the
+    // file must say, in the open, that the machine closed it.
+    expect(checklist).toContain("CLOSED BY THE MACHINE");
     for (const u of human) {
       // The route it belongs to, the page to open, and the exact sentence to
       // look for — a checklist that only named routes would leave a person

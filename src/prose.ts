@@ -189,7 +189,16 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
       const p = `/countries/${country.code}/routes/${route.id}`;
       label(`${p}/name`, route.name);
       label(`${p}/summary`, route.summary);
-      (route.preconditions ?? []).forEach((t, i) => label(`${p}/preconditions/${i}`, t));
+      // A precondition states what the AUTHORITY requires of an applicant —
+      // "the professional licence must already be in hand" is the authority's
+      // position or it is nothing. It was walked as a `label` until s5f, which
+      // is the one slot the s5e gate could not see: 37 sentences rendered
+      // under "Also required — not checked here" with no quote, no date and
+      // nothing watching them. Kinded here, the slot is only usable with the
+      // authority's words beside it, and the honest homes for the rest are the
+      // ones s5e built — `statements` for a quoted precondition, `readings`
+      // for a requirement that is our own inference.
+      (route.preconditions ?? []).forEach((t, i) => authority(`${p}/preconditions/${i}`, t, {}));
       (route.statements ?? []).forEach((s, i) => {
         // A statement IS the authority's position, by the glossary's own
         // definition of the term. It stands on a quote, or on the declared and

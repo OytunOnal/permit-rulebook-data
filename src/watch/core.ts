@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
 import { htmlToText, normalize } from "./normalize.js";
+import { pdfToText, repairKnownGlyphs } from "./pdf-text.js";
 import { forEachCriterion, provenancedValuesOf, routeStatements } from "../engine.js";
 import { countryVocabulary } from "../countries.js";
 import type { Dataset } from "../types.js";
 
-export type WatchStrategy = "html" | "pdf" | "human" | "link";
+export type WatchStrategy = "html" | "pdf" | "pdf-text" | "human" | "link";
 
 export interface WatchEntry {
   id: string;
@@ -29,10 +30,20 @@ export interface WatchEntry {
 export interface Watchlist { entries: WatchEntry[] }
 
 export interface Snapshot {
+  /** What "changed" is decided on: the normalized text where a strategy can
+   * read one, the file's own bytes where it cannot. */
   hash: string;
   retrieved_at: string;
-  /** normalized text kept for html entries so a change can quote its diff context */
+  /** normalized text kept for html and pdf-text entries so a change can quote
+   * its diff context — and so the quote gate has something to check against */
   text?: string;
+  /** pdf-text only: the file's own hash, kept beside the words. The words are
+   * what a change means; the bytes are what a re-export moves. */
+  bytes_hash?: string;
+  /** pdf-text only: the document carried no text layer on this read. Set so
+   * the quote gate can say WHY it cannot check, and say the same thing twice
+   * running rather than "never fetched". */
+  no_text_layer?: boolean;
   history: { hash: string; retrieved_at: string }[];
 }
 
@@ -122,9 +133,26 @@ export async function runWatch(
 
     let hash: string;
     let text: string | undefined;
+    let bytesHash: string | undefined;
+    let noTextLayer = false;
     try {
       if (entry.strategy === "pdf") {
         hash = sha256(fetched.body);
+      } else if (entry.strategy === "pdf-text") {
+        // The words decide, not the bytes: a ministry re-exporting the same
+        // sheet moves every byte and no sentence, and a watch that cried
+        // "changed" at that is a watch a curator learns to wave through.
+        bytesHash = sha256(fetched.body);
+        const decoded = pdfToText(fetched.body);
+        if (decoded) {
+          text = decoded.text;
+          hash = sha256(text);
+        } else {
+          // A scan. There is nothing to read, so the bytes are all there is —
+          // and the quote gate is told why, rather than left to guess.
+          noTextLayer = true;
+          hash = bytesHash;
+        }
       } else {
         text = normalize(htmlToText(new TextDecoder("utf-8").decode(fetched.body)));
         if (entry.slice) {
@@ -145,7 +173,7 @@ export async function runWatch(
     const prev = state.entries[entry.id];
     if (!prev) {
       reports.push({ ...base, outcome: "baseline", new_hash: hash });
-      nextEntries[entry.id] = { hash, retrieved_at: today, text, history: [] };
+      nextEntries[entry.id] = { hash, retrieved_at: today, text, ...(bytesHash ? { bytes_hash: bytesHash } : {}), ...(noTextLayer ? { no_text_layer: true } : {}), history: [] };
     } else if (prev.hash === hash) {
       reports.push({ ...base, outcome: "unchanged", old_hash: prev.hash, new_hash: hash });
     } else {
@@ -155,6 +183,8 @@ export async function runWatch(
       });
       nextEntries[entry.id] = {
         hash, retrieved_at: today, text,
+        ...(bytesHash ? { bytes_hash: bytesHash } : {}),
+        ...(noTextLayer ? { no_text_layer: true } : {}),
         history: [...prev.history, { hash: prev.hash, retrieved_at: prev.retrieved_at }],
       };
     }
@@ -245,6 +275,11 @@ function loose(s: string): string {
     .replace(/(\d)(?=[A-Za-zÀ-ÿ])/g, "$1 ")
     .replace(/([A-Za-zÀ-ÿ€])(?=\d)/g, "$1 ")
     .replace(/\s+([.,;:])/g, "$1")
+    // The same tolerance, one level down, for a PDF: a document positions
+    // "1." and "091" as two separate showing operators, and the decoder puts
+    // a space between operators because that is where words break. Inside a
+    // number it never is one — "1. 091" is our spacing, "1.091" is the page's.
+    .replace(/(\d[.,]) (?=\d)/g, "$1")
     .trim();
 }
 
@@ -284,13 +319,21 @@ export function checkQuotes(dataset: Dataset, watchlist: Watchlist, state: Watch
       // here can confirm the sentence. Saying so beats a silent pass.
       unverifiable.push({
         ...q,
-        reason: entry.strategy === "human"
-          ? "human tier — read by a person; no machine snapshot to check against"
-          : `${entry.strategy} tier — no text snapshot`,
+        reason: snapshot?.no_text_layer
+          // The one answer a text strategy may give about a scan. Anything
+          // else would put a machine's guess at a photograph behind a
+          // sentence the reader is told was quoted.
+          ? "no text layer — the document is a picture of a page"
+          : entry.strategy === "human"
+            ? "human tier — read by a person; no machine snapshot to check against"
+            : `${entry.strategy} tier — no text snapshot`,
       });
       continue;
     }
-    if (loose(snapshot.text).includes(loose(q.quote))) verified++;
+    // Where a decoder is known to be wrong about a source, it is wrong BY
+    // NAME: the substitution is declared per entry, applied to the snapshot
+    // for the comparison only, and never written into what the dataset ships.
+    if (loose(repairKnownGlyphs(entry.id, snapshot.text)).includes(loose(q.quote))) verified++;
     else missing.push(q);
   }
   return { ok: missing.length === 0, missing, unverifiable, verified };
