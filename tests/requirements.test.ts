@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { routeStatements } from "../src/engine.js";
+import { UNSOURCED_REASONS } from "../src/types.js";
 import type { Dataset, Route } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -182,13 +183,21 @@ describe("a statement in the reader's favour is never a requirement", () => {
       }
   });
 
+  it("the fixed set of reasons is one list, not three copies of one", () => {
+    // The schema gates the dataset, the type gates the code, and the watch
+    // says one of these words about a PDF it found no text in. Three spellings
+    // of one fact is three facts to the next reader (review 2026-09-07, S2).
+    const schema = JSON.parse(readFileSync(new URL("../schema/ruleset.schema.json", import.meta.url), "utf8"));
+    expect(schema.$defs.unsourcedReason.properties.reason.enum).toEqual([...UNSOURCED_REASONS]);
+  });
+
   it("no reason a statement gives for having no quote is one we invented", () => {
     // The point of an enumeration is that nobody can extend it by writing
     // something. If a new case genuinely occurs, the schema names it first.
     for (const route of routes())
       for (const s of routeStatements(route))
         if (s.unsourced)
-          expect(["scanned-image", "not-published-in-words", "unreachable"], `${route.id}:${s.id}`)
+          expect(UNSOURCED_REASONS as readonly string[], `${route.id}:${s.id}`)
             .toContain(s.unsourced.reason);
   });
 });

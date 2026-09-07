@@ -167,12 +167,29 @@ export interface RouteReading {
  * a date in the shape `retrieved_at` takes, so it ages the same way. Prose is
  * welcome in `note` — in addition to both, never in place of either.
  */
+/**
+ * The fixed set of reasons, as words. Exported as a value because the same
+ * words are needed at runtime and by tests, and because the watch says one of
+ * them too: a PDF the decoder finds no text in is `scanned-image`, the very
+ * word a statement uses for a source published only as a picture. It had a
+ * second spelling there ("no text layer") and one fact with two names is two
+ * facts to the next reader (review 2026-09-07).
+ *
+ * scanned-image: published only as a scan whose text cannot be extracted.
+ * not-published-in-words: stated as a list, table or form, never in a sentence
+ * there is anything to quote. unreachable: no fetch from here reaches the
+ * source at all.
+ *
+ * Grow this list only when a case genuinely occurs — an enumeration nobody can
+ * extend by writing prose is the whole point. The JSON schema carries the same
+ * three; `tests/blockers.test.ts` holds them to each other.
+ */
+export const UNSOURCED_REASONS = ["scanned-image", "not-published-in-words", "unreachable"] as const;
+
+export type UnsourcedReasonWord = (typeof UNSOURCED_REASONS)[number];
+
 export interface UnsourcedReason {
-  /** scanned-image: published only as a scan whose text cannot be extracted.
-   * not-published-in-words: stated as a list, table or form, never in a
-   * sentence there is anything to quote. unreachable: no fetch from here
-   * reaches the source at all. */
-  reason: "scanned-image" | "not-published-in-words" | "unreachable";
+  reason: UnsourcedReasonWord;
   /** The day we last went looking and did not find it. */
   checked_at: string;
   /** Which document, which page, what was tried — what the reason cannot say. */

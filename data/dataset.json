@@ -205,7 +205,10 @@
         {
           "value": "y3in7",
           "label": "3+ years within the last 7",
-          "short": "3+ years of related experience"
+          "short": "3+ years of related experience",
+          "implies": [
+            "y2in5"
+          ]
         },
         {
           "value": "y5in7",
@@ -2415,8 +2418,12 @@
                   "criteria": [
                     {
                       "field": "experience",
-                      "op": "eq",
-                      "value": "y5in7",
+                      "op": "in",
+                      "values": [
+                        "y3in7",
+                        "y5in7"
+                      ],
+                      "short_reason": "at least three years of related experience",
                       "source": {
                         "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
                         "quote": "conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos 3 años que pueda considerarse equiparable a dicha cualificación",

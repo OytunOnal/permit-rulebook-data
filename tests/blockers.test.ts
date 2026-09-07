@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { evaluate, fieldOptions, matchOptions, notices, routeStatements } from "../src/engine.js";
 import { countryVocabulary } from "../src/countries.js";
+import { UNSOURCED_REASONS } from "../src/types.js";
 import type { Dataset, Profile, Route } from "../src/types.js";
 
 /** Everything a card lists under "Also required — not checked here": the plain
@@ -130,8 +131,10 @@ describe("cleared blocker: a card never claims more than the interview checked",
 });
 
 /** The reasons a statement may have no quote, and the shape its check-date
- * takes — both the schema's, so a test cannot drift from the gate. */
-const REASONS = ["scanned-image", "not-published-in-words", "unreachable"];
+ * takes — both the schema's, so a test cannot drift from the gate. The words
+ * are imported, not retyped: the watch says one of them too, about a PDF it
+ * found no text in, and one fact must not have two spellings (review). */
+const REASONS: readonly string[] = UNSOURCED_REASONS;
 const DATED = /^\d{4}-\d{2}-\d{2}$/;
 
 describe("cleared blocker: a person can find their own country", () => {

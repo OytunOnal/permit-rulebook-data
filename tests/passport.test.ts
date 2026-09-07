@@ -49,11 +49,18 @@ describe("s5c — a passport is a country, and the rules read it through classes
     expect(statusMap({ ...baseOffer, citizenship: "IE" })).toEqual(statusMap({ ...baseOffer, citizenship: "eu_eea_ch" }));
   });
 
-  it("an option without `implies` satisfies its own value and nothing else", () => {
-    // Every field but the passport still answers only for itself.
-    for (const def of dataset.fields)
-      if (def.id !== "citizenship")
-        expect(fieldOptions(dataset, def.id).every((o) => o.implies === undefined), def.id).toBe(true);
+  it("only the fields that declare a hierarchy carry `implies` — the list is an inventory", () => {
+    // `implies` is how one answer says it also satisfies another, and it
+    // widens every criterion that reads the field at once. Two fields declare
+    // a hierarchy: the passport (a country IS a member of its class) and the
+    // experience ladder (a longer record clears a shorter band's bar, s5f).
+    // Every other field answers only for itself, and a third entry here has to
+    // be a deliberate edit rather than a typo nobody notices.
+    const declared = dataset.fields.flatMap((def) =>
+      fieldOptions(dataset, def.id)
+        .filter((o) => o.implies)
+        .map((o) => `${def.id}:${o.value} -> ${o.implies!.join(",")}`));
+    expect(declared.filter((d) => !d.startsWith("citizenship:"))).toEqual(["experience:y3in7 -> y2in5"]);
     // `situation eq offer` must not start passing for an intra-corporate transfer.
     const offer = statusMap({ ...baseOffer, citizenship: "TR" });
     const ict = statusMap({ ...baseOffer, citizenship: "TR", situation: "ict" });

@@ -26,7 +26,7 @@
       "url": "https://kairo.diplo.de/resource/blob/2664804/5e952d2720a91e83a475a3e02452f1cf/250122-deu-merkblatt-chancenkarte-data.pdf",
       "strategy": "pdf-text",
       "kind": "value-source",
-      "note": "Backs the Chancenkarte livelihood amount (EUR 1,091/month). Byte-hash only; on change a human reads the PDF."
+      "note": "Backs the Chancenkarte livelihood amount (EUR 1,091/month). The decoded text layer decides change; the file's own hash is kept beside it, so a re-export moves the bytes and not the watch."
     },
     {
       "id": "buzer-anlage-aufenthg",
@@ -67,7 +67,21 @@
       "url": "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf",
       "strategy": "pdf-text",
       "kind": "value-source",
-      "note": "Backs the ES Blue Card / PAC nacional thresholds (EUR 41,356.36). Byte-hash only; on change a human reads the PDF. Liferay slugs have churned before — the UGE index sentinel guards the link."
+      "note": "Backs the ES Blue Card / PAC nacional thresholds (EUR 41,356.36). The decoded text layer decides change; the file's own hash is kept beside it, so a re-export moves the bytes and not the watch. Liferay slugs have churned before — the UGE index sentinel guards the link.",
+      "glyph_substitutions": [
+        {
+          "from": "Ouándo",
+          "to": "Cuándo",
+          "reason": "The sheet sets its headings in a second subsetted font whose glyph numbering collides with the body font's; the decoder merges both maps, first font wins, and draws this C as an O. Read against the PDF by a person.",
+          "checked_at": "2026-09-07"
+        },
+        {
+          "from": "PAO",
+          "to": "PAC",
+          "reason": "The same two colliding glyphs, in the same headings font: the C of \"PAC nacional\" decodes as an O. Read against the PDF by a person.",
+          "checked_at": "2026-09-07"
+        }
+      ]
     },
     {
       "id": "es-uge-index",

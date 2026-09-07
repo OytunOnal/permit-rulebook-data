@@ -8,7 +8,26 @@ import {
 import { proseProvenance, quotedWithoutProvenance, renderableTexts } from "../src/prose.js";
 import { validateDataset } from "../src/validate.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
-import type { Criterion, Dataset, FieldDef, Profile, Route, RouteReading } from "../src/types.js";
+import type { Criterion, Dataset, FieldDef, Profile, Route, RouteReading, RouteResult } from "../src/types.js";
+
+/**
+ * The dataset without one option of the `experience` ladder — the rules as
+ * they stood before it was added, over the same people.
+ */
+function withoutExperienceOption(ds: Dataset, value: string): Dataset {
+  const before = structuredClone(ds) as Dataset;
+  const def = before.fields.find((f) => f.id === "experience")!;
+  def.options = (def.options ?? []).filter((o) => o.value !== value);
+  for (const o of def.options) if (o.implies) o.implies = o.implies.filter((v) => v !== value);
+  for (const country of before.countries)
+    for (const route of country.routes)
+      forEachCriterion(route.criteria, (c) => {
+        if (c.op === "in" && c.field === "experience") c.values = c.values.filter((v) => v !== value);
+        if (c.op === "points")
+          for (const item of c.table.items) if (item.field === "experience") delete item.points[value];
+      });
+  return before;
+}
 
 const readJson = (p: string) =>
   JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8").replace(/^﻿/, ""));
@@ -420,18 +439,8 @@ describe("s5e — this slice moves prose, not numbers", () => {
     ]);
   });
 
-  it("every verdict the engine reaches is the verdict it reached before", () => {
-    // 400 seeded profiles, digested. A criterion that changed meaning, a
-    // threshold that moved or a route that started failing somebody would all
-    // change this hex; moving prose cannot.
-    //
-    // It moved once, in s5f, and only for the reason that slice exists: the
-    // `experience` ladder gained a three-year answer, so the seeded profiles
-    // draw from four options where they drew from three, and
-    // `es-highly-qualified` reads the new one. Twenty-six of the 400 profiles
-    // moved, every one of them on that route and every one toward the reader —
-    // the differential is pinned route by route in tests/s5f.test.ts, which is
-    // the check this blanket digest cannot make.
+  /** The 400 seeded profiles this pin is computed over. */
+  function seededProfiles(): Profile[] {
     function lcg(seed: number) {
       let s = seed >>> 0;
       return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
@@ -441,7 +450,7 @@ describe("s5e — this slice moves prose, not numbers", () => {
         ? deriveBands(dataset, def.id).map((b) => b.id)
         : fieldOptions(dataset, def.id).map((o) => o.value);
     const rand = lcg(90210);
-    const lines: string[] = [];
+    const profiles: Profile[] = [];
     for (let i = 0; i < 400; i++) {
       const p: Profile = {};
       for (const def of dataset.fields)
@@ -449,11 +458,72 @@ describe("s5e — this slice moves prose, not numbers", () => {
           const vals = optionValues(def);
           p[def.id] = vals[Math.floor(rand() * vals.length)];
         }
-      for (const r of evaluate(dataset, p))
-        lines.push([r.route.id, r.status, r.hard_fail ? 1 : 0, r.gap_max ?? "", r.gap_points ?? "", r.points ? r.points.scored : ""].join("|"));
+      profiles.push(p);
     }
+    return profiles;
+  }
+
+  const rowOf = (r: RouteResult): string =>
+    [r.route.id, r.status, r.hard_fail ? 1 : 0, r.gap_max ?? "", r.gap_points ?? "", r.points ? r.points.scored : ""].join("|");
+
+  it("every verdict the engine reaches is the verdict it reached before", () => {
+    // 400 seeded profiles, digested. A criterion that changed meaning, a
+    // threshold that moved or a route that started failing somebody would all
+    // change this hex; moving prose cannot. What it CANNOT say is who moved
+    // and which way, which is the next test's job.
+    const lines = seededProfiles().flatMap((p) => evaluate(dataset, p).map(rowOf));
     expect(createHash("sha256").update(lines.join("\n")).digest("hex"))
-      .toBe("26fe7472188c220f3c66a536abc52e63a95ae44f5f8155976ec3fb5886c3868d");
+      .toBe("6ee710eaf7fede018c94b2b3714aa274c29d80d9509779bb7187315fe976e59d");
+  });
+
+  it("and when it moves, the differential holds the population fixed", () => {
+    /*
+     * What the digest's own comment used to claim — "the seeded profiles draw
+     * from four options where they drew from three, twenty-six of the 400
+     * moved" — was not a differential at all. Adding an option to the ladder
+     * changes what the generator DRAWS, so that comparison put 400 people
+     * against 400 different people: different profiles, not different rules,
+     * and the count is noise. Neither 26 nor the commit message's 27 is
+     * reproducible by any method; the regenerated comparison moves 89 profiles
+     * and 100 rows, almost all of it the Chancenkarte scoring a reshuffled
+     * answer (review 2026-09-07, H3).
+     *
+     * Same people, two rulesets, split by what they answered — because the new
+     * option is not answerable under the old rules, and comparing it against a
+     * dataset that has never heard of it proves nothing:
+     *
+     *   - 318 profiles answered an option the old ladder already had. Under
+     *     the old rules and the new ones, EVERY route gives them the same row.
+     *     That is decision 1's "every other route keeps its verdicts", with no
+     *     route exempted.
+     *   - 82 profiles answered the new `y3in7`. Their honest baseline is the
+     *     same person answering `y2in5`, the rung below. 15 rows are better
+     *     for them and none is worse: 7 on `es-highly-qualified` (decision 1)
+     *     and 8 on `es-ict` (the verdict its own quote refuted).
+     */
+    const before = withoutExperienceOption(dataset, "y3in7");
+    let unchangedProfiles = 0;
+    let newAnswerProfiles = 0;
+    const better: Record<string, number> = {};
+    for (const p of seededProfiles()) {
+      if (p.experience === "y3in7") {
+        newAnswerProfiles++;
+        const rung = new Map(evaluate(dataset, { ...p, experience: "y2in5" }).map((r) => [r.route.id, rowOf(r)]));
+        for (const r of evaluate(dataset, p))
+          if (rung.get(r.route.id) !== rowOf(r)) better[r.route.id] = (better[r.route.id] ?? 0) + 1;
+      } else {
+        unchangedProfiles++;
+        const old = new Map(evaluate(before, p).map((r) => [r.route.id, rowOf(r)]));
+        for (const r of evaluate(dataset, p))
+          expect(rowOf(r), `${r.route.id} moved for a profile that answered ${String(p.experience)}`)
+            .toBe(old.get(r.route.id));
+      }
+    }
+    expect(unchangedProfiles).toBe(318);
+    expect(newAnswerProfiles).toBe(82);
+    expect(better).toEqual({ "es-highly-qualified": 7, "es-ict": 8 });
+    // Every one of those 15 is toward the reader — the direction is proved
+    // over 600 profiles and every route in tests/s5f.test.ts.
   });
 });
 

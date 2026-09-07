@@ -1,7 +1,7 @@
 import { countryOptions } from "./countries.js";
 import type {
   Band, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef, FieldOption, Notice,
-  PointsBreakdown, Profile, Route, RouteReading, RouteResult, RouteStatement, RouteStatus,
+  PointsBreakdown, PointsItem, Profile, Route, RouteReading, RouteResult, RouteStatement, RouteStatus,
 } from "./types.js";
 
 export function formatEUR(amount: number): string {
@@ -121,17 +121,37 @@ export function fieldOptions(dataset: Dataset, id: string): FieldOption[] {
 
 /**
  * The one predicate that decides whether an answer meets a wanted value —
- * used by `eq`, by `in` and by notice matching. An answer satisfies a value
- * when it IS that value, or when its option's `implies` list carries it
- * ("TR" implies "third_country"). Points tables deliberately do NOT go
- * through here: they key on the raw answer, because a class is not a scoring
- * bucket. No points item reads a class-bearing field today; if one ever does,
- * decide the semantics on purpose rather than inheriting them.
+ * used by `eq`, by `in`, by notice matching and by `pointsFor`. An answer
+ * satisfies a value when it IS that value, or when its option's `implies` list
+ * carries it ("TR" implies "third_country"; "3+ years within the last 7"
+ * implies the two-year band it clears).
  */
 function satisfies(dataset: Dataset, field: string, answer: string, wanted: string[]): boolean {
   if (wanted.includes(answer)) return true;
   const implied = fieldIndex(dataset, field)?.byValue.get(answer)?.implies;
   return implied !== undefined && wanted.some((v) => implied.includes(v));
+}
+
+/**
+ * What one answer scores on one points item — the ONE place a points value is
+ * read, so the scorer and the equivalence fingerprint cannot disagree.
+ *
+ * The answer scores the BEST of the rows it satisfies, never their sum: an
+ * `implies` list says the same person also clears a lower rung, and a ladder
+ * pays for the highest rung reached, not for every rung below it.
+ *
+ * The old comment on `satisfies` said points tables deliberately key on the
+ * raw answer, "and if a points item ever reads a class-bearing field, decide
+ * the semantics on purpose rather than inheriting them". s5f made one: the
+ * `experience` ladder gained `y3in7`, which implies `y2in5`, and the
+ * Chancenkarte scores `experience`. Keying on the raw answer paid the honest
+ * three-year answerer 0 where the two-year answerer got 2 (review 2026-09-07).
+ */
+function pointsFor(dataset: Dataset, item: PointsItem, answer: string): number {
+  let best = item.points[answer] ?? 0;
+  for (const [value, pts] of Object.entries(item.points))
+    if (pts > best && satisfies(dataset, item.field, answer, [value])) best = pts;
+  return best;
 }
 
 /** All field ids a criterion reads (recursing through disjunctions). */
@@ -251,7 +271,7 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
       if (isUnknownAnswer(dataset, item.field, answer)) {
         unanswered++;
       } else {
-        const pts = item.points[answer as string] ?? 0;
+        const pts = pointsFor(dataset, item, answer as string);
         scored += pts;
         if (pts > 0) items.push({ field: item.field, points: pts });
       }
@@ -396,7 +416,7 @@ function equivalenceKey(dataset: Dataset, field: string, value: string): string 
         else if (c.op === "in" && c.field === field) parts.push(satisfies(dataset, field, value, c.values) ? "1" : "0");
         else if (c.op === "points")
           for (const item of c.table.items)
-            if (item.field === field) parts.push(`p${item.points[value] ?? 0}`);
+            if (item.field === field) parts.push(`p${pointsFor(dataset, item, value)}`);
       });
   // Notices are part of what an answer decides, so two answers are only
   // interchangeable when they draw the same notices too — otherwise a consumer

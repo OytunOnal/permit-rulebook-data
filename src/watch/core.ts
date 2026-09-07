@@ -1,11 +1,63 @@
 import { createHash } from "node:crypto";
 import { htmlToText, normalize } from "./normalize.js";
-import { pdfToText, repairKnownGlyphs } from "./pdf-text.js";
+import { pdfToText } from "./pdf-text.js";
+import { repairKnownGlyphs, unboundedReason, type GlyphSubstitution } from "./corrections.js";
 import { forEachCriterion, provenancedValuesOf, routeStatements } from "../engine.js";
 import { countryVocabulary } from "../countries.js";
-import type { Dataset } from "../types.js";
+import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
 export type WatchStrategy = "html" | "pdf" | "pdf-text" | "human" | "link";
+
+/**
+ * What each strategy is, in one place.
+ *
+ * The strategies had grown five switches across two files — the human arm, the
+ * link arm, the read, the quote gate's "no text snapshot" wording and the
+ * CLI's remediation — and `pdf-text` was named in only one of them: a changed
+ * decoded PDF fell through to the generic "update the dataset value" advice,
+ * which is not what a curator should do with a PDF whose words moved (review
+ * 2026-09-07). One table now, and a strategy that forgets a row will not
+ * compile.
+ */
+export const STRATEGIES: Record<WatchStrategy, {
+  /** Whether a pass fetches the source at all. */
+  fetches: boolean;
+  /** Whether what came back is compared against the last snapshot. A learn
+   * link is fetched and not compared: its wording may change freely, and only
+   * silence is news. */
+  compares: boolean;
+  /** What the quote gate says when there is no text to check a quote against
+   * on this strategy — its honest answer, never a silent pass. */
+  no_text_snapshot: string;
+  /** What a curator must do when a source on this strategy changes. */
+  remediation: string;
+}> = {
+  html: {
+    fetches: true, compares: true,
+    no_text_snapshot: "html tier — no text snapshot; the source has not been fetched yet",
+    remediation: "Update the dataset value(s) with quote + retrieval date; move the old value into history.",
+  },
+  "pdf-text": {
+    fetches: true, compares: true,
+    no_text_snapshot: "pdf-text tier — no text snapshot; the source has not been fetched yet",
+    remediation: "The PDF's WORDS changed, not just its bytes. Read the diff context below, then update the dataset value(s) with quote + retrieval date; move the old value into history.",
+  },
+  pdf: {
+    fetches: true, compares: true,
+    no_text_snapshot: "pdf tier — the bytes are watched; nothing here reads the document's words",
+    remediation: "PDF changed — a human must read it; no value is extracted automatically.",
+  },
+  link: {
+    fetches: true, compares: false,
+    no_text_snapshot: "link tier — a learn link backs no value, so no quote rests on it",
+    remediation: "A learn link backs no value; only silence is news here.",
+  },
+  human: {
+    fetches: false, compares: false,
+    no_text_snapshot: "human tier — read by a person; no machine snapshot to check against",
+    remediation: "Scheduled human re-verification is due. After verifying, update `last_verified` for this entry in watch/watchlist.json.",
+  },
+};
 
 export interface WatchEntry {
   id: string;
@@ -25,6 +77,11 @@ export interface WatchEntry {
   /** human strategy only */
   max_age_days?: number;
   last_verified?: string; // YYYY-MM-DD
+  /** pdf-text strategy only: where this document's decoded text is known to
+   * disagree with the document a person holds, declared beside the source it
+   * corrects rather than in the decoder. Each correction is bounded — see
+   * `corrections.ts` — and the coverage gate refuses one that is not. */
+  glyph_substitutions?: GlyphSubstitution[];
 }
 
 export interface Watchlist { entries: WatchEntry[] }
@@ -40,10 +97,11 @@ export interface Snapshot {
   /** pdf-text only: the file's own hash, kept beside the words. The words are
    * what a change means; the bytes are what a re-export moves. */
   bytes_hash?: string;
-  /** pdf-text only: the document carried no text layer on this read. Set so
-   * the quote gate can say WHY it cannot check, and say the same thing twice
-   * running rather than "never fetched". */
-  no_text_layer?: boolean;
+  /** pdf-text only: why this snapshot carries no `text`, in the dataset's own
+   * vocabulary, so the quote gate can say WHY it cannot check rather than
+   * leaving a reader with "never fetched". A text strategy may give exactly
+   * one answer here: the document is a picture of a page. */
+  unverifiable_reason?: UnsourcedReasonWord;
   history: { hash: string; retrieved_at: string }[];
 }
 
@@ -89,6 +147,65 @@ function daysSince(last: string, today: string): number {
   return Number.isFinite(diff) ? Math.max(0, diff) : Infinity;
 }
 
+/** What one read of one source produced, before it is compared to anything. */
+interface Reading {
+  hash: string;
+  text?: string;
+  bytes_hash?: string;
+  unverifiable_reason?: UnsourcedReasonWord;
+}
+
+/**
+ * How each fetching strategy turns bytes into the thing "changed" is decided
+ * on. The one switch over strategies that cannot be a table, because each arm
+ * is an algorithm — and exhaustive, so a new strategy stops the build here
+ * rather than silently reading as html.
+ */
+function readSource(entry: WatchEntry, body: Uint8Array): Reading {
+  switch (entry.strategy) {
+    case "pdf":
+      return { hash: sha256(body) };
+    case "pdf-text": {
+      // The words decide, not the bytes: a ministry re-exporting the same
+      // sheet moves every byte and no sentence, and a watch that cried
+      // "changed" at that is a watch a curator learns to wave through.
+      const bytes_hash = sha256(body);
+      const decoded = pdfToText(body);
+      // A scan. There is nothing to read, so the bytes are all there is — and
+      // the quote gate is told why, in the word the dataset already uses for
+      // a source published only as a picture.
+      if (!decoded) return { hash: bytes_hash, bytes_hash, unverifiable_reason: "scanned-image" };
+      return { hash: sha256(decoded.text), text: decoded.text, bytes_hash };
+    }
+    case "html": {
+      let text = normalize(htmlToText(new TextDecoder("utf-8").decode(body)));
+      if (entry.slice) {
+        const from = text.indexOf(entry.slice.from);
+        const to = from >= 0 ? text.indexOf(entry.slice.to, from + entry.slice.from.length) : -1;
+        if (from < 0 || to < 0)
+          throw new Error(`slice marker missing: ${from < 0 ? "from" : "to"}`);
+        text = text.slice(from, to + entry.slice.to.length);
+      }
+      return { hash: sha256(text), text };
+    }
+    default: {
+      const _exhaustive: "human" | "link" = entry.strategy;
+      throw new Error(`strategy ${_exhaustive} does not read a source`);
+    }
+  }
+}
+
+/** A reading, dated — the fields a snapshot keeps, minus its history. */
+function snapshotOf(reading: Reading, today: string): Omit<Snapshot, "history"> {
+  return {
+    hash: reading.hash,
+    retrieved_at: today,
+    text: reading.text,
+    ...(reading.bytes_hash ? { bytes_hash: reading.bytes_hash } : {}),
+    ...(reading.unverifiable_reason ? { unverifiable_reason: reading.unverifiable_reason } : {}),
+  };
+}
+
 /**
  * Pure watch pass: fetches via the injected fetcher, compares against state,
  * returns per-source reports and the next state. NEVER writes anything —
@@ -108,7 +225,7 @@ export async function runWatch(
       id: entry.id, url: entry.url, strategy: entry.strategy, kind: entry.kind, note: entry.note,
     };
 
-    if (entry.strategy === "human") {
+    if (!STRATEGIES[entry.strategy].fetches) {
       const age = entry.last_verified ? daysSince(entry.last_verified, today) : Infinity;
       reports.push({ ...base, outcome: age > (entry.max_age_days ?? 90) ? "reminder-due" : "ok" });
       continue;
@@ -126,54 +243,25 @@ export async function runWatch(
     // would raise a flag every time an unrelated paragraph moved, and the
     // flag that cries every week is the flag nobody reads. Only silence is
     // news here, and silence is already reported above.
-    if (entry.strategy === "link") {
+    if (!STRATEGIES[entry.strategy].compares) {
       reports.push({ ...base, outcome: "ok" });
       continue;
     }
 
-    let hash: string;
-    let text: string | undefined;
-    let bytesHash: string | undefined;
-    let noTextLayer = false;
+    let reading: Reading;
     try {
-      if (entry.strategy === "pdf") {
-        hash = sha256(fetched.body);
-      } else if (entry.strategy === "pdf-text") {
-        // The words decide, not the bytes: a ministry re-exporting the same
-        // sheet moves every byte and no sentence, and a watch that cried
-        // "changed" at that is a watch a curator learns to wave through.
-        bytesHash = sha256(fetched.body);
-        const decoded = pdfToText(fetched.body);
-        if (decoded) {
-          text = decoded.text;
-          hash = sha256(text);
-        } else {
-          // A scan. There is nothing to read, so the bytes are all there is —
-          // and the quote gate is told why, rather than left to guess.
-          noTextLayer = true;
-          hash = bytesHash;
-        }
-      } else {
-        text = normalize(htmlToText(new TextDecoder("utf-8").decode(fetched.body)));
-        if (entry.slice) {
-          const from = text.indexOf(entry.slice.from);
-          const to = from >= 0 ? text.indexOf(entry.slice.to, from + entry.slice.from.length) : -1;
-          if (from < 0 || to < 0)
-            throw new Error(`slice marker missing: ${from < 0 ? "from" : "to"}`);
-          text = text.slice(from, to + entry.slice.to.length);
-        }
-        hash = sha256(text);
-      }
+      reading = readSource(entry, fetched.body);
     } catch (e) {
       // One mangled page must not kill the whole pass (review finding #7).
       reports.push({ ...base, outcome: "unreachable", error: `processing: ${String(e)}` });
       continue;
     }
 
+    const { hash, text } = reading;
     const prev = state.entries[entry.id];
     if (!prev) {
       reports.push({ ...base, outcome: "baseline", new_hash: hash });
-      nextEntries[entry.id] = { hash, retrieved_at: today, text, ...(bytesHash ? { bytes_hash: bytesHash } : {}), ...(noTextLayer ? { no_text_layer: true } : {}), history: [] };
+      nextEntries[entry.id] = { ...snapshotOf(reading, today), history: [] };
     } else if (prev.hash === hash) {
       reports.push({ ...base, outcome: "unchanged", old_hash: prev.hash, new_hash: hash });
     } else {
@@ -182,9 +270,7 @@ export async function runWatch(
         context: text !== undefined && prev.text !== undefined ? diffContext(prev.text, text) : undefined,
       });
       nextEntries[entry.id] = {
-        hash, retrieved_at: today, text,
-        ...(bytesHash ? { bytes_hash: bytesHash } : {}),
-        ...(noTextLayer ? { no_text_layer: true } : {}),
+        ...snapshotOf(reading, today),
         history: [...prev.history, { hash: prev.hash, retrieved_at: prev.retrieved_at }],
       };
     }
@@ -239,6 +325,10 @@ export interface CoverageResult {
   ok: boolean;
   missing_from_watchlist: string[];
   orphan_watch_entries: string[];
+  /** Declared glyph corrections that are not corrections: the bound in
+   * `corrections.ts` is what stops a substitution writing content into a
+   * source, so breaking it fails the gate rather than being skipped quietly. */
+  unbounded_substitutions: string[];
 }
 
 /** Every quote the dataset ships, with the source it claims to come from. */
@@ -268,19 +358,21 @@ export function datasetQuotes(dataset: Dataset): { quote: string; source_url: st
  * punctuation ("in the EU ."). Everything else must match character for
  * character — this is the check that keeps a quote a quote.
  */
-function loose(s: string): string {
-  return s
+function loose(s: string, operatorSpacing = false): string {
+  let out = s
     .replace(/​/g, "")
     .replace(/\s+/g, " ")
     .replace(/(\d)(?=[A-Za-zÀ-ÿ])/g, "$1 ")
     .replace(/([A-Za-zÀ-ÿ€])(?=\d)/g, "$1 ")
-    .replace(/\s+([.,;:])/g, "$1")
-    // The same tolerance, one level down, for a PDF: a document positions
-    // "1." and "091" as two separate showing operators, and the decoder puts
-    // a space between operators because that is where words break. Inside a
-    // number it never is one — "1. 091" is our spacing, "1.091" is the page's.
-    .replace(/(\d[.,]) (?=\d)/g, "$1")
-    .trim();
+    .replace(/\s+([.,;:])/g, "$1");
+  // One further tolerance, for decoded PDFs ONLY: a document positions "1."
+  // and "091" as two separate showing operators, and the decoder puts a space
+  // between operators because that is where words break. Inside a number it
+  // never is one — "1. 091" is our spacing, "1.091" is the page's. An html
+  // page has no showing operators, so applying this there would forgive a
+  // difference that is really in the page (review 2026-09-07).
+  if (operatorSpacing) out = out.replace(/(\d[.,]) (?=\d)/g, "$1");
+  return out.trim();
 }
 
 export interface QuoteCheckResult {
@@ -316,24 +408,27 @@ export function checkQuotes(dataset: Dataset, watchlist: Watchlist, state: Watch
     if (!snapshot?.text) {
       // The human tier is not a gap in the gate, it is the gate's honest
       // answer: the page renders client-side, a person read it, and no machine
-      // here can confirm the sentence. Saying so beats a silent pass.
+      // here can confirm the sentence. Saying so beats a silent pass — and
+      // what each strategy's honest answer IS lives with the strategy.
       unverifiable.push({
         ...q,
-        reason: snapshot?.no_text_layer
-          // The one answer a text strategy may give about a scan. Anything
-          // else would put a machine's guess at a photograph behind a
-          // sentence the reader is told was quoted.
-          ? "no text layer — the document is a picture of a page"
-          : entry.strategy === "human"
-            ? "human tier — read by a person; no machine snapshot to check against"
-            : `${entry.strategy} tier — no text snapshot`,
+        reason: snapshot?.unverifiable_reason
+          // The one answer a text strategy may give about a document it found
+          // no words in, in the dataset's own word for it. Anything else would
+          // put a machine's guess at a photograph behind a sentence the reader
+          // is told was quoted.
+          ? `${snapshot.unverifiable_reason} — the document is a picture of a page, with no text layer to read`
+          : STRATEGIES[entry.strategy].no_text_snapshot,
       });
       continue;
     }
     // Where a decoder is known to be wrong about a source, it is wrong BY
-    // NAME: the substitution is declared per entry, applied to the snapshot
-    // for the comparison only, and never written into what the dataset ships.
-    if (loose(repairKnownGlyphs(entry.id, snapshot.text)).includes(loose(q.quote))) verified++;
+    // NAME: the correction is declared on the watch entry beside the source,
+    // bounded to a glyph run of the same length, applied to the snapshot for
+    // the comparison only, and never written into what the dataset ships.
+    const operatorSpacing = entry.strategy === "pdf-text";
+    const page = repairKnownGlyphs(entry.glyph_substitutions, snapshot.text);
+    if (loose(page, operatorSpacing).includes(loose(q.quote, operatorSpacing))) verified++;
     else missing.push(q);
   }
   return { ok: missing.length === 0, missing, unverifiable, verified };
@@ -351,5 +446,15 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
   const orphans = watchlist.entries
     .filter((e) => e.kind === "value-source" && !datasetUrls.has(e.url))
     .map((e) => e.id);
-  return { ok: missing.length === 0 && orphans.length === 0, missing_from_watchlist: missing, orphan_watch_entries: orphans };
+  const unbounded = watchlist.entries.flatMap((e) =>
+    (e.glyph_substitutions ?? []).flatMap((sub) => {
+      const why = unboundedReason(sub);
+      return why === null ? [] : [`${e.id}: "${sub.from}" → "${sub.to}" — ${why}`];
+    }));
+  return {
+    ok: missing.length === 0 && orphans.length === 0 && unbounded.length === 0,
+    missing_from_watchlist: missing,
+    orphan_watch_entries: orphans,
+    unbounded_substitutions: unbounded,
+  };
 }

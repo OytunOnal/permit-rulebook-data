@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { runWatch, type Fetcher, type WatchReport, type WatchState, type Watchlist } from "./core.js";
+import { runWatch, STRATEGIES, type Fetcher, type WatchReport, type WatchState, type Watchlist } from "./core.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -29,14 +29,17 @@ const fetcher: Fetcher = async (url) => {
   }
 };
 
+/**
+ * What a curator does about this flag. The advice per strategy lives in one
+ * table in core.ts — this arm used to name only `pdf`, so a `pdf-text` entry
+ * whose WORDS moved was told to update the dataset as if it were a web page
+ * (review 2026-09-07). What a sentinel means is the exception, because it is
+ * about the entry's kind and not about how it is read.
+ */
 function remediation(report: WatchReport): string {
-  if (report.outcome === "reminder-due")
-    return "Scheduled human re-verification is due. After verifying, update `last_verified` for this entry in watch/watchlist.json.";
-  if (report.strategy === "pdf")
-    return "PDF changed — a human must read it; no value is extracted automatically.";
-  if (report.kind === "sentinel")
+  if (report.kind === "sentinel" && report.outcome !== "reminder-due")
     return "Sentinel changed — it backs no dataset value directly. Read the source, act on the intent below, and extend the watchlist if new value pages appeared.";
-  return "Update the dataset value(s) with quote + retrieval date; move the old value into history.";
+  return STRATEGIES[report.strategy].remediation;
 }
 
 function flagFile(report: WatchReport, today: string) {

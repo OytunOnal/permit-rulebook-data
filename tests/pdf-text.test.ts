@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { deflateSync } from "node:zlib";
-import { KNOWN_GLYPH_SUBSTITUTIONS, pdfToText, repairKnownGlyphs } from "../src/watch/pdf-text.js";
-import { checkQuotes, runWatch, sha256, type Watchlist, type WatchState } from "../src/watch/core.js";
+import { readFileSync } from "node:fs";
+import { pdfToText, WIN_ANSI_HIGH } from "../src/watch/pdf-text.js";
+import { repairKnownGlyphs, unboundedReason, type GlyphSubstitution } from "../src/watch/corrections.js";
+import { checkCoverage, checkQuotes, runWatch, sha256, type Watchlist, type WatchState } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
+
+const watchlist = JSON.parse(readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
+const entryOf = (id: string) => watchlist.entries.find((e) => e.id === id)!;
 
 /**
  * Fixture PDFs, built here rather than checked in.
@@ -80,15 +85,9 @@ function imageOnlyPdf(): Uint8Array {
   ]));
 }
 
-/** The code points WinAnsi gives the bytes 0x80-0x9F (0 = undefined there). */
-const WIN_ANSI_HIGH = [
-  0x20ac, 0, 0x201a, 0x0192, 0x201e, 0x2026, 0x2020, 0x2021,
-  0x02c6, 0x2030, 0x0160, 0x2039, 0x0152, 0, 0x017d, 0,
-  0, 0x2018, 0x2019, 0x201c, 0x201d, 0x2022, 0x2013, 0x2014,
-  0x02dc, 0x2122, 0x0161, 0x203a, 0x0153, 0, 0x017e, 0x0178,
-];
-
-/** A PDF that draws `text` as a WinAnsi literal string — the other form. */
+/** A PDF that draws `text` as a WinAnsi literal string — the other form. The
+ * encoding table is the decoder's own (imported, not copied): two tables that
+ * agree only by hand would let the same typo pass on both sides. */
 function literalStringPdf(text: string): Uint8Array {
   const { font } = trueTypeFont("x");
   const bytes: number[] = [];
@@ -144,14 +143,55 @@ describe("pdf-text — a quote in a PDF is checked like a quote on a page", () =
     expect(pdfToText(b)!.text).toBe(pdfToText(a)!.text);
   });
 
-  it("the decoder's known artefacts are named, not silently corrected", () => {
+  it("the decoder's known artefacts are declared beside the source, not in the decoder", () => {
     // Merging every embedded font's glyph map is what makes the decoder small
     // enough to audit, and it is why two capitals land wrong on one Spanish
-    // PDF. The record shows both readings.
-    expect(KNOWN_GLYPH_SUBSTITUTIONS["es-uge-umbral-pdf"]).toContainEqual(["Ouándo", "Cuándo"]);
-    expect(repairKnownGlyphs("es-uge-umbral-pdf", "¿Ouándo se aplica")).toBe("¿Cuándo se aplica");
+    // PDF. The record shows both readings, and it is DATA on the watch entry:
+    // the decoder does not know this document exists.
+    const subs = entryOf("es-uge-umbral-pdf").glyph_substitutions!;
+    expect(subs.map((sub) => [sub.from, sub.to])).toContainEqual(["Ouándo", "Cuándo"]);
+    for (const sub of subs) {
+      expect(sub.checked_at, sub.from).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(sub.reason.length, sub.from).toBeGreaterThan(10);
+    }
+    expect(repairKnownGlyphs(subs, "¿Ouándo se aplica")).toBe("¿Cuándo se aplica");
     // Nothing is repaired for a source with no declared artefact.
-    expect(repairKnownGlyphs("kairo-chancenkarte-merkblatt", "¿Ouándo")).toBe("¿Ouándo");
+    expect(entryOf("kairo-chancenkarte-merkblatt").glyph_substitutions).toBeUndefined();
+    expect(repairKnownGlyphs(undefined, "¿Ouándo")).toBe("¿Ouándo");
+  });
+
+  it("a correction may swap a glyph run, never write a phrase", () => {
+    // The bound is what keeps this from being a way to make a failing quote
+    // pass: a correction of the same length, with no space in it, cannot add a
+    // clause, drop a condition, or invent a sentence the document lacks.
+    const dated = { reason: "Two subsetted fonts collide on this glyph.", checked_at: "2026-09-07" };
+    const phrase: GlyphSubstitution = { from: "Umbral", to: "Umbral general: 41.356,36", ...dated };
+    expect(unboundedReason(phrase)).toContain("length");
+    expect(repairKnownGlyphs([phrase], "Umbral"), "a phrase substitution was applied").toBe("Umbral");
+
+    expect(unboundedReason({ from: "PAO nacional", to: "PAC nacional", ...dated })).toContain("whitespace");
+    expect(unboundedReason({ from: "PAO", to: "PAC", ...dated, checked_at: "7 September 2026" })).toContain("checked_at");
+    expect(unboundedReason({ from: "PAO", to: "PAC", ...dated, reason: "typo" })).toContain("reason");
+    expect(unboundedReason({ from: "PAO", to: "PAC", ...dated })).toBeNull();
+  });
+
+  it("and the coverage gate refuses a declared correction that is not one", () => {
+    const dataset = { schema_version: "0.4.0", dataset_version: "t", fields: [], countries: [] } as unknown as Dataset;
+    const loosened: Watchlist = {
+      entries: [{
+        ...entryOf("es-uge-umbral-pdf"),
+        glyph_substitutions: [{
+          from: "Umbral", to: "Umbral general: 41.356,36",
+          reason: "It would be convenient if the sheet said this.", checked_at: "2026-09-07",
+        }],
+      }],
+    };
+    const result = checkCoverage(dataset, loosened);
+    expect(result.ok).toBe(false);
+    expect(result.unbounded_substitutions).toHaveLength(1);
+    expect(result.unbounded_substitutions[0]).toContain("es-uge-umbral-pdf");
+    // The shipped watchlist passes it.
+    expect(checkCoverage(dataset, watchlist).unbounded_substitutions).toEqual([]);
   });
 });
 
@@ -190,7 +230,9 @@ describe("pdf-text — the watch pass", () => {
     expect(reports[0].outcome).toBe("baseline");
     const snapshot = nextState.entries["fixture-pdf"];
     expect(snapshot.text).toBeUndefined();
-    expect(snapshot.no_text_layer).toBe(true);
+    // One word for the state, the dataset's own: a statement with no quote
+    // because its source is a picture says `scanned-image` too.
+    expect(snapshot.unverifiable_reason).toBe("scanned-image");
     // The bytes are still watched: a scan replaced by a real document is news.
     expect(snapshot.hash).toBe(sha256(scan));
   });
@@ -233,6 +275,7 @@ describe("s5f invariant — a PDF text strategy never reports verified for a doc
         scans++;
         expect(result.verified, `document ${i} is a scan and was counted verified`).toBe(0);
         expect(result.unverifiable).toHaveLength(1);
+        expect(result.unverifiable[0].reason).toContain("scanned-image");
         expect(result.unverifiable[0].reason).toContain("no text layer");
       }
     }

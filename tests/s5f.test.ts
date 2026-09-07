@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, fieldOptions, forEachCriterion, routeReadings, routeStatements } from "../src/engine.js";
 import { quotedWithoutProvenance } from "../src/prose.js";
 import { criterionPhrase } from "../src/verdict.js";
-import type { Criterion, Dataset, FieldDef, Profile, Route, RouteStatus } from "../src/types.js";
+import type { Criterion, Dataset, FieldDef, Profile, Route, RouteResult, RouteStatus } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
@@ -57,16 +57,24 @@ function namesValue(route: Route, field: string, value: string): boolean {
  * The dataset as it stood BEFORE an option joined a band field: the option
  * gone from the ladder, and gone from every criterion that names it.
  *
- * This is the only honest baseline for "did anything else move". Re-running
- * the seeded generator over the old option list would compare two different
- * populations of people, and a shifted random draw would read as a moved
- * verdict; holding the population fixed and moving only the rules leaves the
- * rule change as the single variable.
+ * Holding the population fixed and moving only the rules leaves the rule
+ * change as the single variable — re-running the seeded generator over the old
+ * option list would compare two different populations of people, and a shifted
+ * random draw would read as a moved verdict.
+ *
+ * It has ONE blind spot, and s5f fell into it: a profile that answers the new
+ * option scores nothing under this baseline, because the answer is not in its
+ * ladder. Comparing those two is a tautology — "the new answer does nothing on
+ * a dataset that has never heard of it" — and it is exactly the case that
+ * matters. So this baseline is used only for profiles answering options the
+ * ladder ALREADY had; what the new answer is worth is measured against its
+ * neighbour on the ladder instead, below (review 2026-09-07, H2).
  */
 function withoutOption(ds: Dataset, field: string, value: string): Dataset {
   const before = structuredClone(ds) as Dataset;
   const def = before.fields.find((f) => f.id === field)!;
   def.options = (def.options ?? []).filter((o) => o.value !== value);
+  for (const o of def.options) if (o.implies) o.implies = o.implies.filter((v) => v !== value);
   const strip = (c: Criterion): void => {
     if (c.op === "in" && c.field === field) c.values = c.values.filter((v) => v !== value);
     if (c.op === "points")
@@ -141,42 +149,139 @@ describe("s5f decision 1 — the three-year Spanish criterion", () => {
   });
 });
 
-describe("s5f invariant — adding an option to a band field never changes a verdict on a route that does not read it", () => {
-  it("holds for every route but the one, over 600 generated profiles", { timeout: 120_000 }, () => {
-    const before = withoutOption(dataset, "experience", NEW_OPTION);
-    const reading = dataset.countries.flatMap((c) => c.routes)
-      .filter((r) => namesValue(r, "experience", NEW_OPTION)).map((r) => r.id);
-    expect(reading).toEqual([READS_IT]);
+/**
+ * Is `now` a worse answer for the person reading it than `than`?
+ *
+ * Everything a route result says, in the order a reader feels it: the verdict
+ * first, then whether the door is shut, then the score, and — only where those
+ * agree, because a gap on a route you just passed is not comparable to a gap
+ * on one you failed — how far the remaining shortfall is.
+ */
+function worseFor(now: RouteResult, than: RouteResult): string | null {
+  if (TOWARDS_READER[now.status] < TOWARDS_READER[than.status]) return `status ${than.status} → ${now.status}`;
+  if (now.hard_fail && !than.hard_fail) return "became a hard fail";
+  const scored = (r: RouteResult) => r.points?.scored ?? 0;
+  if (scored(now) < scored(than)) return `points ${scored(than)} → ${scored(now)}`;
+  if (now.status !== than.status || now.hard_fail !== than.hard_fail) return null;
+  const wider = (a?: number, b?: number) => a !== undefined && b !== undefined && a > b;
+  if (wider(now.gap_max, than.gap_max)) return `salary gap ${than.gap_max} → ${now.gap_max}`;
+  if (wider(now.gap_points, than.gap_points)) return `points gap ${than.gap_points} → ${now.gap_points}`;
+  return null;
+}
 
+/** The same person, answering the experience question differently. */
+const answering = (p: Profile, experience: string): Map<string, RouteResult> =>
+  new Map(evaluate(dataset, { ...p, experience }).map((r) => [r.route.id, r]));
+
+describe("s5f — the ICT route reads the three years its own quote states", () => {
+  /**
+   * `es-ict` shipped `experience eq y5in7` beside a source quoting "una
+   * experiencia profesional de al menos 3 años" (Ley 14/2013, art. 73.2.b). A
+   * verdict its own quote refutes is the thing the sweep exists to remove, and
+   * it cost one token once `y3in7` existed (review 2026-09-07, H1).
+   */
+  const ICT = "es-ict";
+
+  it("the criterion and the quote say the same number", () => {
+    let criterion: Criterion | undefined;
+    forEachCriterion(routeOf(ICT).criteria, (c) => {
+      if ((c.op === "in" || c.op === "eq") && c.field === "experience") criterion = c;
+    });
+    expect(criterion, `${ICT} does not read experience`).toBeDefined();
+    expect(criterion!.op).toBe("in");
+    expect((criterion as Extract<Criterion, { op: "in" }>).values).toEqual([NEW_OPTION, "y5in7"]);
+    expect(criterion!.source?.quote).toContain("al menos 3 años");
+    expect(criterion!.source?.legal_basis).toBe("Ley 14/2013, art. 73.2.b)");
+    expect(criterionPhrase(dataset, criterion!)).toBe("at least three years of related experience");
+  });
+
+  it("a three-year transferee is met where the five-year answer was demanded", () => {
+    const base: Profile = {
+      citizenship: "TR", destination: "es", situation: "ict", situation_country: "es",
+      qualification: "vocational", salary_eur_year: bandFor("salary_eur_year", 45000),
+    };
+    const statusOn = (experience: string): RouteStatus =>
+      evaluate(dataset, { ...base, experience }).find((r) => r.route.id === ICT)!.status;
+    expect(statusOn(NEW_OPTION)).toBe("met");
+    expect(statusOn("y5in7")).toBe("met");
+    // Two years is below the article's three, here as on the other Spanish route.
+    expect(statusOn("y2in5")).toBe("hold");
+  });
+});
+
+describe("s5f invariant — adding an option to a band field changes nothing for anyone who could already answer", () => {
+  it("holds for every route, over 600 profiles drawn from the answers the ladder already had", { timeout: 120_000 }, () => {
+    // The honest reading of decision 1's "every other route keeps its
+    // verdicts": nobody who could answer the question before sees a different
+    // card because a fourth option now exists. Profiles are drawn from the OLD
+    // ladder, so the comparison is between two datasets that both understand
+    // every answer in it — no tautology, and no route exempted.
+    const before = withoutOption(dataset, "experience", NEW_OPTION);
     const rand = lcg(20260907);
     for (let i = 0; i < 600; i++) {
-      // Profiles are drawn from the NEW ladder, so the added answer is really
-      // in the population — a property that never exercises the new option
-      // would prove nothing.
-      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.75);
+      const p = randomProfile(before, rand, rand() < 0.5 ? 1 : 0.75);
+      expect(p.experience, "a profile answered with the new option").not.toBe(NEW_OPTION);
       const after = new Map(evaluate(dataset, p).map((r) => [r.route.id, rowOf(r)]));
-      for (const r of evaluate(before, p)) {
-        if (reading.includes(r.route.id)) continue;
+      for (const r of evaluate(before, p))
         expect(after.get(r.route.id), `${r.route.id} moved on ${JSON.stringify(p)}`).toBe(rowOf(r));
-      }
+    }
+  });
+});
+
+describe("s5f — the experience ladder is ordinal: a longer record is never worth less", () => {
+  /**
+   * The regression this replaced a tautology to catch. `y3in7` shipped with no
+   * `implies`, so a person with three recent years who answered honestly FAILED
+   * `de-experienced-worker` (which reads `y2in5`, `y5in7`) and scored 0
+   * Chancenkarte points where the two-year answer scored 2. The old guard could
+   * not see it: it stripped the new option from both sides, so a `y3in7`
+   * profile scored nothing in either (review 2026-09-07, H2).
+   */
+  it("the new answer declares the band it clears, and the ladder stays in order", () => {
+    const options = fieldOptions(dataset, "experience");
+    expect(options.find((o) => o.value === NEW_OPTION)!.implies).toEqual(["y2in5"]);
+    // Only the rungs below it, and never a rung above.
+    expect(options.find((o) => o.value === "y5in7")!.implies ?? []).not.toContain(NEW_OPTION);
+    expect(options.find((o) => o.value === "y2in5")!.implies).toBeUndefined();
+    expect(options.find((o) => o.value === "lt2")!.implies).toBeUndefined();
+  });
+
+  it("no route pays the three-year answer less than the two-year one, over 600 profiles", { timeout: 120_000 }, () => {
+    // The guard the scenario asked for, stated so it cannot be tautological:
+    // the same profile, two answers, every route. If this cannot be made true,
+    // the failure names the route — which is the report decision 1 demands.
+    const rand = lcg(20260907);
+    for (let i = 0; i < 600; i++) {
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.75);
+      const two = answering(p, "y2in5");
+      for (const [id, three] of answering(p, NEW_OPTION))
+        expect(worseFor(three, two.get(id)!), `${id} pays y3in7 less than y2in5 on ${JSON.stringify(p)}`).toBeNull();
     }
   });
 
-  it("and the movement on the one route is always toward the reader", { timeout: 120_000 }, () => {
-    const before = withoutOption(dataset, "experience", NEW_OPTION);
+  it("nor the five-year answer less than the three-year one", { timeout: 120_000 }, () => {
     const rand = lcg(20260907);
-    let moved = 0;
     for (let i = 0; i < 600; i++) {
       const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.75);
-      const was = evaluate(before, p).find((r) => r.route.id === READS_IT)!;
-      const now = evaluate(dataset, p).find((r) => r.route.id === READS_IT)!;
-      if (rowOf(was) === rowOf(now)) continue;
-      moved++;
-      expect(TOWARDS_READER[now.status], `${READS_IT} moved backwards on ${JSON.stringify(p)}`)
-        .toBeGreaterThanOrEqual(TOWARDS_READER[was.status]);
-      expect(p.experience).toBe(NEW_OPTION);
+      const three = answering(p, NEW_OPTION);
+      for (const [id, five] of answering(p, "y5in7"))
+        expect(worseFor(five, three.get(id)!), `${id} pays y5in7 less than y3in7 on ${JSON.stringify(p)}`).toBeNull();
     }
-    expect(moved, "the new option moved nothing at all").toBeGreaterThan(0);
+  });
+
+  it("and where three years buys more than two, it is on the routes that ask for three", { timeout: 120_000 }, () => {
+    // The other half of "no verdict moved elsewhere": the routes the new answer
+    // moves are the two whose own source says three years, and no other.
+    const rand = lcg(20260907);
+    const movers = new Set<string>();
+    for (let i = 0; i < 600; i++) {
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.75);
+      const two = answering(p, "y2in5");
+      for (const [id, three] of answering(p, NEW_OPTION))
+        if (rowOf(three) !== rowOf(two.get(id)!)) movers.add(id);
+    }
+    expect([...movers].sort()).toEqual(["es-highly-qualified", "es-ict"]);
+    for (const id of movers) expect(namesValue(routeOf(id), "experience", NEW_OPTION)).toBe(true);
   });
 });
 
@@ -205,6 +310,24 @@ describe("s5f step 2 — Germany does not flinch", () => {
     expect(evaluate(dataset, de("y2in5")).find((r) => r.route.id === "de-experienced-worker")!.status).toBe("met");
   });
 
+  it("and the three-year answer gets what the two-year answer gets, on both German rules", () => {
+    // Germany's rules do not flinch — its criterion and its points table are
+    // byte-for-byte what they were. What changed is that the honest three-year
+    // answer now reaches them, through the band it clears. Shipped without
+    // this, the route FAILED that person and the ladder paid them nothing.
+    const met = (experience: string) =>
+      evaluate(dataset, de(experience)).find((r) => r.route.id === "de-experienced-worker")!;
+    expect(met(NEW_OPTION).status).toBe(met("y2in5").status);
+    expect(met(NEW_OPTION).status).toBe("met");
+
+    const ck = (experience: string) => {
+      const p = { ...de(experience), qualification: "none", recognition_de: "partial", german: "b1" };
+      return evaluate(dataset, p).find((r) => r.route.id === "de-chancenkarte")!.points!.scored;
+    };
+    expect(ck(NEW_OPTION), "the three-year answer scores nothing").toBe(ck("y2in5"));
+    expect(ck("y5in7")).toBeGreaterThan(ck(NEW_OPTION));
+  });
+
   it("the 7-year IT limb and the Chancenkarte points ladder are untouched", () => {
     const before = withoutOption(dataset, "experience", NEW_OPTION);
     const it = { ...de("y5in7"), qualification: "none", occupation_it: "yes" };
@@ -217,9 +340,24 @@ describe("s5f step 2 — Germany does not flinch", () => {
       if (c.op === "points")
         for (const item of c.table.items) if (item.field === "experience") points = item.points;
     });
+    // The law names two rungs and the dataset still carries two: the third
+    // answer is paid through what it declares it clears, not by writing a row
+    // into a table the Anlage does not have.
     expect(points).toEqual({ y2in5: 2, y5in7: 3 });
   });
 });
+
+/**
+ * Decision 3's count, as counted.
+ *
+ * The scenario says 38 bare preconditions. The dataset carried 37 at the
+ * commit this slice began from, and 40 two commits before that; 38 appears
+ * nowhere in the file's history, so 37 is the number and the discrepancy is
+ * stated rather than rounded away (review 2026-09-07, H5). Of those 37, 34
+ * became sourced statements, 2 became declared readings, and 1 was deleted as
+ * repealed law (pre-2023 art. 71.1).
+ */
+const BARE_PRECONDITIONS_REMOVED = 37;
 
 describe("s5f invariant — no precondition reaches the screen without a declared kind", () => {
   const allRoutes = (): Route[] => dataset.countries.flatMap((c) => c.routes);
@@ -254,7 +392,7 @@ describe("s5f invariant — no precondition reaches the screen without a declare
       }
       ours += routeReadings(route).length;
     }
-    expect(sourced).toBeGreaterThan(0);
+    expect(sourced).toBeGreaterThan(BARE_PRECONDITIONS_REMOVED - 4);
     expect(ours).toBeGreaterThan(0);
   });
 
