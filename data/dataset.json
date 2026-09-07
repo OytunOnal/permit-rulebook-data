@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.3.0",
-  "dataset_version": "2026.09.04",
+  "schema_version": "0.4.0",
+  "dataset_version": "2026.09.07",
   "fields": [
     {
       "id": "destination",
@@ -573,7 +573,7 @@
       },
       "kind": "extra-rights",
       "title": "Türkiye: extra rights once you are legally employed",
-      "body": "Your route options are the same as for any other non-EU passport — the EU–Türkiye agreement adds rights after you are working, not different entry criteria.",
+      "body": "Your route options are the same as for any other non-EU passport: the EU–Türkiye agreement adds rights once you are legally working, rather than a separate way in. Where an authority states that its own requirements differ for Turkish citizens, that route's card says so — the Dutch orientation year is one.",
       "source": {
         "source_url": "https://europa.eu/youreurope/citizens/work/work-abroad/work-permits/index_en.htm",
         "quote": "As a national of Türkiye, your rights to live and work in an EU country depend entirely on the national rules of that country. When employed legally in the EU, you enjoy the same working conditions as the nationals of that country and you have the following rights: after one year's legal employment you are entitled to a renewal of your work permit for the same employer if a job is available after three years' legal employment you may change employers and respond to any other employment offer within the same professional qualifications after four years' legal employment you enjoy full access to any paid employment in that EU country.",
@@ -2769,11 +2769,11 @@
           "id": "nl-orientation-year",
           "name": "Orientation year (zoekjaar)",
           "kind": "seek",
-          "summary": "A one-year permit to look for work. You may take any job without a separate work permit. It is for people who graduated, took a doctorate or did research in the Netherlands — or graduated from a foreign institution the Dutch immigration service (IND) designates — within the last three years. It cannot be extended.",
+          "summary": "A one-year permit to look for work — any job, no separate work permit, and it cannot be extended. The Dutch immigration service (IND) grants it after certain studies, doctorates or research finished in the three years before you apply; its list of qualifying programmes and institutions is longer than the two cases asked about here, so read its own page before ruling yourself out. Having a job offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
           "preconditions": [
-            "You apply within three years of graduating or finishing the research",
-            "If you studied abroad: proof of English (IELTS 6.0 or an equivalent test), or a programme taught in English or Dutch"
+            "You apply within three years of graduating, of the doctoral defence, or of finishing the research",
+            "If you studied at a foreign institution the Dutch immigration service designates: proof of English (a score of 6.0 on IELTS or another accepted test), or a programme taught in English or Dutch"
           ],
           "criteria": [
             {
@@ -2790,15 +2790,9 @@
               ]
             },
             {
-              "field": "situation",
-              "op": "eq",
-              "value": "none",
-              "note": "A job-search permit — with an offer, transfer or hosting agreement the work routes apply directly."
-            },
-            {
               "op": "any",
               "label": "where you studied",
-              "note": "IND: the qualifying event must fall in \"the 3 years before the date of application\" — a Dutch institution, or \"a designated foreign educational institution\". The designation list is published by the IND; the earlier \"top 200 in 2 of 3 rankings\" reading was not found on the page (human check 2026-09-04) and is no longer asserted.",
+              "note": "IND: the qualifying event must fall in “the 3 years before the date of application” — a Dutch institution, or “a designated foreign educational institution”. The designation list is published by the IND; the earlier “top 200 in 2 of 3 rankings” reading was not found on the page (human check 2026-09-04) and is no longer asserted. The page states five qualifying situations (human read 2026-09-07); these two fields cover the broadest of them and are a simplification — the three we do not model are recorded in data/exclusions.md.",
               "paths": [
                 {
                   "label": "a Dutch university or research institution",
@@ -2821,6 +2815,32 @@
                   ]
                 }
               ]
+            }
+          ],
+          "statements": [
+            {
+              "id": "no-second-orientation-year",
+              "kind": "condition",
+              "text": "You have not previously held an orientation year permit for the same study programme, doctorate or research.",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+                "quote": "You have not previously held a residence permit for an orientation year for the same research for which you are now applying. Nor have you held such a permit following the completion of the same study programme or doctoral programme.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements (page states “Last update: 12 June 2026”); read by a person, the page renders client-side",
+                "history": []
+              }
+            },
+            {
+              "id": "turkish-citizens-differ",
+              "kind": "caveat",
+              "text": "If you hold a Turkish passport, the Dutch immigration service says the requirements for you and your family may be different. It does not say how, so read its own page before relying on the answer above.",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+                "quote": "Different requirements may apply to Turkish citizens and their family members.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements; read by a person, the page renders client-side",
+                "history": []
+              }
             }
           ]
         }

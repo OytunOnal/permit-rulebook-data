@@ -105,10 +105,10 @@
       "id": "nl-ind-orientation-year-human",
       "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
       "strategy": "human",
-      "kind": "sentinel",
+      "kind": "value-source",
       "max_age_days": 90,
-      "last_verified": "2026-09-04",
-      "note": "Human tier: IND route pages render client-side (our fetch sees a 1.4 kB shell), so the designated-institution list and the English-proficiency requirement cannot be machine-watched. Re-read quarterly."
+      "last_verified": "2026-09-07",
+      "note": "Human tier: IND route pages render client-side (our fetch sees a 1.4 kB shell), so the requirement list cannot be machine-watched. It backs values now, not just the route's existence: the two statements on nl-orientation-year (the bar on a second orientation year for the same study, and the Turkish-citizens qualification) are quoted from the requirement list a person read on 2026-09-07. The quote gate reports them unverifiable at the human tier rather than passing them. Re-read quarterly."
     },
     {
       "id": "nl-ind-blue-card-human",

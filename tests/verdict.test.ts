@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, fieldOptions, forEachCriterion, unlocks } from "../src/engine.js";
+import { deriveBands, evaluate, fieldOptions, forEachCriterion, routeStatements, unlocks } from "../src/engine.js";
 import { deriveQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
 import { answerLabel, criterionPhrase, reasonFor, shortLabelOf, subjectOf, unlockTitleOf } from "../src/verdict.js";
@@ -52,6 +52,9 @@ function datasetProse(): string[] {
   for (const country of dataset.countries)
     for (const route of country.routes) {
       out.push(route.name, ...(route.summary ? [route.summary] : []), ...(route.preconditions ?? []));
+      // A statement is authored prose on the card like a summary or a
+      // precondition, and owes the same plain English (2026-09-07).
+      out.push(...routeStatements(route).map((s) => s.text));
       forEachCriterion(route.criteria, (c) => {
         if (c.short_reason) out.push(c.short_reason);
         if (c.op === "gte" && c.threshold_label) out.push(c.threshold_label);
@@ -140,6 +143,7 @@ describe("invariant: no user-facing string contains a dataset field id", () => {
         slots.push([`${route.id} name`, route.name]);
         if (route.summary) slots.push([`${route.id} summary`, route.summary]);
         for (const pre of route.preconditions ?? []) slots.push([`${route.id} precondition`, pre]);
+        for (const st of routeStatements(route)) slots.push([`${route.id} statement`, st.text]);
         forEachCriterion(route.criteria, (c) => slots.push([`${route.id} criterion`, criterionPhrase(dataset, c)]));
       }
     // The two slots that only exist for a person: an unlock's step and the one

@@ -195,9 +195,12 @@ describe("provenance and meta", () => {
 
   it("meta reports the newest retrieved_at across all value kinds", () => {
     expect(datasetMeta(dataset)).toEqual({
-      schema_version: "0.3.0",
-      dataset_version: "2026.09.04",
-      newest_retrieved_at: "2026-09-04",
+      schema_version: "0.4.0",
+      dataset_version: "2026.09.07",
+      // A route statement is a provenanced value like any other — the Dutch
+      // orientation-year requirements, read by a person on 2026-09-07, are
+      // now the freshest thing the dataset carries.
+      newest_retrieved_at: "2026-09-07",
     });
   });
 });

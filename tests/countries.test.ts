@@ -59,6 +59,10 @@ describe("scenario s5 — one interview, four countries", () => {
       destination: "nl", citizenship: "third_country", situation: "offer",
       age_band: "u30", salary_eur_month: "band_4", // €4,357 – €4,754
       qualification: "degree", qualification_recent: "no", experience: "y2in5",
+      // Since 2026-09-07 an offer no longer closes the orientation year, so a
+      // Dutch-bound persona is asked where they studied whatever they have
+      // lined up. Neither persona studied in the Netherlands.
+      nl_recent_grad: "no", top200_grad: "no",
     });
     const r = byId(profile);
     expect(r["nl-hsm-under30"].status).toBe("met");
@@ -134,6 +138,7 @@ describe("NL Blue Card — the IT experience rule (human verification 2026-09-04
       destination: "nl", citizenship: "third_country", situation: "offer",
       qualification: "degree", qualification_recent: "no", age_band: "a30to35",
       salary_eur_month: "band_6", experience: "y2in5",
+      nl_recent_grad: "no", top200_grad: "no",
     });
     expect(asked).not.toContain("experience_7y");
   });

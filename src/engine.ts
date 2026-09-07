@@ -1,7 +1,7 @@
 import { countryOptions } from "./countries.js";
 import type {
   Band, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef, FieldOption, Notice,
-  PointsBreakdown, Profile, Route, RouteResult, RouteStatus,
+  PointsBreakdown, Profile, Route, RouteResult, RouteStatement, RouteStatus,
 } from "./types.js";
 
 export function formatEUR(amount: number): string {
@@ -181,10 +181,23 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
       // ungapped fail and are excluded here, so no gap is ever measured
       // against a threshold the person cannot get to.
       let best: CriterionResult | undefined;
+      // A path whose failures are all bounded but whose own answers are still
+      // open has not had its say: answering them turns "nothing decided" into a
+      // measured shortfall. Reporting an ungapped fail there retires the route
+      // AND its remaining questions, so the answer that would have made it a
+      // near miss is never asked — a €0 transfer to the Netherlands read as a
+      // dead ICT route because nobody asked the applicant's age (found by the
+      // completed-interview property, 2026-09-07).
+      let openBounded = false;
       for (const rs of pathResults) {
         const fails = rs.filter((r) => r.outcome === "fail");
         const undecided = rs.filter((r) => r.outcome === "unknown");
-        if (undecided.length > 0 || !fails.every((f) => f.gap_max !== undefined || f.gap_points !== undefined)) continue;
+        const bounded = fails.every((f) => f.gap_max !== undefined || f.gap_points !== undefined);
+        if (undecided.length > 0) {
+          if (bounded) openBounded = true;
+          continue;
+        }
+        if (!bounded) continue;
         const result: CriterionResult = { criterion: c, outcome: "fail" };
         const gapsMoney = fails.map((f) => f.gap_max).filter((g): g is number => g !== undefined);
         const gapsPoints = fails.map((f) => f.gap_points).filter((g): g is number => g !== undefined);
@@ -194,7 +207,8 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
         if (pts) result.points = pts;
         if (best === undefined || isNearerThan(result, best)) best = result;
       }
-      return best ?? { criterion: c, outcome: "fail" };
+      if (best) return best;
+      return { criterion: c, outcome: openBounded ? "unknown" : "fail" };
     }
     // Undecided: surface points progress from a still-open points path, if any.
     const open = pathResults.find((rs) => !rs.some((r) => r.outcome === "fail") && rs.some((r) => r.points));
@@ -303,9 +317,15 @@ function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): st
   if (c.op === "points")
     return c.table.items.map((i) => i.field).filter((f) => profile[f] === undefined);
   if (c.op === "any")
-    // Only paths not yet failed can still be satisfied; their open questions matter.
+    // Paths that can still be satisfied — or still be MEASURED. A path failing
+    // on an ungapped criterion is out of reach and its questions are noise; one
+    // failing only by a bounded gap still turns the route into a near miss, so
+    // the answers it is waiting on are worth asking for.
     return c.paths
-      .filter((p) => !p.criteria.some((pc) => evalCriterion(dataset, pc, profile).outcome === "fail"))
+      .filter((p) => p.criteria.every((pc) => {
+        const r = evalCriterion(dataset, pc, profile);
+        return r.outcome !== "fail" || r.gap_max !== undefined || r.gap_points !== undefined;
+      }))
       .flatMap((p) => p.criteria.flatMap((pc) => undecidedFieldsOf(dataset, pc, profile)));
   return profile[c.field] === undefined ? [c.field] : [];
 }
@@ -578,10 +598,19 @@ export function provenancedValuesOf(c: Criterion): ProvenanceEntry[] {
   }
 }
 
-/** All provenanced values a route rests on — what the UI must show, quoted and dated. */
+/** The statements a route ships, in dataset order. One accessor so no consumer
+ * has to remember that the array is optional. */
+export function routeStatements(route: Route): RouteStatement[] {
+  return route.statements ?? [];
+}
+
+/** All provenanced values a route rests on — what the UI must show, quoted and
+ * dated. Statements are values too: a route with no threshold used to have
+ * nothing to quote, and silence there read as if the promise held. */
 export function routeProvenance(route: Route): ProvenanceEntry[] {
   const entries: ProvenanceEntry[] = [];
   forEachCriterion(route.criteria, (c) => entries.push(...provenancedValuesOf(c)));
+  for (const s of routeStatements(route)) entries.push({ value: s.source });
   return entries;
 }
 
@@ -593,7 +622,12 @@ export function datasetMeta(dataset: Dataset): DatasetMeta {
         for (const p of provenancedValuesOf(c))
           if (!newest || p.value.retrieved_at > newest) newest = p.value.retrieved_at;
       });
-  // Notices are provenanced statements too — a fresher notice is a fresher dataset.
+  // Notices and route statements are provenanced values too — a fresher one of
+  // either is a fresher dataset.
+  for (const country of dataset.countries)
+    for (const route of country.routes)
+      for (const s of routeStatements(route))
+        if (!newest || s.source.retrieved_at > newest) newest = s.source.retrieved_at;
   for (const n of dataset.notices ?? [])
     if (!newest || n.source.retrieved_at > newest) newest = n.source.retrieved_at;
   return {

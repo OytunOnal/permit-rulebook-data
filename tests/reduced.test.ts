@@ -82,9 +82,16 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
     delete undecided.nl_recent_grad;
     delete undecided.top200_grad;
     expect([...informativeFields(dataset, undecided)]).toContain("nl_recent_grad");
-    // €6,000 clears the full criterion outright: nothing left for it to change.
+    // €6,000 clears the full criterion outright: nothing left for it to change
+    // ON THIS ROUTE. Since 2026-09-07 the fact also decides the orientation
+    // year for anyone bound for the Netherlands — an offer no longer closes
+    // that route — so the interview may still ask it, for that reason and not
+    // this one. The claim here is about the salary rule, and it is checked
+    // where it lives.
     const settled = { ...undecided, salary_eur_month: bandFor("salary_eur_month", 6000) };
-    expect([...informativeFields(dataset, settled)]).not.toContain("nl_recent_grad");
+    const salary = byId(settled)["nl-hsm-under30"].criteria.find((c) => c.criterion.op === "any" && c.outcome === "pass");
+    expect(salary, "the full salary threshold decides it on its own").toBeDefined();
+    expect(byId(settled)["nl-hsm-under30"].unknown_fields).not.toContain("nl_recent_grad");
   });
 
   it("it is asked at most once across a whole interview", () => {

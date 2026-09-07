@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { evaluate, fieldOptions, matchOptions, notices } from "../src/engine.js";
+import { evaluate, fieldOptions, matchOptions, notices, routeStatements } from "../src/engine.js";
 import { countryVocabulary } from "../src/countries.js";
-import type { Dataset, Profile } from "../src/types.js";
+import type { Dataset, Profile, Route } from "../src/types.js";
+
+/** Everything a card lists under "Also required — not checked here": the plain
+ * lines and the ones that carry a quote. */
+const preconditionsOf = (route: Route): string[] =>
+  [...(route.preconditions ?? []), ...routeStatements(route).filter((s) => s.kind === "condition").map((s) => s.text)];
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
@@ -79,8 +84,24 @@ describe("cleared blocker: a card never claims more than the interview checked",
   it("a precondition states something the applicant must satisfy, never what the permit allows", () => {
     for (const country of dataset.countries)
       for (const route of country.routes)
-        for (const p of route.preconditions ?? [])
+        for (const p of preconditionsOf(route))
           expect(p, `${route.id}: "${p}"`).not.toMatch(/permitted|allowed|you may work|hours per week|hours\/week|renewable|valid for/i);
+  });
+
+  // A condition statement is a precondition that carries its quote, so it is
+  // held to the precondition rule above AND to the provenance rule every other
+  // value obeys. The orientation year shipped its unasked condition as an
+  // invented criterion instead — "you have no offer yet" — which failed people
+  // the source does not fail (2026-09-07).
+  it("every statement a route makes carries the source and the date behind it", () => {
+    for (const country of dataset.countries)
+      for (const route of country.routes)
+        for (const s of routeStatements(route)) {
+          expect(s.source.source_url, `${route.id}:${s.id}`).toMatch(/^https:\/\//);
+          expect(s.source.quote.length, `${route.id}:${s.id}`).toBeGreaterThan(4);
+          expect(s.source.retrieved_at, `${route.id}:${s.id}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+          expect(s.text.length, `${route.id}:${s.id}`).toBeGreaterThan(4);
+        }
   });
 });
 

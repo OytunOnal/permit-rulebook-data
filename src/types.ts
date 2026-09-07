@@ -73,6 +73,29 @@ export type Criterion =
   /** Disjunction: the criterion passes when ANY path's criteria all pass (e.g. §20a "Fachkraft ODER Punktzahl"). */
   | { op: "any"; label?: string; paths: { label?: string; criteria: Criterion[] }[]; note?: string; short_reason?: string };
 
+/**
+ * What a source says about one route that no criterion can compute.
+ *
+ * A precondition is our plain language and carries no provenance; a threshold
+ * carries provenance but has to be a number. Between them sat statements the
+ * source makes in words — a condition the interview cannot ask about, or a
+ * qualification the source puts on its own answer — and the dataset had
+ * nowhere to put them, so they were written as our own editorial `note` or,
+ * worse, invented as a criterion (the orientation year's "you have no offer",
+ * removed 2026-09-07). This is the place: our words in `text`, the source's
+ * in `source.quote`, watched and quote-checked like any other value.
+ */
+export interface RouteStatement {
+  id: string;
+  /** condition: something the applicant must satisfy that the interview never
+   * asks — it joins the preconditions on the card. caveat: a qualification the
+   * source puts on its own answer; it sits beside the verdict and fails nobody. */
+  kind: "condition" | "caveat";
+  /** Our plain English — what the reader sees. */
+  text: string;
+  source: ProvenancedText;
+}
+
 export interface Route {
   id: string;
   name: string;
@@ -83,6 +106,8 @@ export interface Route {
   /** Plain-language conditions the authority applies that the interview does
    * NOT ask — stated on the card so "criteria met" never overpromises. */
   preconditions?: string[];
+  /** Provenanced statements the source makes that no criterion can compute. */
+  statements?: RouteStatement[];
 }
 
 export interface Country {

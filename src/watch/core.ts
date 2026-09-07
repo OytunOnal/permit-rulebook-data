@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { htmlToText, normalize } from "./normalize.js";
-import { forEachCriterion, provenancedValuesOf } from "../engine.js";
+import { forEachCriterion, provenancedValuesOf, routeStatements } from "../engine.js";
 import { countryVocabulary } from "../countries.js";
 import type { Dataset } from "../types.js";
 
@@ -173,10 +173,13 @@ function usesCountryVocabulary(dataset: Dataset): boolean {
 export function datasetSourceUrls(dataset: Dataset): Set<string> {
   const urls = new Set<string>();
   for (const country of dataset.countries)
-    for (const route of country.routes)
+    for (const route of country.routes) {
       forEachCriterion(route.criteria, (c) => {
         for (const p of provenancedValuesOf(c)) urls.add(p.value.source_url);
       });
+      // A route statement rests on a quote like every other value.
+      for (const s of routeStatements(route)) urls.add(s.source.source_url);
+    }
   // A notice rests on a quote like every other value — it is watched like one.
   for (const n of dataset.notices ?? []) urls.add(n.source.source_url);
   // So does a passport class: its member list decides who needs a permit at
@@ -212,11 +215,14 @@ export interface CoverageResult {
 export function datasetQuotes(dataset: Dataset): { quote: string; source_url: string; where: string }[] {
   const out: { quote: string; source_url: string; where: string }[] = [];
   for (const country of dataset.countries)
-    for (const route of country.routes)
+    for (const route of country.routes) {
       forEachCriterion(route.criteria, (c) => {
         for (const p of provenancedValuesOf(c))
           out.push({ quote: p.value.quote, source_url: p.value.source_url, where: route.id });
       });
+      for (const s of routeStatements(route))
+        out.push({ quote: s.source.quote, source_url: s.source.source_url, where: `${route.id}:${s.id}` });
+    }
   for (const n of dataset.notices ?? [])
     out.push({ quote: n.source.quote, source_url: n.source.source_url, where: `notice:${n.id}` });
   if (usesCountryVocabulary(dataset))
@@ -271,7 +277,15 @@ export function checkQuotes(dataset: Dataset, watchlist: Watchlist, state: Watch
     }
     const snapshot = state.entries[entry.id];
     if (!snapshot?.text) {
-      unverifiable.push({ ...q, reason: `${entry.strategy} tier — no text snapshot` });
+      // The human tier is not a gap in the gate, it is the gate's honest
+      // answer: the page renders client-side, a person read it, and no machine
+      // here can confirm the sentence. Saying so beats a silent pass.
+      unverifiable.push({
+        ...q,
+        reason: entry.strategy === "human"
+          ? "human tier — read by a person; no machine snapshot to check against"
+          : `${entry.strategy} tier — no text snapshot`,
+      });
       continue;
     }
     if (loose(snapshot.text).includes(loose(q.quote))) verified++;
