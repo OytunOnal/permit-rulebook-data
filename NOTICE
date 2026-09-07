@@ -1,0 +1,46 @@
+NOTICE — third-party material and the terms it carries
+
+This repository is MIT-licensed code (LICENSE) plus a CC BY 4.0 dataset
+(data/LICENSE). The following material inside it comes from elsewhere, and the
+terms below travel with it.
+
+1. Unicode CLDR — data/countries.json
+   The country names and codes were generated from Unicode CLDR region data
+   (via Intl.DisplayNames) and then hand-edited: dependent territories were
+   removed, labels were rewritten to ordinary English usage, and aliases were
+   added. Unicode CLDR is provided under the Unicode License v3
+   (https://www.unicode.org/license.txt), which requires this notice to be
+   retained:
+
+     Copyright © 1991-2026 Unicode, Inc. Unicode and the Unicode Logo are
+     registered trademarks of Unicode, Inc. in the United States and other
+     countries. See https://www.unicode.org/copyright.html.
+
+2. Official texts quoted in data/dataset.json
+   Every threshold, condition, notice and statement carries a verbatim quote,
+   its source URL and the date it was read. These are short excerpts of
+   statutes, regulations and administrative information published by public
+   authorities, reproduced to cite the rule they state. They are not
+   relicensed by this repository. Terms known to apply:
+
+   - European Union content (europa.eu, european-union.europa.eu): reusable
+     with acknowledgement of the source under Commission Decision 2011/833/EU
+     on the reuse of Commission documents.
+   - German federal statutes (AufenthG, BeschV): official works excluded from
+     copyright under § 5 UrhG. Where a statute is quoted via buzer.de, that
+     site is a consolidated mirror, not the rightsholder; the text is the
+     statute's.
+   - Netherlands (ind.nl), France (service-public.gouv.fr), Spain (boe.es,
+     inclusion.gob.es), EFTA (efta.int), Germany's Federal Employment Agency
+     (arbeitsagentur.de), BAMF (bamf.de), the German embassy in Cairo
+     (kairo.diplo.de) and Anabin (anabin.kmk.org): public administrative
+     information, quoted as short excerpts with attribution. Each source's own
+     reuse terms, where stated, apply to the excerpt.
+
+   If you are the rightsholder of any quoted text and believe an excerpt
+   exceeds fair quotation, open an issue: the quote will be shortened or
+   replaced by a citation.
+
+3. Nothing else
+   No other third-party code or data is vendored into this repository. Runtime
+   dependencies are declared in package.json under their own licences.

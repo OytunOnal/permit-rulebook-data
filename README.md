@@ -38,4 +38,4 @@ database and no backup problem: cloning the repo is the backup.
 
 ## Licence
 
-Code MIT. Dataset (`data/`) CC-BY-4.0 — use it, cite it.
+Code MIT (LICENSE). Dataset (`data/`) CC BY 4.0 (data/LICENSE) — use it, cite it, link back. Third-party material and the terms it carries — Unicode CLDR behind countries.json, the official texts behind every quote — are listed in NOTICE.

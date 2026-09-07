@@ -1,0 +1,35 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+The dataset in this directory — the rules, thresholds, quotes, retrieval dates,
+histories, notices, statements and readings in dataset.json, countries.json,
+exclusions.md and the verification checklists — is licensed under the Creative
+Commons Attribution 4.0 International licence.
+
+Copyright (c) 2026 Oytun
+
+You are free to share and adapt this dataset for any purpose, including
+commercially, on one condition: attribution. Credit the dataset, link to its
+source repository, indicate whether you changed it, and link to this licence.
+You may do so in any reasonable manner, but not in a way that suggests the
+licensor endorses you or your use.
+
+A sufficient attribution line:
+
+    Work-permit rules dataset by Oytun (https://github.com/<org>/<repo>),
+    licensed CC BY 4.0. Changes: <none | describe>.
+
+Full legal code: https://creativecommons.org/licenses/by/4.0/legalcode
+Human-readable summary: https://creativecommons.org/licenses/by/4.0/
+
+What this licence does not cover
+--------------------------------
+
+The verbatim quotes in this dataset are short excerpts of official texts —
+statutes, regulations and administrative information published by public
+authorities — reproduced for the purpose of citing the rule they state. Each
+carries the URL it was read from and the date. The licence above applies to the
+dataset as a compiled and annotated work; it does not claim rights over the
+official texts themselves, whose terms are noted in ../NOTICE.
+
+countries.json was derived from Unicode CLDR region data and hand-edited; the
+Unicode licence and its attribution requirement are also recorded in ../NOTICE.
