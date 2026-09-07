@@ -6,5 +6,7 @@ export {
   declaredPlace, isLocalization, isPlacedElsewhere, liveUnknowns, mootWith, joinOr, joinAnd,
 } from "./verdict.js";
 export type { Reason, ReasonRow } from "./verdict.js";
+export { quotedSpans, quotedWithoutProvenance, renderableTexts, offenceMessage } from "./prose.js";
+export type { QuotationOffence, RenderableText } from "./prose.js";
 export { countryClasses, countryOptions, classOfCountry, countryVocabulary } from "./countries.js";
 export type { CountryClass, CountryVocabulary } from "./countries.js";

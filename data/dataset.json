@@ -818,7 +818,11 @@
               "field": "recognition_de",
               "op": "eq",
               "value": "recognized",
-              "note": "BAMF: \"Proof of a German or recognised foreign university degree or a foreign university degree which is comparable to a German university degree\""
+              "source": {
+                "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
+                "quote": "Proof of a German or recognised foreign university degree or a foreign university degree which is comparable to a German university degree",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ]
         },
@@ -886,7 +890,11 @@
               "field": "recognition_de",
               "op": "eq",
               "value": "recognized",
-              "note": "BAMF: \"vocational qualifications acquired abroad which are equivalent to qualified German vocational training\""
+              "source": {
+                "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Fachkraft/fachkraft-node.html",
+                "quote": "vocational qualifications acquired abroad which are equivalent to qualified German vocational training",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ]
         },
@@ -951,7 +959,11 @@
                 "y2in5",
                 "y5in7"
               ],
-              "note": "ZAV: \"Innerhalb der letzten fünf Jahren muss eine mindestens zweijährige, einschlägige Berufserfahrung auf dem Niveau einer Fachkraft gesammelt worden sein.\""
+              "source": {
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/04-2026/berufserfahrene",
+                "quote": "Innerhalb der letzten fünf Jahren muss eine mindestens zweijährige, einschlägige Berufserfahrung auf dem Niveau einer Fachkraft gesammelt worden sein.",
+                "retrieved_at": "2026-09-02"
+              }
             },
             {
               "op": "any",
@@ -967,7 +979,12 @@
                         "vocational",
                         "degree"
                       ],
-                      "note": "Recognised by the state where it was acquired — German recognition not required (§ 6 BeschV)."
+                      "source": {
+                        "source_url": "https://www.buzer.de/6_BeschV.htm",
+                        "quote": "eine ausländische Berufsqualifikation, die von dem Staat, in dem sie erworben wurde, staatlich anerkannt ist und deren Erlangung eine Ausbildungsdauer von mindestens zwei Jahren vorausgesetzt hat",
+                        "retrieved_at": "2026-09-07",
+                        "legal_basis": "§ 6 Abs. 1 Satz 1 Nr. 3 Buchst. a BeschV"
+                      }
                     }
                   ]
                 },
@@ -978,7 +995,12 @@
                       "field": "occupation_it",
                       "op": "eq",
                       "value": "yes",
-                      "note": "§ 6 BeschV: \"In Berufen auf dem Gebiet der Informations- und Kommunikationstechnologie findet Satz 1 Nummer 3 keine Anwendung\""
+                      "source": {
+                        "source_url": "https://www.buzer.de/6_BeschV.htm",
+                        "quote": "In Berufen auf dem Gebiet der Informations- und Kommunikationstechnologie findet Satz 1 Nummer 3 keine Anwendung.",
+                        "retrieved_at": "2026-09-07",
+                        "legal_basis": "§ 6 Abs. 1 Satz 3 BeschV"
+                      }
                     }
                   ]
                 }
@@ -996,8 +1018,7 @@
                 "retrieved_at": "2026-09-02",
                 "legal_basis": "§ 6 BeschV (45% der Beitragsbemessungsgrenze)",
                 "history": []
-              },
-              "note": "Waived when the employer is collectively bound (tarifgebunden, §§ 3, 5 TVG)."
+              }
             }
           ],
           "statements": [
@@ -1042,7 +1063,11 @@
               "field": "situation",
               "op": "eq",
               "value": "research",
-              "note": "BAMF: \"concluded a hosting agreement or corresponding contract with a research facility to carry out a research project\""
+              "source": {
+                "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
+                "quote": "concluded a hosting agreement or corresponding contract with a research facility to carry out a research project",
+                "retrieved_at": "2026-09-07"
+              }
             },
             {
               "op": "any",
@@ -1079,8 +1104,7 @@
           "summary": "Your company moves you to its German branch for more than 90 days, as a manager, specialist or trainee. Up to three years, or one year for trainees.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
           "preconditions": [
-            "At least six months with the company before the transfer",
-            "The transfer must last more than 90 days, in a manager, specialist or trainee role"
+            "At least six months with the company before the transfer"
           ],
           "criteria": [
             {
@@ -1100,7 +1124,11 @@
               "field": "situation",
               "op": "eq",
               "value": "ict",
-              "note": "BAMF: \"you have been employed by the undertaking or group of undertakings for at least six months\" and \"the intra-corporate transfer is to last longer than 90 days\""
+              "source": {
+                "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
+                "quote": "you have been employed by the undertaking or group of undertakings for at least six months",
+                "retrieved_at": "2026-09-07"
+              }
             },
             {
               "op": "any",
@@ -1127,6 +1155,18 @@
                   ]
                 }
               ]
+            }
+          ],
+          "statements": [
+            {
+              "id": "transfer-longer-than-ninety-days",
+              "kind": "precondition",
+              "text": "A transfer of more than 90 days, in a manager, specialist or trainee role",
+              "source": {
+                "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
+                "quote": "the intra-corporate transfer is to last longer than 90 days",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ]
         },
@@ -1157,13 +1197,16 @@
                 "vocational",
                 "degree"
               ],
-              "note": "Embassy: \"einen ausländischen Hochschulabschluss, einen mindestens zweijährigen Berufsabschluss (jeweils im Ausbildungsstaat staatlich anerkannt)\""
+              "source": {
+                "source_url": "https://kairo.diplo.de/resource/blob/2664804/5e952d2720a91e83a475a3e02452f1cf/250122-deu-merkblatt-chancenkarte-data.pdf",
+                "quote": "einen ausländischen Hochschulabschluss, einen mindestens zweijährigen Berufsabschluss (jeweils im Ausbildungsstaat staatlich anerkannt)",
+                "retrieved_at": "2026-09-02"
+              }
             },
             {
               "op": "any",
               "label": "a language to start with",
               "short_reason": "German at A1 (beginner) or better, or English at B2 (upper intermediate) or better",
-              "note": "§ 20a: German A1 (\"mindestens einfache deutsche Sprachkenntnisse\") OR English B2.",
               "paths": [
                 {
                   "label": "German A1+",
@@ -1193,7 +1236,13 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "source": {
+                "source_url": "https://www.buzer.de/20a_AufenthG.htm",
+                "quote": "der Ausländer a) mindestens einfache deutsche Sprachkenntnisse nachweist oder b) englische Sprachkenntnisse mindestens auf dem Niveau B2 des Gemeinsamen Europäischen Referenzrahmens für Sprachen nachweist.",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "§ 20a Abs. 1 Satz 3 Nr. 2 AufenthG"
+              }
             },
             {
               "field": "funds_eur_month",
@@ -1220,7 +1269,12 @@
                       "field": "recognition_de",
                       "op": "eq",
                       "value": "recognized",
-                      "note": "Embassy: \"Drittstaatsangehörige, die eine volle Gleichwertigkeit der ausländischen Qualifikation nachweisen … können die Chancenkarte … ohne weitere besondere Voraussetzungen erhalten.\""
+                      "source": {
+                        "source_url": "https://www.buzer.de/20a_AufenthG.htm",
+                        "quote": "Die Chancenkarte kann einem Ausländer erteilt werden, wenn 1. er eine Fachkraft ist",
+                        "retrieved_at": "2026-09-07",
+                        "legal_basis": "§ 20a Abs. 3 Nr. 1 AufenthG"
+                      }
                     }
                   ]
                 },
@@ -1353,7 +1407,12 @@
               "field": "situation",
               "op": "eq",
               "value": "offer",
-              "note": "Fiche F16922: \"Avoir un contrat de travail de plus de 3 mois\""
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir un contrat de travail de plus de 3 mois",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — salarié qualifié"
+              }
             },
             {
               "op": "any",
@@ -1390,7 +1449,12 @@
               "field": "fr_degree",
               "op": "eq",
               "value": "yes",
-              "note": "Fiche F16922: \"Avoir obtenu en France un diplôme au moins équivalent au master ou un diplôme de niveau 1 labellisé par la Conférence des grandes écoles\" — this subtype is the young-graduate track; foreign-degree holders route via the Blue Card."
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir obtenu en France un diplôme au moins équivalent au master",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — salarié qualifié"
+              }
             },
             {
               "field": "salary_eur_year",
@@ -1402,9 +1466,16 @@
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de plus de 3 mois qui prévoit une rémunération brute annuelle supérieure ou égale à 39 582 €.",
                 "retrieved_at": "2026-09-02",
-                "legal_basis": "CESEDA — carte de séjour « talent » (fiche F16922)",
+                "legal_basis": "CESEDA — carte de séjour talent (fiche F16922)",
                 "history": []
               }
+            }
+          ],
+          "statements": [
+            {
+              "id": "foreign-degrees-belong-on-the-blue-card",
+              "kind": "modelling",
+              "text": "This is France's track for people who studied in France. With a degree from anywhere else, the European Blue Card is the card that fits — its own page on this site."
             }
           ]
         },
@@ -1435,7 +1506,12 @@
               "field": "situation",
               "op": "eq",
               "value": "offer",
-              "note": "Fiche F16922: \"Avoir un contrat de travail de 6 mois minimum\""
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir un contrat de travail de 6 mois minimum",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — carte bleue européenne"
+              }
             },
             {
               "op": "any",
@@ -1466,7 +1542,6 @@
             {
               "op": "any",
               "label": "diploma or experience",
-              "note": "Fiche F16922: \"Avoir un diplôme sanctionnant au moins 3 années d'études supérieures ou 5 années d'expérience professionnelle de niveau comparable\" (reduced to 3-in-last-7 years for listed professions — order not yet modeled).",
               "paths": [
                 {
                   "label": "3-year higher-education diploma",
@@ -1488,7 +1563,13 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir un diplôme sanctionnant au moins 3 années d'études supérieures ou 5 années d'expérience professionnelle de niveau comparable",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — carte bleue européenne"
+              }
             },
             {
               "field": "salary_eur_year",
@@ -1500,9 +1581,16 @@
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir une rémunération annuelle brute supérieure ou égale à 1,5 fois le salaire brut moyen annuel de référence, soit 59 373,00 € brut annuel.",
                 "retrieved_at": "2026-09-02",
-                "legal_basis": "CESEDA — carte « talent — carte bleue européenne » (fiche F16922)",
+                "legal_basis": "CESEDA — carte talent, carte bleue européenne (fiche F16922)",
                 "history": []
               }
+            }
+          ],
+          "statements": [
+            {
+              "id": "listed-professions-not-modelled",
+              "kind": "modelling",
+              "text": "For some listed professions France counts three years of experience in the last seven instead of five. We do not model that list, so this card judges you on the general rule."
             }
           ]
         },
@@ -1534,7 +1622,11 @@
               "field": "situation",
               "op": "eq",
               "value": "ict",
-              "note": "Fiche F33952: \"Vous avez une ancienneté d'au moins 6 mois dans le groupe qui vous emploie\" — \"pour effectuer une mission de plus d'1 an\" — \"pour occuper un poste d'encadrement supérieur ou apporter une expertise\""
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+                "quote": "Vous avez une ancienneté d'au moins 6 mois dans le groupe qui vous emploie",
+                "retrieved_at": "2026-09-07"
+              }
             },
             {
               "op": "any",
@@ -1566,16 +1658,22 @@
               "field": "salary_eur_month",
               "op": "gte",
               "threshold_label": "resources, at the French minimum wage level",
-              "note": "The fiche frames this as a resources proof (« justificatif de ressources »), not a salary threshold; SMIC-indexed, will move on SMIC revaluation.",
               "threshold": {
                 "amount": 1867.02,
                 "currency": "EUR",
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
                 "quote": "Justificatif de ressources supérieures ou égales à 1 867,02 € brut par mois",
                 "retrieved_at": "2026-09-02",
-                "legal_basis": "CESEDA — carte « salarié détaché ICT » (fiche F33952)",
+                "legal_basis": "CESEDA — carte salarié détaché ICT (fiche F33952)",
                 "history": []
               }
+            }
+          ],
+          "statements": [
+            {
+              "id": "resources-proof-tracks-the-minimum-wage",
+              "kind": "modelling",
+              "text": "The French page states this figure as proof of resources rather than a salary an employer must pay, and it tracks the French minimum wage — expect it to move when that is revalued."
             }
           ]
         },
@@ -1607,7 +1705,12 @@
               "field": "situation",
               "op": "eq",
               "value": "offer",
-              "note": "Fiche F16922: \"Avoir des fonctions en lien direct avec le projet de recherche et de développement de cette entreprise\""
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir des fonctions en lien direct avec le projet de recherche et de développement de cette entreprise",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — salarié en mission ou entreprise innovante"
+              }
             },
             {
               "op": "any",
@@ -1639,8 +1742,13 @@
               "field": "fr_innovative_employer",
               "op": "eq",
               "value": "yes",
-              "note": "Fiche F16922: \"Être recruté dans une jeune entreprise innovante ou une entreprise reconnue innovante par le ministère de l'économie\"",
-              "short_reason": "an employer France recognises as innovative"
+              "short_reason": "an employer France recognises as innovative",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Être recruté dans une jeune entreprise innovante ou une entreprise reconnue innovante par le ministère de l'économie",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — entreprise innovante"
+              }
             },
             {
               "field": "salary_eur_year",
@@ -1652,7 +1760,7 @@
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail qui prévoit une rémunération brute annuelle supérieure ou égale à 39 582 €.",
                 "retrieved_at": "2026-09-04",
-                "legal_basis": "CESEDA — carte « talent-salarié qualifié », parcours entreprise innovante (fiche F16922)",
+                "legal_basis": "CESEDA — carte talent-salarié qualifié, parcours entreprise innovante (fiche F16922)",
                 "history": []
               }
             }
@@ -1686,7 +1794,12 @@
               "field": "situation",
               "op": "eq",
               "value": "ict",
-              "note": "Fiche F16922: \"Être salarié d'une entreprise établie à l'étranger et venir en France pour exercer une activité salariée dans le cadre d'une mobilité entre établissements d'une même entreprise ou entre entreprises d'un même groupe (mobilité intragroupe)\" — \"Avoir une ancienneté d'au moins 3 mois dans le groupe qui vous emploie\""
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Être salarié d'une entreprise établie à l'étranger et venir en France pour exercer une activité salariée dans le cadre d'une mobilité entre établissements d'une même entreprise ou entre entreprises d'un même groupe (mobilité intragroupe)",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — salarié en mission"
+              }
             },
             {
               "op": "any",
@@ -1718,8 +1831,13 @@
               "field": "fr_local_contract",
               "op": "eq",
               "value": "yes",
-              "note": "Fiche F16922: \"Avoir un contrat de travail avec l'entreprise qui vous emploie en France\"",
-              "short_reason": "a contract with the French entity"
+              "short_reason": "a contract with the French entity",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir un contrat de travail avec l'entreprise qui vous emploie en France",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — salarié en mission"
+              }
             },
             {
               "field": "salary_eur_year",
@@ -1731,7 +1849,7 @@
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Percevoir une rémunération brute annuelle supérieure ou égale à 39 582 €.",
                 "retrieved_at": "2026-09-04",
-                "legal_basis": "CESEDA — carte « talent-salarié qualifié », parcours salarié en mission (fiche F16922)",
+                "legal_basis": "CESEDA — carte talent-salarié qualifié, parcours salarié en mission (fiche F16922)",
                 "history": []
               }
             }
@@ -1771,7 +1889,12 @@
               "field": "situation",
               "op": "eq",
               "value": "offer",
-              "note": "Ley 14/2013 art. 71 bis.1.b): \"un contrato de trabajo válido o una oferta firme de empleo de alta cualificación para un período de al menos seis meses\""
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "un contrato de trabajo válido o una oferta firme de empleo de alta cualificación para un período de al menos seis meses",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 71 bis.1.b)"
+              }
             },
             {
               "op": "any",
@@ -1802,7 +1925,6 @@
             {
               "op": "any",
               "label": "qualification or experience",
-              "note": "Ley 14/2013 art. 71.2.a): \"una cualificación derivada de una formación de enseñanza superior de duración mínima de tres años... o acrediten un mínimo de cinco años de conocimientos, capacidades y competencias avalados por una experiencia profesional que pueda considerarse equiparable\" (ICT professionals: 3-in-last-7 years — not separately modeled).",
               "paths": [
                 {
                   "label": "higher-education qualification",
@@ -1820,11 +1942,23 @@
                     {
                       "field": "experience",
                       "op": "eq",
-                      "value": "y5in7"
+                      "value": "y5in7",
+                      "source": {
+                        "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                        "quote": "acrediten un mínimo de cinco años de conocimientos, capacidades y competencias avalados por una experiencia profesional que pueda considerarse equiparable a dicha cualificación",
+                        "retrieved_at": "2026-09-07",
+                        "legal_basis": "Ley 14/2013, art. 71 bis.2"
+                      }
                     }
                   ]
                 }
-              ]
+              ],
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "una cualificación derivada de una formación de enseñanza superior de duración mínima de tres años y equivalente al menos al Nivel 2 del Marco Español de Cualificaciones para la Educación Superior",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 71 bis.2"
+              }
             },
             {
               "op": "any",
@@ -1837,7 +1971,6 @@
                       "field": "salary_eur_year",
                       "op": "gte",
                       "threshold_label": "standard amount (1.4× the Spanish average wage)",
-                      "note": "Threshold PDF value — flagged for human re-verification per project policy. Derivation (UGE PDF, human-read 2026-09-04): \"El Instituto Nacional de Estadística (INE) publicó el pasado 28 de mayo de 2026 el dato actualizado del sueldo medio correspondiente a 2024, fijándolo en 29.540,26 €\" — the threshold moves whenever the INE publishes a new average (Orden PJC/44/2026, art. 3.2: one month after publication).",
                       "threshold": {
                         "amount": 41356.36,
                         "currency": "EUR",
@@ -1858,13 +1991,12 @@
                       "op": "eq",
                       "value": "yes",
                       "short_reason": "a qualification from the last 3 years",
-                      "note": "Whether this limb carries an institution restriction is UNVERIFIED: the Orden is the PDF tier and its text could not be read here (2026-09-07). The limb we model reads \"a qualification obtained within the last 3 years\" and states no institution scope. The Dutch equivalent does carry one, but applying that by analogy would be a guess in the other direction. Recorded in data/exclusions.md; needs a human read of the Orden."
+                      "note": "Institution scope UNVERIFIED (2026-09-07): the Orden is the PDF tier and its text could not be read here, so we model the limb as the law states it — a qualification obtained within the last 3 years, with no institution scope. The Dutch equivalent does carry one; applying that by analogy would be a guess in the other direction. Recorded in data/exclusions.md; needs a human read of the Orden."
                     },
                     {
                       "field": "salary_eur_year",
                       "op": "gte",
                       "threshold_label": "lower amount for a qualification from the last 3 years",
-                      "note": "Threshold PDF value — flagged for human re-verification per project policy. The Orden gives two limbs; only the qualification-within-3-years limb is modelled (see the route's preconditions).",
                       "threshold": {
                         "amount": 33085.09,
                         "currency": "EUR",
@@ -1890,6 +2022,16 @@
                 "checked_at": "2026-09-07",
                 "note": "The wording sits in Orden PJC/44/2026, which the ministry publishes as a scanned document whose text cannot be read here, and no page we can reach states it."
               }
+            },
+            {
+              "id": "it-professionals-limb-not-modelled",
+              "kind": "modelling",
+              "text": "Spain's law gives IT professionals and managers a shorter experience route of their own. We do not model it, so this card judges you on the general rule."
+            },
+            {
+              "id": "salary-figures-and-their-limits-read-by-a-person",
+              "kind": "modelling",
+              "text": "Both salary figures here were read by a person from a ministry PDF, and so was the question of whether the lower one is limited to qualifications from particular institutions — which the PDF did not settle. We apply it with no such limit, the wording the law itself uses. No automatic check can confirm any of that between reads."
             }
           ]
         },
@@ -1950,7 +2092,6 @@
             {
               "op": "any",
               "label": "qualification or experience",
-              "note": "Ley 14/2013 art. 71.2.b): \"una titulación equiparable al menos al nivel 1 del Marco Español de Cualificaciones para la Educación Superior... o conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos tres años\". The law requires 3 years; the nearest declarable option (5-in-last-7) is used — conservative.",
               "paths": [
                 {
                   "label": "higher-education qualification",
@@ -1968,17 +2109,28 @@
                     {
                       "field": "experience",
                       "op": "eq",
-                      "value": "y5in7"
+                      "value": "y5in7",
+                      "source": {
+                        "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                        "quote": "conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos tres años que pueda considerarse equiparable a dicha cualificación",
+                        "retrieved_at": "2026-09-07",
+                        "legal_basis": "Ley 14/2013, art. 71.2"
+                      }
                     }
                   ]
                 }
-              ]
+              ],
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "una titulación equiparable al menos al nivel 1 del Marco Español de Cualificaciones para la Educación Superior",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 71.2"
+              }
             },
             {
               "field": "salary_eur_year",
               "op": "gte",
               "threshold_label": "the one salary amount on this route",
-              "note": "Threshold PDF value — flagged for human re-verification per project policy. Derivation (UGE PDF, human-read 2026-09-04): \"El Instituto Nacional de Estadística (INE) publicó el pasado 28 de mayo de 2026 el dato actualizado del sueldo medio correspondiente a 2024, fijándolo en 29.540,26 €\" — the threshold moves whenever the INE publishes a new average (Orden PJC/44/2026, art. 3.2: one month after publication).",
               "threshold": {
                 "amount": 41356.36,
                 "currency": "EUR",
@@ -1988,6 +2140,18 @@
                 "legal_basis": "Ley 14/2013 art. 71.2.b) + UGE threshold publication (June 2026)",
                 "history": []
               }
+            }
+          ],
+          "statements": [
+            {
+              "id": "experience-answer-is-conservative",
+              "kind": "modelling",
+              "text": "The law counts three years of professional experience here. The nearest answer this interview can offer is five years in the last seven, so a person with three or four years is judged more harshly than Spain would judge them."
+            },
+            {
+              "id": "salary-figure-read-by-a-person",
+              "kind": "modelling",
+              "text": "The salary figure on this route was read by a person from the ministry's PDF. No automatic check can confirm it between reads, so the read date beside it is the age of the number."
             }
           ]
         },
@@ -2019,7 +2183,12 @@
               "field": "situation",
               "op": "eq",
               "value": "ict",
-              "note": "Ley 14/2013 art. 73.2.c): \"La existencia de una relación laboral o profesional, previa y continuada, de 3 meses con una o varias de las empresas del grupo\""
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "La existencia de una relación laboral o profesional, previa y continuada, de 3 meses con una o varias de las empresas del grupo",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 73.2.c)"
+              }
             },
             {
               "op": "any",
@@ -2050,7 +2219,6 @@
             {
               "op": "any",
               "label": "qualification or experience",
-              "note": "Ley 14/2013 art. 73.2.b): \"Titulación superior equiparable al menos al nivel 1 del Marco Español de Cualificaciones para la Educación Superior... o conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos 3 años\".",
               "paths": [
                 {
                   "label": "higher-education qualification",
@@ -2068,11 +2236,23 @@
                     {
                       "field": "experience",
                       "op": "eq",
-                      "value": "y5in7"
+                      "value": "y5in7",
+                      "source": {
+                        "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                        "quote": "conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos 3 años que pueda considerarse equiparable a dicha cualificación",
+                        "retrieved_at": "2026-09-07",
+                        "legal_basis": "Ley 14/2013, art. 73.2.b)"
+                      }
                     }
                   ]
                 }
-              ]
+              ],
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "Titulación superior equiparable al menos al nivel 1 del Marco Español de Cualificaciones para la Educación Superior",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 73.2.b)"
+              }
             }
           ]
         },
@@ -2103,7 +2283,12 @@
               "field": "situation",
               "op": "eq",
               "value": "research",
-              "note": "Ley 14/2013 art. 72.2.a): requires \"un convenio de acogida o contrato de trabajo\" with a research body; UGE: \"Extranjeros que desean desarrollar actividades de formación, investigación, desarrollo e innovación en entidades públicas o privadas establecidas en España y que cuentan con una oferta para desarrollar esa actividad.\""
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "el solicitante de una autorización de residencia para investigación UE deberá presentar un convenio de acogida o contrato de trabajo",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Ley 14/2013, art. 72.2"
+              }
             },
             {
               "op": "any",
@@ -2147,7 +2332,6 @@
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
             "Your employer must be on the Dutch immigration service's (IND) list of recognised sponsors",
-            "The salary must match what the job normally pays — the Dutch immigration service judges this",
             "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions"
           ],
           "criteria": [
@@ -2168,7 +2352,11 @@
               "field": "situation",
               "op": "eq",
               "value": "offer",
-              "note": "IND: \"You have an employment contract with an employer or research institution in the Netherlands. This employer is a sponsor recognised by the IND.\""
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "You have an employment contract with an employer or research institution in the Netherlands. This employer is a sponsor recognised by the IND.",
+                "retrieved_at": "2026-09-07"
+              }
             },
             {
               "op": "any",
@@ -2218,7 +2406,6 @@
                       "field": "salary_eur_month",
                       "op": "gte",
                       "threshold_label": "30 or older, 2026",
-                      "note": "IND also applies a market-rate test: \"The agreed salary is in line with the market rate.\"",
                       "threshold": {
                         "amount": 5942,
                         "currency": "EUR",
@@ -2238,7 +2425,6 @@
                       "op": "any",
                       "label": "where you studied",
                       "short_reason": "a degree from the last 3 years, from a Dutch institution or from one the Dutch immigration service designates",
-                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The third case additionally requires the applicant to meet the requirements for that residence purpose — the orientation year — and that is where the institution restriction lives: a Dutch university or research institution, or a foreign institution the IND designates. Modelled here as the same disjunction the orientation-year route uses. The first two cases (holding, or having held, an orientation-year permit) are NOT modelled: the interview never asks about permits already held. Recorded in data/exclusions.md (2026-09-07) and stated in this route's preconditions.",
                       "paths": [
                         {
                           "label": "a Dutch university or research institution",
@@ -2260,7 +2446,12 @@
                             }
                           ]
                         }
-                      ]
+                      ],
+                      "source": {
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "The highly skilled migrant has never had a residence permit for an orientation year for highly educated persons, but does meet the requirements for that residence purpose.",
+                        "retrieved_at": "2026-09-02"
+                      }
                     },
                     {
                       "field": "salary_eur_month",
@@ -2293,6 +2484,16 @@
                 "legal_basis": "Dutch immigration service, required amounts — the reduced highly-skilled-migrant rows (read from the watched snapshot of 2026-09-02)",
                 "history": []
               }
+            },
+            {
+              "id": "salary-must-match-the-market-rate",
+              "kind": "precondition",
+              "text": "The salary must match what the job normally pays — the Dutch immigration service judges this",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "The agreed salary is in line with the market rate.",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ]
         },
@@ -2304,7 +2505,6 @@
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
             "Your employer must be on the Dutch immigration service's (IND) list of recognised sponsors",
-            "The salary must match what the job normally pays — the Dutch immigration service judges this",
             "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions"
           ],
           "criteria": [
@@ -2324,7 +2524,12 @@
             {
               "field": "situation",
               "op": "eq",
-              "value": "offer"
+              "value": "offer",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "You have an employment contract with an employer or research institution in the Netherlands. This employer is a sponsor recognised by the IND.",
+                "retrieved_at": "2026-09-07"
+              }
             },
             {
               "op": "any",
@@ -2370,7 +2575,6 @@
                       "field": "salary_eur_month",
                       "op": "gte",
                       "threshold_label": "under 30, 2026",
-                      "note": "When changing employer after turning 30, the €5,942.00 amount applies.",
                       "threshold": {
                         "amount": 4357,
                         "currency": "EUR",
@@ -2390,7 +2594,6 @@
                       "op": "any",
                       "label": "where you studied",
                       "short_reason": "a degree from the last 3 years, from a Dutch institution or from one the Dutch immigration service designates",
-                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The third case additionally requires the applicant to meet the requirements for that residence purpose — the orientation year — and that is where the institution restriction lives: a Dutch university or research institution, or a foreign institution the IND designates. Modelled here as the same disjunction the orientation-year route uses. The first two cases (holding, or having held, an orientation-year permit) are NOT modelled: the interview never asks about permits already held. Recorded in data/exclusions.md (2026-09-07) and stated in this route's preconditions.",
                       "paths": [
                         {
                           "label": "a Dutch university or research institution",
@@ -2412,7 +2615,12 @@
                             }
                           ]
                         }
-                      ]
+                      ],
+                      "source": {
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "The highly skilled migrant has never had a residence permit for an orientation year for highly educated persons, but does meet the requirements for that residence purpose.",
+                        "retrieved_at": "2026-09-02"
+                      }
                     },
                     {
                       "field": "salary_eur_month",
@@ -2445,6 +2653,26 @@
                 "legal_basis": "Dutch immigration service, required amounts — the reduced highly-skilled-migrant rows (read from the watched snapshot of 2026-09-02)",
                 "history": []
               }
+            },
+            {
+              "id": "salary-must-match-the-market-rate",
+              "kind": "precondition",
+              "text": "The salary must match what the job normally pays — the Dutch immigration service judges this",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "The agreed salary is in line with the market rate.",
+                "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "higher-amount-after-a-change-of-employer-past-thirty",
+              "kind": "caveat",
+              "text": "Change employer after you turn 30 and the €5,942.00 amount applies instead of this one. The lower amount stays with you only if the change happened while you were still under 30.",
+              "source": {
+                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                "quote": "Has the highly skilled migrant changed employers since the first permit was issued? Then this must have happened when the highly skilled migrant was still under the age of 30. Highly skilled migrant is still younger than 30: € 4,357.00 Highly skilled migrant is now 30 years or older: € 5,942.00",
+                "retrieved_at": "2026-09-02"
+              }
             }
           ]
         },
@@ -2476,7 +2704,11 @@
               "field": "situation",
               "op": "eq",
               "value": "offer",
-              "note": "IND: \"Your employment contract is valid for at least 6 months.\""
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+                "quote": "Your employment contract is valid for at least 6 months.",
+                "retrieved_at": "2026-09-07"
+              }
             },
             {
               "op": "any",
@@ -2507,7 +2739,6 @@
             {
               "op": "any",
               "label": "diploma or experience",
-              "note": "IND: \"you have a diploma of a programme in higher education. This programme was at least 3 years.\" OR \"you have a minimum of 5 years of relevant work experience\". For IT roles: \"Are you an IT manager or IT professional? A minimum of 3 years of relevant work experience is required during the period of 7 years before the application.\" (human-verified on the IND page 2026-09-04; the page body is client-rendered and cannot be machine-read).",
               "paths": [
                 {
                   "label": "higher-education diploma",
@@ -2525,7 +2756,12 @@
                     {
                       "field": "experience",
                       "op": "eq",
-                      "value": "y5in7"
+                      "value": "y5in7",
+                      "source": {
+                        "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+                        "quote": "you have a minimum of 5 years of relevant work experience",
+                        "retrieved_at": "2026-09-07"
+                      }
                     }
                   ]
                 },
@@ -2541,11 +2777,20 @@
                       "field": "experience_7y",
                       "op": "eq",
                       "value": "yes",
-                      "note": "IND: a minimum of 3 years of relevant work experience during the 7 years before the application, for IT managers and IT professionals."
+                      "source": {
+                        "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+                        "quote": "Are you an IT manager or IT professional? A minimum of 3 years of relevant work experience is required during the period of 7 years before the application.",
+                        "retrieved_at": "2026-09-07"
+                      }
                     }
                   ]
                 }
-              ]
+              ],
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+                "quote": "you have a diploma of a programme in higher education. This programme was at least 3 years.",
+                "retrieved_at": "2026-09-07"
+              }
             },
             {
               "op": "any",
@@ -2584,7 +2829,6 @@
                       "op": "any",
                       "label": "where you studied",
                       "short_reason": "a degree from the last 3 years, from a Dutch institution or from one the Dutch immigration service designates",
-                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The third case additionally requires the applicant to meet the requirements for that residence purpose — the orientation year — and that is where the institution restriction lives: a Dutch university or research institution, or a foreign institution the IND designates. Modelled here as the same disjunction the orientation-year route uses. The first two cases (holding, or having held, an orientation-year permit) are NOT modelled: the interview never asks about permits already held. Recorded in data/exclusions.md (2026-09-07) and stated in this route's preconditions.",
                       "paths": [
                         {
                           "label": "a Dutch university or research institution",
@@ -2606,7 +2850,12 @@
                             }
                           ]
                         }
-                      ]
+                      ],
+                      "source": {
+                        "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                        "quote": "The highly skilled migrant has never had a residence permit for an orientation year for highly educated persons, but does meet the requirements for that residence purpose.",
+                        "retrieved_at": "2026-09-02"
+                      }
                     },
                     {
                       "field": "salary_eur_month",
@@ -2671,7 +2920,11 @@
               "field": "situation",
               "op": "eq",
               "value": "ict",
-              "note": "IND: \"You have already worked for the company outside the EU, EEA or Switzerland for at least 3 months.\""
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
+                "quote": "You have already worked for the company outside the EU, EEA or Switzerland for at least 3 months.",
+                "retrieved_at": "2026-09-07"
+              }
             },
             {
               "op": "any",
@@ -2703,7 +2956,6 @@
               "op": "any",
               "label": "the highly skilled migrant salary for your age",
               "short_reason": "at least €5,942/month if you are 30 or older, or €4,357/month if you are under 30",
-              "note": "IND: \"Your salary is in line with the market. The salary is in line with the market if it meets the salary criterion for highly skilled migrants.\"",
               "paths": [
                 {
                   "label": "30 or older",
@@ -2759,7 +3011,12 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
+                "quote": "Your salary is in line with the market. The salary is in line with the market if it meets the salary criterion for highly skilled migrants.",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ]
         },
@@ -2791,7 +3048,11 @@
               "field": "situation",
               "op": "eq",
               "value": "research",
-              "note": "IND: \"You have an employment contract or a host agreement with your employer\" — the institute must be a recognised sponsor (public register)."
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
+                "quote": "You have an employment contract or a host agreement with your employer",
+                "retrieved_at": "2026-09-07"
+              }
             },
             {
               "op": "any",
@@ -2823,7 +3084,6 @@
               "field": "salary_eur_month",
               "op": "gte",
               "threshold_label": "sufficient income (Jul–Dec 2026)",
-              "note": "Grants, stipends or own savings also count toward sufficient income; the amount is the gross SV salary per month without holiday allowance.",
               "threshold": {
                 "amount": 1635.9,
                 "currency": "EUR",
@@ -2832,6 +3092,18 @@
                 "retrieved_at": "2026-09-04",
                 "legal_basis": "Researcher (Directive (EU) 2016/801) — required amounts valid 1 July – 31 December 2026",
                 "history": []
+              }
+            }
+          ],
+          "statements": [
+            {
+              "id": "other-income-can-meet-this",
+              "kind": "caveat",
+              "text": "If your Dutch employer pays you no salary, a grant, a stipend, money from a sponsor or enough money in your own account can meet this instead.",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
+                "quote": "Will you not receive a salary from your Dutch employer? Then you must have other income, for example a grant, stipend or money from a sponsor. Or you have sufficient money in your bank account for the time you are in the Netherlands.",
+                "retrieved_at": "2026-09-07"
               }
             }
           ]
@@ -2863,7 +3135,6 @@
             {
               "op": "any",
               "label": "where you studied",
-              "note": "IND: the qualifying event must fall in “the 3 years before the date of application” — a Dutch institution, or “a designated foreign educational institution”. The designation list is published by the IND; the earlier “top 200 in 2 of 3 rankings” reading was not found on the page (human check 2026-09-04) and is no longer asserted. The page states five qualifying situations (human read 2026-09-07); these two fields cover the broadest of them and are a simplification — the three we do not model are recorded in data/exclusions.md.",
               "paths": [
                 {
                   "label": "a Dutch university or research institution",
@@ -2871,7 +3142,12 @@
                     {
                       "field": "nl_recent_grad",
                       "op": "eq",
-                      "value": "yes"
+                      "value": "yes",
+                      "source": {
+                        "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+                        "quote": "An accredited bachelor’s or master’s degree programme at a Dutch higher education institution.",
+                        "retrieved_at": "2026-09-07"
+                      }
                     }
                   ]
                 },
@@ -2881,11 +3157,21 @@
                     {
                       "field": "top200_grad",
                       "op": "eq",
-                      "value": "yes"
+                      "value": "yes",
+                      "source": {
+                        "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+                        "quote": "A master’s degree programme, a doctoral programme or a post-master’s study programme at a designated foreign educational institution",
+                        "retrieved_at": "2026-09-07"
+                      }
                     }
                   ]
                 }
-              ]
+              ],
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+                "quote": "You completed one of the following study programmes in the 3 years before the date of application:",
+                "retrieved_at": "2026-09-07"
+              }
             }
           ],
           "statements": [
@@ -2897,7 +3183,7 @@
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
                 "quote": "You have not previously held a residence permit for an orientation year for the same research for which you are now applying. Nor have you held such a permit following the completion of the same study programme or doctoral programme.",
                 "retrieved_at": "2026-09-07",
-                "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements (page states “Last update: 12 June 2026”); read by a person, the page renders client-side",
+                "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements (the page's own last-update date: 12 June 2026)",
                 "history": []
               }
             },
@@ -2909,9 +3195,14 @@
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
                 "quote": "Different requirements may apply to Turkish citizens and their family members.",
                 "retrieved_at": "2026-09-07",
-                "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements; read by a person, the page renders client-side",
+                "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements",
                 "history": []
               }
+            },
+            {
+              "id": "two-of-five-situations-modelled",
+              "kind": "modelling",
+              "text": "The Dutch immigration service lists five situations that open this route. We model the two that turn on where and when you studied; the other three — research done here, an Erasmus Mundus master, a permit you already held — are not asked about anywhere on this site."
             }
           ]
         }

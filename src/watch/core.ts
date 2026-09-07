@@ -253,8 +253,10 @@ export interface QuoteCheckResult {
   /** Quotes no longer found in the snapshot of the source they cite. */
   missing: { where: string; source_url: string; quote: string }[];
   /** Sources with no text snapshot to check against (pdf tier, human tier,
-   * or never fetched) — reported, never silently counted as verified. */
-  unverifiable: { where: string; source_url: string; reason: string }[];
+   * or never fetched) — reported, never silently counted as verified. The
+   * quote travels with them: a checklist that named only the route would leave
+   * a person holding a PDF wondering which sentence they came to find (s5e). */
+  unverifiable: { where: string; source_url: string; quote: string; reason: string }[];
   verified: number;
 }
 

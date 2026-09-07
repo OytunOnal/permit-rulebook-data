@@ -1,6 +1,7 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
 import schema from "../schema/ruleset.schema.json" with { type: "json" };
 import { countryVocabulary, vocabularyErrors } from "./countries.js";
+import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import type { Dataset } from "./types.js";
 
 export interface ValidationError {
@@ -49,6 +50,16 @@ export function validateDataset(data: unknown): ValidationResult {
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
   const errors: ValidationError[] = [...vocabularyErrors(countryVocabulary)];
+
+  /**
+   * s5e: nothing reaches a screen in quotation marks without provenance beside
+   * it that covers the quoted words. Written over the text rather than over the
+   * fields, so moving a sentence to another slot is not a way to silence it —
+   * and the message names both honest ways out, because a gate whose easiest
+   * fix is deleting the quotation marks is a gate that teaches dishonesty.
+   */
+  for (const offence of quotedWithoutProvenance(dataset))
+    errors.push({ path: offence.path, message: offenceMessage(offence), keyword: "quotedWithoutProvenance" });
   const seenIds = new Set<string>();
   const thresholds = new Map<string, { amount: number; source_url: string; retrieved_at: string; route: string }>();
 

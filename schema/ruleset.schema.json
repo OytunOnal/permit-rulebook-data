@@ -560,11 +560,17 @@
               "type": "string"
             },
             "note": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
             },
             "short_reason": {
               "type": "string",
               "minLength": 1
+            },
+            "source": {
+              "$ref": "#/$defs/provenancedText",
+              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
             }
           }
         },
@@ -590,11 +596,17 @@
               "type": "string"
             },
             "note": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
             },
             "short_reason": {
               "type": "string",
               "minLength": 1
+            },
+            "source": {
+              "$ref": "#/$defs/provenancedText",
+              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
             }
           }
         },
@@ -621,11 +633,17 @@
               }
             },
             "note": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
             },
             "short_reason": {
               "type": "string",
               "minLength": 1
+            },
+            "source": {
+              "$ref": "#/$defs/provenancedText",
+              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
             }
           }
         },
@@ -648,11 +666,17 @@
               "$ref": "#/$defs/pointsTable"
             },
             "note": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
             },
             "short_reason": {
               "type": "string",
               "minLength": 1
+            },
+            "source": {
+              "$ref": "#/$defs/provenancedText",
+              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
             }
           }
         },
@@ -694,11 +718,17 @@
               }
             },
             "note": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
             },
             "short_reason": {
               "type": "string",
               "minLength": 1
+            },
+            "source": {
+              "$ref": "#/$defs/provenancedText",
+              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
             }
           }
         }
@@ -711,40 +741,6 @@
         "kind",
         "text"
       ],
-      "oneOf": [
-        {
-          "required": [
-            "source"
-          ],
-          "properties": {
-            "source": true
-          },
-          "not": {
-            "required": [
-              "unsourced"
-            ],
-            "properties": {
-              "unsourced": true
-            }
-          }
-        },
-        {
-          "required": [
-            "unsourced"
-          ],
-          "properties": {
-            "unsourced": true
-          },
-          "not": {
-            "required": [
-              "source"
-            ],
-            "properties": {
-              "source": true
-            }
-          }
-        }
-      ],
       "additionalProperties": false,
       "properties": {
         "id": {
@@ -754,9 +750,10 @@
         "kind": {
           "enum": [
             "precondition",
-            "caveat"
+            "caveat",
+            "modelling"
           ],
-          "description": "precondition: something the applicant must satisfy that the interview never asks. It joins `route.preconditions` in the same list under the same heading, so it IS a precondition — one that carries its quote — and calling it a `condition` coined a synonym for a term the glossary already fixes (review 2026-09-07). caveat: a qualification the source puts on its own answer, which sits beside the verdict and never fails anyone."
+          "description": "precondition: something the applicant must satisfy that the interview never asks. It joins `route.preconditions` in the same list under the same heading, so it IS a precondition — one that carries its quote — and calling it a `condition` coined a synonym for a term the glossary already fixes (review 2026-09-07). caveat: a qualification the source puts on its own answer, which sits beside the verdict and never fails anyone. modelling: our own commentary about what we did or did not model, which is not a claim about the law. It is the one kind that carries neither a source nor an unsourced reason — the kind IS the attribution, recorded in the data and shown on the card, so absence of a source is always a decision someone made (s5e)."
         },
         "text": {
           "type": "string",
@@ -769,7 +766,79 @@
         "unsourced": {
           "$ref": "#/$defs/unsourcedReason"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "modelling"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "source"
+                  ],
+                  "properties": {
+                    "source": true
+                  }
+                },
+                {
+                  "required": [
+                    "unsourced"
+                  ],
+                  "properties": {
+                    "unsourced": true
+                  }
+                }
+              ]
+            }
+          },
+          "else": {
+            "oneOf": [
+              {
+                "required": [
+                  "source"
+                ],
+                "properties": {
+                  "source": true
+                },
+                "not": {
+                  "required": [
+                    "unsourced"
+                  ],
+                  "properties": {
+                    "unsourced": true
+                  }
+                }
+              },
+              {
+                "required": [
+                  "unsourced"
+                ],
+                "properties": {
+                  "unsourced": true
+                },
+                "not": {
+                  "required": [
+                    "source"
+                  ],
+                  "properties": {
+                    "source": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "route": {
       "type": "object",

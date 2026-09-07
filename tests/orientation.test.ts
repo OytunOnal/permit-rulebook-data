@@ -84,7 +84,7 @@ describe("the orientation year states what the source states, and no more", () =
     // (human catch 2026-09-07): a condition states what must be true, it does
     // not assert something about a reader we never asked.
     expect(condition.text).toMatch(/must not have previously held an orientation year permit/i);
-    expect(condition.source.quote).toBe(
+    expect(condition.source!.quote).toBe(
       "You have not previously held a residence permit for an orientation year for the same research " +
       "for which you are now applying. Nor have you held such a permit following the completion of the " +
       "same study programme or doctoral programme.",
@@ -93,7 +93,7 @@ describe("the orientation year states what the source states, and no more", () =
 
   it("the qualification the source puts on its own answer is passed on, not resolved", () => {
     const caveat = routeStatements(route()).find((s) => s.kind === "caveat")!;
-    expect(caveat.source.quote).toBe(
+    expect(caveat.source!.quote).toBe(
       "Different requirements may apply to Turkish citizens and their family members.",
     );
     // What those requirements are is not invented here.
@@ -101,19 +101,27 @@ describe("the orientation year states what the source states, and no more", () =
     expect(caveat.text).toMatch(/Turkish/);
   });
 
-  it("every statement carries its source and the date a person read it", () => {
-    const statements = routeStatements(route());
+  it("every statement about the law carries its source and the date a person read it", () => {
+    // Since s5e a third kind sits beside them — `modelling`, our own words
+    // about what we did and did not model. It carries no source BECAUSE it
+    // quotes nobody, and the card says so in the reader's language.
+    const statements = routeStatements(route()).filter((s) => s.kind !== "modelling");
     expect(statements.length).toBe(2);
     for (const s of statements) {
-      expect(s.source.source_url, s.id).toBe(SOURCE);
-      expect(s.source.retrieved_at, s.id).toBe("2026-09-07");
-      expect(s.source.quote.length, s.id).toBeGreaterThan(20);
+      expect(s.source!.source_url, s.id).toBe(SOURCE);
+      expect(s.source!.retrieved_at, s.id).toBe("2026-09-07");
+      expect(s.source!.quote.length, s.id).toBeGreaterThan(20);
+    }
+    for (const s of routeStatements(route()).filter((s) => s.kind === "modelling")) {
+      expect(s.source, s.id).toBeUndefined();
+      expect(s.unsourced, s.id).toBeUndefined();
     }
   });
 
   it("a statement is a value, so it reaches the card's quote list", () => {
     const quotes = routeProvenance(route()).map((p) => p.value.quote);
-    for (const s of routeStatements(route())) expect(quotes).toContain(s.source.quote);
+    for (const s of routeStatements(route()))
+      if (s.source) expect(quotes).toContain(s.source.quote);
   });
 
   it("the limbs we do not model are recorded, with the reason and the date", () => {
@@ -136,19 +144,26 @@ describe("a route statement is watched like every other value", () => {
     expect(coverage.orphan_watch_entries).toEqual([]);
     const entry = watchlist.entries.find((e) => e.url === SOURCE)!;
     expect(entry.kind).toBe("value-source");
-    expect(entry.strategy).toBe("human");
+    // Human tier until 2026-09-07, on the reading that IND route pages render
+    // client-side and our fetch saw a 1.4 kB shell. A fetch from this host now
+    // returns the whole requirement list, and both quotes are found in it —
+    // so the page is watched by machine and the gate checks the sentences
+    // rather than reporting that it cannot (s5e). If that ever stops being
+    // true the quotes go missing, loudly, which is the point of the check
+    // below.
+    expect(entry.strategy).toBe("html");
   });
 
-  it("the quote gate reports it unverifiable at the human tier — never verified, never missing", () => {
-    // The IND page renders client-side, so no machine here can confirm the
-    // sentence. Silence would read as a pass; this is the honest third answer.
+  it("the quote gate finds both sentences on the page — never silently, never missing", () => {
     const result = checkQuotes(dataset, watchlist, state);
     expect(result.missing).toEqual([]);
-    const mine = result.unverifiable.filter((u) => u.where.startsWith("nl-orientation-year:"));
-    expect(mine.map((u) => u.where).sort()).toEqual([
-      "nl-orientation-year:no-second-orientation-year",
-      "nl-orientation-year:turkish-citizens-differ",
-    ]);
-    for (const u of mine) expect(u.reason, u.where).toMatch(/human tier/);
+    expect(result.unverifiable.filter((u) => u.where.startsWith("nl-orientation-year"))).toEqual([]);
+    // Neither statement is missing and neither is unverifiable, so both were
+    // found on the snapshot of the page they cite — the only third answer the
+    // gate has left.
+    for (const s of routeStatements(routeOf("nl-orientation-year")))
+      if (s.source)
+        expect(result.missing.map((m) => m.quote), s.id).not.toContain(s.source.quote);
+    expect(result.verified).toBeGreaterThan(30);
   });
 });

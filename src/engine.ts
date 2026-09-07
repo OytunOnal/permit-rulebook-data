@@ -612,17 +612,27 @@ export function forEachCriterion(criteria: Criterion[], fn: (c: Criterion) => vo
   }
 }
 
-/** Every provenanced value one criterion node carries (exhaustive by op). */
+/**
+ * Every provenanced value one criterion node carries (exhaustive by op).
+ *
+ * A criterion's own `source` is one of them: since s5e a condition that is not
+ * a number quotes its authority the way a threshold does, so the card's source
+ * list shows the quotes behind the conditions and not only behind the numbers,
+ * and the watch coverage and quote-fidelity gates cover both. It carries no
+ * amount, so nothing ever marks it "does not apply to you" — that mark tells
+ * two NUMBERS apart.
+ */
 export function provenancedValuesOf(c: Criterion): ProvenanceEntry[] {
+  const condition: ProvenanceEntry[] = c.source ? [{ value: c.source }] : [];
   switch (c.op) {
     case "eq": case "in": case "any":
-      return [];
+      return condition;
     case "gte":
-      return [{ label: c.threshold_label, value: c.threshold, amount: c.threshold.amount }];
+      return [...condition, { label: c.threshold_label, value: c.threshold, amount: c.threshold.amount }];
     case "points":
       return c.table.source_url !== c.required.source_url || c.table.quote !== c.required.quote
-        ? [{ label: "points required", value: c.required }, { label: "points table", value: c.table }]
-        : [{ label: "points required", value: c.required }];
+        ? [...condition, { label: "points required", value: c.required }, { label: "points table", value: c.table }]
+        : [...condition, { label: "points required", value: c.required }];
     default: {
       const _exhaustive: never = c;
       throw new Error(`unhandled criterion op: ${JSON.stringify(_exhaustive)}`);

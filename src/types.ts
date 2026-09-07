@@ -65,13 +65,35 @@ export interface PointsTable {
  * the named options, for criteria whose option list reads badly in a sentence.
  * A verdict line is built from these, never from the field id (s5d).
  */
+/**
+ * What every criterion may carry beside the condition itself.
+ *
+ * `source`: the authority's own words for the condition this criterion checks —
+ * the same provenance a threshold carries, for a condition that is not a
+ * number. Until s5e only `gte` and `points` could be sourced, so the evidence
+ * behind an `eq` lived in `note`, a bare string 39 of whose 45 instances quoted
+ * an authority with no URL and no read date, watched by nothing and rendered
+ * nowhere. A criterion's source joins the card's source list and the
+ * quote-fidelity gate like any other value.
+ *
+ * `note`: curation prose that is ours and reaches no screen — what was tried,
+ * what is unverified, which document to read next. It may not quote anybody:
+ * a sentence worth attributing is worth sourcing, and the honest place for our
+ * own words in front of a reader is a `modelling` statement.
+ */
+interface CriterionExtras {
+  source?: ProvenancedText;
+  note?: string;
+  short_reason?: string;
+}
+
 export type Criterion =
-  | { field: string; op: "eq"; value: string; note?: string; short_reason?: string }
-  | { field: string; op: "in"; values: string[]; note?: string; short_reason?: string }
-  | { field: string; op: "gte"; threshold: ProvenancedAmount; threshold_label?: string; note?: string; short_reason?: string }
-  | { op: "points"; required: ProvenancedNumber; table: PointsTable; note?: string; short_reason?: string }
+  | ({ field: string; op: "eq"; value: string } & CriterionExtras)
+  | ({ field: string; op: "in"; values: string[] } & CriterionExtras)
+  | ({ field: string; op: "gte"; threshold: ProvenancedAmount; threshold_label?: string } & CriterionExtras)
+  | ({ op: "points"; required: ProvenancedNumber; table: PointsTable } & CriterionExtras)
   /** Disjunction: the criterion passes when ANY path's criteria all pass (e.g. §20a "Fachkraft ODER Punktzahl"). */
-  | { op: "any"; label?: string; paths: { label?: string; criteria: Criterion[] }[]; note?: string; short_reason?: string };
+  | ({ op: "any"; label?: string; paths: { label?: string; criteria: Criterion[] }[] } & CriterionExtras);
 
 /**
  * What a source says about one route that no criterion can compute.
@@ -92,16 +114,21 @@ export interface RouteStatement {
    * `route.preconditions`, so it IS a Precondition — one that carries its
    * quote. `condition` was a coined synonym for a term the glossary fixes
    * (review 2026-09-07). caveat: a qualification the source puts on its own
-   * answer; it sits beside the verdict and fails nobody. */
-  kind: "precondition" | "caveat";
+   * answer; it sits beside the verdict and fails nobody. modelling: our own
+   * commentary about what we did or did not model — NOT a claim about the law,
+   * and the only text in the dataset that may quote without provenance,
+   * because the kind itself is the attribution (s5e). */
+  kind: "precondition" | "caveat" | "modelling";
   /** Our plain English — what the reader sees. */
   text: string;
   /** The source's own words. Absent only where they could not be found: then
    * `unsourced` says why, and the card says so too. Borrowing a neighbouring
-   * quote that does not cover the sentence would be inventing provenance. */
+   * quote that does not cover the sentence would be inventing provenance.
+   * A `modelling` statement carries neither: the words are ours, so there is
+   * no authority to cite and no absence to explain. */
   source?: ProvenancedText;
   /** Why this statement carries no quote — required when `source` is absent,
-   * forbidden when it is present. */
+   * forbidden when it is present. Not for `modelling`, which claims none. */
   unsourced?: UnsourcedReason;
 }
 

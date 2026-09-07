@@ -98,7 +98,14 @@ describe("cleared blocker: a card never claims more than the interview checked",
       for (const route of country.routes)
         for (const s of routeStatements(route)) {
           expect(s.text.length, `${route.id}:${s.id}`).toBeGreaterThan(4);
-          if (s.source) {
+          if (s.kind === "modelling") {
+            // The third kind, added s5e: our own words about what we did or
+            // did not model. It is not a claim about the law, so there is no
+            // authority to cite and no absence to explain — and it may carry
+            // NEITHER, or the kind would stop meaning what it says.
+            expect(s.source, `${route.id}:${s.id}`).toBeUndefined();
+            expect(s.unsourced, `${route.id}:${s.id}`).toBeUndefined();
+          } else if (s.source) {
             expect(s.source.source_url, `${route.id}:${s.id}`).toMatch(/^https:\/\//);
             expect(s.source.quote.length, `${route.id}:${s.id}`).toBeGreaterThan(4);
             expect(s.source.retrieved_at, `${route.id}:${s.id}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
