@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: How a value changes, and what a pull request must carry
+    url: https://github.com/OytunOnal/permit-rulebook-data/blob/master/CONTRIBUTING.md
+    about: Read this before opening a pull request against the dataset.
+  - name: Why a route is not here
+    url: https://github.com/OytunOnal/permit-rulebook-data/blob/master/data/exclusions.md
+    about: Every researched-but-excluded route, with the reason it was left out.

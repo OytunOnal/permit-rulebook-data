@@ -1,0 +1,41 @@
+name: Design flaw — it works as built, and as built it is wrong
+description: A word that misleads, a control nobody can tap, a claim that overreaches.
+title: "[design-flaw] "
+labels: ["design-flaw"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the label for the things that are not broken and are still
+        wrong: a sentence that reads as a verdict on you, a link too small to
+        tap on a phone, a heading that claims more than the data holds.
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: The page or the screen, with a link if you have one.
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What you saw, and what you took it to mean
+      description: >
+        The exact words or the control, and the reading a person could
+        reasonably come away with.
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: What it cost you
+      description: >
+        What you did, or did not do, because of it. This is what tells us
+        whether it is worth changing before anything else.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: iPhone 14, Safari — or Firefox on Windows

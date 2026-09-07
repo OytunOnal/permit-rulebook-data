@@ -35,6 +35,13 @@ const fixture: Dataset = {
       name: "Points card",
       kind: "seek",
       info_url: "https://example.gov.de/route",
+      // s6: every route declares what the interview asks of it, and the schema
+      // refuses one that does not — a fixture is a route like any other.
+      scope: {
+        value: "every-deciding-rule-asked" as const,
+        reason: "Every rule that decides this route is a question you answer, and nothing else is stated.",
+        not_asked: [],
+      },
       criteria: [
         { field: "citizenship", op: "eq", value: "third" },
         { field: "qualification", op: "eq", value: "degree" },

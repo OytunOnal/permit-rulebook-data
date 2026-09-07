@@ -19,7 +19,7 @@ const fetcher: Fetcher = async (url) => {
   try {
     const res = await fetch(url, {
       redirect: "follow",
-      headers: { "user-agent": "visa-rules-watch/0.1 (+https://github.com/visa-rules) change-detection" },
+      headers: { "user-agent": "permit-rulebook-watch/0.1 (+https://github.com/OytunOnal/permit-rulebook-data) change-detection" },
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) return { ok: false, status: res.status, error: `HTTP ${res.status}` };

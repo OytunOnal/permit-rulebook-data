@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://visa-rules.dev/schema/ruleset.schema.json",
-  "title": "Visa Rules dataset",
+  "$id": "https://permitrulebook.com/schema/ruleset.schema.json",
+  "title": "Permit Rulebook dataset",
   "type": "object",
   "required": [
     "schema_version",
@@ -744,7 +744,8 @@
         "name",
         "kind",
         "criteria",
-        "info_url"
+        "info_url",
+        "scope"
       ],
       "additionalProperties": false,
       "properties": {
@@ -784,6 +785,9 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "scope": {
+          "$ref": "#/$defs/routeScope"
         },
         "statements": {
           "type": "array",
@@ -847,6 +851,40 @@
           }
         }
       ]
+    },
+    "routeScope": {
+      "type": "object",
+      "description": "How much of this route the interview actually asks about, declared in plain words. Absence is not allowed: a route with no coverage value would render as silence, and silence on this question reads as \"we asked everything\". The value is authored by a curator from data/exclusions.md and the route's own readings; the reason beside it is our own words about our own interview, and it never states what the law requires — the conditions it points at carry their own quotes on the same page.",
+      "required": [
+        "value",
+        "reason",
+        "not_asked"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "enum": [
+            "every-deciding-rule-asked",
+            "some-conditions-stated-not-asked",
+            "rules-quoted-nothing-asked"
+          ],
+          "description": "every-deciding-rule-asked: every rule this route turns on is a question the interview asks. some-conditions-stated-not-asked: the page states conditions — the authority's, or our own reading — that decide the case and the interview does not ask about; it names which. rules-quoted-nothing-asked: the route's rules are quoted and shown, and nothing on it is asked."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 40,
+          "description": "The curator's one line beside the value: what is asked here and what is not, in the words the page prints. The floor is a sentence's worth of characters — it is there so an empty string or a single word cannot satisfy a required field, not as a style rule."
+        },
+        "not_asked": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "uniqueItems": true,
+          "description": "The statement and reading ids this route names to the reader and never asks about. Held against data/exclusions.md's machine-readable twin in both directions: every limb the file records must be named here, and every id named here must exist on the route."
+        }
+      }
     },
     "routeReading": {
       "type": "object",

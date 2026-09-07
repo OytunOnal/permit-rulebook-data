@@ -38,7 +38,7 @@ jobs:
 
       - name: Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)
         run: |
-          git config user.name "visa-rules-watch"
+          git config user.name "permit-rulebook-watch"
           git config user.email "watch@users.noreply.github.com"
           git add watch/state.json watch/flags || true
           git diff --cached --quiet || git commit -m "watch: state update $(date -u +%F)"

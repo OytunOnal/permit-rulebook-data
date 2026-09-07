@@ -196,12 +196,71 @@ export interface UnsourcedReason {
   note?: string;
 }
 
+/**
+ * A route's Scope statement: how much of it the interview actually decides,
+ * said in plain words, plus the limbs it does not ask.
+ *
+ * The value a stranger reads on the route page and on the results card. It is a
+ * declared fact per route, authored by a person and never derived by a test:
+ * the curator writes it from `data/exclusions.md` and the route's own readings,
+ * and the schema refuses a route without it — absence would render as silence,
+ * and silence on this question reads as "we asked everything".
+ *
+ * It is called `scope`, not `coverage`: "coverage" already names the watch's
+ * both-way check over the watchlist, and it sits on the avoid-list of Prose
+ * provenance in the glossary (Standards review, 2026-09-07).
+ *
+ * The words are deliberately not ours. "Fully modelled" shipped on the first
+ * route-page mock and the isolated critique took it apart: pipeline vocabulary
+ * a stranger cannot parse, worn as a badge in the criteria-met green, retracted
+ * by its own next sentence (B3, 2026-09-07).
+ */
+export const SCOPE_VALUES = [
+  /** Every rule this route turns on is a question the interview asks. */
+  "every-deciding-rule-asked",
+  /** The page states conditions — the authority's, or our own reading — that
+   * decide the case and the interview does not ask about. It names which. */
+  "some-conditions-stated-not-asked",
+  /** The route's rules are quoted and shown; nothing on it is asked. */
+  "rules-quoted-nothing-asked",
+] as const;
+
+export type ScopeValue = (typeof SCOPE_VALUES)[number];
+
+export interface RouteScope {
+  value: ScopeValue;
+  /**
+   * The limbs this route names to the reader and never asks about — statement
+   * ids and reading ids, exactly as the page prints them.
+   *
+   * It exists because the prose reason alone cannot be checked against
+   * anything: the first cut of the invariant read `named in exclusions.md OR
+   * states something unasked`, whose right side is true of every route the
+   * dataset ships, so nothing was ever compared to `data/exclusions.md`
+   * (Standards review, 2026-09-07). With the limbs named as ids, the file's own
+   * machine-readable twin and the page can be held to each other in both
+   * directions.
+   */
+  not_asked: string[];
+  /**
+   * The curator's one line beside the value: what is asked here and what is
+   * not. Our own words about our own interview — declared ours in
+   * `renderableTexts`, like a Route reading, because being here IS the
+   * attribution. It never states what the law requires: the conditions it
+   * points at carry their own quotes on the same page.
+   */
+  reason: string;
+}
+
 export interface Route {
   id: string;
   name: string;
   kind: "res-work" | "seek" | "self-employed";
   summary?: string;
   info_url: string;
+  /** What the interview asks of this route, declared. Required: a route with
+   * no scope statement fails validation (s6 decision 3). */
+  scope: RouteScope;
   criteria: Criterion[];
   /** Plain-language conditions the authority applies that the interview does
    * NOT ask — stated on the card so "criteria met" never overpromises. */

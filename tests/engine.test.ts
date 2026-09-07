@@ -226,7 +226,9 @@ describe("provenance and meta", () => {
 
   it("meta reports the newest retrieved_at across all value kinds", () => {
     expect(datasetMeta(dataset)).toEqual({
-      schema_version: "0.4.0",
+      // 0.5.0 since s6: a route carries a required coverage value, which is a
+      // breaking change to the public contract.
+      schema_version: "0.5.0",
       dataset_version: "2026.09.07",
       // A route statement is a provenanced value like any other — the Dutch
       // orientation-year requirements, read by a person on 2026-09-07, are

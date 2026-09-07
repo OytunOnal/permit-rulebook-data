@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.4.0",
+  "schema_version": "0.5.0",
   "dataset_version": "2026.09.07",
   "fields": [
     {
@@ -602,6 +602,14 @@
           "kind": "res-work",
           "summary": "A lower salary threshold, for occupations on Germany's shortage list — IT, engineering, health and others.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides the shortage-occupation Blue Card is a question you answer, including whether the occupation is on Germany's list; the two conditions the authority states — the six-month job offer, and the licence where the profession is regulated — are listed with the rules below and never asked.",
+            "not_asked": [
+              "job-offer-of-at-least-six-months",
+              "licence-for-a-regulated-profession"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -708,6 +716,14 @@
           "kind": "res-work",
           "summary": "The standard EU Blue Card: a recognised university degree and a salary above the general threshold, in any qualified job.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides the general Blue Card is a question you answer, the salary included; two conditions the authority states — the job offer of at least six months, and the licence where the profession is regulated — are listed with the rules below and never asked.",
+            "not_asked": [
+              "job-offer-of-at-least-six-months",
+              "licence-for-a-regulated-profession"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -809,6 +825,13 @@
           "kind": "res-work",
           "summary": "Your university degree is recognised in Germany and the job matches it. There is no salary threshold — but from age 45 an extra salary requirement applies, or proof of pension provision.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; one condition the authority states — that the job can be done with the qualification you hold — is listed with the rules below and never asked.",
+            "not_asked": [
+              "a-job-the-degree-can-do"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -889,6 +912,14 @@
           "kind": "res-work",
           "summary": "Your vocational training is recognised in Germany and you have a job offer that matches it. There is no salary threshold — but from age 45 an extra salary requirement applies.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Fachkraft/fachkraft-node.html",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; two things no page we watch states for this route — how much German the job itself needs, and enough income and health cover to live here — are shown below as our own reading and never asked.",
+            "not_asked": [
+              "german-for-the-job-is-our-expectation",
+              "livelihood-and-health-cover-are-our-expectation"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -967,6 +998,14 @@
           "kind": "res-work",
           "summary": "No German recognition needed: two years of recent skilled work in the last five, plus either a qualification your home country officially recognises, or experience in IT.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/FachkraefteOhneAusbildung/fachkraefte-ohne-ausbildung-node.html",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; the recognition your own country must give the qualification is listed with the rules below and never asked, and the collective-agreement exception the authority mentions is not asked either.",
+            "not_asked": [
+              "salary-set-aside-under-a-collective-agreement",
+              "qualification-recognised-where-it-was-earned"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -1113,6 +1152,13 @@
           "kind": "res-work",
           "summary": "A research institution — from a university to a company's research department — has agreed to host you and to cover the costs. The permit runs for at least a year, and you may stay 18 months afterwards to look for work.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; one condition the authority states — the hosting agreement with a research facility — is listed with the rules below and never asked.",
+            "not_asked": [
+              "hosting-agreement-with-a-research-facility"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -1184,6 +1230,14 @@
           "kind": "res-work",
           "summary": "Your company moves you to its German branch for more than 90 days, as a manager, specialist or trainee. Up to three years, or one year for trainees.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — the transfer of more than ninety days in a manager, specialist or trainee role, and the six months already with the company — are listed with the rules below and never asked.",
+            "not_asked": [
+              "transfer-longer-than-ninety-days",
+              "six-months-with-the-company-before-the-transfer"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -1264,6 +1318,11 @@
           "kind": "seek",
           "summary": "A one-year card to come and look for work, with part-time work of up to 20 hours a week. If your qualification is fully recognised in Germany you get it directly; otherwise you need six points from the official table. Having an offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://handbookgermany.de/en/opportunity-card",
+          "scope": {
+            "value": "every-deciding-rule-asked",
+            "reason": "Every rule that decides this route is a question you answer, the points included. What the card lets you do once you hold it — the weekly hour limit — sits beside the rules below, and it is a limit on the card rather than a condition of getting it, so nothing this route turns on goes unasked.",
+            "not_asked": []
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -1474,6 +1533,14 @@
           "kind": "res-work",
           "summary": "For people who earned a master's-level degree in France and have a contract of more than three months. The card lasts as long as the contract, up to four years, and the job does not have to be advertised first.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; the contract length the authority states is listed with the rules below and never asked, and which card fits a degree earned outside France is our own reading, not the authority's words.",
+            "not_asked": [
+              "employment-contract-of-more-than-three-months",
+              "foreign-degrees-belong-on-the-blue-card"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -1581,6 +1648,14 @@
           "kind": "res-work",
           "summary": "A contract of at least six months, plus a higher-education diploma of three years or more — or five years of comparable experience. Up to four years, and the job does not have to be advertised first.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; the six-month contract the authority states is listed with the rules below and never asked, and the shorter experience France allows for some listed professions is not checked here — this page judges you on the general rule.",
+            "not_asked": [
+              "employment-contract-of-at-least-six-months",
+              "listed-professions-not-modelled"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -1704,6 +1779,16 @@
           "kind": "res-work",
           "summary": "Your group moves you to France for an assignment of more than a year, in a senior or expert role. Up to three years, and it cannot be renewed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — six months with the company group, an assignment lasting more than a year, and a senior or expert post — are listed with the rules below and never asked.",
+            "not_asked": [
+              "six-months-with-the-group-already",
+              "an-assignment-of-more-than-a-year",
+              "a-senior-or-expert-post",
+              "resources-proof-tracks-the-minimum-wage"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -1814,6 +1899,14 @@
           "kind": "res-work",
           "summary": "For a job at a company France officially recognises as innovative, in work tied to its research and development. The salary threshold is the same as the qualified-employee card, and no French degree is needed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — that the work is tied to the company's research and development, and the recognition the company itself must hold — are listed with the rules below and never asked.",
+            "not_asked": [
+              "work-tied-to-the-research-and-development-project",
+              "a-young-innovative-company-or-one-the-ministry-recognises"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -1921,6 +2014,14 @@
           "kind": "res-work",
           "summary": "For an intra-group move to France where the French company issues your contract. Unlike the ICT card, the contract is French and the salary rule is the talent threshold.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — three months with the company group, and the move between companies of that group — are listed with the rules below and never asked.",
+            "not_asked": [
+              "three-months-with-the-group-already",
+              "a-move-inside-one-company-or-group"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -2034,6 +2135,17 @@
           "kind": "res-work",
           "summary": "A contract or firm offer of at least six months, plus a higher-education qualification of three years or more — or five years of comparable experience. Spain's large-companies unit decides in 20 working days, and if it does not answer in time the application counts as approved. A lower salary applies if you earned your qualification in the last three years.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; the unit that handles the application is listed with the rules below and never asked, and two things the source adds — the shortage-occupation list behind the lower salary, and Spain's shorter experience route for some professions — are not checked here.",
+            "not_asked": [
+              "reduced-also-for-shortage-occupations",
+              "handled-by-the-large-companies-unit",
+              "reduced-also-for-a-qualification-earned-in-the-last-three-years",
+              "it-professionals-limb-not-modelled",
+              "lower-salary-applied-with-no-institution-limit"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -2226,6 +2338,13 @@
           "kind": "res-work",
           "summary": "Spain's national fast-track for higher-education professionals, or people with equivalent experience, hired by a qualifying employer. One salary threshold, with no reduced version, decided in 20 working days.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; one condition the authority states — that Spain's large-companies unit handles the application and the Directorate-General for Migration grants it — is listed with the rules below and never asked.",
+            "not_asked": [
+              "handled-by-the-large-companies-unit"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -2348,6 +2467,14 @@
           "kind": "res-work",
           "summary": "Your group moves you to its Spanish entity as a manager, specialist or trainee. There is no salary threshold beyond the collective agreement for the job. Up to three years, or one for trainees.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/trabajadores",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — a real business activity in the company and its group, and three months of unbroken prior work with it — are listed with the rules below and never asked.",
+            "not_asked": [
+              "a-real-business-behind-the-company",
+              "three-months-with-the-group-before-the-move"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -2473,6 +2600,13 @@
           "kind": "res-work",
           "summary": "A Spanish university, R&D centre or business school has agreed to host you. Three years, plus a year afterwards to look for work or start a business.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/investigadores",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; one condition the authority states — the hosting agreement or contract with the research body — is listed with the rules below and never asked.",
+            "not_asked": [
+              "hosting-agreement-or-contract-with-the-research-body"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -2551,6 +2685,16 @@
           "kind": "res-work",
           "summary": "The Dutch highly skilled migrant permit. No degree is needed — the salary is what qualifies you. A lower salary counts if, within the last three years, you graduated from a Dutch university or research institution, or from a foreign institution the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — pay that matches what the job normally pays, an employer on the recognised-sponsor register, and the healthcare register where it applies — are listed with the rules below and never asked, and the orientation year permit that also opens the lower salary is never asked about.",
+            "not_asked": [
+              "reduced-also-for-orientation-year-permit-holders",
+              "salary-must-match-the-market-rate",
+              "employer-must-be-a-recognised-sponsor",
+              "big-register-for-healthcare-professions"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -2740,6 +2884,17 @@
           "kind": "res-work",
           "summary": "The same permit with a lower salary for people under 30 — and lower still if, within the last three years, you graduated from a Dutch university or research institution, or from a foreign institution the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — pay that matches what the job normally pays, an employer on the recognised-sponsor register, and the healthcare register where it applies — are listed with the rules below and never asked, and neither the orientation year permit that also opens the lower salary nor what happens when you change employer after thirty is asked about.",
+            "not_asked": [
+              "reduced-also-for-orientation-year-permit-holders",
+              "salary-must-match-the-market-rate",
+              "higher-amount-after-a-change-of-employer-past-thirty",
+              "employer-must-be-a-recognised-sponsor",
+              "big-register-for-healthcare-professions"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -2935,6 +3090,15 @@
           "kind": "res-work",
           "summary": "A contract of at least six months, plus a higher-education diploma of three years or more — or five years of relevant experience, three years if you work in information technology. Your employer does not have to be a recognised sponsor. A lower salary counts for a degree holder who graduated in the last three years from a Dutch institution, or from a foreign one the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — the contract of at least six months, and the authorisation to practise a regulated profession — are listed with the rules below and never asked, and the extension and employer-change cases that also open the lower salary are not covered by the questions.",
+            "not_asked": [
+              "reduced-also-on-extension-or-employer-change",
+              "employment-contract-valid-for-six-months",
+              "permission-to-practise-a-regulated-profession"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -3166,6 +3330,15 @@
           "kind": "res-work",
           "summary": "Your company moves you to the Netherlands as a manager, specialist or trainee. The salary has to reach the highly skilled migrant level for your age. Up to three years, or one for trainees.",
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — three months already with the company outside Europe, the manager, specialist or trainee role, and the authorisation to practise a protected profession — are listed with the rules below and never asked.",
+            "not_asked": [
+              "three-months-with-the-company-outside-the-union",
+              "a-manager-specialist-or-trainee-post",
+              "permission-to-practise-a-protected-profession"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -3322,6 +3495,15 @@
           "kind": "res-work",
           "summary": "A contract or hosting agreement with a Dutch research institution the immigration service (IND) recognises as a sponsor. Up to five years.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — a research institute on the recognised-sponsor register, and a degree giving access to a doctoral programme — are listed with the rules below and never asked, and the grant or own funds that can stand in for a salary are not asked about either.",
+            "not_asked": [
+              "other-income-can-meet-this",
+              "the-institute-must-be-a-recognised-sponsor",
+              "a-degree-that-opens-a-doctorate"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",
@@ -3426,6 +3608,17 @@
           "kind": "seek",
           "summary": "A one-year permit to look for work — any job, no separate work permit, and it cannot be extended. The Dutch immigration service (IND) grants it after certain studies, doctorates or research finished in the three years before you apply; its list of qualifying programmes and institutions is longer than the two cases asked about here, so read its own page before ruling yourself out. Having a job offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+          "scope": {
+            "value": "some-conditions-stated-not-asked",
+            "reason": "Of the five situations the authority lists, the two that turn on where and when you studied are asked here; three are not — research carried out in the Netherlands, an Erasmus Mundus master's, and a permit you already hold or have held — and three further conditions are listed with the rules below and never asked.",
+            "not_asked": [
+              "no-second-orientation-year",
+              "turkish-citizens-differ",
+              "the-research-finished-within-three-years",
+              "english-where-the-institution-was-abroad",
+              "two-of-five-situations-modelled"
+            ]
+          },
           "criteria": [
             {
               "field": "citizenship",

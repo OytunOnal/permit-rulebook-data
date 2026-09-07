@@ -1,7 +1,7 @@
 {
-  "name": "visa-rules",
+  "name": "permit-rulebook-data",
   "version": "0.1.0",
-  "description": "Open, dated, source-quoted work-permit rules dataset + deterministic eligibility engine",
+  "description": "Permit Rulebook data — every route, quoted and dated: an open, source-quoted work-permit ruleset for Europe plus the deterministic engine that evaluates it",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",

@@ -154,8 +154,11 @@ describe("s5e — what is ours is marked as ours", () => {
       // authority demands of an applicant is the authority's position, and it
       // now carries the authority's words or is declared ours below.
       with_provenance: 92,
-      // Ours, declared as ours and shown to the reader as ours.
-      ours: 8,
+      // Ours, declared as ours and shown to the reader as ours: 8 route
+      // readings, plus the 23 scope-statement reasons s6 authored — one per route,
+      // our own words about our own interview, printed as the page's scope
+      // statement.
+      ours: 31,
       // Standing on a declared, dated reason no quote could be found — the one
       // exception, and an attributable decision rather than a blank. It is
       // zero: the last one was the es-blue-card shortage-occupation caveat,

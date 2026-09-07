@@ -217,6 +217,14 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
       });
       // A reading is ours because of where it lives, and for no other reason.
       (route.readings ?? []).forEach((r, i) => ours(`${p}/readings/${i}/text`, r.text));
+      // The scope statement's reason is the same kind of sentence in a
+      // different slot: our own words about our own interview, printed at the
+      // top of the route page. It is walked here so a claim about the law
+      // cannot be smuggled into it under cover of the slot being new (s6).
+      // Not optional-chained: `scope` is schema-required, and chaining it would
+      // let a route with no scope statement pass the gate silently rather than
+      // fail it (Standards review, 2026-09-07).
+      ours(`${p}/scope/reason`, route.scope.reason);
       walkCriteria(route.criteria, p);
     }
 
@@ -264,6 +272,10 @@ export function proseProvenance(dataset: Dataset): ProseProvenance {
         if (s.unsourced) declared_unsourced++;
       }
       ours += (route.readings ?? []).length;
+      // The scope statement's reason is ours, declared and rendered as ours —
+      // so it is counted where the other sentences of ours are counted. A
+      // measurement that stops moving when the data moves stops being one.
+      if (route.scope.reason) ours++;
     }
   return { with_provenance, ours, declared_unsourced };
 }

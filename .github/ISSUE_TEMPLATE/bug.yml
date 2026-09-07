@@ -1,0 +1,49 @@
+name: Bug — a number, a quote or a page is wrong
+description: Permit Rulebook does something it promised not to do.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every route, quoted and dated. If a value here disagrees with the
+        official page, that is the most useful thing you can tell us — and the
+        fastest to fix, because the quote and the read date are on the page
+        beside the number.
+  - type: input
+    id: page
+    attributes:
+      label: Where you saw it
+      description: The route page, or the results screen. A link is ideal.
+      placeholder: https://permitrulebook.com/germany/eu-blue-card-general
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What the page says
+      description: Copy the value, the quote or the sentence as it appears.
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: What the official source says
+      description: >
+        The authority's own wording, and the link you read it on. If you can,
+        add the date you read it — that is the field we will be updating.
+    validations:
+      required: true
+  - type: input
+    id: read_on
+    attributes:
+      label: The day you read the source
+      description: ISO form, please — YYYY-MM-DD.
+      placeholder: "2026-09-07"
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you file
+      options:
+        - label: I read the official source myself, not a summary of it.
+          required: true

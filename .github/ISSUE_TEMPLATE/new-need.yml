@@ -1,0 +1,42 @@
+name: New need — a route, a country or a fact that is not here yet
+description: Something the data does not cover, and you need it to.
+title: "[new-need] "
+labels: ["new-need"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before you file: `data/exclusions.md` lists every route that was
+        researched and deliberately left out, with the reason. If yours is
+        there, say so here and say what has changed — that is a stronger case
+        than a fresh request.
+  - type: textarea
+    id: need
+    attributes:
+      label: What is missing
+      description: The route, the country, the field, or the export.
+    validations:
+      required: true
+  - type: textarea
+    id: who
+    attributes:
+      label: Who needs it, and for what
+      description: >
+        The situation a person is in when this gap costs them something. One
+        concrete case beats a category.
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: The official source, if you have it
+      description: >
+        A route only ships when its rules can be quoted from an official page
+        with the date they were read. A link here makes it a much shorter job.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you file
+      options:
+        - label: I checked data/exclusions.md for this route.
+          required: true
