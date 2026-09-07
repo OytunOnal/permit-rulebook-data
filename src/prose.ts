@@ -1,8 +1,34 @@
 import type { Criterion, Dataset } from "./types.js";
 
 /**
- * Every sentence the dataset ships that can reach a screen, and what provenance
- * — if any — sits beside it.
+ * What a piece of renderable text DECLARES itself to be. The gate reads this,
+ * never a surface trace of it.
+ *
+ * The gate keyed on quotation marks until this review: `if (t.ours ||
+ * !QUOTATION_MARK.test(t.text)) continue`. A check that reads a surface trace
+ * is passed by editing the trace, and the agent learns to edit it without
+ * meaning to — a rule enforced by a sentence in an error string ("Deleting the
+ * quotation marks is not one of the options") is not enforced. It missed the
+ * concrete case it was written for: "Recognised by the state where it was
+ * acquired — German recognition not required (§ 6 BeschV)" cites a statute,
+ * carries no source, contains no quotation mark, and passed.
+ */
+export type RenderableKind =
+  /** The authority's position, in our words or its own. It must carry a
+   * covering source, or a declared, dated reason there is none. */
+  | "authority"
+  /** Declared ours in the data — a route reading, or the prose beside a
+   * declared absence. Being there IS the attribution. */
+  | "ours"
+  /** A name with no truth claim to source: a route name, an option label, a
+   * threshold's row label, a statutory citation, a field's own wording. The
+   * kind check has nothing to say about these, so the additive quotation-mark
+   * check is the only one that reaches them — which is why it is kept. */
+  | "label";
+
+/**
+ * Every sentence the dataset ships that can reach a screen, the kind it
+ * declares itself to be, and what provenance — if any — sits beside it.
  *
  * The product's promise is that every value carries its official source, a
  * verbatim quote and the date it was read. Numbers kept that promise; sentences
@@ -12,21 +38,20 @@ import type { Criterion, Dataset } from "./types.js";
  * not see one of them. Three times in two days a note turned out to be doing a
  * rule's job (s5e).
  *
- * The gate below is deliberately written over the TEXT, not over the fields:
- * moving a sentence to another slot must not be a way to silence it.
+ * The walk is deliberately written over the TEXT, not over the fields: moving a
+ * sentence to another slot must not be a way to silence it.
  */
 export interface RenderableText {
   /** Where it lives, in dataset coordinates. */
   path: string;
   text: string;
+  /** What this slot declares the text to be. */
+  kind: RenderableKind;
   /** The words of the authority this sentence quotes, where one is attached. */
   quote?: string;
-  /**
-   * The dataset says this sentence is OURS. The only honest alternative to a
-   * source: an attributable decision, recorded in the data and shown on the
-   * card, rather than a blank a rule taught an agent to fill.
-   */
-  ours: boolean;
+  /** An `authority` text may stand without a quote only behind a declared,
+   * dated reason there is none — the reason a card prints to the reader. */
+  declared_absence?: boolean;
 }
 
 /**
@@ -38,12 +63,25 @@ const QUOTATION_MARK = /["“”„‟«»‹›]/;
 /** Balanced runs between those marks: what the reader is being told was said. */
 const QUOTED_SPAN = /"([^"]+)"|“([^”]+)”|„([^“”]+)[“”]|«\s*([^»]+?)\s*»/g;
 
+/** The same runs, marks included, so removing them leaves any lone mark behind. */
+const SPAN_WITH_MARKS = /"[^"]+"|“[^”]+”|„[^“”]+[“”]|«\s*[^»]+?\s*»/g;
+
 const flatten = (s: string): string => s.replace(/\s+/g, " ").trim();
 
 export function quotedSpans(text: string): string[] {
   const out: string[] = [];
   for (const m of text.matchAll(QUOTED_SPAN)) out.push(flatten(m[1] ?? m[2] ?? m[3] ?? m[4] ?? ""));
   return out.filter(Boolean);
+}
+
+/**
+ * A quotation mark left over once every balanced run is taken away — one a
+ * reader cannot read back to anything. Exported because the page has to ask
+ * the same question of the rendered card, and it was re-deriving `QUOTED_SPAN`
+ * two lines below importing `quotedSpans` to do it (review 2026-09-07).
+ */
+export function hasUnbalancedQuotationMark(text: string): boolean {
+  return QUOTATION_MARK.test(text.replace(SPAN_WITH_MARKS, " "));
 }
 
 /**
@@ -55,15 +93,17 @@ export interface QuotationOffence extends RenderableText {
 }
 
 const HONEST_OPTIONS =
-  'give it a source (source_url, quote, retrieved_at) whose quote contains those words, ' +
-  'or move the sentence to a route statement with kind: "modelling", which says in the ' +
-  "data and on the card that the words are ours. Deleting the quotation marks is not one " +
-  "of the options.";
+  "give it a source (source_url, quote, retrieved_at) whose quote covers what it says, " +
+  "or move the sentence to the route's `readings`, which says in the data and on the card " +
+  "that the words are ours. Deleting the quotation marks is not one of the options — the " +
+  "gate reads the kind the slot declares, not the punctuation.";
 
 export function offenceMessage(o: QuotationOffence): string {
   const why =
     o.reason === "no-source"
-      ? "quotes an authority but carries no source_url and no retrieved_at"
+      ? o.kind === "authority"
+        ? "states the authority's position but carries no source_url and no retrieved_at, and declares no dated reason it has none"
+        : "quotes an authority but carries no source_url and no retrieved_at"
       : o.reason === "unbalanced"
         ? "carries a quotation mark that opens nothing a reader can read back"
         : "quotes words its own source does not contain — a neighbouring quote is not provenance";
@@ -77,19 +117,30 @@ export function offenceMessage(o: QuotationOffence): string {
  */
 export function renderableTexts(dataset: Dataset): RenderableText[] {
   const out: RenderableText[] = [];
-  const add = (path: string, text: string | undefined, extra: Partial<RenderableText> = {}) => {
-    if (text) out.push({ path, text, ours: false, ...extra });
+  /** A name the dataset gives something — the default, because most strings a
+   * card renders are names, and a slot that means more than that has to say
+   * which kind it is at the call site. */
+  const label = (path: string, text: string | undefined, extra: Partial<RenderableText> = {}) => {
+    if (text) out.push({ path, text, kind: "label", ...extra });
+  };
+  /** The authority's position, in our words or its own. */
+  const authority = (path: string, text: string | undefined, extra: Partial<RenderableText> = {}) => {
+    if (text) out.push({ path, text, kind: "authority", ...extra });
+  };
+  /** Declared ours in the data. */
+  const ours = (path: string, text: string | undefined) => {
+    if (text) out.push({ path, text, kind: "ours" });
   };
 
   dataset.fields.forEach((f, i) => {
     const p = `/fields/${i}`;
-    add(`${p}/label`, f.label);
-    add(`${p}/short_label`, f.short_label);
-    add(`${p}/subject`, f.subject);
-    add(`${p}/learn/label`, f.learn?.label);
+    label(`${p}/label`, f.label);
+    label(`${p}/short_label`, f.short_label);
+    label(`${p}/subject`, f.subject);
+    label(`${p}/learn/label`, f.learn?.label);
     (f.options ?? []).forEach((o, j) => {
-      add(`${p}/options/${j}/label`, o.label);
-      add(`${p}/options/${j}/short`, o.short);
+      label(`${p}/options/${j}/label`, o.label);
+      label(`${p}/options/${j}/short`, o.short);
     });
   });
 
@@ -101,34 +152,32 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
    * which no source quote covered (found by this gate, 2026-09-07).
    */
   const addBasis = (path: string, v: { legal_basis?: string; quote: string } | undefined) => {
-    if (v) add(`${path}/legal_basis`, v.legal_basis, { quote: v.quote });
+    if (v) label(`${path}/legal_basis`, v.legal_basis, { quote: v.quote });
   };
 
   const walkCriteria = (criteria: Criterion[], base: string): void => {
     criteria.forEach((c, i) => {
       const p = `${base}/criteria/${i}`;
       // One rule throughout: a quote covers the thing it is attached to, and
-      // nothing else. Prose ABOUT the criterion is covered by the criterion's
-      // own source; the threshold's quote sits beside an amount and covers the
-      // amount's own label and citation, below. Lending a quote sideways is
-      // how a claim gets provenance it never earned.
+      // nothing else. The threshold's quote sits beside an amount and covers
+      // the amount's own label and citation, below. Lending a quote sideways
+      // is how a claim gets provenance it never earned.
       const quote = c.source?.quote;
-      add(`${p}/note`, c.note, { quote });
-      add(`${p}/short_reason`, c.short_reason, { quote });
+      label(`${p}/short_reason`, c.short_reason, { quote });
       addBasis(`${p}/source`, c.source);
       if (c.op === "gte") {
         // The label belongs to the amount and renders on its line, so the
         // amount's quote is the provenance beside it — the same rule as the
         // citation below. Provenance covers the value it is attached to and
         // nothing else; that is what stops a quote being lent to a sentence.
-        add(`${p}/threshold_label`, c.threshold_label, { quote: c.threshold.quote });
+        label(`${p}/threshold_label`, c.threshold_label, { quote: c.threshold.quote });
         addBasis(`${p}/threshold`, c.threshold);
       }
       if (c.op === "points") { addBasis(`${p}/required`, c.required); addBasis(`${p}/table`, c.table); }
       if (c.op === "any") {
-        add(`${p}/label`, c.label, { quote });
+        label(`${p}/label`, c.label, { quote });
         c.paths.forEach((path, j) => {
-          add(`${p}/paths/${j}/label`, path.label, { quote });
+          label(`${p}/paths/${j}/label`, path.label, { quote });
           walkCriteria(path.criteria, `${p}/paths/${j}`);
         });
       }
@@ -138,24 +187,33 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
   for (const country of dataset.countries)
     for (const route of country.routes) {
       const p = `/countries/${country.code}/routes/${route.id}`;
-      add(`${p}/name`, route.name);
-      add(`${p}/summary`, route.summary);
-      (route.preconditions ?? []).forEach((t, i) => add(`${p}/preconditions/${i}`, t));
+      label(`${p}/name`, route.name);
+      label(`${p}/summary`, route.summary);
+      (route.preconditions ?? []).forEach((t, i) => label(`${p}/preconditions/${i}`, t));
       (route.statements ?? []).forEach((s, i) => {
-        add(`${p}/statements/${i}/text`, s.text, { quote: s.source?.quote, ours: s.kind === "modelling" });
-        // The prose beside an absent quote explains what was tried. It is ours
-        // by definition — and it is held to the same rule, so nobody can
-        // smuggle a claim about the law into the one field that describes a
-        // failure to find one.
-        add(`${p}/statements/${i}/unsourced/note`, s.unsourced?.note);
+        // A statement IS the authority's position, by the glossary's own
+        // definition of the term. It stands on a quote, or on the declared and
+        // dated reason there is none, which the card prints to the reader.
+        authority(`${p}/statements/${i}/text`, s.text, {
+          quote: s.source?.quote, declared_absence: s.unsourced !== undefined,
+        });
+        // The prose beside an absent quote explains what was tried. It is not
+        // a reading — it renders under a heading that says the official wording
+        // was NOT found — and it carries no provenance of its own, so it sits
+        // with the slots that declare no kind and the quotation-mark check is
+        // the one that reaches it. Nobody smuggles a claim about the law into
+        // the one field that describes a failure to find one.
+        label(`${p}/statements/${i}/unsourced/note`, s.unsourced?.note);
         addBasis(`${p}/statements/${i}/source`, s.source);
       });
+      // A reading is ours because of where it lives, and for no other reason.
+      (route.readings ?? []).forEach((r, i) => ours(`${p}/readings/${i}/text`, r.text));
       walkCriteria(route.criteria, p);
     }
 
   (dataset.notices ?? []).forEach((n, i) => {
-    add(`/notices/${i}/title`, n.title, { quote: n.source.quote });
-    add(`/notices/${i}/body`, n.body, { quote: n.source.quote });
+    authority(`/notices/${i}/title`, n.title, { quote: n.source.quote });
+    authority(`/notices/${i}/body`, n.body, { quote: n.source.quote });
     addBasis(`/notices/${i}/source`, n.source);
   });
 
@@ -163,18 +221,77 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
 }
 
 /**
- * The gate: nothing reaches the screen in quotation marks without provenance
- * beside it that actually covers the words being quoted.
+ * Where the dataset's sentences stand, counted. Step 1 of the slice asked for
+ * the number the notes moved to, "reported, not hidden" — so this is printed by
+ * `npm run check` beside the coverage and quote-fidelity lines, and pinned by a
+ * test. A count only a test sees is not reported to anybody.
+ */
+export interface ProseProvenance {
+  /** Sentences an authority is shown to have said: a criterion's own source,
+   * or a statement standing on a quote. */
+  with_provenance: number;
+  /** Ours, declared as ours and rendered as ours: a route reading. */
+  ours: number;
+  /** Statements standing on a declared, dated reason no quote could be found —
+   * the one exception, and an attributable decision rather than a blank. */
+  declared_unsourced: number;
+}
+
+export function proseProvenance(dataset: Dataset): ProseProvenance {
+  let with_provenance = 0;
+  let ours = 0;
+  let declared_unsourced = 0;
+  const walk = (criteria: Criterion[]): void => {
+    for (const c of criteria) {
+      if (c.source) with_provenance++;
+      if (c.op === "any") for (const p of c.paths) walk(p.criteria);
+    }
+  };
+  for (const country of dataset.countries)
+    for (const route of country.routes) {
+      walk(route.criteria);
+      for (const s of route.statements ?? []) {
+        if (s.source) with_provenance++;
+        if (s.unsourced) declared_unsourced++;
+      }
+      ours += (route.readings ?? []).length;
+    }
+  return { with_provenance, ours, declared_unsourced };
+}
+
+/**
+ * The gate, in two parts, and it is worth being exact about which does what.
  *
- * Written at the symptom level on purpose. "The field is present" would have
- * been satisfied by a source attached anywhere near a sentence it does not
- * support, and it would have missed every slot nobody thought of — which is
- * the failure mode this whole slice is about.
+ * The FIRST part keys on the kind the slot declares. Text that declares itself
+ * the authority's position must carry a source, or the declared and dated
+ * reason it carries none — whether or not it contains a quotation mark. This is
+ * the part that catches a sentence like "German recognition not required (§ 6
+ * BeschV)": it states what the law requires, so it needs the law beside it.
+ *
+ * The SECOND part is additive, and it is the quotation-mark test, kept. Kind
+ * alone cannot reach the slots that declare none — a route's summary, a
+ * criterion's `short_reason`, a threshold's row label, a statutory citation, a
+ * field's own wording. Nothing in the data says what those are, so the only
+ * check left is the one a reader would make: whatever you put between
+ * quotation marks, somebody has to be shown to have said.
+ *
+ * Both are written over the TEXT, not the fields: moving a sentence to another
+ * slot is not a way to silence either.
  */
 export function quotedWithoutProvenance(dataset: Dataset): QuotationOffence[] {
   const out: QuotationOffence[] = [];
   for (const t of renderableTexts(dataset)) {
-    if (t.ours || !QUOTATION_MARK.test(t.text)) continue;
+    // Declared ours. The declaration is the attribution, and it is recorded in
+    // the data and shown on the card — never a blank a rule taught somebody to
+    // leave.
+    if (t.kind === "ours") continue;
+
+    if (t.kind === "authority" && !t.quote && !t.declared_absence) {
+      out.push({ ...t, reason: "no-source" });
+      continue;
+    }
+
+    if (!QUOTATION_MARK.test(t.text)) continue;
     const spans = quotedSpans(t.text);
     if (!spans.length) { out.push({ ...t, reason: "unbalanced" }); continue; }
     if (!t.quote) { out.push({ ...t, reason: "no-source" }); continue; }

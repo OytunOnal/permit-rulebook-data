@@ -165,13 +165,10 @@ describe("a statement in the reader's favour is never a requirement", () => {
     for (const route of routes())
       for (const s of routeStatements(route)) {
         const where = `${route.id}:${s.id}`;
-        if (s.kind === "modelling") {
-          // s5e's third kind: ours, so it cites nobody and explains no
-          // absence. Anything else would let a modelling label launder a
-          // borrowed quote.
-          expect(s.source, where).toBeUndefined();
-          expect(s.unsourced, where).toBeUndefined();
-        } else if (s.source) {
+        // No kind to exempt: what is ours is a `route.readings` entry now, a
+        // construct with nowhere to put a source at all, so a label can no
+        // longer launder a borrowed quote (review 2026-09-07).
+        if (s.source) {
           expect(s.source.quote.length, where).toBeGreaterThan(4);
           expect(s.source.retrieved_at, where).toMatch(DATED);
           expect(s.unsourced, where).toBeUndefined();

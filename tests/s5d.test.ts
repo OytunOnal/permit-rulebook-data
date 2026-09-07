@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, forEachCriterion, referencedFields, routeProvenance, routeStatements } from "../src/engine.js";
+import { deriveBands, evaluate, forEachCriterion, referencedFields, routeProvenance, routeReadings, routeStatements } from "../src/engine.js";
 import type { Criterion, Dataset, Profile, Route, RouteResult } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -123,12 +123,13 @@ describe("s5d — Spain is not swept along with the Dutch change", () => {
     expect(fields).not.toContain("top200_grad");
   });
 
-  it("its unverified institution scope is recorded, not guessed at", () => {
-    let note = "";
-    forEachCriterion(routeOf("es-blue-card").criteria, (c: Criterion) => {
-      if ("field" in c && c.field === "qualification_recent" && c.note) note = c.note;
-    });
-    expect(note.toLowerCase()).toMatch(/unverified|not verified/);
+  it("its unverified institution scope is recorded, not guessed at — and the reader is told", () => {
+    // It was recorded in a criterion `note`, which reached no screen and
+    // declared no kind; the reader was never told. It is a reading now: our
+    // own words, on the card, under a heading that says they are ours
+    // (review 2026-09-07).
+    const readings = routeReadings(routeOf("es-blue-card")).map((r) => r.text).join(" ");
+    expect(readings).toMatch(/did not settle|no such limit/i);
     const text = readFileSync(new URL("../data/exclusions.md", import.meta.url), "utf8");
     expect(text).toMatch(/es-blue-card/);
   });

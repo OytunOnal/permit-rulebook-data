@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { evaluate, forEachCriterion, referencedFields, routeProvenance, routeStatements } from "../src/engine.js";
+import { evaluate, forEachCriterion, referencedFields, routeProvenance, routeReadings, routeStatements } from "../src/engine.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
 import type { Dataset, Profile, Route, RouteResult } from "../src/types.js";
 
@@ -102,20 +102,20 @@ describe("the orientation year states what the source states, and no more", () =
   });
 
   it("every statement about the law carries its source and the date a person read it", () => {
-    // Since s5e a third kind sits beside them — `modelling`, our own words
-    // about what we did and did not model. It carries no source BECAUSE it
-    // quotes nobody, and the card says so in the reader's language.
-    const statements = routeStatements(route()).filter((s) => s.kind !== "modelling");
+    // Every statement, with no filter to write: our own words about what we
+    // did and did not model live in `route.readings` since this review, so
+    // nothing in this array is ours (review 2026-09-07).
+    const statements = routeStatements(route());
     expect(statements.length).toBe(2);
     for (const s of statements) {
       expect(s.source!.source_url, s.id).toBe(SOURCE);
       expect(s.source!.retrieved_at, s.id).toBe("2026-09-07");
       expect(s.source!.quote.length, s.id).toBeGreaterThan(20);
     }
-    for (const s of routeStatements(route()).filter((s) => s.kind === "modelling")) {
-      expect(s.source, s.id).toBeUndefined();
-      expect(s.unsourced, s.id).toBeUndefined();
-    }
+    // And the reading beside them cites nobody, because it quotes nobody.
+    const readings = routeReadings(route());
+    expect(readings.length).toBe(1);
+    for (const r of readings) expect(Object.keys(r).sort(), r.id).toEqual(["id", "text"]);
   });
 
   it("a statement is a value, so it reaches the card's quote list", () => {

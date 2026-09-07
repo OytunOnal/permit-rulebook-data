@@ -1471,10 +1471,9 @@
               }
             }
           ],
-          "statements": [
+          "readings": [
             {
               "id": "foreign-degrees-belong-on-the-blue-card",
-              "kind": "modelling",
               "text": "This is France's track for people who studied in France. With a degree from anywhere else, the European Blue Card is the card that fits — its own page on this site."
             }
           ]
@@ -1586,10 +1585,9 @@
               }
             }
           ],
-          "statements": [
+          "readings": [
             {
               "id": "listed-professions-not-modelled",
-              "kind": "modelling",
               "text": "For some listed professions France counts three years of experience in the last seven instead of five. We do not model that list, so this card judges you on the general rule."
             }
           ]
@@ -1669,10 +1667,9 @@
               }
             }
           ],
-          "statements": [
+          "readings": [
             {
               "id": "resources-proof-tracks-the-minimum-wage",
-              "kind": "modelling",
               "text": "The French page states this figure as proof of resources rather than a salary an employer must pay, and it tracks the French minimum wage — expect it to move when that is revalued."
             }
           ]
@@ -1990,8 +1987,7 @@
                       "field": "qualification_recent",
                       "op": "eq",
                       "value": "yes",
-                      "short_reason": "a qualification from the last 3 years",
-                      "note": "Institution scope UNVERIFIED (2026-09-07): the Orden is the PDF tier and its text could not be read here, so we model the limb as the law states it — a qualification obtained within the last 3 years, with no institution scope. The Dutch equivalent does carry one; applying that by analogy would be a guess in the other direction. Recorded in data/exclusions.md; needs a human read of the Orden."
+                      "short_reason": "a qualification from the last 3 years"
                     },
                     {
                       "field": "salary_eur_year",
@@ -2022,15 +2018,15 @@
                 "checked_at": "2026-09-07",
                 "note": "The wording sits in Orden PJC/44/2026, which the ministry publishes as a scanned document whose text cannot be read here, and no page we can reach states it."
               }
-            },
+            }
+          ],
+          "readings": [
             {
               "id": "it-professionals-limb-not-modelled",
-              "kind": "modelling",
               "text": "Spain's law gives IT professionals and managers a shorter experience route of their own. We do not model it, so this card judges you on the general rule."
             },
             {
               "id": "salary-figures-and-their-limits-read-by-a-person",
-              "kind": "modelling",
               "text": "Both salary figures here were read by a person from a ministry PDF, and so was the question of whether the lower one is limited to qualifications from particular institutions — which the PDF did not settle. We apply it with no such limit, the wording the law itself uses. No automatic check can confirm any of that between reads."
             }
           ]
@@ -2142,15 +2138,13 @@
               }
             }
           ],
-          "statements": [
+          "readings": [
             {
               "id": "experience-answer-is-conservative",
-              "kind": "modelling",
               "text": "The law counts three years of professional experience here. The nearest answer this interview can offer is five years in the last seven, so a person with three or four years is judged more harshly than Spain would judge them."
             },
             {
               "id": "salary-figure-read-by-a-person",
-              "kind": "modelling",
               "text": "The salary figure on this route was read by a person from the ministry's PDF. No automatic check can confirm it between reads, so the read date beside it is the age of the number."
             }
           ]
@@ -3198,10 +3192,11 @@
                 "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements",
                 "history": []
               }
-            },
+            }
+          ],
+          "readings": [
             {
               "id": "two-of-five-situations-modelled",
-              "kind": "modelling",
               "text": "The Dutch immigration service lists five situations that open this route. We model the two that turn on where and when you studied; the other three — research done here, an Erasmus Mundus master, a permit you already held — are not asked about anywhere on this site."
             }
           ]

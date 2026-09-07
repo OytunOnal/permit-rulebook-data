@@ -76,14 +76,18 @@ export interface PointsTable {
  * nowhere. A criterion's source joins the card's source list and the
  * quote-fidelity gate like any other value.
  *
- * `note`: curation prose that is ours and reaches no screen — what was tried,
- * what is unverified, which document to read next. It may not quote anybody:
- * a sentence worth attributing is worth sourcing, and the honest place for our
- * own words in front of a reader is a `modelling` statement.
+ * There is deliberately no `note` here any more. It was the one slot whose
+ * text resolved to no declared kind — neither the authority's words nor
+ * declared ours — and that ambiguity is where "Recognised by the state where
+ * it was acquired — German recognition not required (§ 6 BeschV)" sat: a claim
+ * about the law, citing a statute, carrying no source, and passing every gate
+ * because it happened to contain no quotation mark (review 2026-09-07). Its
+ * two honest homes both exist: `source` for the authority's ground, and
+ * `Route.readings` for our own reading, which the card shows as ours.
+ * Maintainer prose that is neither belongs in `data/exclusions.md`.
  */
 interface CriterionExtras {
   source?: ProvenancedText;
-  note?: string;
   short_reason?: string;
 }
 
@@ -114,22 +118,41 @@ export interface RouteStatement {
    * `route.preconditions`, so it IS a Precondition — one that carries its
    * quote. `condition` was a coined synonym for a term the glossary fixes
    * (review 2026-09-07). caveat: a qualification the source puts on its own
-   * answer; it sits beside the verdict and fails nobody. modelling: our own
-   * commentary about what we did or did not model — NOT a claim about the law,
-   * and the only text in the dataset that may quote without provenance,
-   * because the kind itself is the attribution (s5e). */
-  kind: "precondition" | "caveat" | "modelling";
+   * answer; it sits beside the verdict and fails nobody. */
+  kind: "precondition" | "caveat";
   /** Our plain English — what the reader sees. */
   text: string;
   /** The source's own words. Absent only where they could not be found: then
    * `unsourced` says why, and the card says so too. Borrowing a neighbouring
-   * quote that does not cover the sentence would be inventing provenance.
-   * A `modelling` statement carries neither: the words are ours, so there is
-   * no authority to cite and no absence to explain. */
+   * quote that does not cover the sentence would be inventing provenance. */
   source?: ProvenancedText;
   /** Why this statement carries no quote — required when `source` is absent,
-   * forbidden when it is present. Not for `modelling`, which claims none. */
+   * forbidden when it is present. */
   unsourced?: UnsourcedReason;
+}
+
+/**
+ * OUR reading of a route — what we modelled, what we did not, and where a
+ * number came from a page no machine re-reads.
+ *
+ * It shipped as a third `RouteStatement` kind (`modelling`) until this review.
+ * The glossary defines a Route statement as "something a source says about one
+ * route … in the source's own words"; a reading is by definition not something
+ * a source says, so it was an undeclared second exception to Provenance living
+ * inside the construct built for the authority's words, and it needed the kind
+ * enum checked at nine sites across two repos to be told apart from one. Its
+ * own array says in the type system what the glossary says: statements are the
+ * source's, readings are ours.
+ *
+ * A reading carries no `source` and no `unsourced` — not because the rule is
+ * relaxed for it, but because there is no authority to cite and no absence to
+ * explain. Being in this array IS the attribution, and the card renders it
+ * under "Our reading, not the authority's words".
+ */
+export interface RouteReading {
+  id: string;
+  /** Our own words, shown to the reader as ours. */
+  text: string;
 }
 
 /**
@@ -168,6 +191,8 @@ export interface Route {
   preconditions?: string[];
   /** Provenanced statements the source makes that no criterion can compute. */
   statements?: RouteStatement[];
+  /** Our own readings of this route — declared ours, never an authority's. */
+  readings?: RouteReading[];
 }
 
 export interface Country {

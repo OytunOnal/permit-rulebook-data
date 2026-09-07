@@ -1,7 +1,7 @@
 import { countryOptions } from "./countries.js";
 import type {
   Band, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef, FieldOption, Notice,
-  PointsBreakdown, Profile, Route, RouteResult, RouteStatement, RouteStatus,
+  PointsBreakdown, Profile, Route, RouteReading, RouteResult, RouteStatement, RouteStatus,
 } from "./types.js";
 
 export function formatEUR(amount: number): string {
@@ -644,6 +644,16 @@ export function provenancedValuesOf(c: Criterion): ProvenanceEntry[] {
  * has to remember that the array is optional. */
 export function routeStatements(route: Route): RouteStatement[] {
   return route.statements ?? [];
+}
+
+/**
+ * The readings a route ships — our own words, in dataset order. The one
+ * predicate for "this text is ours": `kind === "modelling"` was open-coded at
+ * nine sites across two repos, which is the drift the glossary's *Still
+ * reachable* entry exists to prevent (review 2026-09-07).
+ */
+export function routeReadings(route: Route): RouteReading[] {
+  return route.readings ?? [];
 }
 
 /** All provenanced values a route rests on — what the UI must show, quoted and

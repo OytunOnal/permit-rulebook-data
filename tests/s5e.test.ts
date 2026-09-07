@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import {
-  deriveBands, evaluate, fieldOptions, forEachCriterion, provenancedValuesOf, routeStatements,
+  deriveBands, evaluate, fieldOptions, forEachCriterion, provenancedValuesOf, routeReadings,
+  routeStatements,
 } from "../src/engine.js";
-import { quotedWithoutProvenance, renderableTexts } from "../src/prose.js";
+import { proseProvenance, quotedWithoutProvenance, renderableTexts } from "../src/prose.js";
 import { validateDataset } from "../src/validate.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
-import type { Criterion, Dataset, FieldDef, Profile, Route } from "../src/types.js";
+import type { Criterion, Dataset, FieldDef, Profile, Route, RouteReading } from "../src/types.js";
 
 const readJson = (p: string) =>
   JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8").replace(/^﻿/, ""));
@@ -34,11 +35,25 @@ const allCriteria = (): { route: string; criterion: Criterion }[] =>
 /**
  * s5e — "Every sentence carries its source, not only every number".
  *
- * The measurement that produced the slice: 45 criterion notes shipped, 39 of
- * them containing a quotation mark, none carrying a source URL or a read date.
- * The schema typed `note` as a bare string, so provenance was impossible there
- * BY CONSTRUCTION — and unsourced prose had already turned out three times in
- * two days to be doing a rule's job.
+ * The measurement that produced the slice: criterion notes shipped with a
+ * quotation mark in most of them and a source URL or a read date in none. The
+ * schema typed `note` as a bare string, so provenance was impossible there BY
+ * CONSTRUCTION — and unsourced prose had already turned out three times in two
+ * days to be doing a rule's job.
+ *
+ * ON THE COUNT, because two numbers are in circulation. The approved scenario
+ * says **46 notes, 39 of them quoting**. Re-running the audit against the
+ * dataset as it stood at the start of the slice gives **45**. The scenario's
+ * number has not been reproduced and no note was deleted before the audit ran,
+ * so one of the two counts is simply wrong and this file does not pretend to
+ * know which; 45 is the number this suite measured and the one it reports. The
+ * discrepancy is one note either way and it changes nothing about the slice —
+ * it is written down rather than quietly resolved in favour of whichever is
+ * more convenient (review 2026-09-07).
+ *
+ * Where those sentences went is pinned below, and printed as a measurement by
+ * `npm run check` so it is a number a person reads and not only a test that
+ * passes.
  */
 
 describe("s5e — no sentence a card can render quotes an authority without provenance", () => {
@@ -58,7 +73,12 @@ describe("s5e — no sentence a card can render quotes an authority without prov
     expect(paths.some((p) => p.includes("nl-hsm-under30") && p.endsWith("/name"))).toBe(true);
     expect(paths.some((p) => p.includes("nl-hsm-under30") && p.includes("precondition"))).toBe(true);
     expect(paths.some((p) => p.includes("nl-orientation-year") && p.includes("statements"))).toBe(true);
+    expect(paths.some((p) => p.includes("nl-orientation-year") && p.includes("readings"))).toBe(true);
     expect(paths.some((p) => p.includes("notices/"))).toBe(true);
+    // And every one of them declares which of the three kinds it is — the walk
+    // has no "unknown" bucket, because the gate reads the declaration.
+    for (const t of renderableTexts(dataset))
+      expect(["authority", "ours", "label"], t.path).toContain(t.kind);
     // Nested inside a disjunction, which is where half the criteria live.
     expect(paths.some((p) => /criteria\/\d+\/paths\/\d+\/criteria\/\d+/.test(p))).toBe(true);
   });
@@ -78,47 +98,82 @@ describe("s5e — no sentence a card can render quotes an authority without prov
     }
   });
 
-  it("no criterion carries editorial prose that quotes anybody", () => {
+  it("a criterion has nowhere left to put editorial prose", () => {
+    // `note` was the one renderable slot that declared no kind — neither the
+    // authority's words nor ours — and the gate could only see it when it
+    // happened to contain a quotation mark. "Recognised by the state where it
+    // was acquired — German recognition not required (§ 6 BeschV)" had none,
+    // and passed. The slot is gone rather than policed (review 2026-09-07).
     for (const { route, criterion } of allCriteria())
-      if (criterion.note)
-        expect(criterion.note, `${route}: ${criterion.note}`).not.toMatch(/["“”„«»]/);
+      expect(criterion, route).not.toHaveProperty("note");
+    const ds = clone();
+    (ds.countries[0].routes[0].criteria[0] as Record<string, unknown>).note = "Anything at all.";
+    expect(validateDataset(ds).ok, "a criterion note is still accepted").toBe(false);
   });
 });
 
 describe("s5e — what is ours is marked as ours", () => {
-  const modelling = () =>
-    routes().flatMap((r) => routeStatements(r).filter((s) => s.kind === "modelling").map((s) => ({ route: r.id, s })));
+  const readings = () =>
+    routes().flatMap((r) => routeReadings(r).map((s) => ({ route: r.id, s })));
 
-  it("our own commentary became a statement of its own kind, and the number is reported", () => {
-    expect(modelling().length).toBeGreaterThan(0);
+  it("every sentence stands somewhere declared, and the split is pinned", () => {
+    // Step 1 of the scenario asks for the number, not for "more than none" —
+    // and asks that it be reported. The same three counts are printed by
+    // `npm run check` (see cli-coverage), because a number only a test reads
+    // is not reported to anybody (review 2026-09-07).
+    //
+    // It is more than the 45 notes went to: attaching an authority's words to
+    // an `eq` criterion became possible in this slice, so conditions that
+    // never carried a note carry a source now.
+    expect(proseProvenance(dataset)).toEqual({
+      // Sentences an authority is shown to have said: a criterion's own
+      // source, plus a statement standing on a quote.
+      with_provenance: 55,
+      // Ours, declared as ours and shown to the reader as ours.
+      ours: 8,
+      // Standing on a declared, dated reason no quote could be found — the one
+      // exception, and an attributable decision rather than a blank.
+      declared_unsourced: 1,
+    });
   });
 
-  it("a modelling statement never claims a source — that is the whole point of it", () => {
-    for (const { route, s } of modelling()) {
-      expect(s.source, `${route}:${s.id}`).toBeUndefined();
-      expect(s.unsourced, `${route}:${s.id}`).toBeUndefined();
+  it("our own words live in their own construct, not inside the authority's", () => {
+    // `modelling` was a third RouteStatement kind until this review. The
+    // glossary defines a Route statement as something a SOURCE says about a
+    // route, so a reading was an undeclared second exception to Provenance
+    // living inside the construct built for the authority's words, told apart
+    // from one only by a kind enum checked at nine sites across two repos.
+    expect(readings().length).toBe(8);
+    for (const route of routes())
+      for (const s of routeStatements(route))
+        expect(["precondition", "caveat"], `${route.id}:${s.id}`).toContain(s.kind);
+  });
+
+  it("a reading has nowhere to put a source — that is the whole point of it", () => {
+    for (const { route, s } of readings()) {
+      // Not "is undefined": the schema refuses the key, so a reading cannot be
+      // given borrowed evidence even by a curator who tries.
+      expect(Object.keys(s).sort(), `${route}:${s.id}`).toEqual(["id", "text"]);
     }
   });
 
-  it("the schema refuses a modelling statement that borrows a quote", () => {
+  it("the schema refuses a reading that borrows a quote", () => {
     const ds = clone();
     const route = ds.countries.flatMap((c) => c.routes).find((r) => r.id === "nl-hsm-under30")!;
-    route.statements = [
-      ...(route.statements ?? []),
+    route.readings = [
+      ...(route.readings ?? []),
       {
-        id: "borrowed-quote", kind: "modelling", text: "Ours, with somebody else's evidence.",
+        id: "borrowed-quote", text: "Ours, with somebody else's evidence.",
         source: { source_url: "https://ind.nl/en", quote: "not ours to claim", retrieved_at: "2026-09-07" },
-      },
+      } as unknown as RouteReading,
     ];
     expect(validateDataset(ds).ok).toBe(false);
   });
 
-  it("a precondition or caveat still has to carry a quote or an attributable reason it has none", () => {
+  it("a statement still has to carry a quote or an attributable reason it has none", () => {
     for (const route of routes())
-      for (const s of routeStatements(route)) {
-        if (s.kind === "modelling") continue;
+      for (const s of routeStatements(route))
         expect(Boolean(s.source) !== Boolean(s.unsourced), `${route.id}:${s.id}`).toBe(true);
-      }
   });
 });
 
@@ -128,47 +183,127 @@ describe("s5e — the gate bites, and rewording is not how you silence it", () =
 
   const quoted = 'The service says "you must have a job offer" before you apply.';
 
-  it("a criterion note with a quotation mark and no source fails the build", () => {
+  /**
+   * The sentence the old gate missed. It cites a statute, states what the law
+   * does and does not require, carries no source — and contains no quotation
+   * mark, so a check keyed on quotation marks read it as harmless prose and
+   * let it ship. It is in the mutation set now, and it fails for the reason it
+   * should: the slot it lands in declares itself the authority's position and
+   * has no authority beside it.
+   */
+  const claimWithNoMarks =
+    "Recognised by the state where it was acquired — German recognition not required (§ 6 BeschV).";
+
+  const firstRoute = (ds: Dataset) => ds.countries[0].routes[0];
+
+  it("a sentence in quotation marks with no source fails the build, wherever it is put", () => {
     const ds = clone();
-    ds.countries[0].routes[0].criteria[0].note = quoted;
-    const result = validateDataset(ds);
-    expect(result.ok).toBe(false);
-    // The message says the two honest options, in words a curator can act on.
+    const r = firstRoute(ds);
+    r.statements = [...(r.statements ?? []), {
+      id: "smuggled", kind: "caveat", text: quoted,
+      unsourced: { reason: "unreachable", checked_at: "2026-09-07" },
+    }];
+    expect(validateDataset(ds).ok).toBe(false);
+    // The message says the honest options, in words a curator can act on —
+    // and never leaves "delete the quotation marks" as one of them.
     expect(messageFor(ds)).toMatch(/source_url/);
     expect(messageFor(ds)).toMatch(/retrieved_at/);
-    expect(messageFor(ds)).toMatch(/modelling/);
+    expect(messageFor(ds)).toMatch(/readings/);
+    expect(messageFor(ds)).toMatch(/Deleting the quotation marks is not one of the options/);
   });
 
-  it("the same sentence passes the moment it is attributed to us", () => {
-    const ds = clone();
-    const route = ds.countries[0].routes[0];
-    route.statements = [
-      ...(route.statements ?? []),
-      { id: "ours-for-the-test", kind: "modelling", text: quoted },
+  it("the § 6 BeschV sentence fails too — no quotation mark anywhere in it", () => {
+    // Three slots, three failures. This is the case the re-keying was done
+    // for: the old gate passed all three, because it only ever looked for
+    // punctuation.
+    //
+    // WHERE IT STILL PASSES, stated rather than left to be discovered: as a
+    // notice body, or as a caveat carrying a declared and dated `unsourced`
+    // reason. Both of those DO declare where they stand — one on a quote, one
+    // on a decision somebody made and the card prints — and no gate here can
+    // judge whether a paraphrase is faithful to the quote beside it. That is a
+    // reader's job, and the card shows both so a reader can do it.
+    const mutations: Array<[string, (ds: Dataset) => void]> = [
+      ["a caveat with neither a source nor a declared absence", (ds) => {
+        const r = firstRoute(ds);
+        r.statements = [...(r.statements ?? []), { id: "beschv", kind: "caveat", text: claimWithNoMarks }];
+      }],
+      ["a precondition statement with neither", (ds) => {
+        const r = firstRoute(ds);
+        r.statements = [...(r.statements ?? []), { id: "beschv", kind: "precondition", text: claimWithNoMarks }];
+      }],
+      ["the criterion note it actually shipped in", (ds) => {
+        (firstRoute(ds).criteria[0] as Record<string, unknown>).note = claimWithNoMarks;
+      }],
     ];
-    expect(validateDataset(ds).ok, messageFor(ds)).toBe(true);
+    for (const [where, mutate] of mutations) {
+      const ds = clone();
+      mutate(ds);
+      expect(validateDataset(ds).ok, `${where} slipped past the gate`).toBe(false);
+    }
+  });
+
+  it("the same sentence passes the moment it is declared ours, or given the statute it cites", () => {
+    const asOurs = clone();
+    const r = asOurs.countries[0].routes[0];
+    r.readings = [...(r.readings ?? []), { id: "ours-for-the-test", text: claimWithNoMarks }];
+    expect(validateDataset(asOurs).ok, messageFor(asOurs)).toBe(true);
+
+    const asSourced = clone();
+    const r2 = asSourced.countries[0].routes[0];
+    r2.statements = [...(r2.statements ?? []), {
+      id: "beschv", kind: "caveat", text: claimWithNoMarks,
+      source: {
+        source_url: "https://www.buzer.de/6_BeschV.htm",
+        quote: "im Ausbildungsstaat staatlich anerkannt",
+        retrieved_at: "2026-09-07",
+        legal_basis: "§ 6 Abs. 1 Satz 1 Nr. 3 Buchst. a BeschV",
+      },
+    }];
+    expect(validateDataset(asSourced).ok, messageFor(asSourced)).toBe(true);
+
+    // And a quoted sentence still passes the moment it is ours: the escape is
+    // the declaration, not the punctuation.
+    const quotedAsOurs = clone();
+    const r3 = quotedAsOurs.countries[0].routes[0];
+    r3.readings = [...(r3.readings ?? []), { id: "quoted-ours", text: quoted }];
+    expect(validateDataset(quotedAsOurs).ok, messageFor(quotedAsOurs)).toBe(true);
   });
 
   it("it also bites in every other slot a card renders from, not just the one it was written for", () => {
-    // Written at the symptom level: a curator who moves the sentence to a
-    // different field does not escape it. Each of these is a place text
+    // Written over the text, not the fields: a curator who moves the sentence
+    // to a different slot does not escape it. Each of these is a place text
     // reaches the screen from.
     const mutations: Array<[string, (ds: Dataset) => void]> = [
-      ["route summary", (ds) => { ds.countries[0].routes[0].summary = quoted; }],
-      ["precondition", (ds) => { ds.countries[0].routes[0].preconditions = [quoted]; }],
+      ["route summary", (ds) => { firstRoute(ds).summary = quoted; }],
+      ["precondition", (ds) => { firstRoute(ds).preconditions = [quoted]; }],
       ["statement text", (ds) => {
-        const r = ds.countries[0].routes[0];
+        const r = firstRoute(ds);
         r.statements = [...(r.statements ?? []), {
           id: "smuggled", kind: "caveat", text: quoted,
           unsourced: { reason: "unreachable", checked_at: "2026-09-07" },
         }];
       }],
-      ["short_reason", (ds) => { ds.countries[0].routes[0].criteria[0].short_reason = quoted; }],
+      ["short_reason", (ds) => { firstRoute(ds).criteria[0].short_reason = quoted; }],
+      ["threshold_label", (ds) => {
+        forEachCriterion(firstRoute(ds).criteria, (c) => { if (c.op === "gte") c.threshold_label = quoted; });
+      }],
+      ["legal_basis", (ds) => {
+        forEachCriterion(firstRoute(ds).criteria, (c) => { if (c.op === "gte") c.threshold.legal_basis = quoted; });
+      }],
+      ["a field label", (ds) => { ds.fields[0].label = quoted; }],
+      ["an option label", (ds) => { ds.fields[0].options![0].label = quoted; }],
       ["notice body", (ds) => { ds.notices![0].body = quoted; }],
-      ["a criterion nested inside a disjunction", (ds) => {
+      ["the prose beside a declared absence", (ds) => {
         for (const country of ds.countries)
           for (const route of country.routes)
-            forEachCriterion(route.criteria, (c) => { if (c.op === "any") c.paths[0].criteria[0].note = quoted; });
+            for (const s of route.statements ?? [])
+              if (s.unsourced) s.unsourced.note = quoted;
+      }],
+      ["a disjunction path label", (ds) => {
+        for (const country of ds.countries)
+          for (const route of country.routes)
+            forEachCriterion(route.criteria, (c) => { if (c.op === "any") c.paths[0].label = quoted; });
       }],
     ];
     for (const [where, mutate] of mutations) {
@@ -181,7 +316,6 @@ describe("s5e — the gate bites, and rewording is not how you silence it", () =
   it("attaching a source to the criterion is the other honest option", () => {
     const ds = clone();
     const c = ds.countries[0].routes[0].criteria[0];
-    c.note = undefined;
     c.source = {
       source_url: "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Fachkraft/fachkraft-node.html",
       quote: "you must have a job offer",
@@ -201,8 +335,7 @@ describe("s5e — the euro figure", () => {
     const route = routeOf("nl-hsm-under30");
     const prose = [
       ...(route.preconditions ?? []),
-      ...criteriaOf(route).flatMap((c) => (c.note ? [c.note] : [])),
-      ...routeStatements(route).filter((s) => s.kind === "modelling").map((s) => s.text),
+      ...routeReadings(route).map((r) => r.text),
     ];
     for (const line of prose) expect(line, line).not.toMatch(/5[.,]?942|€\s?5/);
 

@@ -9,6 +9,10 @@ priced in did not fall due: the German BAMF pages, the Spanish BOE and every
 IND route page answer this host in full today, so their quotes went to the
 machine tier instead (see "What did not need a human" below).
 
+**Read section 4 before trusting section 3.** The reassurance section 3 offered
+about the IND pages was wrong, and the correction is what the slice markers on
+those entries are for.
+
 Real-green needs a human pass over the five items in the first section. A
 mismatch → fix the dataset quote (move the old one into `history`), re-run
 `npm run check`, and record the catch in the navigator's DECISIONS.md.
@@ -37,27 +41,63 @@ https://kairo.diplo.de/resource/blob/2664804/5e952d2720a91e83a475a3e02452f1cf/25
       "Für den Aufenthalt in Deutschland müssen Ihnen monatlich mindestens
       1.091 Euro zur Verfügung stehen."
       **A pass:** the amount and the sentence both match.
+      **A fail:** the figure is indexed and moves — put the old amount into the
+      threshold's `history` with its old `retrieved_at`, set the new one, and
+      re-run `npm run check`. If the leaflet is gone rather than changed, the
+      figure has no source at all: § 20a AufenthG (which this host CAN read)
+      states the requirement but not the amount, so the card must lose the
+      number rather than keep an unsourced one.
 
 ### UGE salary-threshold PDF — Spanish ministry (`es-blue-card`, `es-highly-qualified`)
 
 https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf
 
 Standing since s5; re-listed here because the gate still reports them and the
-size of this list has to be honest. Confirm the PDF you open says "Junio 2026".
+size of this list has to be honest. **First, confirm the PDF you open is dated
+"Junio 2026".** If it is not, every item below is a fail for the same reason
+and the whole block needs re-reading against the new edition — say so once
+rather than three times.
 
-- [ ] `es-blue-card` general threshold:
+Each of these three amounts is a salary rail on a card. A wrong one does not
+misinform a reader mildly; it tells them they qualify when they do not, or the
+reverse.
+
+- [ ] `es-blue-card` general threshold. Find this sentence and confirm it word
+      for word:
       "Nuevos umbrales salariales Tarjeta Azul. – Umbral general: 41.356,36 €"
+      **A pass:** the words and the figure both match, in that order.
+      **A fail:** the figure has moved (the INE publishes a new average salary
+      around May–June and the new threshold applies one month later — see the
+      derivation note below). Then: put 41.356,36 into the threshold's
+      `history` with its old `retrieved_at`, set the new amount, quote and read
+      date, and re-run `npm run check`. The same figure also backs
+      `es-highly-qualified`; the build fails if you update one copy and not the
+      other, which is the gate doing its job, not a second bug.
 - [ ] `es-blue-card` reduced threshold:
       "– Umbral reducido: 33.085,09 €"
+      **A pass:** the words and the figure match, and the reduced umbral is
+      still stated as a proportion of the general one rather than as its own
+      independent figure.
+      **A fail:** as above, plus one case worth naming — if the PDF has started
+      to limit the reduced threshold to qualifications from particular
+      institutions, that is not a number change but a rule change. Do not edit
+      the amount; record it and raise it, because the reading
+      `salary-figures-and-their-limits-read-by-a-person` on that card says in
+      so many words that the PDF did not settle this.
 - [ ] `es-highly-qualified` single threshold:
       "Se establece un umbral único de 41.356,36 €"
+      **A pass:** the words match and the threshold is still described as
+      **único** — one figure with no reduced version.
+      **A fail:** if a reduced version has appeared, this route now has a
+      disjunction it does not model. Record it and raise it; do not add a
+      second threshold from this checklist.
 
 ### One thing to read while you have the PDF open (not a shipped quote)
 
 - [ ] The derivation sentence that explains why these figures move. It shipped
       inside an unsourced criterion note until s5e and was removed rather than
-      given provenance it could not carry; the modelling statement on each
-      Spanish card now says only that a person read the number by hand.
+      given provenance it could not carry; the reading on each Spanish card now
+      says only that a person read the number by hand.
       Look for: "El Instituto Nacional de Estadística (INE) publicó el pasado
       28 de mayo de 2026 el dato actualizado del sueldo medio correspondiente a
       2024, fijándolo en 29.540,26 €" and the rule in Orden PJC/44/2026 art. 3.2
@@ -80,7 +120,7 @@ which one each got. Reversing any of them is a data edit, not a code change.
 | "IND also applies a market-rate test" | `nl-hsm-30plus` | **Sourced.** The route's plain precondition about market rate now carries the IND sentence; added to `nl-hsm-under30` too, which had the same precondition and no quote. |
 | "Grants, stipends or own savings also count toward sufficient income" | `nl-researcher` | **Sourced** as a caveat from the IND researcher page. The second half ("gross SV salary without holiday allowance") was **deleted**: the threshold's own quote already says it. |
 | "IND: a minimum of 3 years of relevant work experience … for IT managers" | `nl-blue-card` | **Sourced.** Replaced by the IND page's own sentence, verbatim. |
-| "The fiche frames this as a resources proof … SMIC-indexed" | `fr-ict` | **Demoted** to a modelling statement — it is our reading of how the figure behaves, and it says so on the card. |
+| "The fiche frames this as a resources proof … SMIC-indexed" | `fr-ict` | **Demoted** to a route reading — it is our reading of how the figure behaves, and it says so on the card. |
 | "the page body is client-rendered and cannot be machine-read" | `nl-blue-card` | **Deleted as false.** See below. |
 
 ## 3. What did not need a human
@@ -98,6 +138,44 @@ requirement list, and every quote taken from them is machine-verified:
 
 Two watch entries moved **off** the human tier as a result
 (`nl-ind-orientation-year`, `nl-ind-blue-card`). Their notes recorded that IND
-route pages render client-side and that our fetch saw a 1.4 kB shell; that is
-not what this host sees now. If it becomes true again the quotes will go
-missing loudly, which is what the gate is for.
+route pages render client-side and that our fetch saw a 1.4 kB shell.
+
+## 4. Correction (2026-09-07, review): the shell is still there, and the gate was pointed the wrong way
+
+The paragraph that stood here said that if the shell came back "the quotes will
+go missing loudly, which is what the gate is for". **That was wrong, and it was
+wrong in the direction that costs data.**
+
+What actually happens on a shell response, traced through `src/watch/core.ts`:
+
+1. The shell answers **200**. `runWatch` only reports `unreachable` when the
+   fetch itself fails, so the shell is hashed like any other page.
+2. The hash differs from the snapshot, so the entry reports **`changed`** —
+   the same outcome as a page that was genuinely rewritten.
+3. Under `--commit`, the 1.4 kB shell is written into `state.json` as `text`.
+4. The next `npm run check` then reports **every quote on that page as
+   `missing`** — and "missing" is the signal that says *the page no longer
+   says this, go and rewrite the dataset*.
+
+Around half of the 78 verified quotes are IND-hosted. A curator following that
+flag faithfully would have overwritten correct, verified data because a page
+failed to render once.
+
+**What was done instead.** Every IND and BAMF page on the watchlist now carries
+a `slice: {from, to}` around its operative region — the requirement list on the
+route pages, the paid-employment section on the amounts page, the article body
+on BAMF. The mechanism already existed and already said what it does: *a
+missing marker reports as unreachable — never as "no change"*. A shell carries
+neither marker, so the entry reports `unreachable`, the snapshot is not
+touched, and the quotes stay verified against the last good text. Tested end to
+end in `tests/watch.test.ts` ("a page that answers with a shell is unreachable,
+not changed"), including the counterfactual: the same shell without the marker
+still reports `changed`, which is what makes the marker worth having.
+
+**Still unexplained, and a human should know it:** a bare fetch of the
+orientation-year URL returned the 1.4 kB shell twice on 2026-09-07, with and
+without a browser User-Agent, and returned the full 34 kB page later the same
+day from the same host. Nobody has established why. **An intermittent shell is
+worse than a permanent one** — a permanent one is noticed immediately; an
+intermittent one waits for a `--commit` run. Nothing here fixes IND's
+behaviour; it makes the watch honest about it.

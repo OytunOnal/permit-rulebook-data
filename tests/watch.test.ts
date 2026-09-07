@@ -274,6 +274,112 @@ describe("quote fidelity: the sentence is still on the page", () => {
 });
 
 
+/**
+ * The failure this guards against is not a page that goes away — that is
+ * already `unreachable`. It is a page that answers 200 with a body that is not
+ * the page.
+ *
+ * On 2026-09-07 a bare fetch of the IND orientation-year URL returned a 1.4 kB
+ * shell twice, with and without a browser User-Agent, while the watch fetcher
+ * had taken the full 17 kB document from the same host; a fetch from here on
+ * 2026-09-07 returned the full 34 kB page again. Nobody has established why,
+ * and an intermittent shell is worse than a permanent one: it lands on a
+ * `--commit` run eventually.
+ *
+ * Without a marker the shell hashes cleanly, so the entry reports `changed`,
+ * `--commit` writes the shell in as `text`, and the next `npm run check` puts
+ * every quote on that page into `missing` — the flag that tells a curator the
+ * page was rewritten and the dataset should be rewritten after it. Around half
+ * the dataset's verified quotes are IND-hosted. The marker is what turns that
+ * into `unreachable`.
+ */
+describe("a page that answers with a shell is unreachable, not changed", () => {
+  /** Hosts observed to answer this machine with something that is not the
+   * page: ind.nl served the shell above, and bamf.de refused connections
+   * outright earlier the same day and answers now. Both back values a card
+   * prints, so a wrong "no change" from either is a wrong answer to a person. */
+  const SHELL_PRONE = ["ind.nl", "bamf.de"];
+
+  const proneEntries = () =>
+    shippedWatchlist.entries.filter(
+      (e) => e.strategy === "html" && SHELL_PRONE.some((h) => new URL(e.url).hostname.endsWith(h)),
+    );
+
+  /** A single-page-app shell of about 1.4 kB: right title, right chrome, no page. */
+  const shell = (title: string) =>
+    '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    `<title>${title}</title><link rel="stylesheet" href="/assets/app.css">` +
+    '<script src="/assets/app.js" defer></script></head><body>' +
+    '<div id="root"></div><noscript>You need JavaScript enabled to view this site.</noscript>' +
+    `<!--${" padding".repeat(150)}--></body></html>`;
+
+  it("every watched page on such a host carries a slice marker", () => {
+    for (const e of proneEntries())
+      expect(e.slice, `${e.id}: no slice marker — a shell from here would report as a change`).toBeDefined();
+    expect(proneEntries().length).toBeGreaterThanOrEqual(10);
+  });
+
+  it("the markers bracket every quote the dataset takes from those pages", () => {
+    // Slice each shipped snapshot the way a watch pass would and check the
+    // quotes against the region alone: a marker that cut a quote out of the
+    // watched region would make the slice itself the thing that reports the
+    // quote missing, which is the same wrong answer by another route.
+    const sliced: WatchState = { entries: { ...shippedState.entries } };
+    for (const e of proneEntries()) {
+      const snap = shippedState.entries[e.id];
+      expect(snap?.text, `${e.id}: no snapshot to check the markers against`).toBeDefined();
+      const from = snap!.text!.indexOf(e.slice!.from);
+      const to = from >= 0 ? snap!.text!.indexOf(e.slice!.to, from + e.slice!.from.length) : -1;
+      expect(from, `${e.id}: the "from" marker is not in the snapshot`).toBeGreaterThanOrEqual(0);
+      expect(to, `${e.id}: the "to" marker is not after "from" in the snapshot`).toBeGreaterThan(from);
+      sliced.entries[e.id] = { ...snap!, text: snap!.text!.slice(from, to + e.slice!.to.length) };
+    }
+    expect(checkQuotes(dataset, shippedWatchlist, sliced).missing).toEqual([]);
+  });
+
+  it("a shell reports unreachable, leaves the snapshot alone, and the quotes stay verified", async () => {
+    const entry = shippedWatchlist.entries.find((e) => e.id === "nl-ind-orientation-year")!;
+    const before = checkQuotes(dataset, shippedWatchlist, shippedState);
+    const list: Watchlist = { entries: [entry] };
+    const { reports, nextState } = await runWatch(
+      list, shippedState,
+      okFetcher({ [entry.url]: shell("Residence permit for orientation year | IND") }),
+      "2026-09-08",
+    );
+
+    expect(reports[0].outcome).toBe("unreachable");
+    expect(reports[0].error).toContain("slice marker missing");
+    // Not merely "not committed": the state a --commit run would write carries
+    // the snapshot that was already there, byte for byte.
+    expect(nextState.entries[entry.id]).toEqual(shippedState.entries[entry.id]);
+
+    const after = checkQuotes(dataset, shippedWatchlist, nextState);
+    expect(after.missing).toEqual([]);
+    expect(after.verified).toBe(before.verified);
+    const onThatPage = datasetQuotes(dataset).filter((q) => q.source_url === entry.url);
+    expect(onThatPage.length).toBeGreaterThan(0);
+  });
+
+  it("without the marker the same shell reports 'changed' — which is why the marker is there", async () => {
+    // The counterfactual, kept executable: this is what the watchlist did
+    // before this review, and the flag file it would have produced.
+    const entry = shippedWatchlist.entries.find((e) => e.id === "nl-ind-orientation-year")!;
+    const unsliced: Watchlist = { entries: [{ ...entry, slice: undefined }] };
+    const { reports, nextState } = await runWatch(
+      unsliced, shippedState,
+      okFetcher({ [entry.url]: shell("Residence permit for orientation year | IND") }),
+      "2026-09-08",
+    );
+    expect(reports[0].outcome).toBe("changed");
+    expect(nextState.entries[entry.id]!.text!.length).toBeLessThan(200);
+    // …and every quote on the page is then reported missing, which reads as
+    // "the page was rewritten, rewrite the dataset after it".
+    const wrecked = checkQuotes(dataset, unsliced, nextState);
+    expect(wrecked.missing.length).toBeGreaterThan(0);
+    expect(wrecked.missing.every((m) => m.source_url === entry.url)).toBe(true);
+  });
+});
+
 describe("learn links are watched for liveness, and only for liveness", () => {
   it("every 'find out yourself' link is on the watchlist", () => {
     // The link is a promise to the one person who answered "I don't know".

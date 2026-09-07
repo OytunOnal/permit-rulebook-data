@@ -88,7 +88,11 @@
       "url": "https://ind.nl/en/required-amounts-income-requirements",
       "strategy": "html",
       "kind": "value-source",
-      "note": "Backs all NL amounts (HSM EUR 5,942 / 4,357; Blue Card EUR 5,942; researcher EUR 1,635.90). HSM/Blue Card amounts change every 1 January; most other norms change 1 January AND 1 July."
+      "slice": {
+        "from": "Application for a residence permit to work in paid employment or for seasonal work These required amounts",
+        "to": "Application for a residence permit for medical treatment These required amounts"
+      },
+      "note": "Backs all NL amounts (HSM EUR 5,942 / 4,357; Blue Card EUR 5,942; researcher EUR 1,635.90). HSM/Blue Card amounts change every 1 January; most other norms change 1 January AND 1 July. Sliced from the paid-employment section to the medical-treatment one — every amount this dataset quotes sits between them. Same reason as the IND route pages: a shell answer carries no marker, so it reports unreachable instead of a change that would put all sixteen NL quotes into `missing`."
     },
     {
       "id": "nl-ind-work-index",
@@ -106,14 +110,22 @@
       "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
       "strategy": "html",
       "kind": "value-source",
-      "note": "IND orientation-year requirement list. Human tier until 2026-09-07, on the reading that IND route pages render client-side; a fetch from here now returns the full list, so it is machine-watched and its quotes are checked (s5e). Backs the two statements on nl-orientation-year and the study-programme limbs of its criteria."
+      "slice": {
+        "from": "Requirements",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "note": "IND orientation-year requirement list. Human tier until 2026-09-07, on the reading that IND route pages render client-side; a fetch from here now returns the full list, so it is machine-watched and its quotes are checked (s5e). Backs the two statements on nl-orientation-year and the study-programme limbs of its criteria. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
     },
     {
       "id": "nl-ind-blue-card",
       "url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
       "strategy": "html",
       "kind": "value-source",
-      "note": "IND European Blue Card requirement list. Same move off the human tier (s5e). Backs the contract length, the diploma leg and the IT 3-in-7 experience rule."
+      "slice": {
+        "from": "Requirements",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "note": "IND European Blue Card requirement list. Same move off the human tier (s5e). Backs the contract length, the diploma leg and the IT 3-in-7 experience rule. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
     },
     {
       "id": "eu-countries-list",
@@ -176,28 +188,44 @@
       "url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
       "strategy": "html",
       "kind": "value-source",
-      "note": "BAMF requirement list for the skilled-worker permit for graduates. Backs the recognised-degree condition on de-skilled-academic."
+      "slice": {
+        "from": "You are here: Homepage Topics Migration and residence",
+        "to": "Page functions and information"
+      },
+      "note": "BAMF requirement list for the skilled-worker permit for graduates. Backs the recognised-degree condition on de-skilled-academic. Sliced from the breadcrumb to the page-functions block: bamf.de carries a rotating German notice below the article (Interessenbekundung, dated) and the host refused connections from here on 2026-09-07 before it answered. A body that does not render carries neither marker, so it reports unreachable rather than a change nobody made."
     },
     {
       "id": "bamf-fachkraft",
       "url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Fachkraft/fachkraft-node.html",
       "strategy": "html",
       "kind": "value-source",
-      "note": "BAMF requirement list for the skilled-worker permit for vocational qualifications. Backs the equivalence condition on de-skilled-vocational."
+      "slice": {
+        "from": "You are here: Homepage Topics Migration and residence",
+        "to": "Page functions and information"
+      },
+      "note": "BAMF requirement list for the skilled-worker permit for vocational qualifications. Backs the equivalence condition on de-skilled-vocational. Sliced from the breadcrumb to the page-functions block: bamf.de carries a rotating German notice below the article (Interessenbekundung, dated) and the host refused connections from here on 2026-09-07 before it answered. A body that does not render carries neither marker, so it reports unreachable rather than a change nobody made."
     },
     {
       "id": "bamf-wissenschaftler",
       "url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
       "strategy": "html",
       "kind": "value-source",
-      "note": "BAMF requirement list for researchers. Backs the hosting-agreement condition on de-researcher."
+      "slice": {
+        "from": "You are here: Homepage Topics Migration and residence",
+        "to": "Page functions and information"
+      },
+      "note": "BAMF requirement list for researchers. Backs the hosting-agreement condition on de-researcher. Sliced from the breadcrumb to the page-functions block: bamf.de carries a rotating German notice below the article (Interessenbekundung, dated) and the host refused connections from here on 2026-09-07 before it answered. A body that does not render carries neither marker, so it reports unreachable rather than a change nobody made."
     },
     {
       "id": "bamf-ict",
       "url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
       "strategy": "html",
       "kind": "value-source",
-      "note": "BAMF requirement list for the ICT Card. Backs the six-months-with-the-group condition and the more-than-90-days precondition on de-ict-card."
+      "slice": {
+        "from": "You are here: Homepage Topics Migration and residence",
+        "to": "Page functions and information"
+      },
+      "note": "BAMF requirement list for the ICT Card. Backs the six-months-with-the-group condition and the more-than-90-days precondition on de-ict-card. Sliced from the breadcrumb to the page-functions block: bamf.de carries a rotating German notice below the article (Interessenbekundung, dated) and the host refused connections from here on 2026-09-07 before it answered. A body that does not render carries neither marker, so it reports unreachable rather than a change nobody made."
     },
     {
       "id": "buzer-6-beschv",
@@ -218,21 +246,33 @@
       "url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
       "strategy": "html",
       "kind": "value-source",
-      "note": "IND highly skilled migrant requirement list. Backs the recognised-sponsor contract condition and the market-rate precondition on both HSM routes."
+      "slice": {
+        "from": "Requirements",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "note": "IND highly skilled migrant requirement list. Backs the recognised-sponsor contract condition and the market-rate precondition on both HSM routes. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
     },
     {
       "id": "nl-ind-ict",
       "url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
       "strategy": "html",
       "kind": "value-source",
-      "note": "IND intra-corporate transferee requirement list. Backs the three-months-outside-the-EU condition and the market-rate salary rule on nl-ict."
+      "slice": {
+        "from": "Requirements",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "note": "IND intra-corporate transferee requirement list. Backs the three-months-outside-the-EU condition and the market-rate salary rule on nl-ict. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
     },
     {
       "id": "nl-ind-researcher",
       "url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
       "strategy": "html",
       "kind": "value-source",
-      "note": "IND researcher requirement list. Backs the hosting-agreement condition and the other-income caveat on nl-researcher."
+      "slice": {
+        "from": "Requirements",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "note": "IND researcher requirement list. Backs the hosting-agreement condition and the other-income caveat on nl-researcher. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
     }
   ]
 }

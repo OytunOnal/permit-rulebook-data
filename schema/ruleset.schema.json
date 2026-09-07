@@ -559,18 +559,11 @@
             "value": {
               "type": "string"
             },
-            "note": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
-            },
             "short_reason": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/criterionShortReason"
             },
             "source": {
-              "$ref": "#/$defs/provenancedText",
-              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
+              "$ref": "#/$defs/criterionSource"
             }
           }
         },
@@ -595,18 +588,11 @@
             "threshold_label": {
               "type": "string"
             },
-            "note": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
-            },
             "short_reason": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/criterionShortReason"
             },
             "source": {
-              "$ref": "#/$defs/provenancedText",
-              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
+              "$ref": "#/$defs/criterionSource"
             }
           }
         },
@@ -632,18 +618,11 @@
                 "type": "string"
               }
             },
-            "note": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
-            },
             "short_reason": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/criterionShortReason"
             },
             "source": {
-              "$ref": "#/$defs/provenancedText",
-              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
+              "$ref": "#/$defs/criterionSource"
             }
           }
         },
@@ -665,18 +644,11 @@
             "table": {
               "$ref": "#/$defs/pointsTable"
             },
-            "note": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
-            },
             "short_reason": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/criterionShortReason"
             },
             "source": {
-              "$ref": "#/$defs/provenancedText",
-              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
+              "$ref": "#/$defs/criterionSource"
             }
           }
         },
@@ -717,18 +689,11 @@
                 }
               }
             },
-            "note": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Curation prose that is ours and reaches no screen: what was tried, what is unverified, which document to read next. It may not quote anybody — a sentence worth attributing is worth sourcing, and our own words in front of a reader belong in a statement with kind: \"modelling\"."
-            },
             "short_reason": {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/criterionShortReason"
             },
             "source": {
-              "$ref": "#/$defs/provenancedText",
-              "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched."
+              "$ref": "#/$defs/criterionSource"
             }
           }
         }
@@ -750,10 +715,9 @@
         "kind": {
           "enum": [
             "precondition",
-            "caveat",
-            "modelling"
+            "caveat"
           ],
-          "description": "precondition: something the applicant must satisfy that the interview never asks. It joins `route.preconditions` in the same list under the same heading, so it IS a precondition — one that carries its quote — and calling it a `condition` coined a synonym for a term the glossary already fixes (review 2026-09-07). caveat: a qualification the source puts on its own answer, which sits beside the verdict and never fails anyone. modelling: our own commentary about what we did or did not model, which is not a claim about the law. It is the one kind that carries neither a source nor an unsourced reason — the kind IS the attribution, recorded in the data and shown on the card, so absence of a source is always a decision someone made (s5e)."
+          "description": "precondition: something the applicant must satisfy that the interview never asks. It joins `route.preconditions` in the same list under the same heading, so it IS a precondition — one that carries its quote — and calling it a `condition` coined a synonym for a term the glossary already fixes (review 2026-09-07). caveat: a qualification the source puts on its own answer, which sits beside the verdict and never fails anyone. Both are things a SOURCE says about the route; our own reading of it is a `route.readings` entry, which is a different construct because it is a different thing (review 2026-09-07)."
         },
         "text": {
           "type": "string",
@@ -769,74 +733,7 @@
       },
       "allOf": [
         {
-          "if": {
-            "properties": {
-              "kind": {
-                "const": "modelling"
-              }
-            },
-            "required": [
-              "kind"
-            ]
-          },
-          "then": {
-            "not": {
-              "anyOf": [
-                {
-                  "required": [
-                    "source"
-                  ],
-                  "properties": {
-                    "source": true
-                  }
-                },
-                {
-                  "required": [
-                    "unsourced"
-                  ],
-                  "properties": {
-                    "unsourced": true
-                  }
-                }
-              ]
-            }
-          },
-          "else": {
-            "oneOf": [
-              {
-                "required": [
-                  "source"
-                ],
-                "properties": {
-                  "source": true
-                },
-                "not": {
-                  "required": [
-                    "unsourced"
-                  ],
-                  "properties": {
-                    "unsourced": true
-                  }
-                }
-              },
-              {
-                "required": [
-                  "unsourced"
-                ],
-                "properties": {
-                  "unsourced": true
-                },
-                "not": {
-                  "required": [
-                    "source"
-                  ],
-                  "properties": {
-                    "source": true
-                  }
-                }
-              }
-            ]
-          }
+          "$ref": "#/$defs/sourcedOrDeclaredUnsourced"
         }
       ]
     },
@@ -894,6 +791,80 @@
           "items": {
             "$ref": "#/$defs/routeStatement"
           }
+        },
+        "readings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/routeReading"
+          }
+        }
+      }
+    },
+    "criterionSource": {
+      "$ref": "#/$defs/provenancedText",
+      "description": "The authority's own words for the condition this criterion checks — the same provenance a threshold carries, for a condition that is not a number. Until s5e only a threshold could be sourced, so the evidence behind an eq/in/any criterion lived in `note`, a bare string that reached no screen and that nothing watched. `note` is gone: it was the one slot whose text declared no kind, which is how a claim about the law (\"German recognition not required (§ 6 BeschV)\") shipped with no source and passed every gate (review 2026-09-07). Our own words about a route go in `route.readings`; maintainer prose goes in data/exclusions.md."
+    },
+    "criterionShortReason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What this criterion asks for, as a noun phrase a person would say (\"an age of 30 or older\"). It overrides the phrasing derived from the named options. A verdict line is built from these, never from a field id (s5d)."
+    },
+    "sourcedOrDeclaredUnsourced": {
+      "type": "object",
+      "description": "Exactly one of source/unsourced. A sentence we cannot source says so on the card and is dated; it is never given a neighbouring quote that does not cover it.",
+      "oneOf": [
+        {
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "source": true
+          },
+          "not": {
+            "required": [
+              "unsourced"
+            ],
+            "properties": {
+              "unsourced": true
+            }
+          }
+        },
+        {
+          "required": [
+            "unsourced"
+          ],
+          "properties": {
+            "unsourced": true
+          },
+          "not": {
+            "required": [
+              "source"
+            ],
+            "properties": {
+              "source": true
+            }
+          }
+        }
+      ]
+    },
+    "routeReading": {
+      "type": "object",
+      "description": "OUR reading of a route — what we modelled, what we did not, where a number came from a page no machine re-reads. It shipped as a third RouteStatement kind (`modelling`) until this review; the glossary defines a route statement as something a SOURCE says, so a reading inside that construct was an undeclared second exception to Provenance, told apart from the authority's words only by a kind enum checked at nine sites across two repos. It carries no source and no unsourced reason: there is no authority to cite and no absence to explain. Being in this array IS the attribution, and the card renders it as \"Our reading, not the authority's words\".",
+      "required": [
+        "id",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Our own words, shown to the reader as ours."
         }
       }
     }
