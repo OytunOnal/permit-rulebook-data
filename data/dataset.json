@@ -762,7 +762,7 @@
           "summary": "Your university degree is recognised in Germany and the job matches it. There is no salary threshold — but from age 45 an extra salary requirement applies, or proof of pension provision.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html",
           "preconditions": [
-            "The job matches the qualification that was recognised"
+            "The job must match the qualification that was recognised"
           ],
           "criteria": [
             {
@@ -897,8 +897,7 @@
           "summary": "No German recognition needed: two years of recent skilled work in the last five, plus either a qualification your home country officially recognises, or experience in IT.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/FachkraefteOhneAusbildung/fachkraefte-ohne-ausbildung-node.html",
           "preconditions": [
-            "The salary threshold applies unless your employer is covered by a collective wage agreement",
-            "Your qualification is officially recognised in the country where you earned it"
+            "Your qualification must be officially recognised in the country where you earned it"
           ],
           "criteria": [
             {
@@ -1000,6 +999,20 @@
               },
               "note": "Waived when the employer is collectively bound (tarifgebunden, §§ 3, 5 TVG)."
             }
+          ],
+          "statements": [
+            {
+              "id": "salary-set-aside-under-a-collective-agreement",
+              "kind": "caveat",
+              "text": "The salary threshold can be set aside if your employer is bound by a collective wage agreement and employs you on its agreed terms — we do not ask about collective agreements.",
+              "source": {
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/04-2026/berufserfahrene",
+                "quote": "Von der Gehaltsschwelle kann nur abgewichen werden, wenn der Arbeitgeber tarifgebunden im Sinne des §§ 3 und 5 Tarifvertragsgesetz (TVG) ist und die Beschäftigung zu den geltenden tariflichen Bedingungen erfolgt.",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "§ 6 Beschäftigungsverordnung — collective-agreement exception (§§ 3, 5 Tarifvertragsgesetz)",
+                "history": []
+              }
+            }
           ]
         },
         {
@@ -1067,7 +1080,7 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
           "preconditions": [
             "At least six months with the company before the transfer",
-            "The transfer lasts more than 90 days, in a manager, specialist or trainee role"
+            "The transfer must last more than 90 days, in a manager, specialist or trainee role"
           ],
           "criteria": [
             {
@@ -1121,7 +1134,7 @@
           "id": "de-chancenkarte",
           "name": "Opportunity Card (Chancenkarte, § 20a)",
           "kind": "seek",
-          "summary": "A one-year card to come and look for work, with part-time work of up to 20 hours a week. If your qualification is fully recognised in Germany you get it directly; otherwise you need six points from the official table. It is shown when you have no offer, transfer or hosting agreement yet.",
+          "summary": "A one-year card to come and look for work, with part-time work of up to 20 hours a week. If your qualification is fully recognised in Germany you get it directly; otherwise you need six points from the official table. Having an offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://handbookgermany.de/en/opportunity-card",
           "criteria": [
             {
@@ -1136,12 +1149,6 @@
                 "de",
                 "all"
               ]
-            },
-            {
-              "field": "situation",
-              "op": "eq",
-              "value": "none",
-              "note": "The card exists to seek work — with an offer, transfer or hosting agreement the work routes above apply directly."
             },
             {
               "field": "qualification",
@@ -1296,6 +1303,20 @@
                   ]
                 }
               ]
+            }
+          ],
+          "statements": [
+            {
+              "id": "work-limited-to-twenty-hours",
+              "kind": "caveat",
+              "text": "The card allows work of up to 20 hours a week on average, plus trial work of up to two weeks at a time. That is a limit on what it lets you do, not a condition of getting it — weigh it against a work route with a full-time job.",
+              "source": {
+                "source_url": "https://www.buzer.de/20a_AufenthG.htm",
+                "quote": "Die Chancenkarte berechtigt nur dazu, 1. eine Beschäftigung von durchschnittlich insgesamt höchstens 20 Stunden je Woche auszuüben und 2. eine Probebeschäftigung für jeweils höchstens zwei Wochen auszuüben",
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "§ 20a Absatz 2 AufenthG (consolidated mirror — gesetze-im-internet.de times out from here)",
+                "history": []
+              }
             }
           ]
         }
@@ -1493,7 +1514,7 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
           "preconditions": [
             "At least six months with the group already",
-            "The assignment lasts more than a year, in a senior or expert role"
+            "The assignment must last more than a year, in a senior or expert role"
           ],
           "criteria": [
             {
@@ -1565,8 +1586,8 @@
           "summary": "For a job at a company France officially recognises as innovative, in work tied to its research and development. The salary threshold is the same as the qualified-employee card, and no French degree is needed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "preconditions": [
-            "Your work is directly tied to the company's research and development project",
-            "France's ministry of the economy recognises the employer as innovative"
+            "Your work must be directly tied to the company's research and development project",
+            "France's ministry of the economy must recognise the employer as innovative"
           ],
           "criteria": [
             {
@@ -1645,7 +1666,7 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "preconditions": [
             "At least three months with the group already",
-            "The move is between branches of the same company or group"
+            "The move must be between branches of the same company or group"
           ],
           "criteria": [
             {
@@ -1730,8 +1751,7 @@
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
           "preconditions": [
             "A contract or firm offer of at least six months",
-            "The application goes through Spain's large-companies unit (UGE), not a provincial office",
-            "The lower salary also applies to shortage occupations on Spain's official list — we do not check that list"
+            "The application must go through Spain's large-companies unit (UGE), not a provincial office"
           ],
           "criteria": [
             {
@@ -1859,6 +1879,14 @@
                 }
               ]
             }
+          ],
+          "statements": [
+            {
+              "id": "reduced-also-for-shortage-occupations",
+              "kind": "caveat",
+              "text": "The lower salary can also apply to jobs on Spain's official list of shortage occupations — we do not check that list.",
+              "unsourced": "The wording sits in Orden PJC/44/2026, which the ministry publishes as a scanned document whose text cannot be read here, and no page we can reach states it (checked 2026-09-07)."
+            }
           ]
         },
         {
@@ -1868,7 +1896,7 @@
           "summary": "Spain's national fast-track for higher-education professionals, or people with equivalent experience, hired by a qualifying employer. One salary threshold, with no reduced version, decided in 20 working days.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
           "preconditions": [
-            "Your employer qualifies: a large company, an SME in a strategic sector, or a project of general interest — the unit decides"
+            "Your employer must qualify: a large company, an SME in a strategic sector, or a project of general interest — the unit decides"
           ],
           "criteria": [
             {
@@ -1966,7 +1994,7 @@
           "summary": "Your group moves you to its Spanish entity as a manager, specialist or trainee. There is no salary threshold beyond the collective agreement for the job. Up to three years, or one for trainees.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/trabajadores",
           "preconditions": [
-            "The group actually trades — not a shell company",
+            "The group must actually trade — not a shell company",
             "Three months with the group before the move"
           ],
           "criteria": [
@@ -2114,10 +2142,9 @@
           "summary": "The Dutch highly skilled migrant permit. No degree is needed — the salary is what qualifies you. A lower salary counts if, within the last three years, you graduated from a Dutch university or research institution, or from a foreign institution the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
-            "Your employer is on the Dutch immigration service's (IND) list of recognised sponsors",
-            "The salary matches what the job normally pays — the Dutch immigration service judges this",
-            "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions",
-            "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people — we do not ask about permits you already hold"
+            "Your employer must be on the Dutch immigration service's (IND) list of recognised sponsors",
+            "The salary must match what the job normally pays — the Dutch immigration service judges this",
+            "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions"
           ],
           "criteria": [
             {
@@ -2249,6 +2276,20 @@
                 }
               ]
             }
+          ],
+          "statements": [
+            {
+              "id": "reduced-also-for-orientation-year-permit-holders",
+              "kind": "caveat",
+              "text": "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people. We do not ask about permits you already hold, so the answer above does not count one.",
+              "source": {
+                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                "quote": "The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit.",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "Dutch immigration service, required amounts — the reduced highly-skilled-migrant rows (read from the watched snapshot of 2026-09-02)",
+                "history": []
+              }
+            }
           ]
         },
         {
@@ -2258,10 +2299,9 @@
           "summary": "The same permit with a lower salary for people under 30 — and lower still if, within the last three years, you graduated from a Dutch university or research institution, or from a foreign institution the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
-            "Your employer is on the Dutch immigration service's (IND) list of recognised sponsors",
-            "The salary matches what the job normally pays — the Dutch immigration service judges this",
-            "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions",
-            "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people — we do not ask about permits you already hold"
+            "Your employer must be on the Dutch immigration service's (IND) list of recognised sponsors",
+            "The salary must match what the job normally pays — the Dutch immigration service judges this",
+            "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions"
           ],
           "criteria": [
             {
@@ -2388,6 +2428,20 @@
                 }
               ]
             }
+          ],
+          "statements": [
+            {
+              "id": "reduced-also-for-orientation-year-permit-holders",
+              "kind": "caveat",
+              "text": "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people. We do not ask about permits you already hold, so the answer above does not count one.",
+              "source": {
+                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                "quote": "The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit.",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "Dutch immigration service, required amounts — the reduced highly-skilled-migrant rows (read from the watched snapshot of 2026-09-02)",
+                "history": []
+              }
+            }
           ]
         },
         {
@@ -2398,8 +2452,7 @@
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
           "preconditions": [
             "An employment contract of at least six months",
-            "If your profession is regulated, you must be in the Dutch professional register for it (the BIG register, in healthcare)",
-            "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people — we do not ask about permits you already hold"
+            "If your profession is regulated, you must be in the Dutch professional register for it (the BIG register, in healthcare)"
           ],
           "criteria": [
             {
@@ -2569,6 +2622,20 @@
                 }
               ]
             }
+          ],
+          "statements": [
+            {
+              "id": "reduced-also-on-extension-or-employer-change",
+              "kind": "caveat",
+              "text": "The lower salary can also apply if you extend this permit, or change employer, within three years of graduating — cases the questions above do not cover.",
+              "source": {
+                "source_url": "https://ind.nl/en/required-amounts-income-requirements",
+                "quote": "The lower salary criterion may also apply if you extend the residence permit or change your employer within 3 years after graduation or promotion.",
+                "retrieved_at": "2026-09-02",
+                "legal_basis": "Dutch immigration service, required amounts — the reduced European Blue Card rows (read from the watched snapshot of 2026-09-02)",
+                "history": []
+              }
+            }
           ]
         },
         {
@@ -2579,7 +2646,7 @@
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
           "preconditions": [
             "At least three months with the company outside the EU",
-            "You move in a manager, specialist or trainee role",
+            "You must move in a manager, specialist or trainee role",
             "If your profession is regulated (doctor, architect and similar), you need the Dutch registration for it"
           ],
           "criteria": [
@@ -2699,7 +2766,7 @@
           "summary": "A contract or hosting agreement with a Dutch research institution the immigration service (IND) recognises as a sponsor. Up to five years.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
           "preconditions": [
-            "The institution is on the Dutch immigration service's (IND) list of recognised sponsors",
+            "The institution must be on the Dutch immigration service's (IND) list of recognised sponsors",
             "A degree that would let you start a doctorate, or your employer's statement that your level is equivalent"
           ],
           "criteria": [
@@ -2772,7 +2839,7 @@
           "summary": "A one-year permit to look for work — any job, no separate work permit, and it cannot be extended. The Dutch immigration service (IND) grants it after certain studies, doctorates or research finished in the three years before you apply; its list of qualifying programmes and institutions is longer than the two cases asked about here, so read its own page before ruling yourself out. Having a job offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
           "preconditions": [
-            "You apply within three years of graduating, of the doctoral defence, or of finishing the research",
+            "You must apply within three years of graduating, of the doctoral defence, or of finishing the research",
             "If you studied at a foreign institution the Dutch immigration service designates: proof of English (a score of 6.0 on IELTS or another accepted test), or a programme taught in English or Dutch"
           ],
           "criteria": [
@@ -2821,7 +2888,7 @@
             {
               "id": "no-second-orientation-year",
               "kind": "condition",
-              "text": "You have not previously held an orientation year permit for the same study programme, doctorate or research.",
+              "text": "You must not have previously held an orientation year permit for the same study programme, doctorate or research.",
               "source": {
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
                 "quote": "You have not previously held a residence permit for an orientation year for the same research for which you are now applying. Nor have you held such a permit following the completion of the same study programme or doctoral programme.",

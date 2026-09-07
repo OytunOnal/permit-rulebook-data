@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, forEachCriterion, referencedFields, routeProvenance } from "../src/engine.js";
+import { deriveBands, evaluate, forEachCriterion, referencedFields, routeProvenance, routeStatements } from "../src/engine.js";
 import type { Criterion, Dataset, Profile, Route, RouteResult } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -91,11 +91,18 @@ describe("s5d — the Dutch reduced salary criterion asks where you studied", ()
     expect(label("qualification_recent").toLowerCase()).not.toMatch(/dutch|netherlands/);
   });
 
-  it("step 2: every Dutch reduced route states the orientation-year limbs it does not check", () => {
-    for (const id of NL_REDUCED_ROUTES) {
-      const pre = routeOf(id).preconditions!.join(" · ").toLowerCase();
-      expect(pre, id).toContain("orientation year");
-    }
+  it("step 2: every Dutch reduced route states the limbs of its own rule that it does not check", () => {
+    // Stated as a caveat since 2026-09-07, not as a precondition: a sentence
+    // that says the reader may qualify for LESS is not something to demand of
+    // them. The two highly-skilled-migrant routes carry the orientation-year
+    // limbs; the Blue Card carries the limbs its OWN source states, which say
+    // nothing about an orientation year.
+    const caveats = (id: string) =>
+      routeStatements(routeOf(id)).filter((s) => s.kind === "caveat").map((s) => s.text).join(" · ").toLowerCase();
+    for (const id of ["nl-hsm-30plus", "nl-hsm-under30"]) expect(caveats(id), id).toContain("orientation year");
+    expect(caveats("nl-blue-card")).toMatch(/extend|change employer/);
+    for (const id of NL_REDUCED_ROUTES)
+      expect(routeOf(id).preconditions!.join(" · ").toLowerCase(), id).not.toContain("orientation year");
   });
 
   it("the exclusion is recorded with its reason and its date", () => {
@@ -140,6 +147,7 @@ describe("s5d — the values the routes quote are the ones they quoted before", 
   it("the three Dutch routes still rest on exactly their published amounts and read dates", () => {
     const shape = (id: string) =>
       routeProvenance(routeOf(id))
+        .filter((p) => p.amount !== undefined) // a caveat's quote is not an amount
         .map((p) => `${p.amount} ${p.value.quote} ${p.value.retrieved_at}`)
         .sort();
     expect(shape("nl-hsm-under30")).toEqual([

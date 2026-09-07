@@ -167,6 +167,13 @@
       "kind": "sentinel",
       "learn_for": "occupation_shortage",
       "note": "Learn link for the shortage-occupation question. buzer.de mirrors the consolidated statute and is reachable where gesetze-im-internet.de times out (human check, 2026-09-06). Liveness is checked from wherever the watch runs, which is not where the reader sits: gesetze-im-internet.de answers CI and times out from Türkiye. A source reachable from many places beats a canonical one that is not."
+    },
+    {
+      "id": "buzer-20a-aufenthg",
+      "url": "https://www.buzer.de/20a_AufenthG.htm",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "§ 20a AufenthG — the Opportunity Card's own statute. Backs the caveat that the card allows at most 20 hours of work a week, and is the read that settled that no condition of the card requires the applicant to have no job offer (human read 2026-09-07). Official-source re-check tracked by the gesetze human-tier entry."
     }
   ]
 }

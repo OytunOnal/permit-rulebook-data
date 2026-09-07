@@ -1,6 +1,6 @@
 import { countryOptions } from "./countries.js";
 import type {
-  Band, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef, FieldOption, Notice,
+  Band, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef, FieldOption, Notice,
   PointsBreakdown, Profile, Route, RouteResult, RouteStatement, RouteStatus,
 } from "./types.js";
 
@@ -161,14 +161,25 @@ function isNearerThan(a: CriterionResult, b: CriterionResult): boolean {
   return false;
 }
 
+/** Which path decided a disjunction, in the shape a consumer can walk. */
+function decidedPath(c: Extract<Criterion, { op: "any" }>, index: number, criteria: CriterionResult[]): DecidedPath {
+  const label = c.paths[index].label;
+  return label === undefined ? { index, criteria } : { index, label, criteria };
+}
+
 function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): CriterionResult {
   if (c.op === "any") {
     const pathResults = c.paths.map((p) => p.criteria.map((pc) => evalCriterion(dataset, pc, profile)));
     // A path passes when all its criteria pass; the disjunction passes with it.
-    const passed = pathResults.find((rs) => rs.every((r) => r.outcome === "pass"));
-    if (passed) {
+    // WHICH path passed is the story the card tells — a route met through the
+    // reduced salary must name the reduced threshold, not the first one written.
+    const passedIndex = pathResults.findIndex((rs) => rs.every((r) => r.outcome === "pass"));
+    if (passedIndex >= 0) {
+      const passed = pathResults[passedIndex];
       const points = passed.find((r) => r.points)?.points;
-      return points ? { criterion: c, outcome: "pass", points } : { criterion: c, outcome: "pass" };
+      const result: CriterionResult = { criterion: c, outcome: "pass", path: decidedPath(c, passedIndex, passed) };
+      if (points) result.points = points;
+      return result;
     }
     if (pathResults.every((rs) => rs.some((r) => r.outcome === "fail"))) {
       // Every path failed — but if a path failed only by bounded gaps (salary
@@ -189,7 +200,7 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
       // dead ICT route because nobody asked the applicant's age (found by the
       // completed-interview property, 2026-09-07).
       let openBounded = false;
-      for (const rs of pathResults) {
+      for (const [index, rs] of pathResults.entries()) {
         const fails = rs.filter((r) => r.outcome === "fail");
         const undecided = rs.filter((r) => r.outcome === "unknown");
         const bounded = fails.every((f) => f.gap_max !== undefined || f.gap_points !== undefined);
@@ -198,7 +209,7 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
           continue;
         }
         if (!bounded) continue;
-        const result: CriterionResult = { criterion: c, outcome: "fail" };
+        const result: CriterionResult = { criterion: c, outcome: "fail", path: decidedPath(c, index, rs) };
         const gapsMoney = fails.map((f) => f.gap_max).filter((g): g is number => g !== undefined);
         const gapsPoints = fails.map((f) => f.gap_points).filter((g): g is number => g !== undefined);
         if (gapsMoney.length) result.gap_max = Math.max(...gapsMoney);
@@ -558,6 +569,10 @@ export interface ProvenanceEntry {
   label?: string;
   value: { quote: string; source_url: string; retrieved_at: string; legal_basis?: string };
   amount?: number;
+  /** Whether this value bears on the result it was read for: false only for a
+   * disjunction path the outcome did not rest on. `routeProvenance` leaves it
+   * undefined — a route on its own has no outcome to have rested on anything. */
+  applied?: boolean;
 }
 
 /** The one exhaustive walk over the Criterion union. Every consumer of
@@ -610,7 +625,42 @@ export function routeStatements(route: Route): RouteStatement[] {
 export function routeProvenance(route: Route): ProvenanceEntry[] {
   const entries: ProvenanceEntry[] = [];
   forEachCriterion(route.criteria, (c) => entries.push(...provenancedValuesOf(c)));
-  for (const s of routeStatements(route)) entries.push({ value: s.source });
+  for (const s of routeStatements(route)) if (s.source) entries.push({ value: s.source });
+  return entries;
+}
+
+/**
+ * The criterion nodes an outcome actually rested on. A disjunction contributes
+ * only its deciding path — the one that passed, or the nearest reachable one
+ * the gap was measured against — so a consumer can name the threshold the
+ * reader was measured against instead of whichever the dataset wrote first.
+ * An undecided disjunction contributes nothing: nothing has decided it.
+ */
+export function decidingCriteria(results: CriterionResult[]): CriterionResult[] {
+  const out: CriterionResult[] = [];
+  for (const r of results) {
+    if (r.criterion.op !== "any") { out.push(r); continue; }
+    if (r.path) out.push(...decidingCriteria(r.path.criteria));
+  }
+  return out;
+}
+
+/**
+ * A route's provenanced values, each marked with whether it applied to THIS
+ * result. Both of a route's salary quotes still render — the reader may want
+ * to know the other threshold exists — but the card can now say which one they
+ * were measured against, instead of printing two and leaving them to guess
+ * (human catch 2026-09-07).
+ */
+export function resultProvenance(r: RouteResult): ProvenanceEntry[] {
+  const applied = new Set(decidingCriteria(r.criteria).map((cr) => cr.criterion));
+  const entries: ProvenanceEntry[] = [];
+  forEachCriterion(r.route.criteria, (c) => {
+    for (const e of provenancedValuesOf(c)) entries.push({ ...e, applied: applied.has(c) });
+  });
+  // A statement is not a path anyone could have missed: it stands on every
+  // card the route produces.
+  for (const s of routeStatements(r.route)) if (s.source) entries.push({ value: s.source, applied: true });
   return entries;
 }
 
@@ -627,7 +677,7 @@ export function datasetMeta(dataset: Dataset): DatasetMeta {
   for (const country of dataset.countries)
     for (const route of country.routes)
       for (const s of routeStatements(route))
-        if (!newest || s.source.retrieved_at > newest) newest = s.source.retrieved_at;
+        if (s.source && (!newest || s.source.retrieved_at > newest)) newest = s.source.retrieved_at;
   for (const n of dataset.notices ?? [])
     if (!newest || n.source.retrieved_at > newest) newest = n.source.retrieved_at;
   return {

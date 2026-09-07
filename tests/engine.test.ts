@@ -76,20 +76,29 @@ describe("evaluate — engineer with a German offer", () => {
 });
 
 describe("scenario step 4 — personas reach a verdict in few questions", () => {
-  it("P1 engineer with offer: at most 8 questions (destination included), occupation_it never asked", () => {
-    const { asked } = runFlow(engineer);
-    expect(asked.length).toBeLessThanOrEqual(8);
+  // The Opportunity Card used to be retired by the offer itself, which cost
+  // an offer-holder nothing to answer. § 20a conditions nothing on being
+  // offerless (human read 2026-09-07), so the card now stays live until the
+  // applicant's own answers decide it: three more questions for P1 and P2
+  // (both languages and living costs), measured 2026-09-07.
+  it("P1 engineer with offer: at most 11 questions (destination included), occupation_it never asked", () => {
+    const { asked } = runFlow({ ...engineer, german: "none", english: "none", funds_eur_month: "band_1" });
+    expect(asked.length).toBeLessThanOrEqual(11);
     expect(asked).not.toContain("occupation_it");
-    expect(asked).not.toContain("german"); // Chancenkarte dead → no points ladder
+    // The language answer retires the card, so the points ladder behind it is
+    // still never walked.
+    expect(asked).not.toContain("age_band");
+    expect(asked).not.toContain("partner_ck");
   });
 
-  it("P2 vocational worker with offer: at most 7 questions, shortage list never asked", () => {
+  it("P2 vocational worker with offer: at most 10 questions, shortage list never asked", () => {
     const { asked, profile } = runFlow({
       destination: "de", citizenship: "third_country", situation: "offer", qualification: "vocational",
       recognition_de: "recognized", experience: "y5in7", salary_eur_year: "band_4",
       occupation_shortage: "no", occupation_it: "no",
+      german: "none", english: "none", funds_eur_month: "band_1",
     });
-    expect(asked.length).toBeLessThanOrEqual(7);
+    expect(asked.length).toBeLessThanOrEqual(10);
     expect(asked).not.toContain("occupation_shortage"); // only Blue Card wants it, and Blue Card is dead
     const byId = Object.fromEntries(evaluate(dataset, profile).map((r) => [r.route.id, r]));
     expect(byId["de-skilled-vocational"].status).toBe("met");

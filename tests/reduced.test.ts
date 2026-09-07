@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, formatEURPer, informativeFields, routeProvenance } from "../src/engine.js";
+import { deriveBands, evaluate, formatEURPer, informativeFields, routeProvenance, routeStatements } from "../src/engine.js";
 import { remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile, RouteResult } from "../src/types.js";
 
@@ -134,9 +134,12 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
     };
     expect(byId(base)["es-blue-card"].status).toBe("met");
     expect(byId({ ...base, qualification_recent: "no" })["es-blue-card"].status).not.toBe("met");
-    // The shortage-occupation limb ships as a precondition, not a number.
+    // The shortage-occupation limb ships as a caveat, not a number — and not
+    // as a requirement either: it says the reader may qualify for LESS, which
+    // is not something to demand of them (human catch 2026-09-07).
     const route = byId(base)["es-blue-card"].route;
-    expect(route.preconditions!.join(" ").toLowerCase()).toMatch(/shortage occupations/);
+    const caveats = routeStatements(route).filter((s) => s.kind === "caveat");
+    expect(caveats.map((s) => s.text).join(" ").toLowerCase()).toMatch(/shortage occupation/);
     expect(routeProvenance(route).map((p) => p.value.quote)).toContain("– Umbral reducido: 33.085,09 €");
   });
 

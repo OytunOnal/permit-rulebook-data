@@ -680,8 +680,41 @@
       "required": [
         "id",
         "kind",
-        "text",
-        "source"
+        "text"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "source": true
+          },
+          "not": {
+            "required": [
+              "unsourced"
+            ],
+            "properties": {
+              "unsourced": true
+            }
+          }
+        },
+        {
+          "required": [
+            "unsourced"
+          ],
+          "properties": {
+            "unsourced": true
+          },
+          "not": {
+            "required": [
+              "source"
+            ],
+            "properties": {
+              "source": true
+            }
+          }
+        }
       ],
       "additionalProperties": false,
       "properties": {
@@ -703,6 +736,11 @@
         },
         "source": {
           "$ref": "#/$defs/provenancedText"
+        },
+        "unsourced": {
+          "type": "string",
+          "minLength": 10,
+          "description": "Why this statement carries no quote. Exactly one of source/unsourced: a sentence we cannot source is said to be unsourced on the card, never given a neighbouring quote that does not cover it."
         }
       }
     },

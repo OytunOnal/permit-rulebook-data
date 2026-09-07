@@ -93,7 +93,13 @@ export interface RouteStatement {
   kind: "condition" | "caveat";
   /** Our plain English — what the reader sees. */
   text: string;
-  source: ProvenancedText;
+  /** The source's own words. Absent only where they could not be found: then
+   * `unsourced` says why, and the card says so too. Borrowing a neighbouring
+   * quote that does not cover the sentence would be inventing provenance. */
+  source?: ProvenancedText;
+  /** Why this statement carries no quote — required when `source` is absent,
+   * forbidden when it is present. */
+  unsourced?: string;
 }
 
 export interface Route {
@@ -226,6 +232,22 @@ export interface PointsBreakdown {
   items: { field: string; points: number }[];
 }
 
+/**
+ * The path of a disjunction that decided the outcome: the one that passed or,
+ * where none did, the nearest reachable one the gap was measured against.
+ * A route whose salary criterion is an `any` used to render whichever
+ * threshold was written first, so a graduate met through the €3,122 path was
+ * shown "criteria met" beside a rail labelled €4,357 with his declared band
+ * under the line — a verdict and a picture of the same man failing, on one
+ * card (human catch 2026-09-07).
+ */
+export interface DecidedPath {
+  /** Position in the criterion's own `paths` array. */
+  index: number;
+  label?: string;
+  criteria: CriterionResult[];
+}
+
 export interface CriterionResult {
   criterion: Criterion;
   outcome: Outcome;
@@ -234,6 +256,8 @@ export interface CriterionResult {
   /** For a fully answered points criterion that fell short: points still missing. */
   gap_points?: number;
   points?: PointsBreakdown;
+  /** `any` only, and only once something has decided it. */
+  path?: DecidedPath;
 }
 
 export type RouteStatus = "met" | "near" | "hold";

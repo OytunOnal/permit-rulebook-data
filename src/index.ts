@@ -1,5 +1,5 @@
 export type * from "./types.js";
-export { evaluate, deriveBands, thresholdsForField, routeProvenance, routeStatements, datasetMeta, formatEUR, formatEURPer, notices, matchOptions, foldForSearch, isRouteAlive, informativeFields, referencedFields, forEachCriterion, unlocks, fieldOptions, optionEquivalenceClasses } from "./engine.js";
+export { evaluate, deriveBands, thresholdsForField, routeProvenance, resultProvenance, decidingCriteria, routeStatements, datasetMeta, formatEUR, formatEURPer, notices, matchOptions, foldForSearch, isRouteAlive, informativeFields, referencedFields, forEachCriterion, unlocks, fieldOptions, optionEquivalenceClasses } from "./engine.js";
 export { deriveQuestions, remainingQuestions } from "./questions.js";
 export {
   reasonFor, criterionPhrase, subjectOf, shortLabelOf, answerLabel, unlockTitleOf,

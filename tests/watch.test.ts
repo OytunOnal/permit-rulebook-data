@@ -237,7 +237,10 @@ describe("quote fidelity: the sentence is still on the page", () => {
 
   it("PDF-tier sources are reported unverifiable, never counted as verified", () => {
     const r = checkQuotes(dataset, shippedWatchlist, shippedState);
-    expect(r.unverifiable.every((u) => /pdf tier|not on the watchlist|human tier/.test(u.reason))).toBe(true);
+    // "no text snapshot" is the fourth honest answer: a source added to the
+    // watchlist since the last watch run has nothing to check against yet
+    // (§ 20a joined it 2026-09-07). It is still named, never silently passed.
+    expect(r.unverifiable.every((u) => /pdf tier|not on the watchlist|human tier|no text snapshot/.test(u.reason))).toBe(true);
     for (const u of r.unverifiable) expect(u.reason.length).toBeGreaterThan(4);
   });
 

@@ -178,7 +178,7 @@ export function datasetSourceUrls(dataset: Dataset): Set<string> {
         for (const p of provenancedValuesOf(c)) urls.add(p.value.source_url);
       });
       // A route statement rests on a quote like every other value.
-      for (const s of routeStatements(route)) urls.add(s.source.source_url);
+      for (const s of routeStatements(route)) if (s.source) urls.add(s.source.source_url);
     }
   // A notice rests on a quote like every other value — it is watched like one.
   for (const n of dataset.notices ?? []) urls.add(n.source.source_url);
@@ -221,7 +221,7 @@ export function datasetQuotes(dataset: Dataset): { quote: string; source_url: st
           out.push({ quote: p.value.quote, source_url: p.value.source_url, where: route.id });
       });
       for (const s of routeStatements(route))
-        out.push({ quote: s.source.quote, source_url: s.source.source_url, where: `${route.id}:${s.id}` });
+        if (s.source) out.push({ quote: s.source.quote, source_url: s.source.source_url, where: `${route.id}:${s.id}` });
     }
   for (const n of dataset.notices ?? [])
     out.push({ quote: n.source.quote, source_url: n.source.source_url, where: `notice:${n.id}` });

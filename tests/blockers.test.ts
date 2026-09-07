@@ -97,10 +97,17 @@ describe("cleared blocker: a card never claims more than the interview checked",
     for (const country of dataset.countries)
       for (const route of country.routes)
         for (const s of routeStatements(route)) {
-          expect(s.source.source_url, `${route.id}:${s.id}`).toMatch(/^https:\/\//);
-          expect(s.source.quote.length, `${route.id}:${s.id}`).toBeGreaterThan(4);
-          expect(s.source.retrieved_at, `${route.id}:${s.id}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
           expect(s.text.length, `${route.id}:${s.id}`).toBeGreaterThan(4);
+          if (s.source) {
+            expect(s.source.source_url, `${route.id}:${s.id}`).toMatch(/^https:\/\//);
+            expect(s.source.quote.length, `${route.id}:${s.id}`).toBeGreaterThan(4);
+            expect(s.source.retrieved_at, `${route.id}:${s.id}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+          } else {
+            // The one alternative to a quote is saying there is none. Silence
+            // would read as if the promise held (isolated critique #5).
+            expect(s.unsourced?.length, `${route.id}:${s.id} has neither a source nor a reason`)
+              .toBeGreaterThan(10);
+          }
         }
   });
 });

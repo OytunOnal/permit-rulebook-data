@@ -148,9 +148,13 @@ describe("NL Blue Card — the IT experience rule (human verification 2026-09-04
       destination: "de", citizenship: "third_country", situation: "offer",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
       experience: "y2in5", salary_eur_year: "band_5",
+      // The Opportunity Card no longer excludes offer-holders (§ 20a, human
+      // read 2026-09-07), so its own three questions now come to this German
+      // applicant too. None of them is another country's.
+      german: "none", english: "none", funds_eur_month: "band_1",
     });
     expect(asked).not.toContain("experience_7y");
-    expect(asked.length).toBeLessThanOrEqual(8);
+    expect(asked.length).toBeLessThanOrEqual(11);
   });
 });
 
