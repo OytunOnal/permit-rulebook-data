@@ -53,7 +53,7 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
   const thresholds = new Map<string, { amount: number; source_url: string; retrieved_at: string; route: string }>();
 
   /**
-   * s5d: a rule may only name an answer the dataset can put into words. The
+   * s5d: a criterion may only name an answer the dataset can put into words. The
    * verdict line says what a route asks for; where the words are missing the
    * only thing left to say is the field's own id, which is how "Not met:
    * situation" shipped (product-critique v0.7, B3). There is deliberately no
@@ -69,7 +69,7 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
     Object.entries(countryVocabulary.classes).filter(([, c]) => c.short).map(([id]) => id),
   );
   // A country's own name is already the noun phrase, and the country list is
-  // generated — so a rule naming a country code needs nothing extra. Which
+  // generated — so a criterion naming a country code needs nothing extra. Which
   // codes exist is the vocabulary check's business, just below.
   const generatedFields = new Set(dataset.fields.filter((f) => f.options_from).map((f) => f.id));
   const checkWords = (path: string, route: string, c: import("./types.js").Criterion, field: string, values: string[]) => {
@@ -79,7 +79,7 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
       if (!optionShorts.get(field)?.has(v) && !classShorts.has(v))
         errors.push({
           path,
-          message: `${route}: the rule names ${field} = "${v}", which carries no noun phrase — give the option a "short", or the criterion a "short_reason"`,
+          message: `${route}: a criterion names ${field} = "${v}", which carries no noun phrase — give the option a "short", or the criterion a "short_reason"`,
           keyword: "answerHasWords",
         });
   };

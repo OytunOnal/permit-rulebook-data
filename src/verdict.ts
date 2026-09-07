@@ -65,7 +65,7 @@ export function answerLabel(dataset: Dataset, field: string, value: string | und
  * "30 to 35, 36 to 40 or over 40"); a disjunction expands into its paths, so
  * a route never has to name its own internal structure.
  */
-export function requirementOf(dataset: Dataset, c: Criterion): string {
+export function criterionPhrase(dataset: Dataset, c: Criterion): string {
   if (c.short_reason) return c.short_reason;
   switch (c.op) {
     case "eq":
@@ -77,7 +77,7 @@ export function requirementOf(dataset: Dataset, c: Criterion): string {
     case "points":
       return `${c.required.value} points from the official table`;
     case "any":
-      return joinOr(c.paths.map((p) => joinAnd(p.criteria.map((pc) => requirementOf(dataset, pc)))));
+      return joinOr(c.paths.map((p) => joinAnd(p.criteria.map((pc) => criterionPhrase(dataset, pc)))));
     default: {
       const _exhaustive: never = c;
       throw new Error(`unhandled criterion op: ${JSON.stringify(_exhaustive)}`);
@@ -86,12 +86,14 @@ export function requirementOf(dataset: Dataset, c: Criterion): string {
 }
 
 /**
- * A criterion the person "failed" by having MORE: the route wants the
- * "none of these" answer (the Opportunity Card is for people with no offer
- * yet) and they declared a real step. "Not met: situation" reads to an
- * offer-holder as "lose your offer"; the honest line names what they have.
+ * A moot criterion, and what makes it moot: the route wants the "none of
+ * these" answer (the Opportunity Card is for people with no offer yet) and the
+ * person declared a real step, so they "failed" it by having MORE. "Not met:
+ * situation" reads to an offer-holder as "lose your offer"; the honest line
+ * names what they have. Exported because the page groups rows on the same
+ * shape, and one definition cannot disagree with itself.
  */
-function outgrownWith(dataset: Dataset, cr: CriterionResult, profile: Profile): string | null {
+export function mootWith(dataset: Dataset, cr: CriterionResult, profile: Profile): string | null {
   const c = cr.criterion;
   if (c.op !== "eq") return null;
   const required = fieldOptions(dataset, c.field).find((o) => o.value === c.value);
@@ -131,9 +133,9 @@ export function isPlacedElsewhere(r: RouteResult, profile: Profile): boolean {
 }
 
 export interface ReasonRow {
-  /** needs: a shortfall · outgrown: already covered · where: another country ·
+  /** needs: a shortfall · moot: already covered · where: another country ·
    * unknown: an answer of "I don't know" that still binds. */
-  kind: "needs" | "outgrown" | "where" | "unknown";
+  kind: "needs" | "moot" | "where" | "unknown";
   text: string;
 }
 
@@ -144,7 +146,7 @@ export interface Reason {
   rows: ReasonRow[];
   /** The phrases the line was built from, for callers that lay them out
    * themselves — and for the test that no field NAME ever lands in one. */
-  parts: { needs: string[]; outgrown: string[]; unknown: string[]; moot: string[] };
+  parts: { needs: string[]; unknown: string[]; moot: string[] };
 }
 
 const countryName = (dataset: Dataset, code: string): string =>
@@ -153,7 +155,7 @@ const countryName = (dataset: Dataset, code: string): string =>
 export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): Reason {
   const rows: ReasonRow[] = [];
   const needs: string[] = [];
-  const outgrown: string[] = [];
+  const moot: string[] = [];
   const unknownFields = liveUnknowns(r, profile);
   const unknownSubjects = unknownFields.map((f) => subjectOf(dataset, f));
   // Quoted as the person actually answered it: the results used to report an
@@ -164,10 +166,10 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
 
   for (const cr of r.criteria) {
     if (cr.outcome !== "fail") continue;
-    const already = outgrownWith(dataset, cr, profile);
+    const already = mootWith(dataset, cr, profile);
     if (already) {
-      outgrown.push(already);
-      rows.push({ kind: "outgrown", text: `Not needed — you already have ${already}.` });
+      moot.push(already);
+      rows.push({ kind: "moot", text: `Not needed — you already have ${already}.` });
       continue;
     }
     if (isLocalization(cr.criterion)) {
@@ -178,14 +180,14 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
       });
       continue;
     }
-    const requirement = requirementOf(dataset, cr.criterion);
-    needs.push(requirement);
+    const asks = criterionPhrase(dataset, cr.criterion);
+    needs.push(asks);
     const c = cr.criterion;
     rows.push({
       kind: "needs",
       text: "field" in c
-        ? `Needs ${requirement} — you declared ${answerLabel(dataset, c.field, profile[c.field])}.`
-        : `Needs ${requirement}.`,
+        ? `Needs ${asks} — you declared ${answerLabel(dataset, c.field, profile[c.field])}.`
+        : `Needs ${asks}.`,
     });
   }
 
@@ -195,7 +197,7 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
       text: `You answered “${unknownAnswer(field)}” about ${subjectOf(dataset, field)}.`,
     });
 
-  const parts = { needs, outgrown, unknown: unknownSubjects, moot: outgrown };
+  const parts = { needs, unknown: unknownSubjects, moot };
 
   if (r.status === "met")
     return { line: r.route.summary ?? "Every published condition we check appears met by your declaration.", rows, parts };
@@ -215,7 +217,7 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
   }
 
   const sentences: string[] = [];
-  if (outgrown.length) sentences.push(`Not needed with ${joinAnd(outgrown)}.`);
+  if (moot.length) sentences.push(`Not needed with ${joinAnd(moot)}.`);
   // A requirement that is itself a choice already spends its "or"; joining the
   // list with a bare "and" then leaves the reader to guess where one
   // requirement ends. The semicolon says it.

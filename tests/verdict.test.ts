@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, fieldOptions, forEachCriterion, unlocks } from "../src/engine.js";
 import { deriveQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
-import { reasonFor, requirementOf, subjectOf, unlockTitleOf } from "../src/verdict.js";
+import { answerLabel, criterionPhrase, reasonFor, shortLabelOf, subjectOf, unlockTitleOf } from "../src/verdict.js";
 import type { Dataset, FieldDef, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -113,6 +113,51 @@ describe("invariant: no user-facing string contains a dataset field id", () => {
       }
     }
   });
+
+  it("nor does any OTHER rendered phrase turn out to BE a field id", () => {
+    // What the substring check above cannot reach: seven ids are ordinary
+    // English words ("situation", "experience", "german"), so prose that
+    // contains one is not a leak. What is always a leak is a phrase that IS
+    // one — a whole slot filled with the id itself. That is checkable for
+    // every id, plain-English ones included, and it is checkable
+    // EXHAUSTIVELY: every phrase-shaped slot the engine fills comes from a
+    // finite set. Whole-phrase equality is the honest limit here; an id used
+    // as one word inside an authored sentence stays uncoverable, which is why
+    // `datasetProse` is read by a human at authoring time.
+    // Case-sensitively: an id is lowercase identifier text, and a leak
+    // renders it verbatim. "Destination" is the authored ledger label of the
+    // field whose id happens to be the same English word — capitalised prose,
+    // not an id that escaped.
+    const ids = new Set(dataset.fields.map((f) => f.id));
+    const slots: Array<[string, string]> = [];
+    for (const f of dataset.fields) {
+      slots.push([`${f.id} ledger label`, shortLabelOf(dataset, f.id)]);
+      slots.push([`${f.id} subject`, subjectOf(dataset, f.id)]);
+      for (const v of optionValues(f)) slots.push([`${f.id}=${v} answer`, answerLabel(dataset, f.id, v)]);
+    }
+    for (const country of dataset.countries)
+      for (const route of country.routes) {
+        slots.push([`${route.id} name`, route.name]);
+        if (route.summary) slots.push([`${route.id} summary`, route.summary]);
+        for (const pre of route.preconditions ?? []) slots.push([`${route.id} precondition`, pre]);
+        forEachCriterion(route.criteria, (c) => slots.push([`${route.id} criterion`, criterionPhrase(dataset, c)]));
+      }
+    // The two slots that only exist for a person: an unlock's step and the one
+    // line a card leads with.
+    const rand = lcg(13579);
+    for (let i = 0; i < 120; i++) {
+      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.7);
+      for (const u of unlocks(dataset, p)) slots.push([`${u.field} unlock title`, unlockTitleOf(dataset, u)]);
+      for (const r of evaluate(dataset, p)) {
+        const reason = reasonFor(dataset, r, p);
+        slots.push([`${r.route.id} reason line`, reason.line]);
+        for (const row of reason.rows) slots.push([`${r.route.id} reason row`, row.text]);
+      }
+    }
+    expect(slots.length).toBeGreaterThan(100);
+    for (const [where, phrase] of slots)
+      expect(ids.has(phrase.trim().replace(/[.!?]$/, "")), `${where}: "${phrase}"`).toBe(false);
+  });
 });
 
 describe("invariant: every reason a route gives is a sentence", () => {
@@ -210,13 +255,13 @@ describe("s5d — the plain-words primitives the page renders", () => {
     for (const country of dataset.countries)
       for (const route of country.routes)
         forEachCriterion(route.criteria, (c) => {
-          const text = requirementOf(dataset, c);
+          const text = criterionPhrase(dataset, c);
           expect(text.length, `${route.id}: ${JSON.stringify(c).slice(0, 80)}`).toBeGreaterThan(3);
           expect(text, route.id).not.toMatch(/undefined|\[object/);
         });
   });
 
-  it("a rule with no authored words for the answer it names fails the build", () => {
+  it("a criterion with no authored words for the answer it names fails the build", () => {
     // The guard that keeps the words honest: not "the page has a fallback",
     // but "there is nothing to fall back to". Strip one answer's noun phrase
     // and the dataset stops being valid.
@@ -236,7 +281,7 @@ describe("s5d — the plain-words primitives the page renders", () => {
     const nl = dataset.countries.find((c) => c.code === "NL")!;
     const route = nl.routes.find((r) => r.id === "nl-hsm-under30")!;
     const salary = route.criteria.find((c) => c.op === "any" && c.paths.length === 2 && c.label !== "located in the Netherlands")!;
-    const text = requirementOf(dataset, salary);
+    const text = criterionPhrase(dataset, salary);
     expect(text.toLowerCase()).toContain("dutch");
     expect(text.toLowerCase()).toMatch(/designat/);
   });
