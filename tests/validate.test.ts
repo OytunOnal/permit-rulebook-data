@@ -84,3 +84,64 @@ describe("s5b — notices and preconditions are data, not prose (schema boundary
     expect(validateDataset(data).ok).toBe(false);
   });
 });
+
+/**
+ * The provenance rule is that every value carries a source URL, a verbatim
+ * quote and a retrieval date TO EXIST. `unsourced` is the one exception, and it
+ * shipped as a text box with a minimum length: eleven characters of anything
+ * satisfied it, which made the gate optional by prose (review 2026-09-07). The
+ * genesis rule is never require content, require a DECISION — so the exception
+ * is an attributable one: a reason a gate can read, and a date a human can age.
+ */
+describe("an absent quote is a decision, not an essay", () => {
+  const statementOf = (data: any) =>
+    data.countries.flatMap((c: any) => c.routes).find((r: any) => r.id === "es-blue-card").statements[0];
+
+  it("prose alone fails, however much of it there is", () => {
+    const data = load();
+    statementOf(data).unsourced =
+      "The ministry publishes this only as a scan, and we checked again on 2026-09-07.";
+    expect(validateDataset(data).ok).toBe(false);
+  });
+
+  it("prose without a reason fails — the note is in addition, never instead", () => {
+    const data = load();
+    statementOf(data).unsourced = { note: "We looked hard and could not find it anywhere at all." };
+    expect(validateDataset(data).ok).toBe(false);
+  });
+
+  it("a reason we did not enumerate fails — a gate can only read a fixed set", () => {
+    const data = load();
+    statementOf(data).unsourced = { reason: "we-ran-out-of-time", checked_at: "2026-09-07" };
+    expect(validateDataset(data).ok).toBe(false);
+  });
+
+  it("a reason with no checked-on date fails — nothing a human can age", () => {
+    const data = load();
+    statementOf(data).unsourced = { reason: "scanned-image" };
+    expect(validateDataset(data).ok).toBe(false);
+  });
+
+  it("the date is held to the shape the sourced side is held to", () => {
+    const data = load();
+    statementOf(data).unsourced = { reason: "scanned-image", checked_at: "7 September 2026" };
+    expect(validateDataset(data).ok).toBe(false);
+  });
+
+  it("a reason and a date, with or without a note, is what passes", () => {
+    const data = load();
+    statementOf(data).unsourced = { reason: "unreachable", checked_at: "2026-09-07" };
+    expect(validateDataset(data).errors).toEqual([]);
+    statementOf(data).unsourced = {
+      reason: "not-published-in-words", checked_at: "2026-09-07", note: "The list is a PDF table.",
+    };
+    expect(validateDataset(data).errors).toEqual([]);
+  });
+
+  it("a statement may still not carry both a quote and a reason not to have one", () => {
+    const data = load();
+    const s = statementOf(data);
+    s.source = { source_url: "https://example.es/x", quote: "Some official wording.", retrieved_at: "2026-09-07" };
+    expect(validateDataset(data).ok).toBe(false);
+  });
+});

@@ -65,7 +65,7 @@ describe("the Opportunity Card asks about the applicant, not about their luck so
     // 2026-09-04); nothing may put it back under that heading.
     const required = [
       ...(routeOf("de-chancenkarte").preconditions ?? []),
-      ...routeStatements(routeOf("de-chancenkarte")).filter((s) => s.kind === "condition").map((s) => s.text),
+      ...routeStatements(routeOf("de-chancenkarte")).filter((s) => s.kind === "precondition").map((s) => s.text),
     ];
     expect(required).toEqual([]);
   });

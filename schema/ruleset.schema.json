@@ -217,6 +217,35 @@
         }
       ]
     },
+    "unsourcedReason": {
+      "type": "object",
+      "description": "Why this statement carries no quote. Exactly one of source/unsourced: a sentence we cannot source is said to be unsourced on the card, never given a neighbouring quote that does not cover it. This was a free-text box with a minimum length, so eleven characters of anything silenced the provenance gate — a check that can be answered by writing something is optional by prose (review 2026-09-07). The absence is an attributable decision instead: a reason from a fixed set, and a date in the same shape a retrieval date takes. Prose may be added in `note`; it may never stand in place of either.",
+      "required": [
+        "reason",
+        "checked_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "enum": [
+            "scanned-image",
+            "not-published-in-words",
+            "unreachable"
+          ],
+          "description": "scanned-image: the authority publishes the passage only as a scan or image whose text cannot be extracted. not-published-in-words: the authority states the fact, but as a list, table or form rather than in a sentence there is anything to quote. unreachable: no fetch from here reaches the source at all. Grow this list only when a case genuinely occurs — an enumeration nobody can extend by writing prose is the whole point."
+        },
+        "checked_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "The day we last went looking and did not find it — the sourced side's retrieval date, in the sourced side's shape, so it ages the same way."
+        },
+        "note": {
+          "type": "string",
+          "minLength": 10,
+          "description": "What the reason cannot carry: which document, which page, what was tried. In addition to the reason and the date, never instead of them."
+        }
+      }
+    },
     "provenancedText": {
       "type": "object",
       "required": [
@@ -724,10 +753,10 @@
         },
         "kind": {
           "enum": [
-            "condition",
+            "precondition",
             "caveat"
           ],
-          "description": "condition: something the applicant must satisfy that the interview never asks — it joins the preconditions on the card. caveat: a qualification the source puts on its own answer, which sits beside the verdict and never fails anyone."
+          "description": "precondition: something the applicant must satisfy that the interview never asks. It joins `route.preconditions` in the same list under the same heading, so it IS a precondition — one that carries its quote — and calling it a `condition` coined a synonym for a term the glossary already fixes (review 2026-09-07). caveat: a qualification the source puts on its own answer, which sits beside the verdict and never fails anyone."
         },
         "text": {
           "type": "string",
@@ -738,9 +767,7 @@
           "$ref": "#/$defs/provenancedText"
         },
         "unsourced": {
-          "type": "string",
-          "minLength": 10,
-          "description": "Why this statement carries no quote. Exactly one of source/unsourced: a sentence we cannot source is said to be unsourced on the card, never given a neighbouring quote that does not cover it."
+          "$ref": "#/$defs/unsourcedReason"
         }
       }
     },

@@ -78,7 +78,7 @@ export type Criterion =
  *
  * A precondition is our plain language and carries no provenance; a threshold
  * carries provenance but has to be a number. Between them sat statements the
- * source makes in words — a condition the interview cannot ask about, or a
+ * source makes in words — a precondition the interview cannot ask about, or a
  * qualification the source puts on its own answer — and the dataset had
  * nowhere to put them, so they were written as our own editorial `note` or,
  * worse, invented as a criterion (the orientation year's "you have no offer",
@@ -87,10 +87,13 @@ export type Criterion =
  */
 export interface RouteStatement {
   id: string;
-  /** condition: something the applicant must satisfy that the interview never
-   * asks — it joins the preconditions on the card. caveat: a qualification the
-   * source puts on its own answer; it sits beside the verdict and fails nobody. */
-  kind: "condition" | "caveat";
+  /** precondition: something the applicant must satisfy that the interview
+   * never asks. It renders into the same list under the same heading as
+   * `route.preconditions`, so it IS a Precondition — one that carries its
+   * quote. `condition` was a coined synonym for a term the glossary fixes
+   * (review 2026-09-07). caveat: a qualification the source puts on its own
+   * answer; it sits beside the verdict and fails nobody. */
+  kind: "precondition" | "caveat";
   /** Our plain English — what the reader sees. */
   text: string;
   /** The source's own words. Absent only where they could not be found: then
@@ -99,7 +102,31 @@ export interface RouteStatement {
   source?: ProvenancedText;
   /** Why this statement carries no quote — required when `source` is absent,
    * forbidden when it is present. */
-  unsourced?: string;
+  unsourced?: UnsourcedReason;
+}
+
+/**
+ * Why one statement has no quote: the single exception to the rule that a
+ * value carries a source URL, a verbatim quote and a retrieval date TO EXIST.
+ *
+ * It shipped as a text box with a minimum length, which made the provenance
+ * gate optional by prose — eleven characters of anything passed, and the
+ * Spanish shortage-occupation line's own "(checked 2026-09-07)" sat inside
+ * free text where nothing could read it (review 2026-09-07). The exception is
+ * an attributable decision now: a reason from a fixed set a gate can read, and
+ * a date in the shape `retrieved_at` takes, so it ages the same way. Prose is
+ * welcome in `note` — in addition to both, never in place of either.
+ */
+export interface UnsourcedReason {
+  /** scanned-image: published only as a scan whose text cannot be extracted.
+   * not-published-in-words: stated as a list, table or form, never in a
+   * sentence there is anything to quote. unreachable: no fetch from here
+   * reaches the source at all. */
+  reason: "scanned-image" | "not-published-in-words" | "unreachable";
+  /** The day we last went looking and did not find it. */
+  checked_at: string;
+  /** Which document, which page, what was tried — what the reason cannot say. */
+  note?: string;
 }
 
 export interface Route {

@@ -1885,7 +1885,11 @@
               "id": "reduced-also-for-shortage-occupations",
               "kind": "caveat",
               "text": "The lower salary can also apply to jobs on Spain's official list of shortage occupations — we do not check that list.",
-              "unsourced": "The wording sits in Orden PJC/44/2026, which the ministry publishes as a scanned document whose text cannot be read here, and no page we can reach states it (checked 2026-09-07)."
+              "unsourced": {
+                "reason": "scanned-image",
+                "checked_at": "2026-09-07",
+                "note": "The wording sits in Orden PJC/44/2026, which the ministry publishes as a scanned document whose text cannot be read here, and no page we can reach states it."
+              }
             }
           ]
         },
@@ -2887,7 +2891,7 @@
           "statements": [
             {
               "id": "no-second-orientation-year",
-              "kind": "condition",
+              "kind": "precondition",
               "text": "You must not have previously held an orientation year permit for the same study programme, doctorate or research.",
               "source": {
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",

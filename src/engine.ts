@@ -161,6 +161,21 @@ function isNearerThan(a: CriterionResult, b: CriterionResult): boolean {
   return false;
 }
 
+/**
+ * Whether this criterion result leaves its route or path still reachable: it
+ * did not fail, or it failed only by a bounded gap the person can still close.
+ *
+ * The one definition. It had drifted into four spellings of the same
+ * conjunction — the disjunction's "every failure is bounded", the status
+ * rule's `allFailsGapped`, the question-picker's "this path can still be
+ * MEASURED", and `isHardFail`'s two early returns. They composed only by
+ * coincidence, and the next edit to any one of them would have moved a
+ * verdict without moving the others (review 2026-09-07).
+ */
+function stillReachable(r: CriterionResult): boolean {
+  return r.outcome !== "fail" || r.gap_max !== undefined || r.gap_points !== undefined;
+}
+
 /** Which path decided a disjunction, in the shape a consumer can walk. */
 function decidedPath(c: Extract<Criterion, { op: "any" }>, index: number, criteria: CriterionResult[]): DecidedPath {
   const label = c.paths[index].label;
@@ -203,7 +218,7 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
       for (const [index, rs] of pathResults.entries()) {
         const fails = rs.filter((r) => r.outcome === "fail");
         const undecided = rs.filter((r) => r.outcome === "unknown");
-        const bounded = fails.every((f) => f.gap_max !== undefined || f.gap_points !== undefined);
+        const bounded = fails.every(stillReachable);
         if (undecided.length > 0) {
           if (bounded) openBounded = true;
           continue;
@@ -282,7 +297,7 @@ function routeStatus(criteria: CriterionResult[]): RouteStatus {
   const fails = criteria.filter((r) => r.outcome === "fail");
   const unknowns = criteria.filter((r) => r.outcome === "unknown");
   if (fails.length === 0 && unknowns.length === 0) return "met";
-  const allFailsGapped = fails.every((f) => f.gap_max !== undefined || f.gap_points !== undefined);
+  const allFailsGapped = fails.every(stillReachable);
   if (fails.length > 0 && allFailsGapped && unknowns.length === 0) return "near";
   return "hold";
 }
@@ -304,8 +319,7 @@ function failsOnlyImprovables(dataset: Dataset, c: Criterion): boolean {
  * (citizenship, qualification, situation) end it for real.
  */
 function isHardFail(dataset: Dataset, r: CriterionResult): boolean {
-  if (r.outcome !== "fail") return false;
-  if (r.gap_max !== undefined || r.gap_points !== undefined) return false;
+  if (stillReachable(r)) return false;
   return !failsOnlyImprovables(dataset, r.criterion);
 }
 
@@ -333,10 +347,7 @@ function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): st
     // failing only by a bounded gap still turns the route into a near miss, so
     // the answers it is waiting on are worth asking for.
     return c.paths
-      .filter((p) => p.criteria.every((pc) => {
-        const r = evalCriterion(dataset, pc, profile);
-        return r.outcome !== "fail" || r.gap_max !== undefined || r.gap_points !== undefined;
-      }))
+      .filter((p) => p.criteria.every((pc) => stillReachable(evalCriterion(dataset, pc, profile))))
       .flatMap((p) => p.criteria.flatMap((pc) => undecidedFieldsOf(dataset, pc, profile)));
   return profile[c.field] === undefined ? [c.field] : [];
 }
@@ -569,9 +580,15 @@ export interface ProvenanceEntry {
   label?: string;
   value: { quote: string; source_url: string; retrieved_at: string; legal_basis?: string };
   amount?: number;
-  /** Whether this value bears on the result it was read for: false only for a
-   * disjunction path the outcome did not rest on. `routeProvenance` leaves it
-   * undefined — a route on its own has no outcome to have rested on anything. */
+  /**
+   * Whether this value bears on the result it was read for. Three states,
+   * because two could not tell LOST from NOT YET DECIDED:
+   *   true      — the outcome rested on it;
+   *   false     — a disjunction path the outcome rested on something else;
+   *   undefined — nothing has decided it, so it is neither.
+   * `routeProvenance` leaves every entry undefined: a route on its own has no
+   * outcome to have rested on anything.
+   */
   applied?: boolean;
 }
 
@@ -646,6 +663,28 @@ export function decidingCriteria(results: CriterionResult[]): CriterionResult[] 
 }
 
 /**
+ * Which criterion nodes this outcome rested on (true) and which it ruled out
+ * (false). A node under a disjunction nothing has decided yet is left out of
+ * the map entirely — it is neither.
+ *
+ * Membership of the deciding set used to answer both questions at once, and an
+ * undecided disjunction contributes nothing to that set: a person who had
+ * simply not reached the salary question was shown BOTH of a route's quotes
+ * marked "does not apply to you", having been ruled out of nothing
+ * (review 2026-09-07). The Chancenkarte's points table said the same thing to
+ * an empty interview.
+ */
+function markDecided(results: CriterionResult[], into: Map<Criterion, boolean>): void {
+  for (const r of results) {
+    into.set(r.criterion, true);
+    if (r.criterion.op !== "any" || !r.path) continue;
+    for (const [index, path] of r.criterion.paths.entries())
+      if (index === r.path.index) markDecided(r.path.criteria, into);
+      else forEachCriterion(path.criteria, (c) => into.set(c, false));
+  }
+}
+
+/**
  * A route's provenanced values, each marked with whether it applied to THIS
  * result. Both of a route's salary quotes still render — the reader may want
  * to know the other threshold exists — but the card can now say which one they
@@ -653,10 +692,13 @@ export function decidingCriteria(results: CriterionResult[]): CriterionResult[] 
  * (human catch 2026-09-07).
  */
 export function resultProvenance(r: RouteResult): ProvenanceEntry[] {
-  const applied = new Set(decidingCriteria(r.criteria).map((cr) => cr.criterion));
+  const marks = new Map<Criterion, boolean>();
+  markDecided(r.criteria, marks);
   const entries: ProvenanceEntry[] = [];
   forEachCriterion(r.route.criteria, (c) => {
-    for (const e of provenancedValuesOf(c)) entries.push({ ...e, applied: applied.has(c) });
+    const applied = marks.get(c);
+    for (const e of provenancedValuesOf(c))
+      entries.push(applied === undefined ? { ...e } : { ...e, applied });
   });
   // A statement is not a path anyone could have missed: it stands on every
   // card the route produces.

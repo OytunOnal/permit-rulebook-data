@@ -7,7 +7,7 @@ import type { Dataset, Profile, Route } from "../src/types.js";
 /** Everything a card lists under "Also required — not checked here": the plain
  * lines and the ones that carry a quote. */
 const preconditionsOf = (route: Route): string[] =>
-  [...(route.preconditions ?? []), ...routeStatements(route).filter((s) => s.kind === "condition").map((s) => s.text)];
+  [...(route.preconditions ?? []), ...routeStatements(route).filter((s) => s.kind === "precondition").map((s) => s.text)];
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
@@ -103,14 +103,24 @@ describe("cleared blocker: a card never claims more than the interview checked",
             expect(s.source.quote.length, `${route.id}:${s.id}`).toBeGreaterThan(4);
             expect(s.source.retrieved_at, `${route.id}:${s.id}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
           } else {
-            // The one alternative to a quote is saying there is none. Silence
-            // would read as if the promise held (isolated critique #5).
-            expect(s.unsourced?.length, `${route.id}:${s.id} has neither a source nor a reason`)
-              .toBeGreaterThan(10);
+            // The one alternative to a quote is an attributable decision not to
+            // have one. Silence would read as if the promise held (isolated
+            // critique #5), and prose would let anyone silence this by writing
+            // something (review 2026-09-07) — so the reason is from a fixed set
+            // and the date is held to the shape the sourced side is held to.
+            const why = s.unsourced;
+            expect(why, `${route.id}:${s.id} has neither a source nor a reason`).toBeDefined();
+            expect(REASONS, `${route.id}:${s.id}`).toContain(why!.reason);
+            expect(why!.checked_at, `${route.id}:${s.id}`).toMatch(DATED);
           }
         }
   });
 });
+
+/** The reasons a statement may have no quote, and the shape its check-date
+ * takes — both the schema's, so a test cannot drift from the gate. */
+const REASONS = ["scanned-image", "not-published-in-words", "unreachable"];
+const DATED = /^\d{4}-\d{2}-\d{2}$/;
 
 describe("cleared blocker: a person can find their own country", () => {
   const passports = fieldOptions(dataset, "citizenship");

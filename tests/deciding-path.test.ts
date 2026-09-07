@@ -79,14 +79,30 @@ describe("a card names the threshold it was actually measured against", () => {
     expect(r.gap_max).toBeCloseTo(3122 - 1867.02, 2);
   });
 
-  it("nothing decided yet: no path is claimed, and no quote is marked as theirs", () => {
+  it("nothing decided yet: no path is claimed, and no quote is marked either way", () => {
     // "I don't know" about the designated list leaves the reduced path open —
-    // and a threshold nobody has been measured against yet must not be
-    // presented as the one that applied.
+    // and a threshold nobody has been measured against yet must be neither
+    // claimed for the reader NOR ruled out.
     const r = resultOf({ ...dutchGraduate, nl_recent_grad: "no", top200_grad: "unknown" }, "nl-hsm-under30");
     expect(r.status).toBe("hold");
     expect(salaryOf(r).path).toBeUndefined();
-    expect(thresholdEntries(r).filter((e) => e.applied)).toEqual([]);
+    expect(thresholdEntries(r).map((e) => e.applied)).toEqual([undefined, undefined]);
+  });
+
+  it("the salary unanswered: an undecided route rules neither threshold out", () => {
+    // The scenario's own step 5 — "I don't know wherever it is offered" — with
+    // the salary question not yet reached. `applied` was one boolean carrying
+    // two notions, LOST and NOT YET DECIDED, and an undecided disjunction
+    // contributes nothing to the deciding set: both quotes came back false and
+    // the card printed "does not apply to you" under each of them, to a person
+    // who had been ruled out of nothing (review 2026-09-07).
+    const r = resultOf({
+      destination: "nl", citizenship: "third_country", situation: "offer",
+      age_band: "u30", qualification: "degree", experience: "y2in5",
+    }, "nl-hsm-under30");
+    expect(r.status).toBe("hold");
+    expect(thresholdEntries(r).map((e) => e.amount).sort((a, b) => a! - b!)).toEqual([3122, 4357]);
+    expect(thresholdEntries(r).map((e) => e.applied)).toEqual([undefined, undefined]);
   });
 
   it("a criterion outside any disjunction is always its own decider", () => {
@@ -95,12 +111,21 @@ describe("a card names the threshold it was actually measured against", () => {
     expect(decided).toContain(r.route.criteria[0]); // citizenship, stated flat
   });
 
-  it("every applied threshold is one the route actually states", () => {
+  it("a mark is one of the three states, on every route and every profile", () => {
     // Whatever the profile, the deciding walk can only ever return nodes the
     // dataset wrote — never a synthesised one.
     for (const profile of [dutchGraduate, { ...dutchGraduate, nl_recent_grad: "no" }, {}])
       for (const r of evaluate(dataset, profile))
         for (const entry of resultProvenance(r))
-          expect(entry.applied === true || entry.applied === false, r.route.id).toBe(true);
+          expect([true, false, undefined], r.route.id).toContain(entry.applied);
+  });
+
+  it("before a single answer, no card rules anything out", () => {
+    // The strong form: nothing has decided anything on an empty interview, so
+    // no value anywhere may carry the ruled-out mark.
+    for (const r of evaluate(dataset, {}))
+      for (const entry of resultProvenance(r))
+        expect(entry.applied, `${r.route.id}: ${entry.label ?? entry.value.quote.slice(0, 40)}`)
+          .not.toBe(false);
   });
 });

@@ -91,6 +91,28 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
     expect(asked).not.toContain("partner_ck");
   });
 
+  it("German stays one question, and never opens the points ladder behind it", () => {
+    // The guarantee that was lost when this file stopped asserting
+    // `not.toContain("german")` (review 2026-09-07). That exact form cannot
+    // come back: the Opportunity Card used to be retired by the offer itself,
+    // § 20a conditions nothing on being offerless, and the card now stays live
+    // until the applicant's own answers decide it — so German IS asked.
+    //
+    // What must never come back is the ladder. A recognised Fachkraft already
+    // satisfies § 20a's first limb, so its points path is never the limb in
+    // question and none of its items is worth asking, whatever the German
+    // answer. German costs one question, not the five behind it.
+    for (const german of ["none", "a1", "a2", "b1", "b2plus"]) {
+      const { asked } = runFlow({
+        ...engineer, german, english: "none", funds_eur_month: "band_1",
+      });
+      expect(asked.filter((f) => f === "german"), german).toHaveLength(1);
+      for (const item of ["age_band", "partner_ck", "occupation_it"])
+        expect(asked, `german=${german} still asked ${item}`).not.toContain(item);
+      expect(asked.length, `german=${german}`).toBeLessThanOrEqual(11);
+    }
+  });
+
   it("P2 vocational worker with offer: at most 10 questions, shortage list never asked", () => {
     const { asked, profile } = runFlow({
       destination: "de", citizenship: "third_country", situation: "offer", qualification: "vocational",

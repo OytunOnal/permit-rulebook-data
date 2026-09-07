@@ -79,7 +79,7 @@ describe("the orientation year states what the source states, and no more", () =
   });
 
   it("the requirement the interview cannot ask is on the card, in the source's words", () => {
-    const condition = routeStatements(route()).find((s) => s.kind === "condition")!;
+    const condition = routeStatements(route()).find((s) => s.kind === "precondition")!;
     // In the voice of a requirement, like every other line under that heading
     // (human catch 2026-09-07): a condition states what must be true, it does
     // not assert something about a reader we never asked.

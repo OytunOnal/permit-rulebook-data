@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, fieldOptions, forEachCriterion, routeStatements, unlocks } from "../src/engine.js";
 import { deriveQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
-import { answerLabel, criterionPhrase, reasonFor, shortLabelOf, subjectOf, unlockTitleOf } from "../src/verdict.js";
+import { answerLabel, criterionPhrase, mootWith, reasonFor, shortLabelOf, subjectOf, unlockTitleOf } from "../src/verdict.js";
 import type { Dataset, FieldDef, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -288,5 +288,63 @@ describe("s5d — the plain-words primitives the page renders", () => {
     const text = criterionPhrase(dataset, salary);
     expect(text.toLowerCase()).toContain("dutch");
     expect(text.toLowerCase()).toMatch(/designat/);
+  });
+});
+
+/**
+ * The moot criterion is the Opportunity Card's shape: a route that wanted the
+ * "none of these" answer, failed by a person who had MORE. § 20a conditions
+ * nothing on being offerless (human read 2026-09-07), and with that criterion
+ * gone no route asks for the ABSENCE of a step any more — so nothing in the
+ * shipped dataset can reach `mootWith`. Three absence answers still exist
+ * (`situation:none`, `german:none`, `english:none`); what has gone is any
+ * criterion that names one.
+ *
+ * A prior report claimed this was already pinned. It was not: what existed was
+ * a comment beside a rendered-kinds assertion in the navigator, which pins
+ * which `<li>` classes 60 sample profiles happen to produce — not this
+ * function, and not over the dataset. The kind stays (a moot row is the honest
+ * answer whenever a route asks for an absence again, and the page must not
+ * invent its own then). What it needed was a pin that FAILS the day the shape
+ * returns, and a pin that the code still works when it does. Both are here.
+ */
+describe("the moot criterion: unreachable today, alive the day a route asks for an absence", () => {
+  const fallbackAnswers = (): Set<string> => {
+    const out = new Set<string>();
+    for (const f of dataset.fields)
+      for (const o of fieldOptions(dataset, f.id)) if (o.is_fallback) out.add(`${f.id}:${o.value}`);
+    return out;
+  };
+
+  it("absence answers exist, and no criterion asks for one", () => {
+    // The reason the kind is unreachable, stated where a change trips it. When
+    // this fails, a route wants an absence again — expect moot rows, and
+    // re-read the navigator's assertion that the rendered kinds are three.
+    const fallbacks = fallbackAnswers();
+    expect([...fallbacks].sort()).toEqual(["english:none", "german:none", "situation:none"]);
+    const wanted: string[] = [];
+    for (const country of dataset.countries)
+      for (const route of country.routes)
+        forEachCriterion(route.criteria, (c) => {
+          if (c.op === "eq" && fallbacks.has(`${c.field}:${c.value}`)) wanted.push(`${route.id}:${c.field}`);
+        });
+    expect(wanted).toEqual([]);
+  });
+
+  it("give it the shape and it fires — the code is dormant, not dead", () => {
+    // Constructed, because the dataset no longer produces it: a criterion
+    // wanting the absence answer, and a person who declared a real step.
+    // Without this the assertion above would equally well describe code that
+    // had been deleted.
+    const offer = fieldOptions(dataset, "situation").find((o) => o.value === "offer")!;
+    const wantsNone = { criterion: { field: "situation", op: "eq", value: "none" }, outcome: "fail" } as const;
+    expect(mootWith(dataset, wantsNone, { situation: "offer" })).toBe(offer.short);
+  });
+
+  it("and stays silent where the failure is a genuine shortfall", () => {
+    // A criterion wanting a real step, failed by someone who has none, is a
+    // miss and must read as one — never as "not needed, you already have it".
+    const wantsOffer = { criterion: { field: "situation", op: "eq", value: "offer" }, outcome: "fail" } as const;
+    expect(mootWith(dataset, wantsOffer, { situation: "none" })).toBeNull();
   });
 });
