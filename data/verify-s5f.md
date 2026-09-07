@@ -1,5 +1,14 @@
 # s5f human verification checklist — the Spanish verdicts that moved (curated 2026-09-07)
 
+> **Walked 2026-09-07 by the session, at the human's delegation** ("e bunları
+> sen yapabilirsin"). Recorded in DECISIONS: this is the scenario's real-green
+> condition met by the party that built the slice, not by an independent
+> reader. Method: the ten profiles reconstructed from the rows below and run
+> through the engine with the two-year and the three-year answer (all 15 rows
+> reproduced exactly, 0 worse); rows 2 and 13 entered by hand in the live
+> interview and their cards read. Result: **15 / 15 yes; section 2 pass.** One
+> new finding on the row-13 card, outside this file's question, is in section 4.
+
 s5f's decision 1 gave the `experience` question a three-year answer, and the
 s5f review round made two more changes on the same axis: `y3in7` now declares
 the two-year band it clears (`implies`), and `es-ict` reads the three years its
@@ -74,13 +83,20 @@ that says so.
 
 | # | The person, in their own answers | From | To | Moved toward the reader? |
 | --- | --- | --- | --- | --- |
-| 1 | Destination Spain · the offer is in Germany · no completed qualification · €33,085.09–€39,582 | hold (hard fail) | hold | yes / no |
-| 2 | Samoan passport · destination Spain · has a job offer there · the offer is in Spain · vocational training, 2+ years · €45,630–€45,934.20 | hold (hard fail) | **met** | yes / no |
-| 3 | Has a job offer · the offer is in Spain · vocational training, 2+ years · under €33,085.09 · (destination not answered) | hold (hard fail) | hold | yes / no |
-| 4 | "Any of these four — show me everything" · the offer is in Spain · vocational training, 2+ years · €50,700–€59,373 | hold (hard fail) | hold | yes / no |
-| 5 | Comorian passport · destination Spain · the offer is in Spain · no completed qualification · €41,356.36–€45,630 | hold (hard fail) | hold | yes / no |
-| 6 | Grenadian passport · destination Spain · vocational training, 2+ years · €33,085.09–€39,582 | hold (hard fail) | hold | yes / no |
-| 7 | Vietnamese passport · destination Spain · no completed qualification · €45,934.20–€50,700 | hold (hard fail) | hold | yes / no |
+| 1 | Destination Spain · the offer is in Germany · no completed qualification · €33,085.09–€39,582 | hold (hard fail) | hold | **yes** |
+| 2 | Samoan passport · destination Spain · has a job offer there · the offer is in Spain · vocational training, 2+ years · €45,630–€45,934.20 | hold (hard fail) | **met** | **yes** |
+| 3 | Has a job offer · the offer is in Spain · vocational training, 2+ years · under €33,085.09 · (destination not answered) | hold (hard fail) | hold | **yes** |
+| 4 | "Any of these four — show me everything" · the offer is in Spain · vocational training, 2+ years · €50,700–€59,373 | hold (hard fail) | hold | **yes** |
+| 5 | Comorian passport · destination Spain · the offer is in Spain · no completed qualification · €41,356.36–€45,630 | hold (hard fail) | hold | **yes** |
+| 6 | Grenadian passport · destination Spain · vocational training, 2+ years · €33,085.09–€39,582 | hold (hard fail) | hold | **yes** |
+| 7 | Vietnamese passport · destination Spain · no completed qualification · €45,934.20–€50,700 | hold (hard fail) | hold | **yes** |
+
+**Walked:** row 2 entered in the interview (Samoa · Spain · offer · vocational ·
+3+ years · €45,630–€45,934.20): card reads CRITERIA MET, the rail marks
+€41,356.36 as "the one salary amount on this route" with "your band" above it,
+the art. 71.2 three-year quote is on the card, and the UGE precondition sits
+under "Also required — not checked here". Rows 1, 3–7: engine, hold without
+the hard fail, same person two-year answer dead — toward the reader.
 
 **A pass, for every row:** three years of related experience is *more* than two,
 and this route's own source says three is what it wants — so the person who
@@ -101,14 +117,24 @@ verdict its own quote refutes. These eight rows are that correction landing.
 
 | # | The person, in their own answers | From | To | Moved toward the reader? |
 | --- | --- | --- | --- | --- |
-| 8 | Destination Spain · the offer is in Germany · no completed qualification · €33,085.09–€39,582 *(same person as row 1)* | hold (hard fail) | hold | yes / no |
-| 9 | Malaysian passport · employer is transferring them to a branch · the transfer is to Germany · vocational training, 2+ years · €39,582–€41,356.36 · (destination not answered) | hold (hard fail) | hold | yes / no |
-| 10 | "Any of these four — show me everything" · the offer is in Spain · vocational training, 2+ years · €50,700–€59,373 *(same person as row 4)* | hold (hard fail) | hold | yes / no |
-| 11 | Comorian passport · destination Spain · the offer is in Spain · no completed qualification · €41,356.36–€45,630 *(same person as row 5)* | hold (hard fail) | hold | yes / no |
-| 12 | "Any of these four — show me everything" · employer is transferring them to a branch · vocational training, 2+ years · €33,085.09–€39,582 | hold (hard fail) | hold | yes / no |
-| 13 | Cape Verdean passport · destination Spain · employer is transferring them to a branch · vocational training, 2+ years · (salary not answered) | hold (hard fail) | **met** | yes / no |
-| 14 | Grenadian passport · destination Spain · vocational training, 2+ years · €33,085.09–€39,582 *(same person as row 6)* | hold (hard fail) | hold | yes / no |
-| 15 | Vietnamese passport · destination Spain · no completed qualification · €45,934.20–€50,700 *(same person as row 7)* | hold (hard fail) | hold | yes / no |
+| 8 | Destination Spain · the offer is in Germany · no completed qualification · €33,085.09–€39,582 *(same person as row 1)* | hold (hard fail) | hold | **yes** |
+| 9 | Malaysian passport · employer is transferring them to a branch · the transfer is to Germany · vocational training, 2+ years · €39,582–€41,356.36 · (destination not answered) | hold (hard fail) | hold | **yes** |
+| 10 | "Any of these four — show me everything" · the offer is in Spain · vocational training, 2+ years · €50,700–€59,373 *(same person as row 4)* | hold (hard fail) | hold | **yes** |
+| 11 | Comorian passport · destination Spain · the offer is in Spain · no completed qualification · €41,356.36–€45,630 *(same person as row 5)* | hold (hard fail) | hold | **yes** |
+| 12 | "Any of these four — show me everything" · employer is transferring them to a branch · vocational training, 2+ years · €33,085.09–€39,582 | hold (hard fail) | hold | **yes** |
+| 13 | Cape Verdean passport · destination Spain · employer is transferring them to a branch · vocational training, 2+ years · (salary not answered) | hold (hard fail) | **met** | **yes** |
+| 14 | Grenadian passport · destination Spain · vocational training, 2+ years · €33,085.09–€39,582 *(same person as row 6)* | hold (hard fail) | hold | **yes** |
+| 15 | Vietnamese passport · destination Spain · no completed qualification · €45,934.20–€50,700 *(same person as row 7)* | hold (hard fail) | hold | **yes** |
+
+**Walked:** row 13 entered in the interview (Cape Verde · Spain · transfer ·
+vocational · 3+ years): the interview stopped after five answers without
+asking salary, because no live route needed it; card reads CRITERIA MET, its
+description says "There is no salary threshold beyond the collective agreement
+for the job", and the last line says "No salary or points threshold on this
+route — nothing here to fall short of". Both preconditions (real business
+activity; three months with the group) are under "Also required — not checked
+here". Rows 8–12, 14, 15: engine, hold without the hard fail — toward the
+reader.
 
 **A pass, for every row:** the BOE article this route cites asks for three
 years, so a person declaring three years must not be failed on experience. Row
@@ -161,6 +187,13 @@ the same file and also works.
 **A pass:** the English entry makes the same argument, reaches the same
 decision, and claims no more than the Turkish did.
 
+**Read 2026-09-07 (session):** both versions of the s3b entry side by side,
+paragraph by paragraph — birth, decision (1) and (2), the in-slice honesty
+rule, the v0.5 extension, the second extension and the ADR pointer. Same
+argument, same decisions, same hedges ("can be discussed later" kept; "not
+predicted (fortune-telling)" kept); nothing sharpened, nothing dropped, the
+commit hashes identical. **Pass.**
+
 **A fail:** the English is *better reasoned* than the Turkish — a gap the
 translation filled, a hedge it dropped, a conclusion it sharpened. That is a
 changed record, and the fix is to weaken the English back to what was decided,
@@ -182,3 +215,15 @@ not to leave the improvement in.
   each `npm run check` (120 verified, 0 missing, 0 unverifiable,
   `human_tier: 0`). The human tier closed in s5f; its record is
   `data/verify-s5e.md`.
+
+## 4. Found on the way — not this file's question
+
+The row-13 card quotes the same sentence twice: *"La existencia de una relación
+laboral o profesional, previa y continuada, de 3 meses con una o varias de las
+empresas del grupo"* (art. 73.2.c) appears once as the source of the
+`situation eq ict` criterion and once as the source of the precondition
+"Three months of prior and unbroken work with one or more companies of the
+group". The precondition is where that sentence belongs; the criterion — "is
+your employer transferring you to a branch there" — is carrying the wrong
+quote, and the card shows the duplication. No verdict is affected. Filed on
+the board as a dataset bug with the fix named; not a bar to this real-green.
