@@ -11,6 +11,6 @@ export { quotedSpans, hasUnbalancedQuotationMark, quotedWithoutProvenance, rende
 export type { ProseProvenance, QuotationOffence, RenderableKind, RenderableText } from "./prose.js";
 export { quoteLanguage, sourceUrls, unmappedSources, QUOTE_LANGUAGES, LANGUAGE_NAMES } from "./lang.js";
 export { scopeWords, statedNotAsked, SCOPE_VALUES } from "./scope.js";
-export { EXCLUSIONS_PATH, readExclusions, routesInProse, excludedLimbs, twinDisagreesWithProse, limbIdsOf, scopeDisagreesWithExclusions } from "./exclusions.js";
+export { routesInProse, excludedLimbs, twinDisagreesWithProse, limbIdsOf, scopeDisagreesWithExclusions } from "./exclusions.js";
 export { countryClasses, countryOptions, classOfCountry, countryVocabulary } from "./countries.js";
 export type { CountryClass, CountryVocabulary } from "./countries.js";

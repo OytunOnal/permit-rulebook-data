@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import type { Dataset, Route } from "./types.js";
 import { routeReadings, routeStatements } from "./engine.js";
 
@@ -16,15 +15,17 @@ import { routeReadings, routeStatements } from "./engine.js";
  * at all: its condition was `named in exclusions.md || states something
  * unasked`, and the right side is true of all 23 routes, so the left side was
  * dead code (Standards review, 2026-09-07).
+ *
+ * Every function here takes the file's TEXT. Reading it is the caller's job, and
+ * deliberately so: this module is reachable from the package's entry point, the
+ * site's interview imports that entry point into a browser, and importing the
+ * filesystem module at the top of this file killed the interview outright — the
+ * first question never rendered, because a bundler externalises that import for
+ * the browser and the module threw before any of the page's own code ran (found
+ * by opening the site, 2026-09-07). A parser that takes a string cannot do that
+ * to anybody, and `tests/browser-safe.test.ts` now holds the whole entry point
+ * to the same rule.
  */
-
-/** Where the file lives, relative to the package. */
-export const EXCLUSIONS_PATH = new URL("../data/exclusions.md", import.meta.url);
-
-/** CRLF is not content: the file is read the way a person reads it. */
-export function readExclusions(path: URL = EXCLUSIONS_PATH): string {
-  return readFileSync(path, "utf8").split("\r\n").join("\n");
-}
 
 const ROUTE_ID_IN_PROSE = /`([a-z]{2}-[a-z0-9-]+)`/g;
 const TWIN_BLOCK = /```exclusions\n([\s\S]*?)```/;

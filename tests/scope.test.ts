@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import dataset from "../data/dataset.json" with { type: "json" };
 import { validateDataset } from "../src/validate.js";
 import { proseProvenance, renderableTexts } from "../src/prose.js";
 import { scopeWords, statedNotAsked, SCOPE_VALUES } from "../src/scope.js";
 import {
-  excludedLimbs, limbIdsOf, readExclusions, routesInProse, scopeDisagreesWithExclusions,
-  twinDisagreesWithProse,
+  excludedLimbs, limbIdsOf, routesInProse, scopeDisagreesWithExclusions, twinDisagreesWithProse,
 } from "../src/exclusions.js";
 import {
   LANGUAGE_NAMES, QUOTE_LANGUAGES, quoteLanguage, sourceUrls, unmappedSources,
@@ -15,7 +15,14 @@ import type { Dataset, Route } from "../src/types.js";
 const ds = dataset as unknown as Dataset;
 const routes = (): Route[] => ds.countries.flatMap((c) => c.routes);
 const clone = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
-const exclusions = readExclusions();
+/**
+ * The file, read here rather than by the parser. The parser is reachable from
+ * the package's entry point, which the site imports into a browser, so it may
+ * not touch the filesystem — reading is the caller's job, and a test is a
+ * caller (2026-09-07). CRLF is not content.
+ */
+const exclusions = readFileSync(new URL("../data/exclusions.md", import.meta.url), "utf8")
+  .split("\r\n").join("\n");
 
 /**
  * s6 decision 3 — every route declares its Scope statement, in plain words.
