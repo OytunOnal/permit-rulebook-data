@@ -423,7 +423,16 @@ export function matchOptions(options: FieldOption[], needle: string): FieldOptio
   if (!n) return options;
   // Each name is folded on its own: joining them first would let a needle
   // match across the seam between a label and an alias.
-  return options.filter((o) => [o.label, ...(o.aliases ?? [])].some((name) => foldForSearch(name).includes(n)));
+  const namesOf = (o: FieldOption) => [o.label, ...(o.aliases ?? [])].map(foldForSearch);
+  const matched = options.filter((o) => namesOf(o).some((name) => name.includes(n)));
+  // The country whose name IS what was typed leads. Typing "sudan" listed
+  // South Sudan first, and the first row is what a habitual Enter takes:
+  // a whole eligibility record computed for the wrong nationality, with no
+  // word said about it (product-critique v0.7, B1). Sorting is stable, so
+  // everything else keeps the alphabetical order it already had — the
+  // highlighted row must not move under the user between keystrokes.
+  const exact = (o: FieldOption) => (namesOf(o).includes(n) ? 0 : 1);
+  return matched.sort((a, b) => exact(a) - exact(b));
 }
 
 export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {

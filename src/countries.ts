@@ -11,6 +11,9 @@ import type { FieldOption, ProvenancedText } from "./types.js";
  */
 export interface CountryClass {
   label: string;
+  /** The class as a noun phrase inside a sentence ("a non-EU passport") — a
+   * criterion written against a class has no option to borrow words from. */
+  short: string;
   sources?: ProvenancedText[];
   members?: string[];
 }

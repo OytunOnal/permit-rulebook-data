@@ -60,8 +60,10 @@ export interface PointsTable {
 }
 
 /**
- * `short_reason`: how this criterion reads in a verdict line ("for 30 or
- * older") — the field name alone ("age") states a verdict on the person.
+ * `short_reason`: what this criterion asks for, as a noun phrase a person
+ * would say ("an age of 30 or older"). It overrides the phrasing derived from
+ * the named options, for criteria whose option list reads badly in a sentence.
+ * A verdict line is built from these, never from the field id (s5d).
  */
 export type Criterion =
   | { field: string; op: "eq"; value: string; note?: string; short_reason?: string }
@@ -110,6 +112,19 @@ export interface FieldOption {
 export interface FieldDef {
   id: string;
   label: string;
+  /**
+   * How the fact is named in the answer ledger — a plain noun ("Passport",
+   * "Monthly salary"). It exists so no consumer ever needs a field-id-to-label
+   * map of its own: the page had one, and every field it had not heard of fell
+   * through to the raw id, which is how "Not met: situation" shipped
+   * (product-critique v0.7, B3).
+   */
+  short_label: string;
+  /**
+   * The fact as a noun phrase inside a sentence: "whether Germany recognises
+   * your qualification". A verdict says this, never the field id.
+   */
+  subject: string;
   type: "enum" | "money_band";
   /** money_band only: the period the amount is stated per, so a headline
    * number can never read as annual when it is monthly. */

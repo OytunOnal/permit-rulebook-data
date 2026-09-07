@@ -17,15 +17,21 @@ function bandFor(field: string, amount: number): string {
 const byId = (profile: Profile): Record<string, RouteResult> =>
   Object.fromEntries(evaluate(dataset, profile).map((r) => [r.route.id, r]));
 
-/** Fresh Amsterdam graduate, 28, with an offer — the scenario's first persona. */
+/**
+ * Fresh Amsterdam graduate, 28, with an offer — the scenario's first persona.
+ * s5d: the fact that opens the lower Dutch salary is WHERE the degree comes
+ * from, not merely how recent it is (product-critique v0.7, B2), so the
+ * persona declares a Dutch institution rather than a country-less "yes".
+ */
 const graduate = (monthly: number, recent: string): Profile => ({
   destination: "nl", citizenship: "TR", situation: "offer", qualification: "degree",
-  qualification_recent: recent, age_band: "u30", occupation_it: "no",
+  nl_recent_grad: recent, top200_grad: "no",
+  age_band: "u30", occupation_it: "no",
   salary_eur_month: bandFor("salary_eur_month", monthly),
 });
 
 describe("s5c — a reduced threshold is a second path inside the same route", () => {
-  it("step 1: a graduate on €3,400/month meets the highly-skilled-migrant card on the reduced criterion", () => {
+  it("step 1: a graduate on €3,400/month meets the highly-skilled-migrant card on the lower salary", () => {
     const r = byId(graduate(3400, "yes"))["nl-hsm-under30"];
     expect(r.status).toBe("met");
     // The card must be able to quote the number it was measured against.
@@ -47,12 +53,14 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
       .toMatch(/\/month$/);
   });
 
-  it("step 3: without the recent qualification the reduced path is closed and the card names the fact", () => {
+  it("step 3: without a qualifying institution the lower-salary path is closed and the card names the fact", () => {
     const r = byId(graduate(3400, "no"))["nl-hsm-under30"];
     expect(r.status).not.toBe("met");
     const salary = r.criteria.find((c) => c.criterion.op === "any" && c.outcome === "fail")!;
     const reduced = (salary.criterion as Extract<typeof salary.criterion, { op: "any" }>).paths.at(-1)!;
-    expect(reduced.criteria.some((c) => "field" in c && c.field === "qualification_recent")).toBe(true);
+    const gate = reduced.criteria.find((c) => c.op === "any")!;
+    expect(gate.op === "any" && gate.paths.flatMap((p) => p.criteria).map((c) => "field" in c && c.field))
+      .toEqual(["nl_recent_grad", "top200_grad"]);
     // Measured against the full criterion — the path the profile can still reach.
     const bandFloor = deriveBands(dataset, "salary_eur_month").find((b) => b.id === bandFor("salary_eur_month", 3400))!.min!;
     expect(r.gap_max).toBeCloseTo(4357 - bandFloor, 2);
@@ -68,21 +76,22 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
     }
   });
 
-  it("the recent-qualification fact is asked only while a reduced path can still decide", () => {
+  it("the institution fact is asked only while a reduced path can still decide", () => {
     // €3,400: the reduced path would pass, the full one would not — it decides.
     const undecided = graduate(3400, "yes");
-    delete undecided.qualification_recent;
-    expect([...informativeFields(dataset, undecided)]).toContain("qualification_recent");
+    delete undecided.nl_recent_grad;
+    delete undecided.top200_grad;
+    expect([...informativeFields(dataset, undecided)]).toContain("nl_recent_grad");
     // €6,000 clears the full criterion outright: nothing left for it to change.
     const settled = { ...undecided, salary_eur_month: bandFor("salary_eur_month", 6000) };
-    expect([...informativeFields(dataset, settled)]).not.toContain("qualification_recent");
+    expect([...informativeFields(dataset, settled)]).not.toContain("nl_recent_grad");
   });
 
   it("it is asked at most once across a whole interview", () => {
     const answers: Profile = {
       destination: "nl", citizenship: "TR", situation: "offer", qualification: "degree",
-      qualification_recent: "yes", age_band: "u30", occupation_it: "no", experience: "y2in5",
-      experience_7y: "no", nl_recent_grad: "no", top200_grad: "no",
+      age_band: "u30", occupation_it: "no", experience: "y2in5",
+      experience_7y: "no", nl_recent_grad: "yes", top200_grad: "no",
       salary_eur_month: bandFor("salary_eur_month", 3400),
       salary_eur_year: bandFor("salary_eur_year", 40800),
     };
@@ -96,17 +105,19 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
       asked.push(q.field);
       profile[q.field] = answers[q.field];
     }
-    expect(asked.filter((f) => f === "qualification_recent").length).toBeLessThanOrEqual(1);
+    expect(asked.filter((f) => f === "nl_recent_grad").length).toBeLessThanOrEqual(1);
+    // The country-less fact does not belong to a Dutch interview at all (s5d).
+    expect(asked).not.toContain("qualification_recent");
   });
 
-  it("NL Blue Card: the reduced criterion needs the degree AND the recent qualification", () => {
+  it("NL Blue Card: the lower salary needs the degree AND a qualifying institution", () => {
     const base: Profile = {
       destination: "nl", citizenship: "TR", situation: "offer", qualification: "degree",
-      qualification_recent: "yes", age_band: "a30to35", occupation_it: "no",
+      nl_recent_grad: "yes", top200_grad: "no", age_band: "a30to35", occupation_it: "no",
       salary_eur_month: bandFor("salary_eur_month", 4900),
     };
     expect(byId(base)["nl-blue-card"].status).toBe("met");
-    expect(byId({ ...base, qualification_recent: "no" })["nl-blue-card"].status).not.toBe("met");
+    expect(byId({ ...base, nl_recent_grad: "no" })["nl-blue-card"].status).not.toBe("met");
   });
 
   it("ES Blue Card: the reduced Spanish threshold is the qualification limb only", () => {
@@ -122,7 +133,7 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
     expect(routeProvenance(route).map((p) => p.value.quote)).toContain("– Umbral reducido: 33.085,09 €");
   });
 
-  it("NL ICT keeps the full criterion — the reduced one is not evidenced for it", () => {
+  it("NL ICT keeps the standard amounts — no lower one is evidenced for it", () => {
     const route = dataset.countries.flatMap((c) => c.routes).find((r) => r.id === "nl-ict")!;
     const quotes = routeProvenance(route).map((p) => p.value.quote);
     // The claim is about the data, not the prose: no reduced amount is modelled

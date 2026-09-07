@@ -15,16 +15,17 @@ const fixture: Dataset = {
   schema_version: "0.1.0",
   dataset_version: "test",
   fields: [
-    { id: "citizenship", label: "Citizenship?", type: "enum", options: [
-      { value: "eu", label: "EU" }, { value: "third", label: "Third country" } ] },
-    { id: "qualification", label: "Qualification?", type: "enum", options: [
-      { value: "none", label: "None" }, { value: "vocational", label: "Vocational" }, { value: "degree", label: "Degree" } ] },
-    { id: "experience", label: "Experience?", type: "enum", options: [
+    { id: "citizenship", label: "Citizenship?", short_label: "Passport", subject: "your passport", type: "enum", options: [
+      { value: "eu", label: "EU" }, { value: "third", label: "Third country", short: "a non-EU passport" } ] },
+    { id: "qualification", label: "Qualification?", short_label: "Qualification", subject: "your qualification", type: "enum", options: [
+      { value: "none", label: "None" }, { value: "vocational", label: "Vocational", short: "vocational training" },
+      { value: "degree", label: "Degree", short: "a university degree" } ] },
+    { id: "experience", label: "Experience?", short_label: "Experience", subject: "your work experience", type: "enum", options: [
       { value: "lt2", label: "<2y" }, { value: "y2to5", label: "2-5y" }, { value: "gt5", label: ">5y" } ] },
-    { id: "german", label: "German level?", type: "enum", options: [
+    { id: "german", label: "German level?", short_label: "German", subject: "your German level", type: "enum", options: [
       { value: "none", label: "None" }, { value: "a2", label: "A2" }, { value: "b1", label: "B1+" },
       { value: "unknown", label: "Don't know", is_unknown: true } ] },
-    { id: "age", label: "Age?", type: "enum", options: [
+    { id: "age", label: "Age?", short_label: "Age", subject: "your age", type: "enum", options: [
       { value: "u35", label: "<35" }, { value: "b35_40", label: "35-40" }, { value: "o40", label: ">40" } ] },
   ],
   countries: [{
@@ -105,8 +106,8 @@ describe("points criterion", () => {
 
 describe("any-of paths (§20a shape: direct OR points)", () => {
   const anyFixture: Dataset = JSON.parse(JSON.stringify(fixture));
-  anyFixture.fields.push({ id: "recognized", label: "Fully recognised?", type: "enum", options: [
-    { value: "yes", label: "Yes" }, { value: "no", label: "No" } ] });
+  anyFixture.fields.push({ id: "recognized", label: "Fully recognised?", short_label: "Recognition", subject: "whether your qualification is recognised", type: "enum", options: [
+    { value: "yes", label: "Yes", short: "a fully recognised qualification" }, { value: "no", label: "No" } ] });
   anyFixture.countries[0].routes[0].criteria = [
     { field: "citizenship", op: "eq", value: "third" },
     {

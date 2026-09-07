@@ -52,6 +52,38 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
   const seenIds = new Set<string>();
   const thresholds = new Map<string, { amount: number; source_url: string; retrieved_at: string; route: string }>();
 
+  /**
+   * s5d: a rule may only name an answer the dataset can put into words. The
+   * verdict line says what a route asks for; where the words are missing the
+   * only thing left to say is the field's own id, which is how "Not met:
+   * situation" shipped (product-critique v0.7, B3). There is deliberately no
+   * fallback — the build fails instead.
+   */
+  const optionShorts = new Map<string, Set<string>>();
+  for (const f of dataset.fields) {
+    const named = new Set<string>();
+    for (const o of f.options ?? []) if (o.short) named.add(o.value);
+    optionShorts.set(f.id, named);
+  }
+  const classShorts = new Set(
+    Object.entries(countryVocabulary.classes).filter(([, c]) => c.short).map(([id]) => id),
+  );
+  // A country's own name is already the noun phrase, and the country list is
+  // generated — so a rule naming a country code needs nothing extra. Which
+  // codes exist is the vocabulary check's business, just below.
+  const generatedFields = new Set(dataset.fields.filter((f) => f.options_from).map((f) => f.id));
+  const checkWords = (path: string, route: string, c: import("./types.js").Criterion, field: string, values: string[]) => {
+    if (c.short_reason) return; // the criterion says it in its own words
+    if (generatedFields.has(field)) return;
+    for (const v of values)
+      if (!optionShorts.get(field)?.has(v) && !classShorts.has(v))
+        errors.push({
+          path,
+          message: `${route}: the rule names ${field} = "${v}", which carries no noun phrase — give the option a "short", or the criterion a "short_reason"`,
+          keyword: "answerHasWords",
+        });
+  };
+
   const vocabularyValues = new Set([
     ...Object.keys(countryVocabulary.classes),
     ...countryVocabulary.countries.map((c) => c.code),
@@ -75,8 +107,8 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
       const walk = (cs: import("./types.js").Criterion[]): void => {
         for (const c of cs) {
           if (c.op === "any") { for (const p of c.paths) walk(p.criteria); continue; }
-          if (c.op === "eq") { checkVocabulary(path, c.field, [c.value]); continue; }
-          if (c.op === "in") { checkVocabulary(path, c.field, c.values); continue; }
+          if (c.op === "eq") { checkVocabulary(path, c.field, [c.value]); checkWords(path, route.id, c, c.field, [c.value]); continue; }
+          if (c.op === "in") { checkVocabulary(path, c.field, c.values); checkWords(path, route.id, c, c.field, c.values); continue; }
           // Points keys bypass `satisfies` by design, so a vocabulary field
           // scored by class would silently never match (review).
           if (c.op === "points") {

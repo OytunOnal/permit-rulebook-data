@@ -1,7 +1,8 @@
 {
   "classes": {
     "eu_eea_ch": {
-      "label": "EU, EEA or Switzerland — free movement",
+      "label": "EU, Iceland, Liechtenstein, Norway or Switzerland — free movement",
+      "short": "a passport from the EU, Iceland, Liechtenstein, Norway or Switzerland",
       "sources": [
         {
           "source_url": "https://european-union.europa.eu/principles-countries-history/eu-countries_en",
@@ -67,7 +68,8 @@
       ]
     },
     "third_country": {
-      "label": "non-EU passport"
+      "label": "non-EU passport",
+      "short": "a non-EU passport"
     }
   },
   "countries": [

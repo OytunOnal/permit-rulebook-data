@@ -69,6 +69,8 @@
       "required": [
         "id",
         "label",
+        "short_label",
+        "subject",
         "type"
       ],
       "additionalProperties": false,
@@ -80,6 +82,16 @@
         "label": {
           "type": "string",
           "minLength": 1
+        },
+        "short_label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "How the fact is named in the answer ledger — a plain noun, never the field id."
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The fact as a noun phrase inside a sentence (\"whether Germany recognises your qualification\") — what a verdict line says instead of the field id."
         },
         "type": {
           "enum": [

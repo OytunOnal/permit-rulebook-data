@@ -5,40 +5,51 @@
     {
       "id": "destination",
       "label": "Where are you looking to go?",
+      "short_label": "Destination",
+      "subject": "where you are looking to go",
       "type": "enum",
       "ask_first": true,
       "options": [
         {
           "value": "de",
-          "label": "Germany"
+          "label": "Germany",
+          "short": "Germany as your destination"
         },
         {
           "value": "fr",
-          "label": "France"
+          "label": "France",
+          "short": "France as your destination"
         },
         {
           "value": "es",
-          "label": "Spain"
+          "label": "Spain",
+          "short": "Spain as your destination"
         },
         {
           "value": "nl",
-          "label": "Netherlands"
+          "label": "Netherlands",
+          "short": "the Netherlands as your destination"
         },
         {
           "value": "all",
-          "label": "Any of these four — show me everything"
+          "label": "Any of these four — show me everything",
+          "short": "any of these four as your destination"
         }
       ]
     },
     {
       "id": "citizenship",
       "label": "Which passport will you apply with?",
+      "short_label": "Passport",
+      "subject": "the passport you would apply with",
       "type": "enum",
       "options_from": "countries"
     },
     {
       "id": "situation",
       "label": "Which best describes your situation?",
+      "short_label": "Situation",
+      "subject": "whether you have an offer, a transfer or a hosting agreement",
       "type": "enum",
       "kind": "path",
       "options": [
@@ -60,6 +71,7 @@
         {
           "value": "none",
           "label": "None of these yet — exploring my options",
+          "short": "no offer, transfer or hosting agreement yet",
           "is_fallback": true
         }
       ]
@@ -67,49 +79,62 @@
     {
       "id": "situation_country",
       "label": "Which country is that offer, transfer or agreement in?",
+      "short_label": "Offer country",
+      "subject": "which country your offer, transfer or agreement is in",
       "type": "enum",
       "is_qualifier": true,
       "options": [
         {
           "value": "de",
-          "label": "Germany"
+          "label": "Germany",
+          "short": "your offer, transfer or agreement in Germany"
         },
         {
           "value": "fr",
-          "label": "France"
+          "label": "France",
+          "short": "your offer, transfer or agreement in France"
         },
         {
           "value": "es",
-          "label": "Spain"
+          "label": "Spain",
+          "short": "your offer, transfer or agreement in Spain"
         },
         {
           "value": "nl",
-          "label": "Netherlands"
+          "label": "Netherlands",
+          "short": "your offer, transfer or agreement in the Netherlands"
         }
       ]
     },
     {
       "id": "qualification",
       "label": "Your highest completed qualification?",
+      "short_label": "Qualification",
+      "subject": "your highest completed qualification",
       "type": "enum",
       "options": [
         {
           "value": "none",
-          "label": "No completed qualification"
+          "label": "No completed qualification",
+          "short": "no completed qualification"
         },
         {
           "value": "vocational",
-          "label": "Vocational training, 2+ years (state-recognised where completed)"
+          "label": "Vocational training, 2+ years (state-recognised where completed)",
+          "short": "vocational training of 2+ years"
         },
         {
           "value": "degree",
-          "label": "University degree"
+          "label": "University degree",
+          "short": "a university degree"
         }
       ]
     },
     {
       "id": "qualification_recent",
       "label": "Did you graduate, take your doctorate, or did a research permit end, within the last 3 years?",
+      "short_label": "Qualification date",
+      "subject": "whether your qualification is from the last 3 years",
       "type": "enum",
       "kind": "improvable",
       "options": [
@@ -120,13 +145,16 @@
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "a qualification older than 3 years"
         }
       ]
     },
     {
       "id": "recognition_de",
       "label": "Where does German recognition of your qualification stand?",
+      "short_label": "German recognition",
+      "subject": "whether Germany recognises your qualification",
       "type": "enum",
       "kind": "improvable",
       "learn": {
@@ -146,24 +174,28 @@
         },
         {
           "value": "not_yet",
-          "label": "Not assessed / not recognised"
+          "label": "Not assessed / not recognised",
+          "short": "a qualification that is not assessed or not recognised in Germany"
         },
         {
           "value": "unknown",
-          "label": "I don't know yet",
+          "label": "I don't know",
           "is_unknown": true
         }
       ]
     },
     {
       "id": "experience",
-      "label": "Skilled work experience related to your qualification?",
+      "label": "Skilled work experience related to your qualification, in years?",
+      "short_label": "Experience",
+      "subject": "your skilled work experience",
       "type": "enum",
       "kind": "improvable",
       "options": [
         {
           "value": "lt2",
-          "label": "Under 2 years"
+          "label": "Under 2 years",
+          "short": "under 2 years of related experience"
         },
         {
           "value": "y2in5",
@@ -180,6 +212,8 @@
     {
       "id": "experience_7y",
       "label": "Do you have at least 3 years of relevant experience within the last 7?",
+      "short_label": "Experience, last 7 years",
+      "subject": "your relevant experience in the last 7 years",
       "type": "enum",
       "kind": "improvable",
       "options": [
@@ -197,6 +231,8 @@
     {
       "id": "occupation_shortage",
       "label": "Is your occupation on Germany's shortage list (IT, engineering, health…)?",
+      "short_label": "Shortage list",
+      "subject": "whether your occupation is on Germany's shortage list",
       "type": "enum",
       "learn": {
         "label": "§ 18g AufenthG lists the shortage groups by ISCO-08 code (132, 133, 134, 21, 221, 222, 225, 226, 23, 25)",
@@ -205,11 +241,13 @@
       "options": [
         {
           "value": "yes",
-          "label": "Yes"
+          "label": "Yes",
+          "short": "an occupation on Germany's shortage list"
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "an occupation that is not on Germany's shortage list"
         },
         {
           "value": "unknown",
@@ -221,21 +259,27 @@
     {
       "id": "occupation_it",
       "label": "Is your work in information or communications technology?",
+      "short_label": "IT work",
+      "subject": "whether your work is in information technology",
       "type": "enum",
       "options": [
         {
           "value": "yes",
-          "label": "Yes"
+          "label": "Yes",
+          "short": "work in information technology"
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "work outside information technology"
         }
       ]
     },
     {
       "id": "salary_eur_year",
       "label": "Gross annual salary in the offer?",
+      "short_label": "Yearly salary",
+      "subject": "the yearly salary in your offer",
       "type": "money_band",
       "period": "year",
       "kind": "improvable"
@@ -243,6 +287,8 @@
     {
       "id": "salary_eur_month",
       "label": "Gross monthly salary in the offer (or monthly income you can evidence)?",
+      "short_label": "Monthly salary",
+      "subject": "the monthly salary in your offer",
       "type": "money_band",
       "period": "month",
       "kind": "improvable"
@@ -250,6 +296,8 @@
     {
       "id": "fr_degree",
       "label": "Did you obtain a master's-level degree (or a Grandes Écoles level-1 diploma) in France?",
+      "short_label": "French degree",
+      "subject": "whether you earned a master's-level degree in France",
       "type": "enum",
       "options": [
         {
@@ -259,13 +307,16 @@
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "no master's-level degree from France"
         }
       ]
     },
     {
       "id": "fr_innovative_employer",
       "label": "Is the French employer a recognised innovative company (jeune entreprise innovante, or recognised by the ministry of the economy)?",
+      "short_label": "Innovative employer",
+      "subject": "whether France recognises your employer as an innovative company",
       "type": "enum",
       "learn": {
         "label": "service-public.fr sets out the talent card's innovative-company route",
@@ -274,11 +325,13 @@
       "options": [
         {
           "value": "yes",
-          "label": "Yes"
+          "label": "Yes",
+          "short": "an employer France recognises as innovative"
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "an employer France does not recognise as innovative"
         },
         {
           "value": "unknown",
@@ -290,6 +343,8 @@
     {
       "id": "fr_local_contract",
       "label": "Will you have an employment contract with the French entity you are moving to (not only with your employer abroad)?",
+      "short_label": "French contract",
+      "subject": "whether your contract will be with the French entity",
       "type": "enum",
       "options": [
         {
@@ -299,41 +354,50 @@
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "no contract with the French entity"
         }
       ]
     },
     {
       "id": "nl_recent_grad",
       "label": "In the last 3 years, did you graduate from — or do research at — a Dutch university or research institution?",
+      "short_label": "Dutch degree",
+      "subject": "whether you graduated from — or did research at — a Dutch institution in the last 3 years",
       "type": "enum",
       "options": [
         {
           "value": "yes",
-          "label": "Yes"
+          "label": "Yes",
+          "short": "a degree from a Dutch university or research institution, from the last 3 years"
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "no Dutch degree from the last 3 years"
         }
       ]
     },
     {
       "id": "top200_grad",
-      "label": "In the last 3 years, did you graduate from a foreign institution that the IND designates for the orientation year?",
+      "label": "In the last 3 years, did you graduate from a foreign institution that the Dutch immigration service (IND) designates for its orientation year?",
+      "short_label": "Designated institution",
+      "subject": "whether your foreign institution is one the Dutch immigration service designates",
       "type": "enum",
       "learn": {
-        "label": "The IND lists the designated foreign educational institutions on the orientation-year page",
+        "label": "The Dutch immigration service (IND) lists the designated foreign institutions on its orientation-year page",
         "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year"
       },
       "options": [
         {
           "value": "yes",
-          "label": "Yes"
+          "label": "Yes",
+          "short": "a degree from a foreign institution the Dutch immigration service designates"
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "no degree from a designated foreign institution"
         },
         {
           "value": "unknown",
@@ -345,115 +409,137 @@
     {
       "id": "german",
       "label": "Your German level?",
+      "short_label": "German",
+      "subject": "your German level",
       "type": "enum",
       "kind": "improvable",
       "options": [
         {
           "value": "none",
           "label": "None / below A1",
+          "short": "German below A1",
           "is_fallback": true
         },
         {
           "value": "a1",
           "label": "A1",
-          "short": "German A1"
+          "short": "German at A1 (beginner)"
         },
         {
           "value": "a2",
           "label": "A2",
-          "short": "German A2"
+          "short": "German at A2 (elementary)"
         },
         {
           "value": "b1",
           "label": "B1",
-          "short": "German B1"
+          "short": "German at B1 (intermediate)"
         },
         {
           "value": "b2plus",
           "label": "B2 or higher",
-          "short": "German B2"
+          "short": "German at B2 (upper intermediate) or higher"
         }
       ]
     },
     {
       "id": "english",
       "label": "Your English level?",
+      "short_label": "English",
+      "subject": "your English level",
       "type": "enum",
       "kind": "improvable",
       "options": [
         {
           "value": "none",
           "label": "Below B2",
+          "short": "English below B2",
           "is_fallback": true
         },
         {
           "value": "b2",
           "label": "B2",
-          "short": "English B2"
+          "short": "English at B2 (upper intermediate)"
         },
         {
           "value": "c1",
           "label": "C1 or higher",
-          "short": "English C1"
+          "short": "English at C1 (advanced) or higher"
         }
       ]
     },
     {
       "id": "age_band",
       "label": "Your age?",
+      "short_label": "Age",
+      "subject": "your age",
       "type": "enum",
       "options": [
         {
           "value": "u30",
-          "label": "Under 30"
+          "label": "Under 30",
+          "short": "an age under 30"
         },
         {
           "value": "a30to35",
-          "label": "30 – 35"
+          "label": "30 – 35",
+          "short": "an age of 30 to 35"
         },
         {
           "value": "a35to40",
-          "label": "36 – 40"
+          "label": "36 – 40",
+          "short": "an age of 36 to 40"
         },
         {
           "value": "o40",
-          "label": "Over 40"
+          "label": "Over 40",
+          "short": "an age over 40"
         }
       ]
     },
     {
       "id": "de_stay6m",
       "label": "Lawful, uninterrupted stay of 6+ months in Germany during the last 5 years? (Schengen short visits don't count)",
+      "short_label": "Stay in Germany",
+      "subject": "whether you have already had a lawful stay of six months or more in Germany",
       "type": "enum",
       "options": [
         {
           "value": "yes",
-          "label": "Yes"
+          "label": "Yes",
+          "short": "a lawful stay of six months or more in Germany in the last five years"
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "no lawful stay of six months or more in Germany"
         }
       ]
     },
     {
       "id": "partner_ck",
       "label": "Is your spouse or partner also applying for (and eligible for) an Opportunity Card?",
+      "short_label": "Partner applying too",
+      "subject": "whether your partner is also applying for an Opportunity Card",
       "type": "enum",
       "options": [
         {
           "value": "yes",
-          "label": "Yes"
+          "label": "Yes",
+          "short": "a partner applying for an Opportunity Card too"
         },
         {
           "value": "no",
-          "label": "No"
+          "label": "No",
+          "short": "no partner applying for an Opportunity Card"
         }
       ]
     },
     {
       "id": "funds_eur_month",
-      "label": "Monthly funds you can evidence for the job-search stay (blocked account or formal obligation)?",
+      "label": "Monthly funds you can evidence for the job-search stay (a blocked bank account, or a sponsor's formal undertaking)?",
+      "short_label": "Monthly funds",
+      "subject": "the monthly funds you can evidence",
       "type": "money_band",
       "period": "month",
       "kind": "improvable"
@@ -469,7 +555,7 @@
       },
       "kind": "no-permit-needed",
       "title": "No work permit needed",
-      "body": "EU, EEA and Swiss citizens can live and work in Germany, France, Spain and the Netherlands under free movement — the routes on this site are for other passports. Check registration rules after arrival (e.g. Anmeldung in Germany).",
+      "body": "Citizens of the EU, of Iceland, Liechtenstein and Norway, and of Switzerland, can live and work in Germany, France, Spain and the Netherlands under free movement — the routes on this site are for other passports. Check registration rules after arrival (e.g. Anmeldung in Germany).",
       "source": {
         "source_url": "https://europa.eu/youreurope/citizens/work/work-abroad/work-permits/index_en.htm",
         "quote": "As an EU national you generally don't need a work permit to work anywhere in the EU.",
@@ -575,7 +661,7 @@
             {
               "field": "salary_eur_year",
               "op": "gte",
-              "threshold_label": "reduced",
+              "threshold_label": "lower amount for shortage occupations",
               "threshold": {
                 "amount": 45934.2,
                 "currency": "EUR",
@@ -656,7 +742,7 @@
             {
               "field": "salary_eur_year",
               "op": "gte",
-              "threshold_label": "general",
+              "threshold_label": "standard amount",
               "threshold": {
                 "amount": 50700,
                 "currency": "EUR",
@@ -902,7 +988,7 @@
             {
               "field": "salary_eur_year",
               "op": "gte",
-              "threshold_label": "45% BBG",
+              "threshold_label": "45% of the German pension contribution ceiling",
               "threshold": {
                 "amount": 45630,
                 "currency": "EUR",
@@ -1068,7 +1154,8 @@
             },
             {
               "op": "any",
-              "label": "base language",
+              "label": "a language to start with",
+              "short_reason": "German at A1 (beginner) or better, or English at B2 (upper intermediate) or better",
               "note": "§ 20a: German A1 (\"mindestens einfache deutsche Sprachkenntnisse\") OR English B2.",
               "paths": [
                 {
@@ -1104,7 +1191,7 @@
             {
               "field": "funds_eur_month",
               "op": "gte",
-              "threshold_label": "livelihood",
+              "threshold_label": "living costs",
               "threshold": {
                 "amount": 1091,
                 "currency": "EUR",
@@ -1117,7 +1204,7 @@
             },
             {
               "op": "any",
-              "label": "skilled worker or points",
+              "label": "a recognised qualification, or points",
               "paths": [
                 {
                   "label": "fully recognised (direct)",
@@ -1457,7 +1544,7 @@
             {
               "field": "salary_eur_month",
               "op": "gte",
-              "threshold_label": "resources (SMIC level)",
+              "threshold_label": "resources, at the French minimum wage level",
               "note": "The fiche frames this as a resources proof (« justificatif de ressources »), not a salary threshold; SMIC-indexed, will move on SMIC revaluation.",
               "threshold": {
                 "amount": 1867.02,
@@ -1532,7 +1619,7 @@
               "op": "eq",
               "value": "yes",
               "note": "Fiche F16922: \"Être recruté dans une jeune entreprise innovante ou une entreprise reconnue innovante par le ministère de l'économie\"",
-              "short_reason": "for a recognised innovative employer"
+              "short_reason": "an employer France recognises as innovative"
             },
             {
               "field": "salary_eur_year",
@@ -1611,7 +1698,7 @@
               "op": "eq",
               "value": "yes",
               "note": "Fiche F16922: \"Avoir un contrat de travail avec l'entreprise qui vous emploie en France\"",
-              "short_reason": "for a contract with the French entity"
+              "short_reason": "a contract with the French entity"
             },
             {
               "field": "salary_eur_year",
@@ -1721,15 +1808,15 @@
             },
             {
               "op": "any",
-              "label": "salary criterion",
+              "label": "the salary this route asks for",
               "paths": [
                 {
-                  "label": "full salary criterion",
+                  "label": "the standard salary",
                   "criteria": [
                     {
                       "field": "salary_eur_year",
                       "op": "gte",
-                      "threshold_label": "general (1.4× INE average)",
+                      "threshold_label": "standard amount (1.4× the Spanish average wage)",
                       "note": "Threshold PDF value — flagged for human re-verification per project policy. Derivation (UGE PDF, human-read 2026-09-04): \"El Instituto Nacional de Estadística (INE) publicó el pasado 28 de mayo de 2026 el dato actualizado del sueldo medio correspondiente a 2024, fijándolo en 29.540,26 €\" — the threshold moves whenever the INE publishes a new average (Orden PJC/44/2026, art. 3.2: one month after publication).",
                       "threshold": {
                         "amount": 41356.36,
@@ -1744,18 +1831,19 @@
                   ]
                 },
                 {
-                  "label": "reduced threshold — a qualification from the last 3 years",
+                  "label": "the lower salary for a recent qualification",
                   "criteria": [
                     {
                       "field": "qualification_recent",
                       "op": "eq",
                       "value": "yes",
-                      "short_reason": "for a qualification from the last 3 years"
+                      "short_reason": "a qualification from the last 3 years",
+                      "note": "Whether this limb carries an institution restriction is UNVERIFIED: the Orden is the PDF tier and its text could not be read here (2026-09-07). The limb we model reads \"a qualification obtained within the last 3 years\" and states no institution scope. The Dutch equivalent does carry one, but applying that by analogy would be a guess in the other direction. Recorded in data/exclusions.md; needs a human read of the Orden."
                     },
                     {
                       "field": "salary_eur_year",
                       "op": "gte",
-                      "threshold_label": "reduced (qualification within 3 years)",
+                      "threshold_label": "lower amount for a qualification from the last 3 years",
                       "note": "Threshold PDF value — flagged for human re-verification per project policy. The Orden gives two limbs; only the qualification-within-3-years limb is modelled (see the route's preconditions).",
                       "threshold": {
                         "amount": 33085.09,
@@ -1775,7 +1863,7 @@
         },
         {
           "id": "es-highly-qualified",
-          "name": "Highly qualified professional (PAC nacional)",
+          "name": "Highly qualified professional (profesional altamente cualificado)",
           "kind": "res-work",
           "summary": "Spain's national fast-track for higher-education professionals, or people with equivalent experience, hired by a qualifying employer. One salary threshold, with no reduced version, decided in 20 working days.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
@@ -1857,7 +1945,7 @@
             {
               "field": "salary_eur_year",
               "op": "gte",
-              "threshold_label": "single threshold",
+              "threshold_label": "the one salary amount on this route",
               "note": "Threshold PDF value — flagged for human re-verification per project policy. Derivation (UGE PDF, human-read 2026-09-04): \"El Instituto Nacional de Estadística (INE) publicó el pasado 28 de mayo de 2026 el dato actualizado del sueldo medio correspondiente a 2024, fijándolo en 29.540,26 €\" — the threshold moves whenever the INE publishes a new average (Orden PJC/44/2026, art. 3.2: one month after publication).",
               "threshold": {
                 "amount": 41356.36,
@@ -2023,12 +2111,13 @@
           "id": "nl-hsm-30plus",
           "name": "Highly skilled migrant — 30 or older (kennismigrant)",
           "kind": "res-work",
-          "summary": "The Dutch highly skilled migrant permit. No degree is needed — the salary is what qualifies you. A lower salary counts within three years of graduating, defending a doctorate, or a research permit ending.",
+          "summary": "The Dutch highly skilled migrant permit. No degree is needed — the salary is what qualifies you. A lower salary counts if, within the last three years, you graduated from a Dutch university or research institution, or from a foreign institution the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
-            "Your employer is on the IND's list of recognised sponsors",
-            "The salary matches what the job normally pays — the IND judges this",
-            "If your profession is regulated (nurses, doctors and similar), you need Dutch BIG registration"
+            "Your employer is on the Dutch immigration service's (IND) list of recognised sponsors",
+            "The salary matches what the job normally pays — the Dutch immigration service judges this",
+            "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions",
+            "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people — we do not ask about permits you already hold"
           ],
           "criteria": [
             {
@@ -2084,14 +2173,15 @@
                 "a35to40",
                 "o40"
               ],
-              "short_reason": "for 30 or older"
+              "short_reason": "an age of 30 or older"
             },
             {
               "op": "any",
-              "label": "salary criterion",
+              "label": "the salary this route asks for",
+              "short_reason": "at least €5,942/month — or €3,122/month with a degree from the last 3 years, from a Dutch institution or from one the Dutch immigration service designates",
               "paths": [
                 {
-                  "label": "full salary criterion",
+                  "label": "the standard salary",
                   "criteria": [
                     {
                       "field": "salary_eur_month",
@@ -2111,19 +2201,40 @@
                   ]
                 },
                 {
-                  "label": "reduced criterion — a qualification from the last 3 years",
+                  "label": "the lower salary for a recent graduate",
                   "criteria": [
                     {
-                      "field": "qualification_recent",
-                      "op": "eq",
-                      "value": "yes",
-                      "short_reason": "for a qualification from the last 3 years",
-                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The modelled fact is the 3-year window; the orientation-year cases are the same window seen from the permit side."
+                      "op": "any",
+                      "label": "where you studied",
+                      "short_reason": "a degree from the last 3 years, from a Dutch institution or from one the Dutch immigration service designates",
+                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The third case additionally requires the applicant to meet the requirements for that residence purpose — the orientation year — and that is where the institution restriction lives: a Dutch university or research institution, or a foreign institution the IND designates. Modelled here as the same disjunction the orientation-year route uses. The first two cases (holding, or having held, an orientation-year permit) are NOT modelled: the interview never asks about permits already held. Recorded in data/exclusions.md (2026-09-07) and stated in this route's preconditions.",
+                      "paths": [
+                        {
+                          "label": "a Dutch university or research institution",
+                          "criteria": [
+                            {
+                              "field": "nl_recent_grad",
+                              "op": "eq",
+                              "value": "yes"
+                            }
+                          ]
+                        },
+                        {
+                          "label": "a foreign institution the Dutch immigration service designates",
+                          "criteria": [
+                            {
+                              "field": "top200_grad",
+                              "op": "eq",
+                              "value": "yes"
+                            }
+                          ]
+                        }
+                      ]
                     },
                     {
                       "field": "salary_eur_month",
                       "op": "gte",
-                      "threshold_label": "reduced criterion, 2026",
+                      "threshold_label": "lower amount for a recent graduate, 2026",
                       "threshold": {
                         "amount": 3122,
                         "currency": "EUR",
@@ -2144,12 +2255,13 @@
           "id": "nl-hsm-under30",
           "name": "Highly skilled migrant — under 30 (kennismigrant)",
           "kind": "res-work",
-          "summary": "The same permit with a lower salary for people under 30 — and lower still within three years of graduating, defending a doctorate, or a research permit ending.",
+          "summary": "The same permit with a lower salary for people under 30 — and lower still if, within the last three years, you graduated from a Dutch university or research institution, or from a foreign institution the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "preconditions": [
-            "Your employer is on the IND's list of recognised sponsors",
-            "The salary matches what the job normally pays — the IND judges this",
-            "If your profession is regulated (nurses, doctors and similar), you need Dutch BIG registration"
+            "Your employer is on the Dutch immigration service's (IND) list of recognised sponsors",
+            "The salary matches what the job normally pays — the Dutch immigration service judges this",
+            "If your profession is regulated (nurses, doctors and similar), you must be in the Dutch BIG register for healthcare professions",
+            "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people — we do not ask about permits you already hold"
           ],
           "criteria": [
             {
@@ -2200,14 +2312,15 @@
               "field": "age_band",
               "op": "eq",
               "value": "u30",
-              "short_reason": "for under-30s"
+              "short_reason": "an age under 30"
             },
             {
               "op": "any",
-              "label": "salary criterion",
+              "label": "the salary this route asks for",
+              "short_reason": "at least €4,357/month — or €3,122/month with a degree from the last 3 years, from a Dutch institution or from one the Dutch immigration service designates",
               "paths": [
                 {
-                  "label": "full salary criterion",
+                  "label": "the standard salary",
                   "criteria": [
                     {
                       "field": "salary_eur_month",
@@ -2227,19 +2340,40 @@
                   ]
                 },
                 {
-                  "label": "reduced criterion — a qualification from the last 3 years",
+                  "label": "the lower salary for a recent graduate",
                   "criteria": [
                     {
-                      "field": "qualification_recent",
-                      "op": "eq",
-                      "value": "yes",
-                      "short_reason": "for a qualification from the last 3 years",
-                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The modelled fact is the 3-year window; the orientation-year cases are the same window seen from the permit side."
+                      "op": "any",
+                      "label": "where you studied",
+                      "short_reason": "a degree from the last 3 years, from a Dutch institution or from one the Dutch immigration service designates",
+                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The third case additionally requires the applicant to meet the requirements for that residence purpose — the orientation year — and that is where the institution restriction lives: a Dutch university or research institution, or a foreign institution the IND designates. Modelled here as the same disjunction the orientation-year route uses. The first two cases (holding, or having held, an orientation-year permit) are NOT modelled: the interview never asks about permits already held. Recorded in data/exclusions.md (2026-09-07) and stated in this route's preconditions.",
+                      "paths": [
+                        {
+                          "label": "a Dutch university or research institution",
+                          "criteria": [
+                            {
+                              "field": "nl_recent_grad",
+                              "op": "eq",
+                              "value": "yes"
+                            }
+                          ]
+                        },
+                        {
+                          "label": "a foreign institution the Dutch immigration service designates",
+                          "criteria": [
+                            {
+                              "field": "top200_grad",
+                              "op": "eq",
+                              "value": "yes"
+                            }
+                          ]
+                        }
+                      ]
                     },
                     {
                       "field": "salary_eur_month",
                       "op": "gte",
-                      "threshold_label": "reduced criterion, 2026",
+                      "threshold_label": "lower amount for a recent graduate, 2026",
                       "threshold": {
                         "amount": 3122,
                         "currency": "EUR",
@@ -2260,11 +2394,12 @@
           "id": "nl-blue-card",
           "name": "EU Blue Card",
           "kind": "res-work",
-          "summary": "A contract of at least six months, plus a higher-education diploma of three years or more — or five years of relevant experience, three years if you work in IT. Your employer does not have to be a recognised sponsor. A lower salary counts for graduates within three years.",
+          "summary": "A contract of at least six months, plus a higher-education diploma of three years or more — or five years of relevant experience, three years if you work in information technology. Your employer does not have to be a recognised sponsor. A lower salary counts for a degree holder who graduated in the last three years from a Dutch institution, or from a foreign one the Dutch immigration service designates.",
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
           "preconditions": [
             "An employment contract of at least six months",
-            "If your profession is regulated, you need the Dutch registration for it (BIG in healthcare)"
+            "If your profession is regulated, you must be in the Dutch professional register for it (the BIG register, in healthcare)",
+            "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people — we do not ask about permits you already hold"
           ],
           "criteria": [
             {
@@ -2357,10 +2492,11 @@
             },
             {
               "op": "any",
-              "label": "salary criterion",
+              "label": "the salary this route asks for",
+              "short_reason": "at least €5,942/month — or €4,754/month with a university degree and a degree from the last 3 years, from a Dutch institution or from one the Dutch immigration service designates",
               "paths": [
                 {
-                  "label": "full salary criterion",
+                  "label": "the standard salary",
                   "criteria": [
                     {
                       "field": "salary_eur_month",
@@ -2379,25 +2515,46 @@
                   ]
                 },
                 {
-                  "label": "reduced criterion — a higher-education graduate from the last 3 years",
+                  "label": "the lower salary for a recent graduate",
                   "criteria": [
                     {
                       "field": "qualification",
                       "op": "eq",
                       "value": "degree",
-                      "short_reason": "for the reduced criterion"
+                      "short_reason": "a university degree"
                     },
                     {
-                      "field": "qualification_recent",
-                      "op": "eq",
-                      "value": "yes",
-                      "short_reason": "for a qualification from the last 3 years",
-                      "note": "IND: \"The reduced EU Blue Card salary criterion applies to graduates who have completed a higher education programme.\""
+                      "op": "any",
+                      "label": "where you studied",
+                      "short_reason": "a degree from the last 3 years, from a Dutch institution or from one the Dutch immigration service designates",
+                      "note": "IND: \"The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit. The residence permit for a highly skilled migrant is applied for within 3 years of the graduation date or date of the doctoral defence ceremony. Or it is applied for within 3 years of the date on which the residence permit for research expired.\" The third case additionally requires the applicant to meet the requirements for that residence purpose — the orientation year — and that is where the institution restriction lives: a Dutch university or research institution, or a foreign institution the IND designates. Modelled here as the same disjunction the orientation-year route uses. The first two cases (holding, or having held, an orientation-year permit) are NOT modelled: the interview never asks about permits already held. Recorded in data/exclusions.md (2026-09-07) and stated in this route's preconditions.",
+                      "paths": [
+                        {
+                          "label": "a Dutch university or research institution",
+                          "criteria": [
+                            {
+                              "field": "nl_recent_grad",
+                              "op": "eq",
+                              "value": "yes"
+                            }
+                          ]
+                        },
+                        {
+                          "label": "a foreign institution the Dutch immigration service designates",
+                          "criteria": [
+                            {
+                              "field": "top200_grad",
+                              "op": "eq",
+                              "value": "yes"
+                            }
+                          ]
+                        }
+                      ]
                     },
                     {
                       "field": "salary_eur_month",
                       "op": "gte",
-                      "threshold_label": "reduced Blue Card criterion, 2026",
+                      "threshold_label": "lower Blue Card amount for a recent graduate, 2026",
                       "threshold": {
                         "amount": 4754,
                         "currency": "EUR",
@@ -2473,7 +2630,8 @@
             },
             {
               "op": "any",
-              "label": "HSM salary criterion for your age",
+              "label": "the highly skilled migrant salary for your age",
+              "short_reason": "at least €5,942/month if you are 30 or older, or €4,357/month if you are under 30",
               "note": "IND: \"Your salary is in line with the market. The salary is in line with the market if it meets the salary criterion for highly skilled migrants.\"",
               "paths": [
                 {
@@ -2487,7 +2645,7 @@
                         "a35to40",
                         "o40"
                       ],
-                      "short_reason": "for 30 or older"
+                      "short_reason": "an age of 30 or older"
                     },
                     {
                       "field": "salary_eur_month",
@@ -2512,7 +2670,7 @@
                       "field": "age_band",
                       "op": "eq",
                       "value": "u30",
-                      "short_reason": "for under-30s"
+                      "short_reason": "an age under 30"
                     },
                     {
                       "field": "salary_eur_month",
@@ -2538,10 +2696,10 @@
           "id": "nl-researcher",
           "name": "Researcher (Directive (EU) 2016/801)",
           "kind": "res-work",
-          "summary": "A contract or hosting agreement with a Dutch research institution the IND recognises as a sponsor. Up to five years.",
+          "summary": "A contract or hosting agreement with a Dutch research institution the immigration service (IND) recognises as a sponsor. Up to five years.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
           "preconditions": [
-            "The institution is on the IND's list of recognised sponsors",
+            "The institution is on the Dutch immigration service's (IND) list of recognised sponsors",
             "A degree that would let you start a doctorate, or your employer's statement that your level is equivalent"
           ],
           "criteria": [
@@ -2611,7 +2769,7 @@
           "id": "nl-orientation-year",
           "name": "Orientation year (zoekjaar)",
           "kind": "seek",
-          "summary": "A one-year permit to look for work. You may take any job without a separate work permit. It is for people who graduated, took a doctorate or did research in the Netherlands — or graduated from an institution the IND designates abroad — within the last three years. It cannot be extended.",
+          "summary": "A one-year permit to look for work. You may take any job without a separate work permit. It is for people who graduated, took a doctorate or did research in the Netherlands — or graduated from a foreign institution the Dutch immigration service (IND) designates — within the last three years. It cannot be extended.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
           "preconditions": [
             "You apply within three years of graduating or finishing the research",
@@ -2639,11 +2797,11 @@
             },
             {
               "op": "any",
-              "label": "recent graduate or top-200 graduate",
+              "label": "where you studied",
               "note": "IND: the qualifying event must fall in \"the 3 years before the date of application\" — a Dutch institution, or \"a designated foreign educational institution\". The designation list is published by the IND; the earlier \"top 200 in 2 of 3 rankings\" reading was not found on the page (human check 2026-09-04) and is no longer asserted.",
               "paths": [
                 {
-                  "label": "Dutch graduate or researcher",
+                  "label": "a Dutch university or research institution",
                   "criteria": [
                     {
                       "field": "nl_recent_grad",
@@ -2653,7 +2811,7 @@
                   ]
                 },
                 {
-                  "label": "top-200 graduate",
+                  "label": "a foreign institution the Dutch immigration service designates",
                   "criteria": [
                     {
                       "field": "top200_grad",

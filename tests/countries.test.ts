@@ -288,7 +288,10 @@ describe("the orientation year asks two plain questions (s5b, critique #6)", () 
     expect(labels["nl_recent_grad"]).toMatch(/Dutch/);
     expect(labels["nl_recent_grad"]).not.toMatch(/foreign|designated|top 200/i);
     expect(labels["top200_grad"]).toMatch(/foreign|designated/i);
-    expect(labels["top200_grad"]).not.toMatch(/Dutch/);
+    // The institution is the foreign one — "Dutch" may only appear naming the
+    // authority whose list it is, which s5d spells out because "IND" alone
+    // asked the reader to know an abbreviation (product-critique F6/P10).
+    expect(labels["top200_grad"]).not.toMatch(/Dutch (university|institution|research)/i);
     for (const f of ["nl_recent_grad", "top200_grad"])
       expect(labels[f]).toMatch(/last 3 years/);
   });

@@ -1,0 +1,246 @@
+import { countryClasses } from "./countries.js";
+import { deriveBands, fieldOptions, formatEURPer, referencedFields } from "./engine.js";
+import type {
+  Criterion, CriterionResult, Dataset, FieldDef, Profile, RouteResult, Unlock,
+} from "./types.js";
+
+/**
+ * Why a route reads the way it does, in words a person would say.
+ *
+ * It lives here, beside the rules, for the reason `matchOptions` does: the
+ * promise ("the reason column is prose, never engine output") has a permanent
+ * check behind it, and the check has to survive the next control that renders
+ * it. The page used to hold a field-id-to-label map; every field it had not
+ * heard of fell through to the raw id, and 22 of 23 route cards told the user
+ * "Not met: situation" (product-critique v0.7, blocker B3). Nothing here can
+ * fall through to an id: the words come from the dataset's authored prose, and
+ * `validateDataset` fails the build when a rule has none.
+ */
+
+const fieldCache = new WeakMap<Dataset, Map<string, FieldDef>>();
+function fieldOf(dataset: Dataset, id: string): FieldDef | undefined {
+  let index = fieldCache.get(dataset);
+  if (!index) fieldCache.set(dataset, (index = new Map(dataset.fields.map((f) => [f.id, f]))));
+  return index.get(id);
+}
+
+const join = (xs: string[], last: string): string =>
+  xs.length < 2 ? (xs[0] ?? "") : `${xs.slice(0, -1).join(", ")} ${last} ${xs.at(-1)}`;
+export const joinOr = (xs: string[]): string => join(xs, "or");
+export const joinAnd = (xs: string[]): string => join(xs, "and");
+
+/** How the fact is named in the answer ledger. */
+export function shortLabelOf(dataset: Dataset, field: string): string {
+  return fieldOf(dataset, field)?.short_label ?? field;
+}
+
+/** The fact as a noun phrase inside a sentence. */
+export function subjectOf(dataset: Dataset, field: string): string {
+  return fieldOf(dataset, field)?.subject ?? field;
+}
+
+/**
+ * A value the rules name, as a noun phrase. Options carry `short` for exactly
+ * this; a criterion written against a passport CLASS has no option to borrow
+ * words from, so the class carries its own.
+ */
+function valuePhrase(dataset: Dataset, field: string, value: string): string {
+  const option = fieldOptions(dataset, field).find((o) => o.value === value);
+  if (option?.short) return option.short;
+  if (option) return option.label;
+  return countryClasses[value]?.short ?? countryClasses[value]?.label ?? value;
+}
+
+/** The answer as the person picked it — their words, quoted back. */
+export function answerLabel(dataset: Dataset, field: string, value: string | undefined): string {
+  if (value === undefined) return "no answer";
+  if (fieldOf(dataset, field)?.type === "money_band")
+    return deriveBands(dataset, field).find((b) => b.id === value)?.label ?? value;
+  return fieldOptions(dataset, field).find((o) => o.value === value)?.label ?? value;
+}
+
+/**
+ * What a criterion asks for, as a noun phrase. `short_reason` overrides where
+ * the option list reads badly in a sentence ("an age of 30 or older" beats
+ * "30 to 35, 36 to 40 or over 40"); a disjunction expands into its paths, so
+ * a route never has to name its own internal structure.
+ */
+export function requirementOf(dataset: Dataset, c: Criterion): string {
+  if (c.short_reason) return c.short_reason;
+  switch (c.op) {
+    case "eq":
+      return valuePhrase(dataset, c.field, c.value);
+    case "in":
+      return joinOr(c.values.map((v) => valuePhrase(dataset, c.field, v)));
+    case "gte":
+      return `at least ${formatEURPer(c.threshold.amount, fieldOf(dataset, c.field)?.period)}`;
+    case "points":
+      return `${c.required.value} points from the official table`;
+    case "any":
+      return joinOr(c.paths.map((p) => joinAnd(p.criteria.map((pc) => requirementOf(dataset, pc)))));
+    default: {
+      const _exhaustive: never = c;
+      throw new Error(`unhandled criterion op: ${JSON.stringify(_exhaustive)}`);
+    }
+  }
+}
+
+/**
+ * A criterion the person "failed" by having MORE: the route wants the
+ * "none of these" answer (the Opportunity Card is for people with no offer
+ * yet) and they declared a real step. "Not met: situation" reads to an
+ * offer-holder as "lose your offer"; the honest line names what they have.
+ */
+function outgrownWith(dataset: Dataset, cr: CriterionResult, profile: Profile): string | null {
+  const c = cr.criterion;
+  if (c.op !== "eq") return null;
+  const required = fieldOptions(dataset, c.field).find((o) => o.value === c.value);
+  const declared = fieldOptions(dataset, c.field).find((o) => o.value === profile[c.field]);
+  return required?.is_fallback && declared?.short ? declared.short : null;
+}
+
+/**
+ * A criterion that only asks WHERE a route applies. It reads the destination
+ * and the country of the offer, both of which the person told us. Failing it
+ * is not a shortfall — the route is simply somewhere else.
+ */
+export function isLocalization(c: Criterion): boolean {
+  const fields = referencedFields(c);
+  return fields.length > 0 && fields.every((f) => f === "destination" || f === "situation_country");
+}
+
+/** Where the person said they are headed, in their own words. */
+export function declaredPlace(dataset: Dataset, profile: Profile): string {
+  const field = profile["situation_country"] !== undefined ? "situation_country" : "destination";
+  const value = profile[field];
+  if (!value || (field === "destination" && value === "all")) return "";
+  return fieldOptions(dataset, field).find((o) => o.value === value)?.label ?? "";
+}
+
+/** Unknowns the person can still act on: on a hard-failed route nothing they
+ * find out can change the verdict, so none of them is open. */
+export function liveUnknowns(r: RouteResult, profile: Profile): string[] {
+  if (r.hard_fail) return [];
+  return r.unknown_fields.filter((f) => profile[f] !== undefined);
+}
+
+/** Once a route is in the wrong country, nothing else about it is news. */
+export function isPlacedElsewhere(r: RouteResult, profile: Profile): boolean {
+  return r.criteria.some((c) => c.outcome === "fail" && isLocalization(c.criterion)) &&
+    liveUnknowns(r, profile).length === 0;
+}
+
+export interface ReasonRow {
+  /** needs: a shortfall · outgrown: already covered · where: another country ·
+   * unknown: an answer of "I don't know" that still binds. */
+  kind: "needs" | "outgrown" | "where" | "unknown";
+  text: string;
+}
+
+export interface Reason {
+  /** The one line the card shows — always a sentence. */
+  line: string;
+  /** The same reason unfolded, one row per criterion. */
+  rows: ReasonRow[];
+  /** The phrases the line was built from, for callers that lay them out
+   * themselves — and for the test that no field NAME ever lands in one. */
+  parts: { needs: string[]; outgrown: string[]; unknown: string[]; moot: string[] };
+}
+
+const countryName = (dataset: Dataset, code: string): string =>
+  dataset.countries.find((c) => c.code === code)?.name ?? code;
+
+export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): Reason {
+  const rows: ReasonRow[] = [];
+  const needs: string[] = [];
+  const outgrown: string[] = [];
+  const unknownFields = liveUnknowns(r, profile);
+  const unknownSubjects = unknownFields.map((f) => subjectOf(dataset, f));
+  // Quoted as the person actually answered it: the results used to report an
+  // "I don't know" for a button that said "I don't know yet" (product-critique
+  // v0.7, P4). The dataset now says one thing; this reads it rather than
+  // assuming it.
+  const unknownAnswer = (field: string) => answerLabel(dataset, field, profile[field]);
+
+  for (const cr of r.criteria) {
+    if (cr.outcome !== "fail") continue;
+    const already = outgrownWith(dataset, cr, profile);
+    if (already) {
+      outgrown.push(already);
+      rows.push({ kind: "outgrown", text: `Not needed — you already have ${already}.` });
+      continue;
+    }
+    if (isLocalization(cr.criterion)) {
+      const place = declaredPlace(dataset, profile);
+      rows.push({
+        kind: "where",
+        text: `This route is ${countryName(dataset, r.country)}${place ? `, and you told us ${place}` : ""}.`,
+      });
+      continue;
+    }
+    const requirement = requirementOf(dataset, cr.criterion);
+    needs.push(requirement);
+    const c = cr.criterion;
+    rows.push({
+      kind: "needs",
+      text: "field" in c
+        ? `Needs ${requirement} — you declared ${answerLabel(dataset, c.field, profile[c.field])}.`
+        : `Needs ${requirement}.`,
+    });
+  }
+
+  for (const field of unknownFields)
+    rows.push({
+      kind: "unknown",
+      text: `You answered “${unknownAnswer(field)}” about ${subjectOf(dataset, field)}.`,
+    });
+
+  const parts = { needs, outgrown, unknown: unknownSubjects, moot: outgrown };
+
+  if (r.status === "met")
+    return { line: r.route.summary ?? "Every published condition we check appears met by your declaration.", rows, parts };
+
+  if (r.status === "near")
+    return {
+      line: r.gap_points !== undefined
+        ? "The points total is within reach — the ladder below shows your score."
+        : "The salary this route asks for sits above the band you declared.",
+      rows, parts,
+    };
+
+  if (isPlacedElsewhere(r, profile)) {
+    const place = declaredPlace(dataset, profile);
+    const country = countryName(dataset, r.country);
+    return { line: place ? `A ${country} route — you told us ${place}.` : `A ${country} route.`, rows, parts };
+  }
+
+  const sentences: string[] = [];
+  if (outgrown.length) sentences.push(`Not needed with ${joinAnd(outgrown)}.`);
+  // A requirement that is itself a choice already spends its "or"; joining the
+  // list with a bare "and" then leaves the reader to guess where one
+  // requirement ends. The semicolon says it.
+  if (needs.length)
+    sentences.push(`Needs ${
+      needs.length > 1 && needs.some((n) => / or /.test(n)) ? needs.join("; and ") : joinAnd(needs)
+    }.`);
+  if (unknownSubjects.length)
+    sentences.push(
+      `You answered “${unknownAnswer(unknownFields[0])}” about ${joinAnd(unknownSubjects)} — an open gap, not a no.`,
+    );
+  return {
+    line: sentences.length ? sentences.join(" ") : "Nothing on this route is decided by what you have told us so far.",
+    rows, parts,
+  };
+}
+
+/** The step an unlock row offers, in the person's own words. */
+export function unlockTitleOf(dataset: Dataset, u: Unlock): string {
+  const def = fieldOf(dataset, u.field);
+  let title = u.option.short ?? u.option.label;
+  if (def?.type === "money_band") title += ` — ${shortLabelOf(dataset, u.field).toLowerCase()}`;
+  if (u.qualifier)
+    title += u.qualifier.field === "situation_country"
+      ? ` in ${u.qualifier.option.label}`
+      : ` · ${u.qualifier.option.label}`;
+  return title;
+}

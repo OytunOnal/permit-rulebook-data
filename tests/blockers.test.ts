@@ -111,6 +111,34 @@ describe("cleared blocker: a person can find their own country", () => {
     for (const p of passports) expect(p.label).not.toMatch(/^(Turkey|Holland|Czech Republic|Burma|Swaziland)$/);
   });
 
+  it("the country whose name IS what was typed comes first", () => {
+    // A person typing "niger" and pressing Enter was recorded as Nigerian —
+    // the first row was Niger, and the first row is what Enter takes
+    // (product-critique v0.7, B1). Ordering is half the fix; the other half
+    // is the control committing what is highlighted.
+    const first = (typed: string) => matchOptions(passports, typed)[0].value;
+    expect(first("niger")).toBe("NE");
+    expect(first("Niger")).toBe("NE");
+    expect(first("sudan")).toBe("SD");
+    expect(first("india")).toBe("IN");
+    expect(first("china")).toBe("CN");
+    // Aliases count as names: the name a person grew up with is still theirs.
+    expect(first("turkey")).toBe("TR");
+    expect(first("holland")).toBe("NL");
+  });
+
+  it("every country is the first row for its own exact name", () => {
+    for (const p of passports)
+      expect(matchOptions(passports, p.label)[0].value, p.label).toBe(p.value);
+  });
+
+  it("a partial needle still puts the shortest way in first, alphabetically after", () => {
+    // No exact match: the ordering must stay the stable, alphabetical one, so
+    // the highlighted row does not move under the user between keystrokes.
+    const values = matchOptions(passports, "united").map((o) => o.label);
+    expect(values).toEqual([...values].sort((a, b) => a.localeCompare(b, "en")));
+  });
+
   it("a needle that matches nothing returns nothing, rather than everything", () => {
     expect(matchOptions(passports, "zzzz")).toEqual([]);
     expect(matchOptions(passports, "   ")).toHaveLength(passports.length);
