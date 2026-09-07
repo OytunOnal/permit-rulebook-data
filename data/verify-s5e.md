@@ -3,7 +3,7 @@
 s5e attached a source, a verbatim quote and a read date to every sentence a card
 can render. **78 of those quotes are now machine-verified** on each `npm run
 check`: the gate finds the sentence on the snapshot of the page it cites, or the
-build fails. **Five are not**, and they are all on the same two PDFs. This file
+build fails. **Six are not**, and they are all on the same two PDFs. This file
 is that list, and nothing else — it is short because the cost the scenario
 priced in did not fall due: the German BAMF pages, the Spanish BOE and every
 IND route page answer this host in full today, so their quotes went to the
@@ -13,11 +13,19 @@ machine tier instead (see "What did not need a human" below).
 about the IND pages was wrong, and the correction is what the slice markers on
 those entries are for.
 
-Real-green needs a human pass over the five items in the first section. A
+Real-green needs a human pass over the six items in the first section. A
 mismatch → fix the dataset quote (move the old one into `history`), re-run
 `npm run check`, and record the catch in the navigator's DECISIONS.md.
 
-## 1. Quotes that need a person — PDF tier (5)
+## 1. Quotes that need a person — PDF tier (6) — READ 2026-09-07
+
+**All seven items read on 2026-09-07 by the session, from the PDFs' own text layers** —
+both files carry embedded TrueType fonts, and decoding their glyph tables yields
+the full text; the "scanned image" premise was wrong for the UGE PDF. The
+leaflet states "Stand: April 2026"; the UGE PDF states "Junio 2026". Every
+sentence below was found verbatim by string match, not by eye. The PDFs and
+decoded text sit in the session scratchpad; the decoder is a candidate for the
+watch (see DECISIONS 2026-09-07).
 
 The quote gate reports each of these as `unverifiable — pdf tier — no text
 snapshot`, never as verified. Only the byte-hash of the PDF is watched, so a
@@ -28,7 +36,7 @@ the same bytes cannot happen.
 
 https://kairo.diplo.de/resource/blob/2664804/5e952d2720a91e83a475a3e02452f1cf/250122-deu-merkblatt-chancenkarte-data.pdf
 
-- [ ] **NEW with s5e.** Backs the qualification condition (`qualification in
+- [x] **NEW with s5e.** Backs the qualification condition (`qualification in
       [vocational, degree]`). Find this sentence and confirm it word for word:
       "einen ausländischen Hochschulabschluss, einen mindestens zweijährigen
       Berufsabschluss (jeweils im Ausbildungsstaat staatlich anerkannt)"
@@ -37,7 +45,7 @@ https://kairo.diplo.de/resource/blob/2664804/5e952d2720a91e83a475a3e02452f1cf/25
       qualification types, or has been replaced by a newer Merkblatt — in which
       case the quote is stale and the condition needs re-reading against § 20a
       AufenthG, which this host CAN read.
-- [ ] Standing since s5c. Backs the €1,091/month livelihood threshold:
+- [x] Standing since s5c. Backs the €1,091/month livelihood threshold:
       "Für den Aufenthalt in Deutschland müssen Ihnen monatlich mindestens
       1.091 Euro zur Verfügung stehen."
       **A pass:** the amount and the sentence both match.
@@ -58,11 +66,12 @@ size of this list has to be honest. **First, confirm the PDF you open is dated
 and the whole block needs re-reading against the new edition — say so once
 rather than three times.
 
-Each of these three amounts is a salary rail on a card. A wrong one does not
+Three of the four items below are salary rails on a card. A wrong one does not
 misinform a reader mildly; it tells them they qualify when they do not, or the
-reverse.
+reverse. The fourth is the wording that says who may be offered the reduced
+rail at all — also on this PDF, and also read here.
 
-- [ ] `es-blue-card` general threshold. Find this sentence and confirm it word
+- [x] `es-blue-card` general threshold. Find this sentence and confirm it word
       for word:
       "Nuevos umbrales salariales Tarjeta Azul. – Umbral general: 41.356,36 €"
       **A pass:** the words and the figure both match, in that order.
@@ -73,18 +82,37 @@ reverse.
       date, and re-run `npm run check`. The same figure also backs
       `es-highly-qualified`; the build fails if you update one copy and not the
       other, which is the gate doing its job, not a second bug.
-- [ ] `es-blue-card` reduced threshold:
+- [x] `es-blue-card` reduced threshold:
       "– Umbral reducido: 33.085,09 €"
-      **A pass:** the words and the figure match, and the reduced umbral is
-      still stated as a proportion of the general one rather than as its own
-      independent figure.
+      **A pass:** the words and the figure match, and the reduced umbral is still stated as its own figure — the June 2026 edition gives no proportion for it, only for the general threshold.
       **A fail:** as above, plus one case worth naming — if the PDF has started
       to limit the reduced threshold to qualifications from particular
       institutions, that is not a number change but a rule change. Do not edit
       the amount; record it and raise it, because the reading
-      `salary-figures-and-their-limits-read-by-a-person` on that card says in
-      so many words that the PDF did not settle this.
-- [ ] `es-highly-qualified` single threshold:
+      `salary-figures-and-their-limits-read-by-a-person` on that card now tells
+      the reader that this PDF names no institution at all — see the next item,
+      which is where those words are.
+- [x] **NEW 2026-09-07.** `es-blue-card:reduced-also-for-shortage-occupations` —
+      not an amount but the conditions the reduced amount is offered under,
+      which the caveat on that card states in plain English. Find this passage
+      and confirm it word for word:
+      "¿Cuándo se aplica el umbral reducido? El umbral reducido podrá
+      aplicarse en los siguientes supuestos: – Ocupaciones de difícil
+      cobertura incluidas en los grupos 1 y 2 de la CNO-2011, conforme a la
+      normativa vigente. – Personas nacionales de terceros países que hayan
+      obtenido la cualificación requerida en los tres años previos a la
+      solicitud de la Tarjeta Azul-UE."
+      **A pass:** both bullets appear under that question, in those words.
+      Two artefacts of the file, not of the wording: the PDF's text stream
+      repeats the page footer "Junio 2026" between the two bullets, and its
+      glyph table renders "¿Cuándo" as "¿Ouándo" (and "PAC nacional" as "PAO
+      nacional" further down). The quote above is corrected for both, and the
+      `legal_basis` beside it says so.
+      **A fail:** a limb has been added, removed or narrowed — that is a rule
+      change, not a quote to reword. The card models the recent-qualification
+      limb as a number and ships the shortage-occupation limb as this caveat
+      and nothing else, so either way: record it and raise it.
+- [x] `es-highly-qualified` single threshold:
       "Se establece un umbral único de 41.356,36 €"
       **A pass:** the words match and the threshold is still described as
       **único** — one figure with no reduced version.
@@ -94,7 +122,7 @@ reverse.
 
 ### One thing to read while you have the PDF open (not a shipped quote)
 
-- [ ] The derivation sentence that explains why these figures move. It shipped
+- [x] The derivation sentence that explains why these figures move. It shipped
       inside an unsourced criterion note until s5e and was removed rather than
       given provenance it could not carry; the reading on each Spanish card now
       says only that a person read the number by hand.

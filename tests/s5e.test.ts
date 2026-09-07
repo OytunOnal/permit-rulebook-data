@@ -128,12 +128,17 @@ describe("s5e — what is ours is marked as ours", () => {
     expect(proseProvenance(dataset)).toEqual({
       // Sentences an authority is shown to have said: a criterion's own
       // source, plus a statement standing on a quote.
-      with_provenance: 55,
+      with_provenance: 56,
       // Ours, declared as ours and shown to the reader as ours.
       ours: 8,
       // Standing on a declared, dated reason no quote could be found — the one
-      // exception, and an attributable decision rather than a blank.
-      declared_unsourced: 1,
+      // exception, and an attributable decision rather than a blank. It is
+      // zero: the last one was the es-blue-card shortage-occupation caveat,
+      // declared unsourced because Orden PJC/44/2026 is a scanned image, and
+      // the UGE salary PDF turned out to state the same conditions in words
+      // (2026-09-07). An exception nobody is using is the healthy state for
+      // it; the slot stays, and the gate that enforces it stays.
+      declared_unsourced: 0,
     });
   });
 
@@ -295,10 +300,17 @@ describe("s5e — the gate bites, and rewording is not how you silence it", () =
       ["an option label", (ds) => { ds.fields[0].options![0].label = quoted; }],
       ["notice body", (ds) => { ds.notices![0].body = quoted; }],
       ["the prose beside a declared absence", (ds) => {
-        for (const country of ds.countries)
-          for (const route of country.routes)
-            for (const s of route.statements ?? [])
-              if (s.unsourced) s.unsourced.note = quoted;
+        // The mutation builds the slot it tests. No statement in the dataset
+        // declares an absence any more — the last one, the es-blue-card
+        // shortage-occupation caveat, got its quote on 2026-09-07 — and a
+        // mutation that finds nothing to poison is a test that passes for the
+        // wrong reason. The slot is still in the schema, so the gate still has
+        // to reach it the day somebody uses it again.
+        const r = firstRoute(ds);
+        r.statements = [...(r.statements ?? []), {
+          id: "absence-with-a-note", kind: "caveat", text: "Something the authority is said to require.",
+          unsourced: { reason: "unreachable", checked_at: "2026-09-07", note: quoted },
+        }];
       }],
       ["a disjunction path label", (ds) => {
         for (const country of ds.countries)

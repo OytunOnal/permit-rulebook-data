@@ -97,42 +97,55 @@ describe("an absent quote is a decision, not an essay", () => {
   const statementOf = (data: any) =>
     data.countries.flatMap((c: any) => c.routes).find((r: any) => r.id === "es-blue-card").statements[0];
 
+  /**
+   * The same statement with its own quote taken off. That caveat stands on a
+   * source since 2026-09-07, so a mutation that left the source in place would
+   * be refused for carrying BOTH a quote and a declared absence — the wrong
+   * rule, and a green that proves nothing about the one under test. Taking the
+   * source off first keeps each case below testing what it says it tests.
+   */
+  const unquotedStatementOf = (data: any) => {
+    const s = statementOf(data);
+    delete s.source;
+    return s;
+  };
+
   it("prose alone fails, however much of it there is", () => {
     const data = load();
-    statementOf(data).unsourced =
+    unquotedStatementOf(data).unsourced =
       "The ministry publishes this only as a scan, and we checked again on 2026-09-07.";
     expect(validateDataset(data).ok).toBe(false);
   });
 
   it("prose without a reason fails — the note is in addition, never instead", () => {
     const data = load();
-    statementOf(data).unsourced = { note: "We looked hard and could not find it anywhere at all." };
+    unquotedStatementOf(data).unsourced = { note: "We looked hard and could not find it anywhere at all." };
     expect(validateDataset(data).ok).toBe(false);
   });
 
   it("a reason we did not enumerate fails — a gate can only read a fixed set", () => {
     const data = load();
-    statementOf(data).unsourced = { reason: "we-ran-out-of-time", checked_at: "2026-09-07" };
+    unquotedStatementOf(data).unsourced = { reason: "we-ran-out-of-time", checked_at: "2026-09-07" };
     expect(validateDataset(data).ok).toBe(false);
   });
 
   it("a reason with no checked-on date fails — nothing a human can age", () => {
     const data = load();
-    statementOf(data).unsourced = { reason: "scanned-image" };
+    unquotedStatementOf(data).unsourced = { reason: "scanned-image" };
     expect(validateDataset(data).ok).toBe(false);
   });
 
   it("the date is held to the shape the sourced side is held to", () => {
     const data = load();
-    statementOf(data).unsourced = { reason: "scanned-image", checked_at: "7 September 2026" };
+    unquotedStatementOf(data).unsourced = { reason: "scanned-image", checked_at: "7 September 2026" };
     expect(validateDataset(data).ok).toBe(false);
   });
 
   it("a reason and a date, with or without a note, is what passes", () => {
     const data = load();
-    statementOf(data).unsourced = { reason: "unreachable", checked_at: "2026-09-07" };
+    unquotedStatementOf(data).unsourced = { reason: "unreachable", checked_at: "2026-09-07" };
     expect(validateDataset(data).errors).toEqual([]);
-    statementOf(data).unsourced = {
+    unquotedStatementOf(data).unsourced = {
       reason: "not-published-in-words", checked_at: "2026-09-07", note: "The list is a PDF table.",
     };
     expect(validateDataset(data).errors).toEqual([]);
@@ -140,8 +153,11 @@ describe("an absent quote is a decision, not an essay", () => {
 
   it("a statement may still not carry both a quote and a reason not to have one", () => {
     const data = load();
-    const s = statementOf(data);
-    s.source = { source_url: "https://example.es/x", quote: "Some official wording.", retrieved_at: "2026-09-07" };
+    // Read from the sourced side now: the statement ships with a quote, and a
+    // declared absence is added beside it. The rule is symmetric, and this is
+    // the direction a curator can actually reach today — nothing in the
+    // dataset declares an absence any more (2026-09-07).
+    statementOf(data).unsourced = { reason: "unreachable", checked_at: "2026-09-07" };
     expect(validateDataset(data).ok).toBe(false);
   });
 });
