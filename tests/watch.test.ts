@@ -481,3 +481,50 @@ describe("the highly-skilled-migrant slice", () => {
     }
   });
 });
+
+/**
+ * The FR talent fiche's slice, bounded on 2026-09-08, and why it must stay so.
+ *
+ * The entry hashed the whole page — 87,303 characters of it — so anything on
+ * the fiche could move it. On 2026-09-05 something did: the Allô Service Public
+ * contact panel, whose "Horaires exceptionnels le mardi 8 septembre" line
+ * changes with the calendar. Quote fidelity verified every FR quote against the
+ * new snapshot that same day and still does, so nothing had happened to a
+ * value. The slice is now the accordions the entry's own intent names.
+ */
+describe("the FR talent fiche's slice", () => {
+  const entry = shippedWatchlist.entries.find((e) => e.id === "fr-f16922-talent")!;
+  const snapshot = shippedState.entries["fr-f16922-talent"];
+
+  it("is bounded to the accordions, not the whole fiche", () => {
+    expect(entry.slice?.from).toBe("Salarié qualifié");
+    expect(entry.slice?.to).toBe("Faire la démarche auprès de la préfecture");
+    expect(snapshot.text!.length).toBeLessThan(30_000);
+  });
+
+  it("keeps the opening-hours widget out of the hash", () => {
+    for (const outside of ["horaires", "Horaires exceptionnels", "Allô Service Public", "Trouver un interlocuteur"])
+      expect(snapshot.text, `${outside} is inside the slice`).not.toContain(outside);
+  });
+
+  it("still carries every talent amount the entry exists for", () => {
+    for (const amount of ["39 582", "59 373", "41 386"])
+      expect(snapshot.text, amount).toContain(amount);
+  });
+
+  it("and every quote citing the fiche still verifies against it", () => {
+    const url = "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922";
+    const cited = datasetQuotes(dataset).filter((q) => q.source_url === url);
+    expect(cited.length).toBeGreaterThan(5);
+    const missing = checkQuotes(dataset, shippedWatchlist, shippedState).missing
+      .filter((m) => m.source_url === url);
+    expect(missing).toEqual([]);
+  });
+
+  it("records that a person bounded it, so the flag is not read as the page changing", () => {
+    const bounded = entry.history?.find((h) => h.changed_at === "2026-09-08");
+    expect(bounded, "a deliberate slice change with no history entry").toBeDefined();
+    expect(bounded!.note).toMatch(/opening-hours/i);
+    expect(bounded!.note).toMatch(/false alarm/i);
+  });
+});

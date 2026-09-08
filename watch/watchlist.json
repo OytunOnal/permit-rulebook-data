@@ -53,7 +53,17 @@
       "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
       "strategy": "html",
       "kind": "value-source",
-      "note": "Backs the FR talent thresholds (EUR 39,582 salarié qualifié; EUR 59,373 Blue Card). All talent amounts live in this fiche's accordions."
+      "note": "Backs the FR talent thresholds (EUR 39,582 salarié qualifié; EUR 59,373 Blue Card). All talent amounts live in this fiche's accordions, and the slice is those accordions: from the first one to the line that begins the prefecture procedure. Everything after it backs no value and moves on its own — the postcode-driven preface widget, and the Allo Service Public opening hours, which carry a line like \"Horaires exceptionnels le mardi 8 septembre\" and changed under the entry on 2026-09-05 while every quoted amount stood still.",
+      "slice": {
+        "from": "Salarié qualifié",
+        "to": "Faire la démarche auprès de la préfecture"
+      },
+      "history": [
+        {
+          "changed_at": "2026-09-08",
+          "note": "Slice added: from the first accordion heading to the start of the prefecture procedure, cutting the watched region from 87,303 to 26,008 characters. The entry had no slice and hashed the whole page, so the Allo Service Public opening-hours widget flagged it as changed on 2026-09-05 while quote fidelity still verified every FR quote — a false alarm caused by text outside the values. All three talent amounts and every quote citing this fiche are inside the new bounds; the `changed` flag this raised on 2026-09-08 is the re-slice, not the authority."
+        }
+      ]
     },
     {
       "id": "fr-f33952-ict",
