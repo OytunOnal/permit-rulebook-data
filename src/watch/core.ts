@@ -71,6 +71,17 @@ export interface WatchEntry {
    * for pages whose chrome rotates (ads, promos) while the operative text stands
    * still. A missing marker reports as unreachable — never as "no change". */
   slice?: { from: string; to: string };
+  /**
+   * Deliberate changes to the ENTRY — a marker moved, a strategy swapped — with
+   * the day and the reason.
+   *
+   * The dataset keeps an append-only history for every value it ships, and an
+   * entry that decides what a value is checked against deserves the same: a
+   * widened slice raises a `changed` flag that is expected, and a reader of that
+   * flag six months later needs to find out here that a person moved the marker
+   * on purpose rather than that the authority rewrote the page.
+   */
+  history?: { changed_at: string; note: string }[];
   /** link strategy only: the field whose "find out yourself" link this is,
    * so a report says which question loses its help when the page goes. */
   learn_for?: string;

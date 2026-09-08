@@ -282,6 +282,21 @@ export interface FieldOption {
   label: string;
   /** Noun-phrase form for prose ("a job offer in Germany"). */
   short?: string;
+  /**
+   * What choosing this answer MEANS here, in our words, where the label alone
+   * leaves two answers hard to tell apart.
+   *
+   * A reader whose employer is moving them to a branch abroad read "I have (or
+   * am about to get) a job offer there" as their situation, took the
+   * highly-skilled-migrant route as open to them, and only the authority's own
+   * page says otherwise (human walk, 2026-09-08). The distinction is about what
+   * THIS interview means by the answer, so it is ours and it lives beside the
+   * option rather than in a renderer.
+   *
+   * It may carry the token `{place}`, which the reader's declared destination
+   * fills in — nothing here names a country.
+   */
+  means?: string;
   /** Names a person may type that are not the label — former or English names
    * ("Turkey", "Holland"). Search keys only; never displayed. */
   aliases?: string[];

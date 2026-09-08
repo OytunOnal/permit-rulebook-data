@@ -261,10 +261,16 @@
       "strategy": "html",
       "kind": "value-source",
       "slice": {
-        "from": "Requirements",
+        "from": "To work in the Netherlands as a highly skilled migrant",
         "to": "Cookies Proclaimer Privacy Sitemap"
       },
-      "note": "IND highly skilled migrant requirement list. Backs the recognised-sponsor contract condition and the market-rate precondition on both HSM routes. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
+      "note": "IND highly skilled migrant requirement list. Backs the recognised-sponsor contract condition, the market-rate precondition and the intra-corporate-transferee statement on both HSM routes. Sliced from the page's own lede to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`. The lede is the first line below the rotating menu and below the page's own \"Last update\" date, which must stay outside the slice or the entry flags every day.",
+      "history": [
+        {
+          "changed_at": "2026-09-08",
+          "note": "Slice `from` moved from \"Requirements\" to the page's lede, widening the watched region by one paragraph. The IND states there that a person on a contract with a company outside the EU, transferred as a manager, specialist or trainee, is an intra corporate transferee and other requirements apply — a sentence that changes who each HSM route is for, and which sat 64 characters above the old marker where nothing watched it. The `changed` flag this raised on 2026-09-08 is that move, not a change by the authority."
+        }
+      ]
     },
     {
       "id": "nl-ind-ict",

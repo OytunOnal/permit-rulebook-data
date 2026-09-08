@@ -230,10 +230,10 @@ describe("provenance and meta", () => {
       // breaking change to the public contract.
       schema_version: "0.5.0",
       dataset_version: "2026.09.07",
-      // A route statement is a provenanced value like any other — the Dutch
-      // orientation-year requirements, read by a person on 2026-09-07, are
-      // now the freshest thing the dataset carries.
-      newest_retrieved_at: "2026-09-07",
+      // A route statement is a provenanced value like any other. The freshest
+      // is now the IND's own sentence about intra-corporate transferees, read
+      // on 2026-09-08 once the watch's slice was widened to cover it.
+      newest_retrieved_at: "2026-09-08",
     });
   });
 });

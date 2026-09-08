@@ -152,8 +152,10 @@ describe("s5e — what is ours is marked as ours", () => {
       // source, plus a statement standing on a quote.
       // s5f moved 37 bare preconditions in here: a line saying what an
       // authority demands of an applicant is the authority's position, and it
-      // now carries the authority's words or is declared ours below.
-      with_provenance: 92,
+      // now carries the authority's words or is declared ours below. Two more
+      // arrived on 2026-09-08 with the intra-corporate-transferee caveat on
+      // both highly-skilled-migrant routes.
+      with_provenance: 94,
       // Ours, declared as ours and shown to the reader as ours: 8 route
       // readings, plus the 23 scope-statement reasons s6 authored — one per route,
       // our own words about our own interview, printed as the page's scope

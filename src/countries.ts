@@ -21,7 +21,9 @@ export interface CountryClass {
 export interface CountryVocabulary {
   classes: Record<string, CountryClass>;
   /** ISO 3166-1 alpha-2. A vocabulary, not a rule: no per-country provenance. */
-  countries: { code: string; name: string; aliases?: string[] }[];
+  /** `article` is the word the name takes inside a sentence ("the"
+   * Netherlands) — a fact about the country, kept beside its name. */
+  countries: { code: string; name: string; article?: string; aliases?: string[] }[];
 }
 
 export interface VocabularyError {
@@ -57,11 +59,30 @@ const derivedOptions: FieldOption[] = countryVocabulary.countries
   .map((c) => ({
     value: c.code,
     label: c.name,
+    // The prose form, where it differs from the name: a sentence says "in the
+    // Netherlands", a button in a list says "Netherlands".
+    ...(c.article ? { short: `${c.article} ${c.name}` } : {}),
     implies: [classOfCountry(c.code)!],
     // Names people still type. Search keys only — never displayed.
     ...(c.aliases?.length ? { aliases: c.aliases } : {}),
   }))
   .sort((a, b) => a.label.localeCompare(b.label, "en"));
+
+/**
+ * A country's name as it reads inside a sentence: "Germany", "the Netherlands".
+ *
+ * The article is a fact about the country, so it lives beside the name in
+ * `countries.json` rather than in a set of exceptions inside a renderer — where
+ * it sat, with a comment saying it would move here the second country that
+ * needed it. The second was the leverage line (human walk, 2026-09-08).
+ */
+export function countryPhrase(
+  code: string, vocab: CountryVocabulary = countryVocabulary,
+): string | undefined {
+  const country = vocab.countries.find((c) => c.code === code);
+  if (!country) return undefined;
+  return country.article ? `${country.article} ${country.name}` : country.name;
+}
 
 export function countryOptions(): FieldOption[] {
   return derivedOptions;

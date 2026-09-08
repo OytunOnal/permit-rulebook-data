@@ -4,6 +4,9 @@ import dataset from "../data/dataset.json" with { type: "json" };
 import { validateDataset } from "../src/validate.js";
 import { proseProvenance, renderableTexts } from "../src/prose.js";
 import { scopeWords, statedNotAsked, SCOPE_VALUES } from "../src/scope.js";
+import { declaredPlace, optionMeans, unlockTitleOf } from "../src/verdict.js";
+import { countryPhrase } from "../src/countries.js";
+import { unlocks } from "../src/engine.js";
 import {
   excludedLimbs, limbIdsOf, routesInProse, scopeDisagreesWithExclusions, twinDisagreesWithProse,
 } from "../src/exclusions.js";
@@ -204,5 +207,74 @@ describe("s6 — every quote can name the language it is in", () => {
     expect(quoteLanguage("https://ind.nl/en/required-amounts-income-requirements")).toBe("en");
     expect(quoteLanguage("https://example.invalid/x")).toBeUndefined();
     for (const [, lang] of QUOTE_LANGUAGES) expect(LANGUAGE_NAMES[lang], lang).toBeTruthy();
+  });
+});
+
+/**
+ * The human's walk, 2026-09-08: a reader whose employer was moving them to its
+ * Dutch branch read "With a job offer → Highly skilled migrant would be met" as
+ * something they already had. They do have an offer. They do not have this one.
+ */
+describe("an answer a reader can mistake for the one they hold says what it means", () => {
+  const optionsOf = (field: string) =>
+    ds.fields.find((f) => f.id === field)!.options!;
+
+  it("the two situations a transferee confuses each say what they mean", () => {
+    const situation = optionsOf("situation");
+    for (const value of ["offer", "ict"]) {
+      const option = situation.find((o) => o.value === value)!;
+      expect(option.means, value).toBeTruthy();
+      expect(option.means, value).toContain("{place}");
+      expect(option.means, value).toMatch(/\.$/);
+    }
+    // Each names what the other is, so the pair can be told apart.
+    expect(situation.find((o) => o.value === "offer")!.means).toMatch(/not a transfer/i);
+    expect(situation.find((o) => o.value === "ict")!.means).toMatch(/contract stays with the company abroad/i);
+  });
+
+  it("no country is named in the words — the place comes from the reader", () => {
+    for (const option of optionsOf("situation"))
+      for (const country of ds.countries)
+        expect(option.means ?? "", `${option.value} names ${country.name}`).not.toContain(country.name);
+  });
+
+  it("the place is filled in from what was declared, with its article", () => {
+    const offer = optionsOf("situation").find((o) => o.value === "offer")!;
+    expect(optionMeans(offer, ds, { destination: "nl" }))
+      .toBe("An employment contract with an employer in the Netherlands itself — including one you already hold — not a transfer to a branch on a contract you hold abroad.");
+    expect(optionMeans(offer, ds, { destination: "de" })).toContain("an employer in Germany itself");
+    // Nothing declared yet: the sentence still reads, in the word the option
+    // labels already use.
+    expect(optionMeans(offer, ds, {})).toContain("an employer there itself");
+    // No token survives rendering, ever.
+    for (const profile of [{}, { destination: "nl" }, { destination: "all" }, { situation_country: "NL" }])
+      for (const option of optionsOf("situation"))
+        expect(optionMeans(option, ds, profile)).not.toContain("{place}");
+    // An option with nothing to distinguish says nothing.
+    expect(optionMeans(optionsOf("situation").find((o) => o.value === "none")!, ds, { destination: "nl" })).toBe("");
+  });
+
+  it("a country's article travels with its name, not with a renderer", () => {
+    expect(countryPhrase("NL")).toBe("the Netherlands");
+    expect(countryPhrase("DE")).toBe("Germany");
+    expect(countryPhrase("ZZ")).toBeUndefined();
+    expect(declaredPlace(ds, { destination: "nl" })).toBe("the Netherlands");
+    expect(declaredPlace(ds, { destination: "de" })).toBe("Germany");
+    expect(declaredPlace(ds, { destination: "all" })).toBe("");
+  });
+
+  it("the leverage row keeps the short step, and the meaning rides beside it", () => {
+    const profile = {
+      destination: "nl", citizenship: "TR", situation: "ict",
+      salary_eur_month: "band_6", nl_recent_grad: "no", top200_grad: "no", age_band: "a30to35",
+    };
+    const rows = unlocks(ds, profile);
+    const offer = rows.find((u) => u.field === "situation" && u.option.value === "offer");
+    expect(offer, "the job-offer step is the one the walk turned on").toBeDefined();
+    // The row is still scanned by its short step.
+    expect(unlockTitleOf(ds, offer!)).toBe("a job offer");
+    // And the sentence beside it says which offer.
+    expect(optionMeans(offer!.option, ds, profile)).toContain("in the Netherlands itself");
+    expect(offer!.routes.some((r) => r.route.id === "nl-hsm-30plus" && r.status === "met")).toBe(true);
   });
 });

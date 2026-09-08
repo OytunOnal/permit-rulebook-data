@@ -1,7 +1,7 @@
-import { countryClasses } from "./countries.js";
+import { countryClasses, countryPhrase } from "./countries.js";
 import { deriveBands, fieldOptions, formatEURPer, referencedFields } from "./engine.js";
 import type {
-  Criterion, CriterionResult, Dataset, FieldDef, Profile, RouteResult, Unlock,
+  Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, RouteResult, Unlock,
 } from "./types.js";
 
 /**
@@ -116,7 +116,13 @@ export function declaredPlace(dataset: Dataset, profile: Profile): string {
   const field = profile["situation_country"] !== undefined ? "situation_country" : "destination";
   const value = profile[field];
   if (!value || (field === "destination" && value === "all")) return "";
-  return fieldOptions(dataset, field).find((o) => o.value === value)?.label ?? "";
+  // The country's own prose form, from the vocabulary that holds the article:
+  // a sentence says "the Netherlands", the button in the list says
+  // "Netherlands". Both destination and situation_country are country codes, so
+  // one lookup serves both; an option's `short` is a different sentence
+  // ("Germany as your destination") and is deliberately not used here.
+  return countryPhrase(value.toUpperCase()) ??
+    fieldOptions(dataset, field).find((o) => o.value === value)?.label ?? "";
 }
 
 /** Unknowns the person can still act on: on a hard-failed route nothing they
@@ -235,14 +241,41 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
   };
 }
 
-/** The step an unlock row offers, in the person's own words. */
+/**
+ * The step an unlock row offers, in the person's own words — and, where the
+ * answer is one a reader can mistake for the one they already have, what the
+ * step actually is.
+ *
+ * "With a job offer → Highly skilled migrant would be met" was read by a person
+ * whose employer was moving them to its Dutch branch as something they already
+ * had (human walk, 2026-09-08). They do have an offer; they do not have this
+ * one. What the step actually is comes from `optionMeans` below and is shown
+ * beside this title rather than inside it, so the step stays the short phrase a
+ * row is scanned by and the distinction reads as the sentence it is.
+ */
 export function unlockTitleOf(dataset: Dataset, u: Unlock): string {
   const def = fieldOf(dataset, u.field);
   let title = u.option.short ?? u.option.label;
   if (def?.type === "money_band") title += ` — ${shortLabelOf(dataset, u.field).toLowerCase()}`;
   if (u.qualifier)
     title += u.qualifier.field === "situation_country"
-      ? ` in ${u.qualifier.option.label}`
-      : ` · ${u.qualifier.option.label}`;
+      ? ` in ${u.qualifier.option.short ?? u.qualifier.option.label}`
+      : ` · ${u.qualifier.option.short ?? u.qualifier.option.label}`;
   return title;
+}
+
+/**
+ * What an option means here, with `{place}` filled in from what the reader
+ * declared.
+ *
+ * The preposition travels with the place, not with the sentence: where nothing
+ * has been declared the token becomes "there" — the word the option labels
+ * already use — and "an employer in there" is not a sentence anyone would say.
+ */
+export function optionMeans(
+  option: FieldOption, dataset: Dataset, profile: Profile = {},
+): string {
+  if (!option.means) return "";
+  const place = declaredPlace(dataset, profile);
+  return option.means.split("{place}").join(place ? `in ${place}` : "there");
 }

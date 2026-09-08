@@ -164,6 +164,11 @@
                 "type": "string",
                 "minLength": 1
               },
+              "means": {
+                "type": "string",
+                "minLength": 1,
+                "description": "What choosing this answer means in this interview, in our words, where the label alone leaves two answers hard to tell apart. May carry the token {place}, filled in from the reader's declared destination."
+              },
               "is_unknown": {
                 "type": "boolean"
               },

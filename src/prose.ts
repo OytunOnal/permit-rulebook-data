@@ -141,6 +141,10 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
     (f.options ?? []).forEach((o, j) => {
       label(`${p}/options/${j}/label`, o.label);
       label(`${p}/options/${j}/short`, o.short);
+      // What an answer means here is our wording of our own question, so it is
+      // a label like the rest of the question's words — and the additive
+      // quotation-mark check still reaches it (s6, human walk 2026-09-08).
+      label(`${p}/options/${j}/means`, o.means);
     });
   });
 

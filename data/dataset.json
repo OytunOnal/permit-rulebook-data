@@ -56,12 +56,14 @@
         {
           "value": "offer",
           "label": "I have (or am about to get) a job offer there",
-          "short": "a job offer"
+          "short": "a job offer",
+          "means": "An employment contract with an employer {place} itself — including one you already hold — not a transfer to a branch on a contract you hold abroad."
         },
         {
           "value": "ict",
           "label": "My employer is transferring me to a branch there",
-          "short": "an intra-corporate transfer"
+          "short": "an intra-corporate transfer",
+          "means": "Your contract stays with the company abroad and it moves you to its branch {place}."
         },
         {
           "value": "research",
@@ -2875,6 +2877,16 @@
                 "quote": "Are you going to work in individual healthcare? And do you practise a medical profession that is listed in Article 3 and Article 36a of the Individual Healthcare Professions Act (BIG Act)? If so, you must be registered in the BIG register.",
                 "retrieved_at": "2026-09-07"
               }
+            },
+            {
+              "id": "a-contract-abroad-is-a-transfer",
+              "kind": "caveat",
+              "text": "Your employment contract is with the employer in the Netherlands. If your contract is with a company outside the EU and that company is transferring you to a branch here as a manager, specialist or trainee, the intra-corporate transferee permit is the one that applies to you, not this one.",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "Do you have an employment contract with a company located outside the EU? And are you going to be transferred as a manager, specialist or trainee? Then you are an intra corporate transferee and other requirements apply to you.",
+                "retrieved_at": "2026-09-08"
+              }
             }
           ]
         },
@@ -3080,6 +3092,16 @@
                 "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
                 "quote": "Are you going to work in individual healthcare? And do you practise a medical profession that is listed in Article 3 and Article 36a of the Individual Healthcare Professions Act (BIG Act)? If so, you must be registered in the BIG register.",
                 "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "a-contract-abroad-is-a-transfer",
+              "kind": "caveat",
+              "text": "Your employment contract is with the employer in the Netherlands. If your contract is with a company outside the EU and that company is transferring you to a branch here as a manager, specialist or trainee, the intra-corporate transferee permit is the one that applies to you, not this one.",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "Do you have an employment contract with a company located outside the EU? And are you going to be transferred as a manager, specialist or trainee? Then you are an intra corporate transferee and other requirements apply to you.",
+                "retrieved_at": "2026-09-08"
               }
             }
           ]

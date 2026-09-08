@@ -426,3 +426,58 @@ describe("learn links are watched for liveness, and only for liveness", () => {
       expect([...quoteUrls], e.id).not.toContain(e.url);
   });
 });
+
+/**
+ * The slice that was widened on 2026-09-08, and why it must stay where it is.
+ *
+ * The IND states, above its requirement list, that a person on a contract with
+ * a company outside the EU who is being transferred as a manager, specialist or
+ * trainee is an intra corporate transferee and other requirements apply. That
+ * sentence changes who each highly-skilled-migrant route is for, and it sat 64
+ * characters above the old `from` marker, where nothing watched it. The marker
+ * moved down to the page's own lede — below the rotating mega-menu, and below
+ * the page's "Last update" date, which would otherwise flag every day.
+ */
+describe("the highly-skilled-migrant slice", () => {
+  const entry = shippedWatchlist.entries
+    .find((e) => e.id === "nl-ind-highly-skilled-migrant")!;
+  const snapshot = shippedState.entries["nl-ind-highly-skilled-migrant"];
+  const SENTENCE = "Do you have an employment contract with a company located outside the EU?"
+    + " And are you going to be transferred as a manager, specialist or trainee?"
+    + " Then you are an intra corporate transferee and other requirements apply to you.";
+
+  it("starts at the lede, so the sentence is inside it", () => {
+    expect(entry.slice?.from).toBe("To work in the Netherlands as a highly skilled migrant");
+    expect(snapshot.text, "the snapshot predates the widened slice").toContain(SENTENCE);
+    // Everything the old, narrower slice covered is still covered.
+    expect(snapshot.text).toContain("Requirements");
+  });
+
+  it("keeps the page's own date outside it, or the entry flags every day", () => {
+    expect(snapshot.text).not.toContain("Last update");
+    expect(entry.slice?.from.startsWith("Last update")).toBe(false);
+  });
+
+  it("records that a person moved the marker, so the flag is not read as the page changing", () => {
+    const moved = entry.history?.find((h) => h.changed_at === "2026-09-08");
+    expect(moved, "a deliberate slice change with no history entry").toBeDefined();
+    expect(moved!.note).toMatch(/intra corporate transferee/i);
+    expect(moved!.note).toMatch(/moved/i);
+  });
+
+  it("the quote the widened slice exists for is in the dataset, dated the day it was read", () => {
+    const routes = dataset.countries.flatMap((c) => c.routes);
+    for (const id of ["nl-hsm-30plus", "nl-hsm-under30"]) {
+      const statement = routes.find((r) => r.id === id)!
+        .statements!.find((s) => s.id === "a-contract-abroad-is-a-transfer");
+      expect(statement, `${id} does not carry it`).toBeDefined();
+      expect(statement!.source!.quote).toBe(SENTENCE);
+      expect(statement!.source!.retrieved_at).toBe("2026-09-08");
+      expect(statement!.source!.source_url).toBe(entry.url);
+      // It is a caveat, not a precondition: the interview DOES ask this, as
+      // `situation eq offer`, so it is the source qualifying its own answer
+      // rather than a condition nobody asks about.
+      expect(statement!.kind).toBe("caveat");
+    }
+  });
+});

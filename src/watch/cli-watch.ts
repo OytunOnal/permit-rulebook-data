@@ -11,9 +11,28 @@ function log(level: "info" | "warn" | "error", msg: string, extra: Record<string
 const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
 
 const commit = process.argv.includes("--commit");
+/**
+ * `--only=<id>` runs one entry and leaves every other snapshot untouched.
+ *
+ * A curator who moves a slice marker on purpose has to re-baseline that entry
+ * and only that entry: running all thirty would rewrite thirty snapshots and
+ * bury the one deliberate change among them. The daily run passes no filter
+ * and is unaffected.
+ */
+const onlyArg = process.argv.find((a) => a.startsWith("--only="));
+const only = onlyArg?.slice("--only=".length);
 const watchlist = readJson(new URL("../../../watch/watchlist.json", import.meta.url)) as Watchlist;
 const statePath = new URL("../../../watch/state.json", import.meta.url);
 const state = readJson(statePath) as WatchState;
+
+if (only) {
+  const wanted = watchlist.entries.filter((e) => e.id === only);
+  if (!wanted.length) {
+    log("error", "no such watch entry", { id: only });
+    process.exit(2);
+  }
+  watchlist.entries = wanted;
+}
 
 const fetcher: Fetcher = async (url) => {
   try {
@@ -76,8 +95,11 @@ for (const r of reports) {
 }
 
 if (commit) {
-  writeFileSync(statePath, JSON.stringify(nextState, null, 2) + "\n");
-  log("info", "state committed", { entries: Object.keys(nextState.entries).length });
+  // With `--only`, every other entry's snapshot is carried over untouched: a
+  // targeted re-baseline must not quietly drop the twenty-nine it did not fetch.
+  const merged = only ? { entries: { ...state.entries, ...nextState.entries } } : nextState;
+  writeFileSync(statePath, JSON.stringify(merged, null, 2) + "\n");
+  log("info", "state committed", { entries: Object.keys(merged.entries).length, only: only ?? null });
 } else {
   log("info", "dry run — state untouched (use --commit to persist)");
 }
