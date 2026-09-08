@@ -69,11 +69,25 @@ describe("s6 — every route declares what the checker asks of it", () => {
 
   it("the words are plain: no pipeline vocabulary reaches the reader", () => {
     const said = [
-      ...SCOPE_VALUES.map((v) => scopeWords(v)),
+      ...SCOPE_VALUES.map((v) => scopeWords(v, 2)),
       ...routes().map((r) => r.scope.reason),
     ].join(" ").toLowerCase();
-    for (const word of ["modelled", "modeled", "modelling", "criterion", "criteria", "scored", "pipeline", "coverage"])
+    // "Scored" left this list on 2026-09-08, by the human's own choice of
+    // words: "scored against your answers" says what the reader gets, which is
+    // the sentence this rule exists to demand. The ban was on our pipeline
+    // describing itself — "fully modelled", "criteria met on 4 of 6 criteria" —
+    // and it holds for every other word on it. It is narrowed here rather than
+    // deleted, with the reason, because a rule that quietly loses a term is a
+    // rule nobody can audit.
+    for (const word of ["modelled", "modeled", "modelling", "criterion", "criteria", "pipeline", "coverage"])
       expect(said, word).not.toContain(word);
+    // And where it IS used, it is used in a sentence about the reader: never
+    // bare, never as a verdict, always beside what it was scored against.
+    for (const value of SCOPE_VALUES) {
+      const words = scopeWords(value, 2);
+      if (!words.includes("scored")) continue;
+      expect(words, value).toMatch(/(not scored$|scored(, | against your answers))/);
+    }
     // A reason is our own words about our own interview. It never puts an
     // authority in quotation marks in a slot nothing can check them against.
     for (const r of routes())

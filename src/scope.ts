@@ -14,14 +14,42 @@ export { SCOPE_VALUES } from "./types.js";
  * (B3). The words below say what is asked and what is not, and nothing about a
  * pipeline.
  */
-const WORDS: Record<ScopeValue, string> = {
-  "every-deciding-rule-asked": "every deciding rule asked",
-  "some-conditions-stated-not-asked": "some conditions stated, not asked",
-  "rules-quoted-nothing-asked": "rules quoted, nothing asked",
+/**
+ * Revision 2 (human, 2026-09-08, amending decision 3): the words now say what
+ * the reader GETS rather than what our pipeline did. "Some conditions stated,
+ * not asked" is a sentence about us; "quoted and dated · scored, two conditions
+ * stated but not asked" is a sentence about what the reader is about to read,
+ * and it counts them. The same words on every screen that states a route's
+ * scope: the country index, the results card and the route page's own short
+ * line.
+ */
+const WORDS: Record<ScopeValue, (stated: number) => string> = {
+  "every-deciding-rule-asked": () => "quoted and dated · scored against your answers",
+  "some-conditions-stated-not-asked": (stated) =>
+    `quoted and dated · scored, ${countWords(stated)} stated but not asked`,
+  "rules-quoted-nothing-asked": () => "quoted and dated · not scored",
 };
 
-export function scopeWords(value: ScopeValue): string {
-  return WORDS[value];
+/** Small numbers read as words in a sentence; larger ones stay digits. */
+const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+
+function countWords(stated: number): string {
+  const many = stated === 1 ? "condition" : "conditions";
+  return `${stated < NUMBER_WORDS.length ? NUMBER_WORDS[stated] : stated} ${many}`;
+}
+
+/**
+ * `stated` is how many conditions the route declares it states without asking
+ * — the authored `not_asked` list, the same one the route page's full sentence
+ * names. It is ignored by the two values that state none.
+ */
+export function scopeWords(value: ScopeValue, stated = 0): string {
+  return WORDS[value](stated);
+}
+
+/** The same words for a route, which knows its own count. */
+export function scopeLine(route: Route): string {
+  return scopeWords(route.scope.value, route.scope.not_asked.length);
 }
 
 /**
