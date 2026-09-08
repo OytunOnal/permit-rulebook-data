@@ -36,7 +36,19 @@ export function notices(dataset: Dataset, profile: Profile): Notice[] {
   });
 }
 
-/** Every threshold referenced by gte-criteria on this field, ascending, deduplicated. */
+/**
+ * Every threshold referenced by gte-criteria on this field, ascending,
+ * deduplicated — across all four countries, whatever the reader declared.
+ *
+ * One pooled ladder, on purpose (human ruling, 2026-09-08). A country's own
+ * cut points alone are a coarse ladder, and the distance to the rule is this
+ * product's differentiator: a German earner on €40,000 placed on Germany's
+ * three thresholds can only say "under €45,630", and the card then has to
+ * report the worst case that answer allows — "up to €45,630/year short"
+ * instead of €6,048. A neighbour's threshold landing inside the range is a
+ * label a reader may find odd; it decides nothing, and it buys the precision
+ * the gap story is made of.
+ */
 export function thresholdsForField(dataset: Dataset, field: string): number[] {
   const amounts = new Set<number>();
   for (const country of dataset.countries)
@@ -52,9 +64,19 @@ export function thresholdsForField(dataset: Dataset, field: string): number[] {
 const bandCache = new WeakMap<Dataset, Map<string, Band[]>>();
 
 /**
- * Band boundaries ARE the thresholds themselves: n thresholds produce n+1 bands.
- * A band passes a threshold iff its inclusive lower bound reaches it, so an
- * answer never straddles a decision boundary.
+ * Band boundaries ARE the thresholds themselves: n thresholds produce n+1
+ * bands. Every band is half-open — `[min, max)` — and its label says so, so a
+ * salary belongs to exactly one of them.
+ *
+ * The arithmetic was always half-open (a band passes a threshold iff its
+ * inclusive lower bound reaches it); the words were not. "€4,754 – €5,942" and
+ * "€5,942 or more" both contained €5,942, and a transferee earning exactly the
+ * threshold got opposite verdicts depending on which true label he picked
+ * (isolated v1-gate critique, 2026-09-08, B1).
+ *
+ * Band ids are positions in this one ladder, and the ladder is the same for
+ * every reader, so an answer means the same amount whichever country is on the
+ * record.
  */
 export function deriveBands(dataset: Dataset, field: string): Band[] {
   let perField = bandCache.get(dataset);
@@ -68,7 +90,7 @@ export function deriveBands(dataset: Dataset, field: string): Band[] {
     const max = i === ts.length ? undefined : ts[i];
     let label: string;
     if (min === undefined && max !== undefined) label = `under ${formatEUR(max)}`;
-    else if (min !== undefined && max !== undefined) label = `${formatEUR(min)} – ${formatEUR(max)}`;
+    else if (min !== undefined && max !== undefined) label = `${formatEUR(min)} – under ${formatEUR(max)}`;
     else if (min !== undefined) label = `${formatEUR(min)} or more`;
     else label = "any amount";
     bands.push({ id: `band_${i}`, min, max, label });
@@ -80,6 +102,23 @@ export function deriveBands(dataset: Dataset, field: string): Band[] {
   Object.freeze(bands);
   perField.set(field, bands);
   return bands;
+}
+
+/**
+ * The same declaration, pointed at another country.
+ *
+ * A reader who arrives from a country or route page is re-scoped to the
+ * country they arrived from (isolated v1-gate critique, 2026-09-08, B2).
+ * Everything else they told us is theirs and travels with them — including
+ * every amount, because the money ladder is one pooled list for all four
+ * countries (human ruling, 2026-09-08), so a band means the same euros
+ * wherever the reader is headed. What the new country's rules no longer ask is
+ * dropped by the interview's own replay, not here.
+ */
+export function rescopeProfile(
+  _dataset: Dataset, profile: Profile, destination: string,
+): { profile: Profile; dropped: string[] } {
+  return { profile: { ...profile, destination }, dropped: [] };
 }
 
 /**
@@ -553,6 +592,24 @@ export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
 }
 
 /**
+ * The rungs of a money ladder that are steps at all: the ones ABOVE what the
+ * reader declared, nearest first.
+ *
+ * Nothing below is a step — the rail offered "under €33,085.09" as a way to
+ * unlock more (B3) — and an answer that is not an amount ("I don't know")
+ * has no floor to climb from, so every rung that names one is a candidate and
+ * the lowest that changes a verdict is the step.
+ */
+function bandSteps(dataset: Dataset, field: string, profile: Profile): FieldOption[] {
+  const bands = deriveBands(dataset, field);
+  const declared = bands.find((b) => b.id === profile[field]);
+  const floor = declared?.min ?? 0;
+  return bands
+    .filter((b) => b.min !== undefined && b.min > floor)
+    .map((b) => ({ value: b.id, label: b.label }));
+}
+
+/**
  * Counterfactual leverage: for every answered PATH field, re-evaluate the
  * profile under each alternative (non-fallback, non-unknown) option and
  * report the routes that would turn met/near. "How close is an offer" is
@@ -567,16 +624,31 @@ export function unlocks(dataset: Dataset, profile: Profile): import("./types.js"
     if (current === undefined) continue;
     const candidates =
       def.type === "money_band"
-        ? deriveBands(dataset, def.id).map((b) => ({ value: b.id, label: b.label }))
+        ? bandSteps(dataset, def.id, profile)
         : fieldOptions(dataset, def.id);
     for (const opt of candidates) {
       if (opt.value === current || ("is_unknown" in opt && opt.is_unknown) || ("is_fallback" in opt && opt.is_fallback)) continue;
       const hypo: Profile = { ...profile, [def.id]: opt.value };
       const hypoResults = evaluate(dataset, hypo);
-      const opened = hypoResults.filter(
-        (r) => (r.status === "met" || r.status === "near") && baseline.get(r.route.id) === "hold",
-      );
-      if (opened.length) out.push({ field: def.id, option: opt, routes: opened });
+      const opened = hypoResults.filter((r) => {
+        const was = baseline.get(r.route.id);
+        // A number is asked for by a rule, so the step a number offers is the
+        // one that MEETS that rule: "with €5,070/year more, EU Blue Card —
+        // general would be met". A rung that only moves a route from not-yet
+        // to within-reach is the ladder read back to the reader, which is what
+        // filled the rail with ten rows of itself (isolated v1-gate critique,
+        // 2026-09-08, B3) — and the card already prints how short they are.
+        if (def.type === "money_band") return was !== "met" && r.status === "met";
+        return was === "hold" && (r.status === "met" || r.status === "near");
+      });
+      if (opened.length) {
+        out.push({ field: def.id, option: opt, routes: opened });
+        // A number is one decision, so it earns one step: the nearest rung
+        // that changes a verdict. Printed rung by rung, the ladder became ten
+        // of the thirteen "steps" a reader was offered, eight of them naming
+        // the same route (isolated v1-gate critique, 2026-09-08, B3).
+        if (def.type === "money_band") break;
+      }
 
       // Qualifier fork: some steps only prove out together with one unanswered
       // attribute — "a job offer" needs "…in which country?" when the user asked

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { unlocks } from "../src/engine.js";
+import { deriveBands, unlocks } from "../src/engine.js";
+import { unlockTitleOf } from "../src/verdict.js";
 import { remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
@@ -12,7 +13,8 @@ const explorer: Profile = {
   recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
   german: "b1", funds_eur_month: "band_1",
   // salary answered so the offer counterfactual can evaluate fully
-  // (band_5 = €45,934.20 – €50,700: clears shortage BC + §19c, below the general BC)
+  // (band_5 = €45,934.20 – under €50,700: clears shortage BC + §19c, below the
+  // general BC)
   salary_eur_year: "band_5",
 };
 
@@ -114,5 +116,71 @@ describe("improvable fails keep the interview alive (user-reported: no-language 
     expect(b2.routes.map((r) => [r.route.id, r.status])).toEqual([["de-chancenkarte", "met"]]);
     // English C1 alone (1+2+1=4) proves nothing while recognition is unknown → honest absence
     expect(rows2.some((u) => u.field === "english" && u.option.value === "c1")).toBe(false);
+  });
+});
+
+/**
+ * A ladder is not a list of steps.
+ *
+ * With three answers of "I don't know" the rail printed thirteen steps, ten of
+ * them the salary and funds ladders one rung at a time and eight of those
+ * naming the same route — the first of them offering "under €33,085.09", which
+ * is a step downwards (isolated v1-gate critique, 2026-09-08, B3). A number is
+ * one decision, so it earns one step: the nearest rung that changes a verdict.
+ */
+describe("a numeric field earns one step, never a rung-by-rung enumeration", () => {
+  // Arun, answering "I don't know" to the three questions the product itself
+  // invites him to be unsure about.
+  const unsure: Profile = {
+    destination: "de", citizenship: "IN", situation: "offer", qualification: "degree",
+    occupation_shortage: "unknown", recognition_de: "unknown", salary_eur_year: "unknown",
+    experience: "y3in7", german: "b1", english: "c1", age_band: "a30to35",
+    de_stay6m: "no", partner_ck: "no", funds_eur_month: "band_1",
+  };
+
+  it("one salary step, and it is the nearest rung that opens something", () => {
+    const rows = unlocks(dataset, unsure);
+    const salary = rows.filter((u) => u.field === "salary_eur_year");
+    expect(salary.length, salary.map((u) => u.option.label).join(" | ")).toBe(1);
+    // €45,630 is the lowest German threshold this reader is short of, and the
+    // route it opens is the one the card would name.
+    expect(salary[0]!.option.label).toBe("€45,630 – under €45,934.20");
+    expect(salary[0]!.routes.map((r) => [r.route.id, r.status])).toEqual([["de-experienced-worker", "met"]]);
+  });
+
+  it("no step ever moves a money answer downwards", () => {
+    for (const profile of [unsure, { ...unsure, salary_eur_year: "band_4" }, { ...unsure, salary_eur_year: "band_5" }]) {
+      const declared = deriveBands(dataset, "salary_eur_year").find((b) => b.id === profile["salary_eur_year"]);
+      for (const u of unlocks(dataset, profile).filter((x) => x.field === "salary_eur_year")) {
+        const step = deriveBands(dataset, "salary_eur_year").find((b) => b.id === u.option.value)!;
+        expect(step.min, `${u.option.label} is not above ${declared?.label ?? "an unknown amount"}`)
+          .toBeGreaterThan(declared?.min ?? 0);
+      }
+    }
+  });
+
+  it("the headline counts what survives", () => {
+    // Three real steps — a transfer, a hosting agreement, recognition — and one
+    // salary step, where the rail used to print seven rows for this reader.
+    expect(unlocks(dataset, unsure).length).toBe(4);
+  });
+
+  it("the step says the gap the card computes, and the amount when there is no gap to state", () => {
+    // A reader who declared €45,630 – under €45,934.20: the general Blue Card
+    // is within reach at €50,700, and closing that distance is the step.
+    const declared: Profile = {
+      destination: "de", citizenship: "IN", situation: "offer", qualification: "degree",
+      recognition_de: "recognized", occupation_shortage: "no", experience: "y3in7",
+      german: "b1", english: "c1", age_band: "a30to35", de_stay6m: "no", partner_ck: "no",
+      // €45,630 – under €45,934.20 on the pooled ladder.
+      funds_eur_month: "band_1", salary_eur_year: "band_4",
+    };
+    const step = unlocks(dataset, declared).find((u) => u.field === "salary_eur_year")!;
+    expect(unlockTitleOf(dataset, step, declared)).toBe("€5,070/year more — yearly salary");
+    expect(step.routes.map((r) => [r.route.id, r.status])).toEqual([["de-blue-card-general", "met"]]);
+    // With no floor declared — "I don't know" — there is no distance to state,
+    // so the step is the amount the rule asks for.
+    const step2 = unlocks(dataset, unsure).find((u) => u.field === "salary_eur_year")!;
+    expect(unlockTitleOf(dataset, step2, unsure)).toBe("at least €45,630/year — yearly salary");
   });
 });

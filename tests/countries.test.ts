@@ -48,7 +48,7 @@ describe("scenario s5 — one interview, four countries", () => {
     const r = byId({
       destination: "de", citizenship: "third_country", situation: "offer",
       qualification: "degree", occupation_it: "no", experience: "y2in5",
-      salary_eur_year: "band_2", // €39,582 – €41,356.36 — three pooled bands below €45,630
+      salary_eur_year: "band_2", // €39,582 – under €41,356.36 — three pooled bands below €45,630
     });
     expect(r["de-experienced-worker"].status).toBe("near");
     expect(r["de-experienced-worker"].gap_max).toBeCloseTo(45630 - 39582, 2);
@@ -57,7 +57,7 @@ describe("scenario s5 — one interview, four countries", () => {
   it("NL engineer, 28, €4,500/month offer: under-30 HSM met, 30+ HSM dead, DE routes never asked about", () => {
     const { asked, profile } = runFlow({
       destination: "nl", citizenship: "third_country", situation: "offer",
-      age_band: "u30", salary_eur_month: "band_4", // €4,357 – €4,754
+      age_band: "u30", salary_eur_month: "band_4", // €4,357 – under €4,754
       qualification: "degree", qualification_recent: "no", experience: "y2in5",
       // Since 2026-09-07 an offer no longer closes the orientation year, so a
       // Dutch-bound persona is asked where they studied whatever they have
@@ -77,7 +77,7 @@ describe("scenario s5 — one interview, four countries", () => {
     const r = byId({
       destination: "fr", citizenship: "third_country", situation: "offer",
       qualification: "degree", fr_degree: "yes",
-      salary_eur_year: "band_2", // €39,582 – €41,356.36
+      salary_eur_year: "band_2", // €39,582 – under €41,356.36
     });
     expect(r["fr-talent-qualifie"].status).toBe("met");
     // Bounded-gap semantics: a declared band with a finite ceiling below the
@@ -90,7 +90,7 @@ describe("scenario s5 — one interview, four countries", () => {
     const r = byId({
       destination: "es", citizenship: "third_country", situation: "offer",
       qualification: "degree", experience: "y2in5",
-      salary_eur_year: "band_3", // €41,356.36 – €45,630
+      salary_eur_year: "band_3", // €41,356.36 – under €45,630
     });
     expect(r["es-blue-card"].status).toBe("met");
     expect(r["es-highly-qualified"].status).toBe("met");
@@ -204,16 +204,22 @@ describe("unlocks across countries", () => {
     const stuck: Profile = {
       destination: "nl", citizenship: "third_country", situation: "offer",
       age_band: "u30", qualification: "degree", experience: "y2in5",
-      salary_eur_month: "band_2", // €1,867.02 – €4,357: below both NL thresholds
+      salary_eur_month: "band_2", // €1,867.02 – under €4,357: below both NL thresholds
     };
     const baseline = byId(stuck);
     expect(baseline["nl-hsm-under30"].status).toBe("near");
     expect(baseline["nl-hsm-under30"].gap_max).toBeCloseTo(4357 - 1867.02, 2);
     expect(baseline["nl-blue-card"].status).toBe("near"); // bounded even two bands down
     expect(baseline["nl-blue-card"].gap_max).toBeCloseTo(5942 - 1867.02, 2);
-    // Nothing here is on hold, so the salary field must produce no unlock rows.
-    const rows = unlocks(dataset, stuck);
-    expect(rows.filter((u) => u.field === "salary_eur_month")).toEqual([]);
+    // One row for the number, never one per rung: the nearest band that changes
+    // a verdict, which here is the one that turns the under-30 card from
+    // within reach into met (isolated v1-gate critique, 2026-09-08, B3 — this
+    // case used to assert no row at all, because a step that closes a gap the
+    // card is already showing was not counted as a step).
+    const rows = unlocks(dataset, stuck).filter((u) => u.field === "salary_eur_month");
+    expect(rows.length).toBe(1);
+    expect(rows[0].option.label).toBe("€4,357 – under €4,754");
+    expect(rows[0].routes.map((r) => [r.route.id, r.status])).toEqual([["nl-hsm-under30", "met"]]);
   });
 
   it("destination=all explorer: offer/ict steps fork per country via the situation_country qualifier", () => {

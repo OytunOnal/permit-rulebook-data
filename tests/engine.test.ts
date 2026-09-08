@@ -6,9 +6,10 @@ import type { Dataset, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
-// Annual salary bands (all four countries' thresholds): <33,085.09 / 33,085.09–39,582 /
-// 39,582–41,356.36 / 41,356.36–45,630 / 45,630–45,934.20 / 45,934.20–50,700 /
-// 50,700–59,373 / ≥59,373
+// Annual salary bands (all four countries' thresholds, half-open): <33,085.09 /
+// 33,085.09–under 39,582 / 39,582–under 41,356.36 / 41,356.36–under 45,630 /
+// 45,630–under 45,934.20 / 45,934.20–under 50,700 / 50,700–under 59,373 /
+// 59,373 or more
 const engineer: Profile = {
   destination: "de", citizenship: "third_country", situation: "offer", qualification: "degree",
   recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
@@ -37,7 +38,9 @@ describe("band derivation across the four countries' salary thresholds", () => {
       [undefined, 33085.09], [33085.09, 39582], [39582, 41356.36], [41356.36, 45630],
       [45630, 45934.2], [45934.2, 50700], [50700, 59373], [59373, undefined],
     ]);
-    expect(bands[5].label).toBe("€45,934.20 – €50,700");
+    // Half-open, and the label says so: €50,700 is in the band above, and in
+    // no other (B1).
+    expect(bands[5].label).toBe("€45,934.20 – under €50,700");
   });
 
   it("monthly salary bands include thresholds nested inside any-paths (NL ICT)", () => {
@@ -199,7 +202,7 @@ describe("questions derive from rules", () => {
       for (const c of route.criteria)
         if (c.op === "gte" && c.threshold.amount === 50700) c.threshold.amount = 52000;
     const salary = deriveQuestions(mutated).find((q) => q.field === "salary_eur_year")!;
-    expect(salary.options.map((o) => o.label)).toContain("€45,934.20 – €52,000");
+    expect(salary.options.map((o) => o.label)).toContain("€45,934.20 – under €52,000");
   });
 });
 

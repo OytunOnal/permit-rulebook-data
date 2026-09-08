@@ -324,7 +324,21 @@ function shortfallLine(dataset: Dataset, r: RouteResult, profile: Profile): stri
 export function unlockTitleOf(dataset: Dataset, u: Unlock, profile: Profile = {}): string {
   const def = fieldOf(dataset, u.field);
   let title = u.option.short ?? u.option.label;
-  if (def?.type === "money_band") title += ` — ${shortLabelOf(dataset, u.field).toLowerCase()}`;
+  if (def?.type === "money_band") {
+    // A money step is a distance, not a rung: the reader is told what closing
+    // it costs, in the same arithmetic the card's own "short by" banner shows
+    // (isolated v1-gate critique, 2026-09-08, B3). Where the declared answer
+    // has no floor — the bottom band, or "I don't know" — there is no distance
+    // to state, so the step is the amount the rule asks for.
+    const bands = deriveBands(dataset, u.field);
+    const step = bands.find((b) => b.id === u.option.value);
+    const declared = bands.find((b) => b.id === profile[u.field]);
+    if (step?.min !== undefined)
+      title = declared?.min === undefined
+        ? `at least ${formatEURPer(step.min, def.period)}`
+        : `${formatEURPer(Math.round(step.min - declared.min), def.period)} more`;
+    title += ` — ${shortLabelOf(dataset, u.field).toLowerCase()}`;
+  }
   if (u.qualifier) {
     // A qualifier's `short` is a subject, written to follow "Needs" ("your
     // offer, transfer or agreement in Germany"). A heading wants the place

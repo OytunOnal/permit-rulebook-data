@@ -14,7 +14,7 @@ export const UNKNOWN_BAND = "unknown";
 /** What that answer is called where the dataset does not name it itself. */
 export const DEFAULT_UNKNOWN_LABEL = "Doesn't apply to me, or I don't know";
 
-export function deriveQuestions(dataset: Dataset): Question[] {
+export function deriveQuestions(dataset: Dataset, profile: Profile = {}): Question[] {
   const referenced = new Set<string>();
   for (const country of dataset.countries)
     for (const route of country.routes)
@@ -36,6 +36,10 @@ export function deriveQuestions(dataset: Dataset): Question[] {
       // critique, 2026-09-08, F11). The engine already reads an answer that is
       // not a band as undecided, which is exactly what this answer means.
       const options = [
+        // One pooled ladder for all four countries (human ruling, 2026-09-08):
+        // a neighbour's cut point inside the range decides nothing, and the
+        // extra rungs are what make the distance to a rule a real number
+        // rather than "somewhere under the threshold".
         ...deriveBands(dataset, def.id).map((b) => ({ value: b.id, label: b.label })),
         { value: UNKNOWN_BAND, label: def.unknown_label ?? DEFAULT_UNKNOWN_LABEL, is_unknown: true },
       ];
@@ -88,7 +92,7 @@ function orderByEliminationPower(dataset: Dataset, profile: Profile, questions: 
  */
 export function remainingQuestions(dataset: Dataset, profile: Profile): Question[] {
   const informative = informativeFields(dataset, profile);
-  const candidates = deriveQuestions(dataset).filter(
+  const candidates = deriveQuestions(dataset, profile).filter(
     (q) => profile[q.field] === undefined && informative.has(q.field),
   );
   // ask_first fields (the destination) come before the greedy ordering — the
