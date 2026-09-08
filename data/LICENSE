@@ -5,7 +5,7 @@ histories, notices, statements and readings in dataset.json, countries.json,
 exclusions.md and the verification checklists — is licensed under the Creative
 Commons Attribution 4.0 International licence.
 
-Copyright (c) 2026 Oytun
+Copyright (c) 2026 Oytun Onal
 
 You are free to share and adapt this dataset for any purpose, including
 commercially, on one condition: attribution. Credit the dataset, link to its
@@ -15,7 +15,7 @@ licensor endorses you or your use.
 
 A sufficient attribution line:
 
-    Work-permit rules dataset by Oytun (https://github.com/<org>/<repo>),
+    Work-permit rules dataset by Oytun Onal (https://github.com/OytunOnal/permit-rulebook-data),
     licensed CC BY 4.0. Changes: <none | describe>.
 
 Full legal code: https://creativecommons.org/licenses/by/4.0/legalcode
