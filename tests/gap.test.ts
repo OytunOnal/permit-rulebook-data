@@ -112,3 +112,28 @@ describe("a within-reach card names the rule it is short of", () => {
         expect(reasonFor(dataset, r, profile).line).toContain("points");
   });
 });
+
+/**
+ * The sentence has one fallback: a within-reach result whose gap is not a
+ * bounded amount at all. Nothing in the shipped dataset produces one, which is
+ * why it is exercised here rather than left as a line no one has ever read —
+ * if the engine ever reports it, the reader still gets a sentence and not a
+ * blank (Standards review, 2026-09-08).
+ */
+describe("a within-reach result with no bounded gap still says something", () => {
+  it("names no rule and no amount it does not have", () => {
+    const profile: Profile = {
+      destination: "de", citizenship: "third_country", situation: "offer",
+      qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
+      experience: "y2in5", german: "b1", funds_eur_month: "band_0", salary_eur_year: "band_1",
+    };
+    const near = evaluate(dataset, profile).find((r) => r.status === "near" && r.gap_max !== undefined);
+    expect(near, "no within-reach result to strip a gap from").toBeDefined();
+    const stripped = { ...near!, gap_max: undefined, gap_points: undefined };
+    const said = reasonFor(dataset, stripped, profile).line;
+    expect(said).toBe("One rule on this route is within reach — the card below shows which.");
+    expect(said).not.toContain("€");
+    expect(said).not.toContain("undefined");
+    expect(said).not.toContain("NaN");
+  });
+});

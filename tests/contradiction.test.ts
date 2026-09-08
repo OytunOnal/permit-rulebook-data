@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { contradictionsIn, evaluate } from "../src/engine.js";
 import { deriveQuestions } from "../src/questions.js";
+import { proseProvenance, renderableTexts } from "../src/prose.js";
+import { validateDataset } from "../src/validate.js";
 import type { Dataset, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -71,5 +73,75 @@ describe("two answers that cannot both be true are said out loud", () => {
     };
     const ids = contradictionsIn(dataset, walk).map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+/**
+ * The schema knows the shape of a field name, not which fields exist. A pair
+ * that names a field or an answer nobody has can never fire, and an
+ * unreachable warning is worse than none — it looks like the screen is
+ * watching when it is not (Standards review, 2026-09-08).
+ */
+describe("a pair that could never fire fails the build", () => {
+  const wreck = (change: (d: Dataset) => void): string[] => {
+    const copy = JSON.parse(JSON.stringify(dataset)) as Dataset;
+    change(copy);
+    return validateDataset(copy).errors.map((e) => `${e.keyword}: ${e.message}`);
+  };
+
+  it("the shipped dataset is clean", () => {
+    expect(validateDataset(dataset).ok).toBe(true);
+  });
+
+  it("a field id nobody has is caught", () => {
+    const said = wreck((d) => { d.contradictions![0]!.when[0]!.field = "qualifikation"; });
+    expect(said.join(" | ")).toContain("knownContradictionField");
+  });
+
+  it("an answer nobody can give is caught", () => {
+    const said = wreck((d) => { d.contradictions![0]!.when[0]!.in = ["nope"]; });
+    expect(said.join(" | ")).toContain("knownContradictionAnswer");
+  });
+
+  it("a money field's third door is a real answer, not a typo", () => {
+    const said = wreck((d) => {
+      d.contradictions!.push({
+        id: "money-door",
+        when: [
+          { field: "funds_eur_month", in: ["unknown"] },
+          { field: "qualification", in: ["none"] },
+        ],
+        say: "A sentence long enough to pass the schema, said in words.",
+      });
+    });
+    expect(said.filter((e) => e.includes("Contradiction"))).toEqual([]);
+  });
+});
+
+/**
+ * Reader-facing prose that no gate could see is prose nobody is checking. The
+ * sentence a contradiction shows is ours — no authority says it — so it is
+ * declared ours, checked for quotation marks it cannot back, and counted with
+ * the rest of our prose (Standards review, 2026-09-08).
+ */
+describe("the sentence is inside the prose gate", () => {
+  it("every pair's words are declared ours and reach the gate", () => {
+    const texts = renderableTexts(dataset);
+    for (const pair of dataset.contradictions!) {
+      const seen = texts.find((t) => t.text === pair.say);
+      expect(seen, `${pair.id}: its sentence reaches no gate`).toBeDefined();
+      expect(seen!.kind, pair.id).toBe("ours");
+      expect(seen!.path, pair.id).toContain("/contradictions/");
+    }
+  });
+
+  it("and they are counted, so the measurement moves when the data does", () => {
+    const before = proseProvenance(dataset).ours;
+    const more = JSON.parse(JSON.stringify(dataset)) as Dataset;
+    more.contradictions!.push({
+      id: "another-pair", when: dataset.contradictions![0]!.when,
+      say: "A second pair, said in words long enough for the schema.",
+    });
+    expect(proseProvenance(more).ours).toBe(before + 1);
   });
 });

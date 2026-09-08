@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveQuestions, remainingQuestions } from "../src/questions.js";
+import { UNKNOWN_BAND, deriveQuestions, remainingQuestions } from "../src/questions.js";
 import { evaluate, referencedFields } from "../src/engine.js";
 import { answerLabel, liveUnknowns, reasonFor } from "../src/verdict.js";
+import { proseProvenance, renderableTexts } from "../src/prose.js";
 import type { Dataset, Profile } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -41,11 +42,11 @@ describe("a money question fits whoever is answering it", () => {
     for (const q of deriveQuestions(dataset)) {
       const def = dataset.fields.find((f) => f.id === q.field)!;
       if (def.type !== "money_band") continue;
-      const doors = q.options.filter((o) => o.value === "unknown");
+      const doors = q.options.filter((o) => o.value === UNKNOWN_BAND);
       expect(doors.length, `${q.field}: no third door`).toBe(1);
       expect(doors[0]!.label.length, `${q.field}: an unlabelled door`).toBeGreaterThan(3);
       // It is last: the amounts are what most readers answer.
-      expect(q.options[q.options.length - 1]!.value, q.field).toBe("unknown");
+      expect(q.options[q.options.length - 1]!.value, q.field).toBe(UNKNOWN_BAND);
     }
   });
 
@@ -54,12 +55,12 @@ describe("a money question fits whoever is answering it", () => {
       const profile: Profile = {
         destination: "de", citizenship: "third_country", situation: "offer",
         qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-        experience: "y2in5", german: "b1", [field.id]: "unknown",
+        experience: "y2in5", german: "b1", [field.id]: UNKNOWN_BAND,
       };
       for (const r of evaluate(dataset, profile)) {
         const asks = r.criteria.filter((cr) => referencedFields(cr.criterion).includes(field.id));
         for (const cr of asks)
-          expect(cr.outcome, `${r.route.id}: ${field.id}=unknown read as a verdict`).not.toBe("fail");
+          expect(cr.outcome, `${r.route.id}: ${field.id}=${UNKNOWN_BAND} read as a verdict`).not.toBe("fail");
         // And where nothing else has already settled the route against them,
         // it says so rather than staying silent: an open gap, not a no.
         const hardFailed = r.criteria.some((cr) => cr.outcome === "fail");
@@ -72,8 +73,8 @@ describe("a money question fits whoever is answering it", () => {
   it("the answer is quoted back in the words the button used", () => {
     for (const field of MONEY) {
       const q = deriveQuestions(dataset).find((x) => x.field === field.id)!;
-      const door = q.options.find((o) => o.value === "unknown")!;
-      expect(answerLabel(dataset, field.id, "unknown")).toBe(door.label);
+      const door = q.options.find((o) => o.value === UNKNOWN_BAND)!;
+      expect(answerLabel(dataset, field.id, UNKNOWN_BAND)).toBe(door.label);
     }
   });
 
@@ -81,7 +82,7 @@ describe("a money question fits whoever is answering it", () => {
     const profile: Profile = {
       destination: "de", citizenship: "third_country", situation: "offer",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-      experience: "y2in5", german: "b1", salary_eur_year: "band_4", funds_eur_month: "unknown",
+      experience: "y2in5", german: "b1", salary_eur_year: "band_4", funds_eur_month: UNKNOWN_BAND,
     };
     const card = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;
     const said = reasonFor(dataset, card, profile);
@@ -96,9 +97,37 @@ describe("a money question fits whoever is answering it", () => {
       if (!next) break;
       const def = dataset.fields.find((f) => f.id === next.field)!;
       profile[next.field] = def.type === "money_band"
-        ? "unknown"
+        ? UNKNOWN_BAND
         : next.options[0]!.value;
     }
     expect(remainingQuestions(dataset, profile), "the interview never ends").toEqual([]);
+  });
+});
+
+/**
+ * The door is a button a reader reads, so its words belong to the dataset and
+ * to the gate that checks the dataset's words — not to a default buried in the
+ * question layer where nothing could see them (Standards review, 2026-09-08).
+ */
+describe("the door's words are the dataset's, and the gate sees them", () => {
+  it("every money field names its own door", () => {
+    for (const field of MONEY)
+      expect(field.unknown_label, `${field.id} leans on the code default`).toBeTruthy();
+  });
+
+  it("and each one reaches the prose gate as a label", () => {
+    const texts = renderableTexts(dataset);
+    for (const field of MONEY) {
+      const seen = texts.find((t) => t.path.endsWith(`/unknown_label`) && t.text === field.unknown_label);
+      expect(seen, `${field.id}: its door reaches no gate`).toBeDefined();
+      expect(seen!.kind, field.id).toBe("label");
+    }
+  });
+
+  it("and is counted with the rest of our prose", () => {
+    const before = proseProvenance(dataset).ours;
+    const fewer = JSON.parse(JSON.stringify(dataset)) as Dataset;
+    delete fewer.fields.find((f) => f.id === "funds_eur_month")!.unknown_label;
+    expect(proseProvenance(fewer).ours).toBe(before - 1);
   });
 });

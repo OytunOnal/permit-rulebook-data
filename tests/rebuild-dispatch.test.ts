@@ -70,7 +70,7 @@ describe("a new dataset state wakes the site", () => {
   });
 
   it("and the dispatch fires only on that commit, with the type the site listens for", () => {
-    expect(dispatch).toContain("if: steps.persist.outputs.committed == 'true'");
+    expect(dispatch).toContain("steps.persist.outputs.committed == 'true'");
     // The event type is a contract with the site's `repository_dispatch`
     // trigger: renamed on one side alone, the fast path stops with no error.
     expect(dispatch).toContain('"event_type":"dataset-updated"');
@@ -100,6 +100,43 @@ describe("a new dataset state wakes the site", () => {
     expect(message).toContain("Contents: Read and write");
     expect(message).toContain("Metadata: Read-only");
     expect(message).toContain("DISPATCH_TOKEN");
+  });
+
+  /**
+   * The step failed on the missing token BEFORE the issues were opened, so
+   * every run that committed new state — which is exactly every run that has
+   * new flags — stopped without filing a single one. A watch that notices a
+   * source moved and tells nobody is the whole promise of decision 7, broken
+   * by a step order (review 2026-09-08).
+   */
+  it("runs last, so nothing a flag depends on sits behind a step that can fail on the token", () => {
+    const names = [...watch.matchAll(/^\s*- name: (.+)$/gm)].map((m) => m[1]!.trim());
+    expect(names[names.length - 1], "the dispatch is not the last step").toBe("Tell the site to rebuild");
+
+    // Every step that acts on the flags comes before it — by position, not by
+    // reputation: any step whose condition or body reads the flag collection.
+    const at = (name: string) => names.indexOf(name);
+    const issues = at("Open issues for new flags only");
+    expect(issues, "no step opens issues for the flags").toBeGreaterThan(-1);
+    expect(issues).toBeLessThan(at("Tell the site to rebuild"));
+    for (const name of names) {
+      if (name === "Tell the site to rebuild") continue;
+      const body = step(watch, name);
+      if (!body.includes("newflags") && !body.includes("flags/")) continue;
+      expect(at(name), `${name} runs after a step that can fail on the token`)
+        .toBeLessThan(at("Tell the site to rebuild"));
+    }
+
+    // And the issues step asks nothing of the dispatch: it is conditioned on
+    // the flags alone.
+    const issueStep = step(watch, "Open issues for new flags only");
+    expect(issueStep).toContain("if: steps.newflags.outputs.files != ''");
+    expect(issueStep).not.toContain("DISPATCH_TOKEN");
+    expect(issueStep).not.toContain("dispatch");
+
+    // Being last means an earlier failure would skip it, and a committed state
+    // still has to reach the site: it runs unless the run was cancelled.
+    expect(dispatch).toContain("!cancelled()");
   });
 
   it("and what the token needs is written down where a maintainer will look", () => {

@@ -58,38 +58,6 @@ jobs:
           fi
           git push
 
-      # The site bakes "RULES READ <date>" and promises "checked daily", but it
-      # rebuilds only on its own pushes and its own cron. A new state committed
-      # here is exactly the moment that promise needs honouring, so we tell the
-      # site directly instead of leaving it to tomorrow's schedule (2026-09-08).
-      #
-      # DISPATCH_TOKEN is a fine-grained personal access token whose resource
-      # owner is OytunOnal, scoped to the SITE repository (OytunOnal/permit-rulebook)
-      # alone, with repository permissions "Metadata: Read-only" (mandatory for
-      # every fine-grained token) and "Contents: Read and write" — the dispatch
-      # endpoint is filed under Contents, and read-only is refused with a 403.
-      # It needs nothing else: no access to this repository, no organisation or
-      # account permissions. Store it as a repository secret named
-      # DISPATCH_TOKEN in THIS repository. See CONTRIBUTING.md, "The daily watch
-      # and the site rebuild".
-      #
-      # The step fails loudly when the secret is missing rather than skipping:
-      # a silent skip is how "checked daily" quietly stops being true.
-      - name: Tell the site to rebuild
-        if: steps.persist.outputs.committed == 'true'
-        env:
-          DISPATCH_TOKEN: "${{ secrets.DISPATCH_TOKEN }}"
-          SITE_REPO: "${{ vars.SITE_REPO || 'OytunOnal/permit-rulebook' }}"
-        run: |
-          if [ -z "$DISPATCH_TOKEN" ]; then
-            echo "::error::DISPATCH_TOKEN is not set. The watch committed new state but the site cannot be told to rebuild, so its \"RULES READ\" date will go stale. Create a fine-grained PAT scoped to $SITE_REPO with Metadata: Read-only and Contents: Read and write, then add it to this repository as a secret named DISPATCH_TOKEN (Settings -> Secrets and variables -> Actions). See CONTRIBUTING.md, \"The daily watch and the site rebuild\"."
-            exit 1
-          fi
-          # The dispatch endpoint takes the event type the site listens for; the
-          # payload is there for a human reading the site's run, not for the build.
-          payload=$(printf '{"event_type":"dataset-updated","client_payload":{"sha":"%s","reason":"watch state update"}}' "$GITHUB_SHA")
-          curl --fail-with-body --silent --show-error -X POST "https://api.github.com/repos/$SITE_REPO/dispatches" -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $DISPATCH_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" -d "$payload"
-
       - name: Open issues for new flags only
         if: steps.newflags.outputs.files != ''
         env: { GH_TOKEN: "${{ github.token }}" }
@@ -108,3 +76,40 @@ jobs:
         run: |
           echo "::error::watch reported unreachable sources — see the Watch sources step"
           exit 1
+
+      # The site bakes "RULES READ <date>" and promises "checked daily", but it
+      # rebuilds only on its own pushes and its own cron. A new state committed
+      # here is exactly the moment that promise needs honouring, so we tell the
+      # site directly instead of leaving it to tomorrow's schedule (2026-09-08).
+      #
+      # DISPATCH_TOKEN is a fine-grained personal access token whose resource
+      # owner is OytunOnal, scoped to the SITE repository (OytunOnal/permit-rulebook)
+      # alone, with repository permissions "Metadata: Read-only" (mandatory for
+      # every fine-grained token) and "Contents: Read and write" — the dispatch
+      # endpoint is filed under Contents, and read-only is refused with a 403.
+      # It needs nothing else: no access to this repository, no organisation or
+      # account permissions. Store it as a repository secret named
+      # DISPATCH_TOKEN in THIS repository. See CONTRIBUTING.md, "The daily watch
+      # and the site rebuild".
+      #
+      # The step fails loudly when the secret is missing rather than skipping:
+      # a silent skip is how "checked daily" quietly stops being true.
+      - name: Tell the site to rebuild
+        # Last step in the job, and it runs even after an earlier one failed:
+        # the flags and their issues must never be behind a step that can
+        # fail on a missing secret (review 2026-09-08), and a state that WAS
+        # committed still has to reach the site when some other source was
+        # unreachable. Cancellation is the one case that stands it down.
+        if: ${{ !cancelled() && steps.persist.outputs.committed == 'true' }}
+        env:
+          DISPATCH_TOKEN: "${{ secrets.DISPATCH_TOKEN }}"
+          SITE_REPO: "${{ vars.SITE_REPO || 'OytunOnal/permit-rulebook' }}"
+        run: |
+          if [ -z "$DISPATCH_TOKEN" ]; then
+            echo "::error::DISPATCH_TOKEN is not set. The watch committed new state but the site cannot be told to rebuild, so its \"RULES READ\" date will go stale. Create a fine-grained PAT scoped to $SITE_REPO with Metadata: Read-only and Contents: Read and write, then add it to this repository as a secret named DISPATCH_TOKEN (Settings -> Secrets and variables -> Actions). See CONTRIBUTING.md, \"The daily watch and the site rebuild\"."
+            exit 1
+          fi
+          # The dispatch endpoint takes the event type the site listens for; the
+          # payload is there for a human reading the site's run, not for the build.
+          payload=$(printf '{"event_type":"dataset-updated","client_payload":{"sha":"%s","reason":"watch state update"}}' "$GITHUB_SHA")
+          curl --fail-with-body --silent --show-error -X POST "https://api.github.com/repos/$SITE_REPO/dispatches" -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $DISPATCH_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" -d "$payload"

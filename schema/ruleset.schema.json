@@ -94,6 +94,11 @@
           "minLength": 1,
           "description": "How the fact is named in the answer ledger — a plain noun, never the field id."
         },
+        "unknown_label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "On a money question, what the answer that is not an amount is called — the door for a reader the question does not fit. Optional; the question layer has a plain default."
+        },
         "subject": {
           "type": "string",
           "minLength": 1,

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { htmlToText, normalize } from "../src/watch/normalize.js";
 import {
   checkCoverage, checkQuotes, datasetLearnUrls, datasetQuotes, datasetSourceUrls, runWatch, sha256,
@@ -228,7 +230,16 @@ describe("coverage: enforced both ways", () => {
   });
 });
 
-describe("quote fidelity: the sentence is still on the page", () => {
+/**
+ * The one-pager's second non-negotiable: every value carries its source.
+ *
+ * This is that promise's check, and it is a symptom check, not a surface one —
+ * it does not ask whether a `source_url` field is filled in, it asks whether
+ * the sentence the dataset claims to have quoted is still in the snapshot of
+ * the page it cites. A reworded page that keeps its byte count, or a quote
+ * edited on our side, fails here (human, 2026-09-08).
+ */
+describe("the one-pager's promise: every value carries its source, and the sentence is still on the page", () => {
   it("every shipped quote is found in the snapshot of the source it cites", () => {
     const r = checkQuotes(dataset, shippedWatchlist, shippedState);
     expect(r.missing).toEqual([]);
@@ -601,5 +612,54 @@ describe("the buzer statute slices", () => {
     }
     const beschv = shippedWatchlist.entries.find((e) => e.id === "buzer-6-beschv")!;
     expect(beschv.history![0]!.note).toMatch(/not the law/i);
+  });
+});
+
+/**
+ * A flag is a dated observation, and an observation is not edited.
+ *
+ * The re-baseline that followed the § 6 BeschV false alarm rewrote the flag's
+ * own `old:`/`new:` hashes to the pair the new slice produced — so the file no
+ * longer said what had actually been seen, and the excerpt no longer showed the
+ * furniture that raised it (Standards review, 2026-09-08). A resolution is
+ * something appended with a date; the header is what the run wrote.
+ */
+/** A checkout detail on Windows, not a fact about a file. */
+const CRLF = String.fromCharCode(13) + String.fromCharCode(10);
+const LF = String.fromCharCode(10);
+
+describe("a resolved flag still says what it saw", () => {
+  const flagsDir = fileURLToPath(new URL("../watch/flags/", import.meta.url));
+  const flags = readdirSync(flagsDir).filter((f) => f.endsWith(".md"));
+
+  it("every flag keeps a header its run wrote, with both hashes", () => {
+    expect(flags.length).toBeGreaterThan(3);
+    for (const name of flags) {
+      const text = readFileSync(join(flagsDir, name), "utf8").split(CRLF).join(LF);
+      const header = text.slice(0, text.indexOf(LF + LF));
+      expect(header, `${name}: no url`).toMatch(/^- url: http/m);
+      expect(header, `${name}: no date`).toMatch(/^- date: [0-9]{4}-[0-9]{2}-[0-9]{2}$/m);
+      const hashes = header.match(/^- (old|new): ([0-9a-f]{64})$/gm) ?? [];
+      // A first sighting has no `old`; a change has both.
+      expect(hashes.length, `${name}: header hashes are missing or malformed`).toBeGreaterThan(0);
+      // Anything a person adds comes after the machine's own lines.
+      const resolved = text.indexOf("## Resolved");
+      if (resolved >= 0) expect(resolved, `${name}: a resolution above the record`).toBeGreaterThan(header.length);
+    }
+  });
+
+  it("the § 6 BeschV flag still carries the pair and the excerpt that raised it", () => {
+    const text = readFileSync(join(flagsDir, "buzer-6-beschv-2026-09-08.md"), "utf8")
+      .split(CRLF).join(LF);
+    // The hashes the run that raised it recorded — the whole page, before and
+    // after the furniture moved.
+    expect(text).toContain("- old: 2d6e50243e606ab0c8f3784a88fedd27ca038ca25daa236a5865b5118a11b10a");
+    expect(text).toContain("- new: f81cdc992a27dfdbbd428b277139b5c4dbf3f5de139013500b6f8c7947f808a5");
+    // And the furniture itself, which is the evidence for calling it one.
+    expect(text).toContain("Inhaltsverzeichnis | Ausdrucken/PDF");
+    expect(text).toContain("## Resolved — 2026-09-08");
+    // The re-baseline is recorded as prose, under the resolution.
+    const resolution = text.slice(text.indexOf("## Resolved"));
+    expect(resolution).toContain("2bbd20d8bc77277490c710df1b7f3d0059e0971e328314afd006d0aa8e23d107");
   });
 });

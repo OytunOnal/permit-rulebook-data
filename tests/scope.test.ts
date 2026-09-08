@@ -186,7 +186,9 @@ describe("s6 — every route declares what the checker asks of it", () => {
     const reasons = renderableTexts(ds).filter((t) => t.path.endsWith("/scope/reason"));
     expect(reasons.length).toBe(23);
     for (const t of reasons) expect(t.kind, t.path).toBe("ours");
-    expect(proseProvenance(ds).ours).toBe(8 + 23);
+    // 8 route readings + these 23 reasons + the 2 contradiction sentences and
+    // the 3 money-question doors added on 2026-09-08.
+    expect(proseProvenance(ds).ours).toBe(8 + 23 + 2 + 3);
   });
 });
 

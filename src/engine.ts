@@ -155,7 +155,6 @@ function pointsFor(dataset: Dataset, item: PointsItem, answer: string): number {
   return best;
 }
 
-/** All field ids a criterion reads (recursing through disjunctions). */
 /**
  * The pairs of answers on this profile that cannot both be true.
  *
@@ -172,6 +171,7 @@ export function contradictionsIn(dataset: Dataset, profile: Profile): Contradict
     }));
 }
 
+/** All field ids a criterion reads (recursing through disjunctions). */
 export function referencedFields(c: Criterion): string[] {
   if (c.op === "points") return c.table.items.map((i) => i.field);
   if (c.op === "any") return c.paths.flatMap((p) => p.criteria.flatMap(referencedFields));

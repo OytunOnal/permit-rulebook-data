@@ -138,6 +138,10 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
     label(`${p}/short_label`, f.short_label);
     label(`${p}/subject`, f.subject);
     label(`${p}/learn/label`, f.learn?.label);
+    // The door on a money question for a reader none of the amounts fits: a
+    // button's words, so a label like the question's own (Standards review,
+    // 2026-09-08 — it was reader-facing and outside this gate).
+    label(`${p}/unknown_label`, f.unknown_label);
     (f.options ?? []).forEach((o, j) => {
       label(`${p}/options/${j}/label`, o.label);
       label(`${p}/options/${j}/short`, o.short);
@@ -147,6 +151,14 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
       label(`${p}/options/${j}/means`, o.means);
     });
   });
+
+  /**
+   * What the screen says when two answers cannot both be true. It is our
+   * reading of the reader's own answers — no authority says it — so it is
+   * declared ours, and the quotation-mark check still reaches it (Standards
+   * review, 2026-09-08).
+   */
+  (dataset.contradictions ?? []).forEach((c, i) => ours(`/contradictions/${i}/say`, c.say));
 
   /**
    * A citation renders on the card beside the quote it identifies, so it is
@@ -281,6 +293,13 @@ export function proseProvenance(dataset: Dataset): ProseProvenance {
       // measurement that stops moving when the data moves stops being one.
       if (route.scope.reason) ours++;
     }
+  // Sentences of ours that live beside the fields rather than inside a route:
+  // what the screen says when two answers cannot both be true, and the door on
+  // a money question for a reader none of the amounts fits. Both are read by a
+  // person, so both are counted where the rest of our prose is counted
+  // (Standards review, 2026-09-08).
+  ours += (dataset.contradictions ?? []).length;
+  ours += dataset.fields.filter((f) => f.unknown_label).length;
   return { with_provenance, ours, declared_unsourced };
 }
 

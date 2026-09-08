@@ -159,8 +159,11 @@ describe("s5e — what is ours is marked as ours", () => {
       // Ours, declared as ours and shown to the reader as ours: 8 route
       // readings, plus the 23 scope-statement reasons s6 authored — one per route,
       // our own words about our own interview, printed as the page's scope
-      // statement.
-      ours: 31,
+      // statement — plus, since 2026-09-08, the two sentences a contradiction
+      // shows and the three doors a money question offers a reader none of its
+      // amounts fits. All five are read by a person and none is quoted from
+      // anyone, so they are counted here.
+      ours: 8 + 23 + 2 + 3,
       // Standing on a declared, dated reason no quote could be found — the one
       // exception, and an attributable decision rather than a blank. It is
       // zero: the last one was the es-blue-card shortage-occupation caveat,

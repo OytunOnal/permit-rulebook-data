@@ -1,6 +1,8 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
 import schema from "../schema/ruleset.schema.json" with { type: "json" };
 import { countryVocabulary, vocabularyErrors } from "./countries.js";
+import { deriveBands, fieldOptions } from "./engine.js";
+import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import type { Dataset } from "./types.js";
 
@@ -145,6 +147,33 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
 
   for (const n of dataset.notices ?? [])
     checkVocabulary(`/notices/${n.id}`, n.when.field, n.when.value !== undefined ? [n.when.value] : (n.when.values ?? []));
+
+  /**
+   * A pair of answers that cannot both be true is only worth declaring if both
+   * sides name answers a reader can actually give. A typo in a field id or a
+   * value makes the pair unreachable, and an unreachable warning is worse than
+   * none: it looks like the screen is watching when it is not (Standards
+   * review, 2026-09-08). The schema cannot see this — it knows the shape of a
+   * field name, not which ones exist — so the build does.
+   */
+  for (const pair of dataset.contradictions ?? []) {
+    const path = `/contradictions/${pair.id}`;
+    for (const side of pair.when) {
+      const def = dataset.fields.find((f) => f.id === side.field);
+      if (!def) {
+        errors.push({ path, message: `no field "${side.field}" — a pair that names a field this dataset does not have can never fire`, keyword: "knownContradictionField" });
+        continue;
+      }
+      const answers = def.type === "money_band"
+        // Bands are derived from the thresholds, plus the door for a reader
+        // none of them fits.
+        ? new Set([...deriveBands(dataset, def.id).map((b) => b.id), UNKNOWN_BAND])
+        : new Set(fieldOptions(dataset, def.id).map((o) => o.value));
+      for (const value of side.in)
+        if (!answers.has(value))
+          errors.push({ path, message: `${side.field} has no answer "${value}" — a pair that names an answer nobody can give can never fire`, keyword: "knownContradictionAnswer" });
+    }
+  }
 
   return errors;
 }
