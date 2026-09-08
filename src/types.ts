@@ -321,6 +321,14 @@ export interface FieldDef {
    * (product-critique v0.7, B3).
    */
   short_label: string;
+
+  /**
+   * What the answer that is not an amount is called on a money question — the
+   * door for a reader the question does not fit. Optional: the question layer
+   * has a plain default, and only a field whose own wording needs something
+   * more particular has to say so.
+   */
+  unknown_label?: string;
   /**
    * The fact as a noun phrase inside a sentence: "whether Germany recognises
    * your qualification". A verdict says this, never the field id.
@@ -367,12 +375,34 @@ export interface Unlock {
   routes: RouteResult[];
 }
 
+/**
+ * Two answers a person cannot honestly give at once.
+ *
+ * The engine takes the more specific answer and evaluates on — that is not
+ * wrong. What was wrong was the silence: a reader who said she had no
+ * qualification and then that she had graduated was handed a met verdict with
+ * both answers in her sidebar and nothing pointing at the pair (isolated
+ * v1-gate critique, 2026-09-08, F7).
+ *
+ * It lives in the dataset because it is a fact about these questions, in the
+ * words a reader is shown, and because a pair someone adds later must not need
+ * a release of the site to say it.
+ */
+export interface Contradiction {
+  id: string;
+  /** Each side: the field, and the answers on that side of the pair. */
+  when: { field: string; in: string[] }[];
+  /** What the screen says, in full sentences, naming no field id. */
+  say: string;
+}
+
 export interface Dataset {
   schema_version: string;
   dataset_version: string;
   fields: FieldDef[];
   countries: Country[];
   notices?: Notice[];
+  contradictions?: Contradiction[];
 }
 
 /** Answers keyed by field id. money_band fields hold a band id (see deriveBands). */

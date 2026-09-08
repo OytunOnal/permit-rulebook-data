@@ -1,7 +1,10 @@
 import { countryClasses, countryPhrase } from "./countries.js";
-import { deriveBands, fieldOptions, formatEURPer, referencedFields } from "./engine.js";
+import { DEFAULT_UNKNOWN_LABEL, UNKNOWN_BAND } from "./questions.js";
+import {
+  decidingCriteria, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields,
+} from "./engine.js";
 import type {
-  Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, RouteResult, Unlock,
+  Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
 } from "./types.js";
 
 /**
@@ -54,8 +57,12 @@ function valuePhrase(dataset: Dataset, field: string, value: string): string {
 /** The answer as the person picked it — their words, quoted back. */
 export function answerLabel(dataset: Dataset, field: string, value: string | undefined): string {
   if (value === undefined) return "no answer";
-  if (fieldOf(dataset, field)?.type === "money_band")
-    return deriveBands(dataset, field).find((b) => b.id === value)?.label ?? value;
+  const def = fieldOf(dataset, field);
+  if (def?.type === "money_band")
+    return deriveBands(dataset, field).find((b) => b.id === value)?.label
+      // The answer that is not an amount, quoted back in the words the button
+      // used — the same rule an enum's "I don't know" already follows.
+      ?? (value === UNKNOWN_BAND ? def.unknown_label ?? DEFAULT_UNKNOWN_LABEL : value);
   return fieldOptions(dataset, field).find((o) => o.value === value)?.label ?? value;
 }
 
@@ -113,9 +120,12 @@ export function isLocalization(c: Criterion): boolean {
 
 /** Where the person said they are headed, in their own words. */
 export function declaredPlace(dataset: Dataset, profile: Profile): string {
-  const field = profile["situation_country"] !== undefined ? "situation_country" : "destination";
+  // One resolution, in one order, for every phrase that names a place: the
+  // country the offer is in if the person placed it, otherwise the country they
+  // are headed for if they have picked one. "Still deciding" is not a place.
+  const field = profile["situation_country"] ? "situation_country" : "destination";
   const value = profile[field];
-  if (!value || (field === "destination" && value === "all")) return "";
+  if (!value || value === "all") return "";
   // The country's own prose form, from the vocabulary that holds the article:
   // a sentence says "the Netherlands", the button in the list says
   // "Netherlands". Both destination and situation_country are country codes, so
@@ -212,7 +222,7 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
     return {
       line: r.gap_points !== undefined
         ? "The points total is within reach — the ladder below shows your score."
-        : "The salary this route asks for sits above the band you declared.",
+        : shortfallLine(dataset, r, profile),
       rows, parts,
     };
 
@@ -241,6 +251,64 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
   };
 }
 
+type Gte = Extract<Criterion, { op: "gte" }>;
+
+/** How far the declared band sits below one threshold, worst case. */
+function gapAgainst(dataset: Dataset, c: Gte, profile: Profile): number | undefined {
+  const band = deriveBands(dataset, c.field).find((b) => b.id === profile[c.field]);
+  if (!band || band.max === undefined || band.max > c.threshold.amount) return undefined;
+  return c.threshold.amount - (band.min ?? 0);
+}
+
+/** Every gte criterion in a route, at any depth. */
+function gteCriteriaOf(route: Route): Gte[] {
+  const out: Gte[] = [];
+  forEachCriterion(route.criteria, (c) => { if (c.op === "gte") out.push(c); });
+  return out;
+}
+
+/**
+ * The criterion a near result was measured against — the rule the reader is
+ * actually short of.
+ *
+ * It lives beside the sentence that names it because the two must never
+ * disagree: the card draws its rail and its "short by" banner on this
+ * criterion, and the one-line explanation used to say "salary" whatever the
+ * criterion was. A reader with a good salary and too little in the bank was
+ * told to ask for a raise (isolated v1-gate critique, 2026-09-08).
+ *
+ * The path that was met, or — where none was — the nearest reachable one, which
+ * is the path the engine measured the gap to. Where nothing has decided a
+ * choice of paths yet, it names a threshold the person can at least locate
+ * their band against.
+ */
+export function gapCriterionOf(dataset: Dataset, r: RouteResult, profile: Profile): Gte | undefined {
+  const decided = decidingCriteria(r.criteria)
+    .flatMap((cr) => (cr.criterion.op === "gte" ? [cr.criterion] : []))
+    .filter((c) => profile[c.field] !== undefined);
+  const gapped = r.gap_max === undefined
+    ? undefined
+    : decided.find((c) => Math.abs((gapAgainst(dataset, c, profile) ?? NaN) - r.gap_max!) < 0.005);
+  return gapped ?? decided[0] ?? gteCriteriaOf(r.route).find((c) => profile[c.field] !== undefined);
+}
+
+/**
+ * What a within-reach result is short of, in the rule's own words and with the
+ * distance the card shows beside it.
+ *
+ * "Up to", because a band is a range: the reader declared somewhere inside it,
+ * and the worst case is the only honest number.
+ */
+function shortfallLine(dataset: Dataset, r: RouteResult, profile: Profile): string {
+  const measured = gapCriterionOf(dataset, r, profile);
+  if (!measured || r.gap_max === undefined)
+    return "One rule on this route is within reach — the card below shows which.";
+  const rule = shortLabelOf(dataset, measured.field).toLowerCase();
+  const amount = formatEURPer(Math.round(r.gap_max), fieldOf(dataset, measured.field)?.period);
+  const named = measured.threshold_label ? ` — ${measured.threshold_label}` : "";
+  return `Up to ${amount} short of the ${rule} this route asks for${named}.`;
+}
+
 /**
  * The step an unlock row offers, in the person's own words — and, where the
  * answer is one a reader can mistake for the one they already have, what the
@@ -253,15 +321,35 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
  * beside this title rather than inside it, so the step stays the short phrase a
  * row is scanned by and the distinction reads as the sentence it is.
  */
-export function unlockTitleOf(dataset: Dataset, u: Unlock): string {
+export function unlockTitleOf(dataset: Dataset, u: Unlock, profile: Profile = {}): string {
   const def = fieldOf(dataset, u.field);
   let title = u.option.short ?? u.option.label;
   if (def?.type === "money_band") title += ` — ${shortLabelOf(dataset, u.field).toLowerCase()}`;
-  if (u.qualifier)
-    title += u.qualifier.field === "situation_country"
-      ? ` in ${u.qualifier.option.short ?? u.qualifier.option.label}`
-      : ` · ${u.qualifier.option.short ?? u.qualifier.option.label}`;
+  if (u.qualifier) {
+    // A qualifier's `short` is a subject, written to follow "Needs" ("your
+    // offer, transfer or agreement in Germany"). A heading wants the place
+    // itself, so it comes from the same resolution the row's sentence uses.
+    const place = declaredPlace(dataset, unlockProfile(u, profile));
+    if (u.qualifier.field === "situation_country") { if (place) title += ` in ${place}`; }
+    else title += ` · ${u.qualifier.option.label}`;
+  }
   return title;
+}
+
+/**
+ * The reader's profile as it would stand with this step taken — the row's own
+ * counterfactual. Every phrase in a leverage row reads off this one profile, so
+ * a forked row says the country it forked on and the sentence under it agrees.
+ */
+export function unlockProfile(u: Unlock, profile: Profile = {}): Profile {
+  const taken: Profile = { ...profile, [u.field]: u.option.value };
+  if (u.qualifier) taken[u.qualifier.field] = u.qualifier.option.value;
+  return taken;
+}
+
+/** What the step this row offers actually is, in the row's own place. */
+export function unlockMeansOf(dataset: Dataset, u: Unlock, profile: Profile = {}): string {
+  return optionMeans(u.option, dataset, unlockProfile(u, profile));
 }
 
 /**

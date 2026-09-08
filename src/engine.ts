@@ -1,6 +1,7 @@
 import { countryOptions } from "./countries.js";
 import type {
-  Band, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef, FieldOption, Notice,
+  Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
+  FieldOption, Notice,
   PointsBreakdown, PointsItem, Profile, Route, RouteReading, RouteResult, RouteStatement, RouteStatus,
 } from "./types.js";
 
@@ -155,6 +156,22 @@ function pointsFor(dataset: Dataset, item: PointsItem, answer: string): number {
 }
 
 /** All field ids a criterion reads (recursing through disjunctions). */
+/**
+ * The pairs of answers on this profile that cannot both be true.
+ *
+ * It reports; it never decides. The rules are evaluated exactly as before —
+ * what this adds is that the screen can stop being silent about a verdict
+ * resting on an answer the reader contradicted two questions earlier
+ * (2026-09-08).
+ */
+export function contradictionsIn(dataset: Dataset, profile: Profile): Contradiction[] {
+  return (dataset.contradictions ?? []).filter((pair) =>
+    pair.when.every((side) => {
+      const answer = profile[side.field];
+      return answer !== undefined && side.in.includes(answer);
+    }));
+}
+
 export function referencedFields(c: Criterion): string[] {
   if (c.op === "points") return c.table.items.map((i) => i.field);
   if (c.op === "any") return c.paths.flatMap((p) => p.criteria.flatMap(referencedFields));
@@ -163,6 +180,11 @@ export function referencedFields(c: Criterion): string[] {
 
 function isUnknownAnswer(dataset: Dataset, field: string, answer: string | undefined): boolean {
   if (answer === undefined) return true;
+  // A money question's answers are the bands it derives plus the door for a
+  // reader none of them fits; anything that is not a band is that door, and it
+  // means the same thing an enum's "I don't know" means (2026-09-08).
+  if (dataset.fields.find((f) => f.id === field)?.type === "money_band")
+    return !deriveBands(dataset, field).some((b) => b.id === answer);
   return fieldIndex(dataset, field)?.byValue.get(answer)?.is_unknown === true;
 }
 

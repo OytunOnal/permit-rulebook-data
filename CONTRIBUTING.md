@@ -149,6 +149,47 @@ The tracker carries exactly three, and they are triage, not severity:
 - **`new-need`** — a route, a country, a fact or an export that does not exist
   yet.
 
+## The daily watch and the site rebuild
+
+`.github/workflows/watch.yml` runs at 05:17 UTC, re-reads every watched source,
+and commits `watch/state.json` (plus any new flag) back to this repository. The
+site is a separate repository ([permit-rulebook](https://github.com/OytunOnal/permit-rulebook)),
+it bakes "RULES READ <date>" into its pages and its social card promises
+"checked daily" — so a commit here has to reach a rebuild there, or the promise
+goes stale while it is still printed.
+
+Two things carry it, and they are deliberately redundant:
+
+- **A daily schedule on the site**, at 06:40 UTC, comfortably after this watch
+  has finished and committed. It rebuilds even if every signal fails.
+- **A `repository_dispatch` of type `dataset-updated`**, fired by the "Tell the
+  site to rebuild" step here, but only when the run actually committed new
+  state. This is the fast path: a real change is published in minutes.
+
+### The `DISPATCH_TOKEN` secret
+
+The dispatch step authenticates as a person, not as the workflow: `GITHUB_TOKEN`
+is scoped to this repository and cannot dispatch into another one. Create a
+**fine-grained personal access token** and add it to **this** repository under
+*Settings → Secrets and variables → Actions* as `DISPATCH_TOKEN`.
+
+What the token needs, exactly — and nothing more:
+
+- **Resource owner** `OytunOnal`, **repository access** limited to the single
+  repository `OytunOnal/permit-rulebook` (the site). It needs no access to this
+  repository.
+- **Repository permissions:** `Metadata: Read-only` (mandatory on every
+  fine-grained token) and `Contents: Read and write`. GitHub files the
+  `POST /repos/{owner}/{repo}/dispatches` endpoint under *Contents*, and a
+  read-only token is refused with a 403.
+- **No account permissions and no organisation permissions.**
+
+Fine-grained tokens expire. When it does, the step fails with an explicit
+error naming the secret — it does **not** skip. That is on purpose: a silent
+skip is how "checked daily" quietly stops being true, and a red run is the only
+thing that gets noticed. If you fork this repository and do not want the
+dispatch, remove the step; do not leave the secret unset and the step in place.
+
 ## Licence
 
 By contributing you agree that your code is released under MIT

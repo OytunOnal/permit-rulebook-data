@@ -528,3 +528,78 @@ describe("the FR talent fiche's slice", () => {
     expect(bounded!.note).toMatch(/false alarm/i);
   });
 });
+
+/**
+ * The buzer.de statute mirrors, bounded on 2026-09-08.
+ *
+ * Three of the four entries hashed the whole page. On 2026-09-08 the daily cron
+ * flagged § 6 BeschV as changed and the excerpt was buzer's own furniture —
+ * "m.W.v. 1. März 2024 § 5 ← → § 7 Anzeige Inhaltsverzeichnis | Ausdrucken/PDF
+ * | nach oben Frühere Fassungen von § 6 BeschV". The human fetched the live
+ * page: both quotes verbatim, statute version unchanged. So the watched region
+ * is now the statute body, from the first Absatz to the end of the last one.
+ *
+ * The snapshots in the tree predate the re-baseline — that is the human's, after
+ * the cron's commit is merged — so these cases apply each entry's markers to the
+ * snapshot the way the watch does, and read what the hash would then cover.
+ */
+describe("the buzer statute slices", () => {
+  /** What the watch hashes: the region between the markers, inclusive. */
+  const watched = (id: string): string => {
+    const entry = shippedWatchlist.entries.find((e) => e.id === id)!;
+    const text = shippedState.entries[id]!.text!;
+    expect(entry.slice, `${id} has no slice`).toBeDefined();
+    const from = text.indexOf(entry.slice!.from);
+    expect(from, `${id}: "from" marker missing`).toBeGreaterThanOrEqual(0);
+    const to = text.indexOf(entry.slice!.to, from + entry.slice!.from.length);
+    expect(to, `${id}: "to" marker missing`).toBeGreaterThanOrEqual(0);
+    return text.slice(from, to + entry.slice!.to.length);
+  };
+
+  const IDS = ["buzer-6-beschv", "buzer-20a-aufenthg", "buzer-anlage-aufenthg"];
+
+  it("leaves buzer's navigation, ad blocks and version counters outside the hash", () => {
+    for (const id of IDS) {
+      const cut = watched(id);
+      for (const furniture of [
+        "Frühere Fassungen", "Inhaltsverzeichnis", "Ausdrucken/PDF", "nach oben",
+        "Werben auf buzer.de", "Rechtskataster", "Mail bei Änderungen", "← →",
+      ])
+        expect(cut, `${id}: "${furniture}" is inside the slice`).not.toContain(furniture);
+    }
+  });
+
+  it("still covers every sentence the dataset quotes from those pages", () => {
+    const byId = new Map(IDS.map((id) => [
+      shippedWatchlist.entries.find((e) => e.id === id)!.url, watched(id),
+    ]));
+    let checked = 0;
+    for (const q of datasetQuotes(dataset)) {
+      const cut = byId.get(q.source_url);
+      if (!cut) continue;
+      checked++;
+      expect(cut, `${q.where}: the quote fell outside the slice`).toContain(q.quote);
+    }
+    expect(checked, "no dataset quote cites a buzer page any more").toBeGreaterThan(3);
+  });
+
+  it("watches less of each page than before, and still the whole statute", () => {
+    // Statute body only: a page of navigation is not a page of law.
+    for (const id of IDS) {
+      const cut = watched(id);
+      expect(cut.length, id).toBeLessThan(shippedState.entries[id]!.text!.length + 1);
+      expect(cut.length, `${id} watches nothing`).toBeGreaterThan(150);
+    }
+  });
+
+  it("records that a person bounded them, so the next flag is not read as the page changing", () => {
+    for (const id of IDS) {
+      const entry = shippedWatchlist.entries.find((e) => e.id === id)!;
+      const bounded = entry.history?.find((h) => h.changed_at === "2026-09-08");
+      expect(bounded, `${id}: a deliberate slice change with no history entry`).toBeDefined();
+      expect(bounded!.note).toMatch(/quote fidelity/i);
+    }
+    const beschv = shippedWatchlist.entries.find((e) => e.id === "buzer-6-beschv")!;
+    expect(beschv.history![0]!.note).toMatch(/not the law/i);
+  });
+});

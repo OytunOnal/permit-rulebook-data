@@ -8,6 +8,12 @@ import type { Dataset, Profile, Question } from "./types.js";
  * questions can never drift out of sync with the rules. Enum options come from
  * the field definition; money_band options are the threshold-derived bands.
  */
+/** The answer that is not an amount: taken, the rules stay undecided. */
+export const UNKNOWN_BAND = "unknown";
+
+/** What that answer is called where the dataset does not name it itself. */
+export const DEFAULT_UNKNOWN_LABEL = "Doesn't apply to me, or I don't know";
+
 export function deriveQuestions(dataset: Dataset): Question[] {
   const referenced = new Set<string>();
   for (const country of dataset.countries)
@@ -23,7 +29,16 @@ export function deriveQuestions(dataset: Dataset): Question[] {
       // expands both, so a question never has to know where its list lives.
       questions.push({ field: def.id, label: def.label, options: fieldOptions(dataset, def.id) });
     } else {
-      const options = deriveBands(dataset, def.id).map((b) => ({ value: b.id, label: b.label }));
+      // The amounts, and then a door that is neither a number nor a lie. A
+      // money question describes money the reader may not have, for a stay they
+      // may not be planning; with two amounts and nothing else, a person who
+      // fits neither answers something untrue or stops (isolated v1-gate
+      // critique, 2026-09-08, F11). The engine already reads an answer that is
+      // not a band as undecided, which is exactly what this answer means.
+      const options = [
+        ...deriveBands(dataset, def.id).map((b) => ({ value: b.id, label: b.label })),
+        { value: UNKNOWN_BAND, label: def.unknown_label ?? DEFAULT_UNKNOWN_LABEL, is_unknown: true },
+      ];
       questions.push({ field: def.id, label: def.label, options });
     }
   }

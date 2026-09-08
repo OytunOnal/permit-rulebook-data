@@ -35,9 +35,15 @@
       "kind": "value-source",
       "slice": {
         "from": "Tabelle Anlage hat",
-        "to": "&sect; 107 ←"
+        "to": "Die Mindestpunktzahl beträgt sechs Punkte."
       },
-      "note": "Backs the points requirement and table (mirror). Sliced to the statute table — buzer rotates ad blocks per request (observed 2026-09-02: three page variants, identical legal text). Official-source re-check tracked by the gesetze human-tier entry."
+      "note": "Backs the points requirement and table (mirror). Sliced to the statute table — buzer rotates ad blocks per request (observed 2026-09-02: three page variants, identical legal text). Official-source re-check tracked by the gesetze human-tier entry.",
+      "history": [
+        {
+          "changed_at": "2026-09-08",
+          "note": "Slice narrowed at the end: it stopped at “§ 107 ←”, a navigation link, and now stops at the table's own last sentence, cutting the watched region from 442 to 204 characters. The start marker is unchanged — it is the one proven against the whole page. Quote fidelity re-checked against the slice — 122, nothing missing."
+        }
+      ]
     },
     {
       "id": "gesetze-official-recheck",
@@ -205,7 +211,17 @@
       "url": "https://www.buzer.de/20a_AufenthG.htm",
       "strategy": "html",
       "kind": "value-source",
-      "note": "§ 20a AufenthG — the Opportunity Card's own statute. Backs the caveat that the card allows at most 20 hours of work a week, and is the read that settled that no condition of the card requires the applicant to have no job offer (human read 2026-09-07). Official-source re-check tracked by the gesetze human-tier entry."
+      "note": "§ 20a AufenthG — the Opportunity Card's own statute. Backs the caveat that the card allows at most 20 hours of work a week, and is the read that settled that no condition of the card requires the applicant to have no job offer (human read 2026-09-07). Official-source re-check tracked by the gesetze human-tier entry.",
+      "slice": {
+        "from": "(1) Eine Chancenkarte ist eine Aufenthaltserlaubnis",
+        "to": "zugrunde gelegt werden."
+      },
+      "history": [
+        {
+          "changed_at": "2026-09-08",
+          "note": "Slice added: from the first Absatz to the end of Absatz 7, cutting the watched region from 31,517 to 4,476 characters. Same bounding as § 6 BeschV, applied before it could file the same false alarm: the entry hashed the whole page, navigation, “Frühere Fassungen” list and version counters included. Quote fidelity re-checked against the slice — 122, nothing missing."
+        }
+      ]
     },
     {
       "id": "bamf-hochschulabsolvent",
@@ -256,7 +272,17 @@
       "url": "https://www.buzer.de/6_BeschV.htm",
       "strategy": "html",
       "kind": "value-source",
-      "note": "§ 6 BeschV — the experienced-worker route. Backs the state-recognised-qualification limb and the IT exemption on de-experienced-worker."
+      "note": "§ 6 BeschV — the experienced-worker route. Backs the state-recognised-qualification limb and the IT exemption on de-experienced-worker.",
+      "slice": {
+        "from": "(1) 1 Die Zustimmung zur Ausübung einer inländischen qualifizierten Beschäftigung",
+        "to": "im Bundesanzeiger bekannt."
+      },
+      "history": [
+        {
+          "changed_at": "2026-09-08",
+          "note": "Slice added: from the first Absatz to the end of the last one, cutting the watched region from 8,892 to 2,314 characters. The entry had no slice and hashed the whole page, so the 2026-09-08 flag was buzer's own navigation and ad block (“m.W.v. 1. März 2024 § 5 ← → § 7 … Frühere Fassungen von § 6 BeschV”) and not the law: the human fetched the live page and found both dataset quotes verbatim with the statute version unchanged. Quote fidelity re-checked against the slice — 122, nothing missing."
+        }
+      ]
     },
     {
       "id": "boe-ley-14-2013",

@@ -287,18 +287,18 @@
     },
     {
       "id": "salary_eur_year",
-      "label": "Gross annual salary in the offer?",
+      "label": "Gross yearly salary for the job you would do there?",
       "short_label": "Yearly salary",
-      "subject": "the yearly salary in your offer",
+      "subject": "the yearly salary for the job you would do",
       "type": "money_band",
       "period": "year",
       "kind": "improvable"
     },
     {
       "id": "salary_eur_month",
-      "label": "Gross monthly salary in the offer (or monthly income you can evidence)?",
+      "label": "Gross monthly salary for the job you would do there (or monthly income you could show)?",
       "short_label": "Monthly salary",
-      "subject": "the monthly salary in your offer",
+      "subject": "the monthly salary for the job you would do",
       "type": "money_band",
       "period": "month",
       "kind": "improvable"
@@ -547,12 +547,50 @@
     },
     {
       "id": "funds_eur_month",
-      "label": "Monthly funds you can evidence for the job-search stay (a blocked bank account, or a sponsor's formal undertaking)?",
+      "label": "Monthly money you could show for living costs (a blocked bank account, or a formal sponsorship undertaking)?",
       "short_label": "Monthly funds",
-      "subject": "the monthly funds you can evidence",
+      "subject": "the monthly money you could show for living costs",
       "type": "money_band",
       "period": "month",
       "kind": "improvable"
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "graduated-without-a-qualification",
+      "when": [
+        {
+          "field": "qualification",
+          "in": [
+            "none"
+          ]
+        },
+        {
+          "field": "nl_recent_grad",
+          "in": [
+            "yes"
+          ]
+        }
+      ],
+      "say": "You told us you have no completed qualification, and also that you graduated from a Dutch institution in the last three years. Both cannot be true. The rules read each answer where it applies, so change whichever one is wrong before you rely on what is below."
+    },
+    {
+      "id": "designated-graduate-without-a-qualification",
+      "when": [
+        {
+          "field": "qualification",
+          "in": [
+            "none"
+          ]
+        },
+        {
+          "field": "top200_grad",
+          "in": [
+            "yes"
+          ]
+        }
+      ],
+      "say": "You told us you have no completed qualification, and also that you graduated from an institution the Dutch immigration service designates. Both cannot be true. The rules read each answer where it applies, so change whichever one is wrong before you rely on what is below."
     }
   ],
   "notices": [
