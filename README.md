@@ -43,7 +43,9 @@ request must carry.
 
 **Licence.** Code MIT ([LICENSE](LICENSE)); the dataset in `data/` is
 [CC BY 4.0](data/LICENSE) — use it, cite it, link back. Third-party material
-and the terms it carries are listed in [NOTICE](NOTICE).
+and the terms it carries are listed in [NOTICE](NOTICE). [Sponsor this
+work](https://github.com/sponsors/OytunOnal) — small, optional, and not what
+the site runs on.
 
 ## What "quoted and dated" means here
 
