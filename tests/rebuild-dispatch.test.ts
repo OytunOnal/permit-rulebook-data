@@ -177,3 +177,39 @@ describe("automated commits are attributed to the automation", () => {
     expect(configured, "no workflow configures a git identity any more").toBe(2);
   });
 });
+
+/**
+ * Three runs failed in a row and nobody heard: 09-03 and 09-05 died collecting
+ * the flags (the step handed `head` a directory), 09-06 on a source timeout,
+ * and not one issue was filed — while the flags those runs wrote sat in the
+ * repository unread (devils-advocate, 2026-09-08).
+ */
+describe("a red run is never silent", () => {
+  it("collects flags as files, whatever git says about the directory", () => {
+    const step = watch.slice(watch.indexOf("- name: Collect NEW flags"));
+    expect(step).toContain("git status --porcelain -- 'watch/flags/*.md'");
+    // The old shape, which broke on an untracked directory and on a rename.
+    expect(step).not.toContain("git status --porcelain watch/flags");
+    expect(step).not.toContain("awk '{print $2}'");
+  });
+
+  it("opens or updates one issue when the run itself fails, with the run's link", () => {
+    const names = [...watch.matchAll(/^\s*- name: (.+)$/gm)].map((m) => m[1]!.trim());
+    const say = step(watch, "Say so when the run fails");
+    expect(say).toContain("if: failure()");
+    expect(say).toContain("actions/runs/${{ github.run_id }}");
+    expect(say).toContain("--label watch");
+    // One issue, not one per run: an existing open one is commented on.
+    expect(say).toContain("gh issue list --label watch --state open");
+    expect(say).toContain("gh issue comment");
+    // It sits after everything that can fail, or it cannot see the failure.
+    expect(names.indexOf("Say so when the run fails"))
+      .toBeGreaterThan(names.indexOf("Fail the run if any source was unreachable"));
+  });
+
+  it("and it says what a failure means, which is not that a source changed", () => {
+    const say = step(watch, "Say so when the run fails");
+    expect(say).toContain("it says the check did not finish");
+  });
+});
+

@@ -116,7 +116,22 @@ export interface Snapshot {
   history: { hash: string; retrieved_at: string }[];
 }
 
-export interface WatchState { entries: Record<string, Snapshot> }
+export interface WatchState {
+  entries: Record<string, Snapshot>;
+  /**
+   * When the watch last ran, changed or not — an ISO day.
+   *
+   * The site said the corner date moved on its own, which was not true: that
+   * date is the newest `retrieved_at` in the dataset and only a person changes
+   * it. What DOES move by itself is this: the day every source was last
+   * re-read. The site prints it, so "checked daily" is a claim a reader can
+   * check (devils-advocate, 2026-09-08).
+   *
+   * It is also the repository's own heartbeat: a run that writes it keeps the
+   * schedule alive past GitHub's sixty quiet days.
+   */
+  last_run?: string;
+}
 
 export type FetchResult =
   | { ok: true; body: Uint8Array }
@@ -287,7 +302,7 @@ export async function runWatch(
     }
   }
 
-  return { reports, nextState: { entries: nextEntries } };
+  return { reports, nextState: { entries: nextEntries, last_run: today } };
 }
 
 /** Does this dataset read the country vocabulary at all? */

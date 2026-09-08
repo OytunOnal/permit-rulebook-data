@@ -4,16 +4,23 @@ on:
     - cron: "17 5 * * *" # daily, 05:17 UTC
   workflow_dispatch:
 
+# The floor: reading the repository. The watch job raises it, because it is the
+# one that commits a new state and files an issue when a source moves (Spine
+# steward-40, 2026-09-08).
 permissions:
-  contents: write
-  issues: write
+  contents: read
 
 jobs:
   watch:
     runs-on: ubuntu-latest
+    permissions:
+      # Commits watch/state.json and the flag files.
+      contents: write
+      # Opens one issue per new flag, and one when the run itself fails.
+      issues: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: 22 }
       - run: npm ci
       - run: npm run build
@@ -27,12 +34,18 @@ jobs:
         continue-on-error: true
         run: node dist/src/watch/cli-watch.js --commit
 
+      # Files, and only files. `git status --porcelain watch/flags` printed the
+      # DIRECTORY when it was untracked, `head -n1` was handed a directory, and
+      # the step died — twice, on 09-03 and 09-05, with no issue filed for the
+      # flags those runs had just written (devils-advocate, 2026-09-08). The
+      # pathspec below can only match a markdown file, and the field is taken
+      # with `cut` rather than `awk '{print $2}'`, which loses a renamed path.
       - name: Collect NEW flags (only files this run created)
         id: newflags
         run: |
           {
             echo "files<<EOF"
-            git status --porcelain watch/flags | awk '{print $2}'
+            git status --porcelain -- 'watch/flags/*.md' | cut -c4- | sed 's/^.* -> //'
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -76,6 +89,25 @@ jobs:
         run: |
           echo "::error::watch reported unreachable sources — see the Watch sources step"
           exit 1
+
+      # A red run that nobody sees is a watch that has stopped. One issue,
+      # reopened and updated rather than duplicated, with the link to the run
+      # (devils-advocate, 2026-09-08: three failed runs went unnoticed).
+      - name: Say so when the run fails
+        if: failure()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh label create watch --color b60205 --description "The daily source watch itself" --force
+          title="watch run failed"
+          body="The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          Commit: ${{ github.sha }}
+          Nothing here says a source changed — it says the check did not finish, so today's sources are unread."
+          existing=$(gh issue list --label watch --state open --search "$title in:title" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body" --label watch
+          fi
 
       # The site bakes "RULES READ <date>" and promises "checked daily", but it
       # rebuilds only on its own pushes and its own cron. A new state committed

@@ -97,9 +97,13 @@ for (const r of reports) {
 if (commit) {
   // With `--only`, every other entry's snapshot is carried over untouched: a
   // targeted re-baseline must not quietly drop the twenty-nine it did not fetch.
-  const merged = only ? { entries: { ...state.entries, ...nextState.entries } } : nextState;
+  const merged = only
+    ? { entries: { ...state.entries, ...nextState.entries }, last_run: nextState.last_run }
+    : nextState;
   writeFileSync(statePath, JSON.stringify(merged, null, 2) + "\n");
-  log("info", "state committed", { entries: Object.keys(merged.entries).length, only: only ?? null });
+  log("info", "state committed", {
+    entries: Object.keys(merged.entries).length, only: only ?? null, last_run: merged.last_run,
+  });
 } else {
   log("info", "dry run — state untouched (use --commit to persist)");
 }

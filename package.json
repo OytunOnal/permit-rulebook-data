@@ -1,15 +1,22 @@
 {
   "name": "permit-rulebook-data",
   "version": "0.1.0",
-  "description": "Permit Rulebook data — every route, quoted and dated: an open, source-quoted work-permit ruleset for Europe plus the deterministic engine that evaluates it",
+  "description": "Permit Rulebook data \u2014 every route, quoted and dated: an open, source-quoted work-permit ruleset for Europe plus the deterministic engine that evaluates it",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/src/index.d.ts", "default": "./dist/src/index.js" },
-    "./validate": { "types": "./dist/src/validate.d.ts", "default": "./dist/src/validate.js" },
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./validate": {
+      "types": "./dist/src/validate.d.ts",
+      "default": "./dist/src/validate.js"
+    },
     "./data/dataset.json": "./data/dataset.json",
-    "./schema/ruleset.schema.json": "./schema/ruleset.schema.json"
+    "./schema/ruleset.schema.json": "./schema/ruleset.schema.json",
+    "./watch/state.json": "./watch/state.json"
   },
   "files": [
     "dist",
@@ -34,4 +41,3 @@
     "vitest": "^3.0.0"
   }
 }
-
