@@ -13,7 +13,7 @@ import {
 import {
   LANGUAGE_NAMES, QUOTE_LANGUAGES, quoteLanguage, sourceUrls, unmappedSources,
 } from "../src/lang.js";
-import type { Dataset, Route } from "../src/types.js";
+import type { Dataset, Profile, Route } from "../src/types.js";
 
 const ds = dataset as unknown as Dataset;
 const routes = (): Route[] => ds.countries.flatMap((c) => c.routes);
@@ -273,7 +273,8 @@ describe("an answer a reader can mistake for the one they hold says what it mean
     // labels already use.
     expect(optionMeans(offer, ds, {})).toContain("an employer there itself");
     // No token survives rendering, ever.
-    for (const profile of [{}, { destination: "nl" }, { destination: "all" }, { situation_country: "NL" }])
+    const profiles: Profile[] = [{}, { destination: "nl" }, { destination: "all" }, { situation_country: "NL" }];
+    for (const profile of profiles)
       for (const option of optionsOf("situation"))
         expect(optionMeans(option, ds, profile)).not.toContain("{place}");
     // An option with nothing to distinguish says nothing.

@@ -47,10 +47,14 @@ append-only.
    Not the day the source was published, and not the day you opened the pull
    request.
 5. **A value read again that did not move is recorded the same way.** The
-   reading it replaces goes into `history` with its own `retrieved_at`, and its
-   `note` says in one line why it is there — `re-read 2026-09-08, unchanged`.
-   Without the note a superseded entry carrying the same figure as the live one
-   reads as a change that never happened.
+   reading it replaces goes into `history` with its own `retrieved_at`, plus
+   two fields the schema requires of every entry written from 2026-09-08:
+   `reason`, one of `re-read-unchanged` · `value-changed` · `source-moved` ·
+   `quote-corrected`, and `checked_at`, the day you wrote the entry. Add a
+   `note` only where those two do not carry it — what moved, or which sentence
+   replaced which. Without the reason a superseded entry carrying the same
+   figure as the live one reads as a change that never happened, and nothing
+   mechanical can tell the two apart.
 6. **Let the watch re-baseline.** The daily watch compares each source against
    a stored snapshot. After a value change the next run will record a new
    baseline; if you changed the source URL, say so in the pull request so the

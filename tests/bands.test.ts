@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, formatEUR, rescopeProfile } from "../src/engine.js";
+import { deriveBands, evaluate, formatEUR } from "../src/engine.js";
 import { deriveQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
@@ -61,15 +61,17 @@ describe("bands are half-open, and say so", () => {
       [undefined, 33085.09], [33085.09, 39582], [39582, 41356.36], [41356.36, 45630],
       [45630, 45934.2], [45934.2, 50700], [50700, 59373], [59373, undefined],
     ]);
-    // The interview asks that same ladder whoever the reader is, so an answer
-    // means one amount everywhere it is read.
-    for (const destination of ["de", "es", "fr", "nl", "all"]) {
-      const q = deriveQuestions(dataset, { destination }).find((x) => x.field === "salary_eur_year")!;
-      expect(q.options.map((o) => o.label).slice(0, -1), destination)
-        .toEqual(deriveBands(dataset, "salary_eur_year").map((b) => b.label));
-      // The door that is not an amount is still the last one.
-      expect(q.options.at(-1)!.value, destination).toBe("unknown");
-    }
+    // And the interview offers exactly those rungs, written out here rather
+    // than compared against the function that produced them (Standards review,
+    // 2026-09-08: a test that computes its own expectation asserts nothing).
+    const salary = deriveQuestions(dataset).find((x) => x.field === "salary_eur_year")!;
+    expect(salary.options.map((o) => o.label)).toEqual([
+      "under €33,085.09", "€33,085.09 – under €39,582", "€39,582 – under €41,356.36",
+      "€41,356.36 – under €45,630", "€45,630 – under €45,934.20",
+      "€45,934.20 – under €50,700", "€50,700 – under €59,373", "€59,373 or more",
+      "Doesn't apply to me, or I don't know",
+    ]);
+    expect(salary.options.at(-1)!.value).toBe("unknown");
   });
 
   it("a reader at exactly the threshold has one label, and it is met", () => {
@@ -114,34 +116,25 @@ describe("bands are half-open, and say so", () => {
 });
 
 /**
- * The same declaration, pointed at another country.
+ * Where re-scoping a record lives now.
  *
- * A record is re-scoped when a reader arrives from a country or route page
- * (B2). Every answer travels, amounts included: the money ladder is one pooled
- * list, so a band means the same euros wherever the reader is headed.
+ * It was a one-line pass-through in the engine (spread an object, return an
+ * empty list of casualties), which is not the engine's job and told a reader
+ * of this file that something rules-shaped happened here (Standards review,
+ * 2026-09-08). Moving a record to another country is the interview's own
+ * business and is tested where it happens, in the site's `arrivalPlan`. What
+ * the engine still owes that move is the guarantee below.
  */
-describe("re-scoping a record to another country", () => {
-  const germanRecord: Profile = {
-    destination: "de", citizenship: "IN", qualification: "degree", salary_eur_year: "band_5",
-  };
-
-  it("replaces the destination and keeps everything else, amounts included", () => {
-    const moved = rescopeProfile(dataset, germanRecord, "fr");
-    expect(moved.profile).toEqual({ ...germanRecord, destination: "fr" });
-    expect(moved.dropped).toEqual([]);
-    // The amount it names is the amount it named before.
+describe("a money answer means the same amount in every country", () => {
+  it("one ladder, so a band carried to another destination names the same euros", () => {
     const bands = deriveBands(dataset, "salary_eur_year");
-    expect(bands.find((b) => b.id === moved.profile["salary_eur_year"])!.label)
-      .toBe("€45,934.20 – under €50,700");
-  });
-
-  it("the French verdicts are French: no German route survives the switch", () => {
-    const moved = rescopeProfile(dataset, { ...germanRecord, situation: "offer" }, "fr");
-    expect(evaluate(dataset, moved.profile).filter((r) => r.status !== "hold")
-      .every((r) => r.country === "FR")).toBe(true);
-  });
-
-  it("arriving where the record already is changes nothing", () => {
-    expect(rescopeProfile(dataset, germanRecord, "de").profile).toEqual(germanRecord);
+    const declared = bands.find((b) => b.label === "€45,934.20 – under €50,700")!;
+    for (const destination of ["de", "fr", "es", "nl", "all"]) {
+      const profile: Profile = { destination, salary_eur_year: declared.id };
+      // The engine reads the answer against the same rung whoever is asking.
+      const seen = deriveBands(dataset, "salary_eur_year").find((b) => b.id === profile["salary_eur_year"])!;
+      expect(seen.min, destination).toBe(45934.2);
+      expect(seen.max, destination).toBe(50700);
+    }
   });
 });

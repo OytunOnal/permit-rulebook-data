@@ -1,0 +1,9 @@
+{
+  "//": "The tests, typechecked but never emitted. The build's own tsconfig compiles src/ into dist/ and cannot include tests/ without shipping them; without this file a test could call a function with an argument the signature had lost and nothing would say so until the assertion happened to fail (Standards review, 2026-09-08: two calls to deriveBands were passing a third argument that no longer existed). `npm run check` runs it.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vitest/globals"]
+  },
+  "include": ["src", "tests", "schema", "data/countries.json"]
+}

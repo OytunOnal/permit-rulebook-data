@@ -7,7 +7,7 @@ import { deriveBands, evaluate, formatEURPer, informativeFields, routeProvenance
 const requirementsOf = (route: { statements?: { kind: string; text: string }[] }): string[] =>
   routeStatements(route as never).filter((s) => s.kind === "precondition").map((s) => s.text);
 import { remainingQuestions } from "../src/questions.js";
-import type { Dataset, Profile, RouteResult } from "../src/types.js";
+import type { Criterion, Dataset, Profile, RouteResult } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 

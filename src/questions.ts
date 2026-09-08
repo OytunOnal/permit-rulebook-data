@@ -14,7 +14,7 @@ export const UNKNOWN_BAND = "unknown";
 /** What that answer is called where the dataset does not name it itself. */
 export const DEFAULT_UNKNOWN_LABEL = "Doesn't apply to me, or I don't know";
 
-export function deriveQuestions(dataset: Dataset, profile: Profile = {}): Question[] {
+export function deriveQuestions(dataset: Dataset): Question[] {
   const referenced = new Set<string>();
   for (const country of dataset.countries)
     for (const route of country.routes)
@@ -92,7 +92,7 @@ function orderByEliminationPower(dataset: Dataset, profile: Profile, questions: 
  */
 export function remainingQuestions(dataset: Dataset, profile: Profile): Question[] {
   const informative = informativeFields(dataset, profile);
-  const candidates = deriveQuestions(dataset, profile).filter(
+  const candidates = deriveQuestions(dataset).filter(
     (q) => profile[q.field] === undefined && informative.has(q.field),
   );
   // ask_first fields (the destination) come before the greedy ordering — the

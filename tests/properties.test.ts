@@ -12,8 +12,8 @@ function lcg(seed: number) {
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
 }
 
-function optionValues(def: FieldDef, destination?: string): string[] {
-  if (def.type === "money_band") return deriveBands(dataset, def.id, destination).map((b) => b.id);
+function optionValues(def: FieldDef): string[] {
+  if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
   // Not `def.options`: a field may declare its option list by reference
   // (`options_from`), and the engine is what expands it.
   return fieldOptions(dataset, def.id).map((o) => o.value);
@@ -28,7 +28,7 @@ function randomProfile(rand: () => number, answerProb = 1): Profile {
     .sort((a, b) => Number(b.id === "destination") - Number(a.id === "destination"));
   for (const def of fields) {
     if (rand() < answerProb) {
-      const vals = optionValues(def, p["destination"]);
+      const vals = optionValues(def);
       p[def.id] = vals[Math.floor(rand() * vals.length)];
     }
   }
@@ -104,28 +104,37 @@ describe("property: unlock rows are SOUND and COMPLETE single-step recommendatio
           continue;
         }
         if (def.type === "money_band") {
-          // A number earns ONE step: the nearest rung above what the reader
-          // declared that changes a verdict, and never one below it (B3).
-          const bands = deriveBands(dataset, def.id, p["destination"]);
+          // A number earns at most ONE step, and what makes it the right one is
+          // stated as a property of the ANSWER, not as a second copy of the
+          // code that picks it (Standards review, 2026-09-08): with the step's
+          // band the reader meets a route they did not meet before, and with
+          // any band between theirs and the step's they still do not.
+          const bands = deriveBands(dataset, def.id);
           const floor = bands.find((b) => b.id === current)?.min ?? 0;
           const mine = plain.filter((u) => u.field === def.id);
           expect(mine.length, `${def.id}: ${mine.map((u) => u.option.label).join(" | ")}`)
             .toBeLessThanOrEqual(1);
-          // A number's step is the one that MEETS a rule — a rung that only
-          // narrows a gap the card already prints is the ladder read back.
-          const changed = (id: string) =>
+          const newlyMet = (id: string) =>
             evaluate(dataset, { ...p, [def.id]: id })
               .filter((r) => r.status === "met" && baseline[r.route.id] !== "met")
-              .map((r) => [r.route.id, r.status]);
-          const rungs = bands.filter((b) => b.min !== undefined && b.min > floor);
-          const nearest = rungs.find((b) => changed(b.id).length > 0);
-          if (!nearest) expect(mine).toEqual([]);
-          else {
-            expect(mine[0]?.option.value, `${def.id}: expected the nearest rung ${nearest.label}`)
-              .toBe(nearest.id);
-            expect(mine[0]!.routes.map((r) => [r.route.id, r.status])).toEqual(changed(nearest.id));
-            // Never downwards.
-            expect(bands.find((b) => b.id === mine[0]!.option.value)!.min!).toBeGreaterThan(floor);
+              .map((r) => r.route.id);
+          const step = mine[0];
+          if (step) {
+            const at = bands.find((b) => b.id === step.option.value)!;
+            // It is above what they declared, it opens something, and the
+            // routes it lists are exactly the ones it opens.
+            expect(at.min, `${def.id}: ${at.label} is not above ${floor}`).toBeGreaterThan(floor);
+            expect(newlyMet(at.id), `${def.id}: ${at.label} opens nothing`).not.toEqual([]);
+            expect(step.routes.map((r) => r.route.id)).toEqual(newlyMet(at.id));
+            // And nothing between their band and it would have done: it is the
+            // nearest, so no cheaper rung was passed over.
+            for (const rung of bands.filter((b) => b.min !== undefined && b.min > floor && b.min < at.min!))
+              expect(newlyMet(rung.id), `${def.id}: ${rung.label} was passed over`).toEqual([]);
+          } else {
+            // No row means no rung above theirs opens anything at all.
+            for (const rung of bands.filter((b) => b.min !== undefined && b.min > floor))
+              expect(newlyMet(rung.id), `${def.id}: ${rung.label} opens a route and was not offered`)
+                .toEqual([]);
           }
           continue;
         }

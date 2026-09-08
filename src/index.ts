@@ -1,6 +1,6 @@
 export type * from "./types.js";
 export type { ProvenanceEntry } from "./engine.js";
-export { evaluate, deriveBands, rescopeProfile, thresholdsForField, routeProvenance, resultProvenance, decidingCriteria, routeStatements, routeReadings, provenancedValuesOf, datasetMeta, formatEUR, formatEURPer, notices, matchOptions, foldForSearch, isRouteAlive, informativeFields, referencedFields, forEachCriterion, unlocks, fieldOptions, optionEquivalenceClasses, contradictionsIn } from "./engine.js";
+export { evaluate, deriveBands, thresholdsForField, routeProvenance, resultProvenance, decidingCriteria, routeStatements, routeReadings, provenancedValuesOf, datasetMeta, formatEUR, formatEURPer, notices, matchOptions, foldForSearch, isRouteAlive, informativeFields, referencedFields, forEachCriterion, unlocks, fieldOptions, optionEquivalenceClasses, contradictionsIn } from "./engine.js";
 export { deriveQuestions, remainingQuestions } from "./questions.js";
 export {
   reasonFor, criterionPhrase, subjectOf, shortLabelOf, answerLabel, unlockTitleOf,

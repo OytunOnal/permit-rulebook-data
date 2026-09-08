@@ -105,23 +105,6 @@ export function deriveBands(dataset: Dataset, field: string): Band[] {
 }
 
 /**
- * The same declaration, pointed at another country.
- *
- * A reader who arrives from a country or route page is re-scoped to the
- * country they arrived from (isolated v1-gate critique, 2026-09-08, B2).
- * Everything else they told us is theirs and travels with them — including
- * every amount, because the money ladder is one pooled list for all four
- * countries (human ruling, 2026-09-08), so a band means the same euros
- * wherever the reader is headed. What the new country's rules no longer ask is
- * dropped by the interview's own replay, not here.
- */
-export function rescopeProfile(
-  _dataset: Dataset, profile: Profile, destination: string,
-): { profile: Profile; dropped: string[] } {
-  return { profile: { ...profile, destination }, dropped: [] };
-}
-
-/**
  * Field and option lookups, indexed once per dataset. Both are on every hot
  * path (evaluate, question ordering, property suites) and one of them is now a
  * 249-entry country list — a linear scan per criterion is a different program

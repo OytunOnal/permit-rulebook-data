@@ -317,7 +317,7 @@ describe("the labels are hand-written English, not CLDR's localisation", () => {
     // The label carries a typographic apostrophe; a keyboard types a straight
     // one. Before the fold dropped punctuation, "cote d'ivoire" returned
     // nothing at all — the same dead end that "turkey" used to hit.
-    const opts = fieldOptions(dataset, "citizenship", vocabulary);
+    const opts = fieldOptions(dataset, "citizenship");
     for (const [typed, code] of [
       ["cote d'ivoire", "CI"], ["Cote dIvoire", "CI"], ["côte d’ivoire", "CI"],
       ["guinea bissau", "GW"], ["guineabissau", "GW"],
@@ -328,7 +328,7 @@ describe("the labels are hand-written English, not CLDR's localisation", () => {
   });
 
   it("every displaced form still finds its country", () => {
-    const opts = fieldOptions(dataset, "citizenship", vocabulary);
+    const opts = fieldOptions(dataset, "citizenship");
     for (const [typed, code] of [
       ["Congo - Kinshasa", "CD"], ["Congo-Kinshasa", "CD"], ["Zaire", "CD"],
       ["Congo - Brazzaville", "CG"], ["Congo-Brazzaville", "CG"],

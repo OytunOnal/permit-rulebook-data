@@ -168,11 +168,18 @@ describe("an absent quote is a decision, not an essay", () => {
  * The "value changed" half of the loop had never run before the launch, so the
  * shape of a re-read was untested: `retrieved_at` moves to the day it was read
  * and the reading it replaces goes into `history`, append-only, the same way a
- * changed value does. A superseded entry carrying the SAME value as the live
- * one reads as a change that never happened, so it says in one line why it is
- * there — which is what `note` is for (2026-09-08).
+ * changed value does.
+ *
+ * Why it was superseded is a DECLARED kind, not prose. The first version of
+ * this gate accepted "any lowercase letter", which is a content check wearing
+ * a schema's clothes: nothing mechanical could tell a re-read from a change,
+ * and a curator writing "n/a" would have passed it (Standards review,
+ * 2026-09-08).
  */
 describe("a re-read is recorded like a change", () => {
+  const REASONS = ["re-read-unchanged", "value-changed", "source-moved", "quote-corrected"];
+
+  /** Every history entry in the dataset, with the live value it sits under. */
   const historiesOf = (data: {
     countries: { routes: { id: string; criteria: unknown[] }[] }[];
   }): { where: string; live: unknown; entry: Record<string, unknown> }[] => {
@@ -192,17 +199,31 @@ describe("a re-read is recorded like a change", () => {
     return out;
   };
 
-  it("every superseded reading is older than the live one, and says why it was superseded", () => {
-    const all = historiesOf(load());
-    for (const { where, live, entry } of all) {
-      const then = entry["retrieved_at"] as string;
-      expect(then, `${where} has no date`).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
-      // A reading that says nothing new is a reading that must explain itself.
-      const same = (entry["amount"] ?? entry["value"] ?? entry["text"]) === live;
-      if (same)
-        expect(String(entry["note"] ?? ""), `${where} repeats the live value with no note saying why`)
-          .toMatch(/[a-z]/);
+  it("every superseded reading declares why, from the closed list, and when it was written", () => {
+    for (const { where, live, entry } of historiesOf(load())) {
+      expect(entry["retrieved_at"], `${where} has no date`).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+      expect(REASONS, `${where}: reason ${JSON.stringify(entry["reason"])}`).toContain(entry["reason"]);
+      expect(entry["checked_at"], `${where} does not say when it was written`)
+        .toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+      // A reading that repeats the live value did not record a change, and
+      // must not claim one.
+      if ((entry["amount"] ?? entry["value"] ?? entry["text"]) === live)
+        expect(entry["reason"], `${where} repeats the live value and calls it a change`)
+          .not.toBe("value-changed");
     }
+  });
+
+  it("the schema is the gate, not the test: an undeclared reason fails validation", () => {
+    const data = load();
+    const threshold = data.countries
+      .flatMap((c: { routes: { id: string; criteria: Record<string, unknown>[] }[] }) => c.routes)
+      .find((r: { id: string }) => r.id === "de-blue-card-general")!
+      .criteria.find((c: Record<string, unknown>) => c["field"] === "salary_eur_year")!["threshold"] as
+      Record<string, unknown>;
+    const history = threshold["history"] as Record<string, unknown>[];
+    expect(validateDataset(data).ok).toBe(true);
+    history[0]!["reason"] = "because I said so";
+    expect(validateDataset(data).ok, "any string passes as a reason").toBe(false);
   });
 
   it("the German Blue Card threshold carries the re-read the launch owed", () => {
@@ -216,10 +237,10 @@ describe("a re-read is recorded like a change", () => {
     const history = threshold["history"] as Record<string, unknown>[];
     expect(history.length, "the re-read left no trail").toBe(1);
     expect(history[0]!["amount"], "the re-read invented a movement").toBe(threshold["amount"]);
-    expect(history[0]!["retrieved_at"] as string < (threshold["retrieved_at"] as string),
+    expect(history[0]!["reason"]).toBe("re-read-unchanged");
+    expect(history[0]!["checked_at"]).toBe("2026-09-08");
+    expect((history[0]!["retrieved_at"] as string) < (threshold["retrieved_at"] as string),
       `${history[0]!["retrieved_at"]} is not before ${threshold["retrieved_at"]}`).toBe(true);
-    expect(String(history[0]!["note"] ?? ""), "the re-read does not say it read the same value")
-      .toContain("unchanged");
     // The sentence the value stands on is the one that was read again.
     expect(history[0]!["quote"]).toBe(threshold["quote"]);
     expect(history[0]!["source_url"]).toBe(threshold["source_url"]);

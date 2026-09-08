@@ -16,9 +16,9 @@ function lcg(seed: number) {
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
 }
 
-function optionValues(ds: Dataset, def: FieldDef, destination?: string): string[] {
+function optionValues(ds: Dataset, def: FieldDef): string[] {
   return def.type === "money_band"
-    ? deriveBands(ds, def.id, destination).map((b) => b.id)
+    ? deriveBands(ds, def.id).map((b) => b.id)
     : fieldOptions(ds, def.id).map((o) => o.value);
 }
 
@@ -29,16 +29,15 @@ function randomProfile(ds: Dataset, rand: () => number, answerProb: number): Pro
   // the profile is not on (F12).
   for (const def of [...ds.fields].sort((a, b) => Number(b.id === "destination") - Number(a.id === "destination")))
     if (rand() < answerProb) {
-      const vals = optionValues(ds, def, p["destination"]);
+      const vals = optionValues(ds, def);
       p[def.id] = vals[Math.floor(rand() * vals.length)];
     }
   return p;
 }
 
-/** The band a euro figure falls in, on the ladder the destination is asked —
- * band ids move when a threshold does, and when a country is narrowed to. */
-function bandFor(field: string, amount: number, destination?: string): string {
-  return deriveBands(dataset, field, destination).find(
+/** The band a euro figure falls in — band ids move when a threshold does. */
+function bandFor(field: string, amount: number): string {
+  return deriveBands(dataset, field).find(
     (b) => (b.min === undefined || amount >= b.min) && (b.max === undefined || amount < b.max),
   )!.id;
 }
@@ -140,7 +139,7 @@ describe("s5f decision 1 — the three-year Spanish criterion", () => {
     // qualification limb is the experience one.
     const base: Profile = {
       citizenship: "TR", destination: "es", situation: "offer", qualification: "vocational",
-      salary_eur_year: bandFor("salary_eur_year", 45000, "es"),
+      salary_eur_year: bandFor("salary_eur_year", 45000),
     };
     const statusOn = (experience: string, ds: Dataset = dataset): RouteStatus =>
       evaluate(ds, { ...base, experience }).find((r) => r.route.id === READS_IT)!.status;
@@ -202,7 +201,7 @@ describe("s5f — the ICT route reads the three years its own quote states", () 
   it("a three-year transferee is met where the five-year answer was demanded", () => {
     const base: Profile = {
       citizenship: "TR", destination: "es", situation: "ict", situation_country: "es",
-      qualification: "vocational", salary_eur_year: bandFor("salary_eur_year", 45000, "es"),
+      qualification: "vocational", salary_eur_year: bandFor("salary_eur_year", 45000),
     };
     const statusOn = (experience: string): RouteStatus =>
       evaluate(dataset, { ...base, experience }).find((r) => r.route.id === ICT)!.status;
@@ -292,7 +291,7 @@ describe("s5f — the experience ladder is ordinal: a longer record is never wor
 describe("s5f step 2 — Germany does not flinch", () => {
   const de = (experience: string): Profile => ({
     citizenship: "TR", destination: "de", situation: "offer", qualification: "vocational",
-    occupation_it: "no", experience, salary_eur_year: bandFor("salary_eur_year", 50000, "de"),
+    occupation_it: "no", experience, salary_eur_year: bandFor("salary_eur_year", 50000),
   });
 
   it("the experienced-worker route reads two years within five, unchanged", () => {

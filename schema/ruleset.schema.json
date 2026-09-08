@@ -308,7 +308,22 @@
               "note": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Why this reading was superseded, in one line — \"re-read 2026-09-08, unchanged\" for a value confirmed at its source on a new day, or what moved when one did. Without it a superseded entry carrying the same value as the live one reads as a change that never happened."
+                "description": "The reason in the curator's own words, where the enum does not carry enough: what moved, or which sentence replaced which. Optional prose; `reason` is what anything mechanical reads."
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "re-read-unchanged",
+                  "value-changed",
+                  "source-moved",
+                  "quote-corrected"
+                ],
+                "description": "Why this reading was superseded, from the closed list: re-read-unchanged (read again at its source on a new day, same value), value-changed (the authority published a different value), source-moved (the same value, read at a new URL), quote-corrected (the value stood, the sentence quoted for it did not). Required on every entry written from 2026-09-08. Entries older than that carry none: they were written before the list existed, and rewriting history to fit a new field would be the one edit this format forbids."
+              },
+              "checked_at": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "The day this entry was written — the day a person looked and recorded what they found. `retrieved_at` is the day the superseded value itself was read, which is a different day and, for a re-read, the whole point of the entry."
               }
             }
           }
@@ -486,7 +501,22 @@
               "note": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Why this reading was superseded, in one line — \"re-read 2026-09-08, unchanged\" for a value confirmed at its source on a new day, or what moved when one did. Without it a superseded entry carrying the same value as the live one reads as a change that never happened."
+                "description": "The reason in the curator's own words, where the enum does not carry enough: what moved, or which sentence replaced which. Optional prose; `reason` is what anything mechanical reads."
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "re-read-unchanged",
+                  "value-changed",
+                  "source-moved",
+                  "quote-corrected"
+                ],
+                "description": "Why this reading was superseded, from the closed list: re-read-unchanged (read again at its source on a new day, same value), value-changed (the authority published a different value), source-moved (the same value, read at a new URL), quote-corrected (the value stood, the sentence quoted for it did not). Required on every entry written from 2026-09-08. Entries older than that carry none: they were written before the list existed, and rewriting history to fit a new field would be the one edit this format forbids."
+              },
+              "checked_at": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "The day this entry was written — the day a person looked and recorded what they found. `retrieved_at` is the day the superseded value itself was read, which is a different day and, for a re-read, the whole point of the entry."
               }
             }
           }
@@ -554,7 +584,22 @@
               "note": {
                 "type": "string",
                 "minLength": 1,
-                "description": "Why this reading was superseded, in one line — \"re-read 2026-09-08, unchanged\" for a value confirmed at its source on a new day, or what moved when one did. Without it a superseded entry carrying the same value as the live one reads as a change that never happened."
+                "description": "The reason in the curator's own words, where the enum does not carry enough: what moved, or which sentence replaced which. Optional prose; `reason` is what anything mechanical reads."
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "re-read-unchanged",
+                  "value-changed",
+                  "source-moved",
+                  "quote-corrected"
+                ],
+                "description": "Why this reading was superseded, from the closed list: re-read-unchanged (read again at its source on a new day, same value), value-changed (the authority published a different value), source-moved (the same value, read at a new URL), quote-corrected (the value stood, the sentence quoted for it did not). Required on every entry written from 2026-09-08. Entries older than that carry none: they were written before the list existed, and rewriting history to fit a new field would be the one edit this format forbids."
+              },
+              "checked_at": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "The day this entry was written — the day a person looked and recorded what they found. `retrieved_at` is the day the superseded value itself was read, which is a different day and, for a re-read, the whole point of the entry."
               }
             }
           }

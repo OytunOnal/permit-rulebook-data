@@ -129,7 +129,7 @@ describe("s5e — no sentence a card can render quotes an authority without prov
     for (const { route, criterion } of allCriteria())
       expect(criterion, route).not.toHaveProperty("note");
     const ds = clone();
-    (ds.countries[0].routes[0].criteria[0] as Record<string, unknown>).note = "Anything at all.";
+    (ds.countries[0].routes[0].criteria[0] as unknown as Record<string, unknown>).note = "Anything at all.";
     expect(validateDataset(ds).ok, "a criterion note is still accepted").toBe(false);
   });
 });
@@ -271,7 +271,7 @@ describe("s5e — the gate bites, and rewording is not how you silence it", () =
         r.statements = [...(r.statements ?? []), { id: "beschv", kind: "precondition", text: claimWithNoMarks }];
       }],
       ["the criterion note it actually shipped in", (ds) => {
-        (firstRoute(ds).criteria[0] as Record<string, unknown>).note = claimWithNoMarks;
+        (firstRoute(ds).criteria[0] as unknown as Record<string, unknown>).note = claimWithNoMarks;
       }],
     ];
     for (const [where, mutate] of mutations) {

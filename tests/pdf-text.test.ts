@@ -249,6 +249,7 @@ describe("s5f invariant — a PDF text strategy never reports verified for a doc
       name: "Testland",
       routes: [{
         id: "r", name: "Route", kind: "res-work", info_url: "https://example.test/",
+        scope: { value: "every-deciding-rule-asked" as const, not_asked: [], reason: "Every rule this route turns on is asked." },
         criteria: [{ field: "f", op: "eq", value: "v", source: { source_url: "https://example.test/f.pdf", quote, retrieved_at: "2026-09-07" } }],
       }],
     }],
