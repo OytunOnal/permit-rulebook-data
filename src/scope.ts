@@ -23,33 +23,54 @@ export { SCOPE_VALUES } from "./types.js";
  * scope: the country index, the results card and the route page's own short
  * line.
  */
-const WORDS: Record<ScopeValue, (stated: number) => string> = {
+const WORDS: Record<ScopeValue, (stated: number, noted: number) => string> = {
   "every-deciding-rule-asked": () => "quoted and dated · scored against your answers",
-  "some-conditions-stated-not-asked": (stated) =>
-    `quoted and dated · scored, ${countWords(stated)} stated but not asked`,
+  "some-conditions-stated-not-asked": (stated, noted) => {
+    // What the source states and what we merely note are different claims, and
+    // the reader is told which is which: a reading is ours, and two routes were
+    // saying an authority "stated" our own note (Spec review, 2026-09-08).
+    const parts = [
+      stated ? `${countWords(stated)} stated but not asked` : "",
+      noted ? `${countWords(noted)} we note but do not ask` : "",
+    ].filter(Boolean);
+    return `quoted and dated · scored, ${parts.join(" and ")}`;
+  },
   "rules-quoted-nothing-asked": () => "quoted and dated · not scored",
 };
 
 /** Small numbers read as words in a sentence; larger ones stay digits. */
-const NUMBER_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+export const NUMBER_WORDS = [
+  "no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+] as const;
 
-function countWords(stated: number): string {
-  const many = stated === 1 ? "condition" : "conditions";
-  return `${stated < NUMBER_WORDS.length ? NUMBER_WORDS[stated] : stated} ${many}`;
+/**
+ * A count in the words a sentence reads in: "eight routes", "two conditions".
+ * One implementation, because the site prints counts too and two spellings of
+ * the same number is two facts (Standards review, 2026-09-08).
+ */
+export function countedWords(n: number, one: string, many = `${one}s`): string {
+  return `${n < NUMBER_WORDS.length ? NUMBER_WORDS[n] : n} ${n === 1 ? one : many}`;
+}
+
+const countWords = (n: number): string => countedWords(n, "condition");
+
+/**
+ * `stated` is how many conditions the SOURCE states without our asking, and
+ * `noted` how many are our own readings. Both are ignored by the two values
+ * that state none, and neither has a default: a count nobody passed printed
+ * "no conditions stated" (Standards review, 2026-09-08).
+ */
+export function scopeWords(value: ScopeValue, stated: number, noted = 0): string {
+  return WORDS[value](stated, noted);
 }
 
 /**
- * `stated` is how many conditions the route declares it states without asking
- * — the authored `not_asked` list, the same one the route page's full sentence
- * names. It is ignored by the two values that state none.
+ * The same words for a route, which knows its own counts — the split comes from
+ * `statedNotAsked`, so the sentence and the evidence behind it cannot disagree.
  */
-export function scopeWords(value: ScopeValue, stated = 0): string {
-  return WORDS[value](stated);
-}
-
-/** The same words for a route, which knows its own count. */
 export function scopeLine(route: Route): string {
-  return scopeWords(route.scope.value, route.scope.not_asked.length);
+  const split = statedNotAsked(route, { split: true });
+  return scopeWords(route.scope.value, split.stated.length, split.noted.length);
 }
 
 /**
@@ -65,11 +86,16 @@ export function scopeLine(route: Route): string {
  * the value agrees with the route's own conditions in full is a v1.x candidate
  * recorded with this slice.
  */
-export function statedNotAsked(route: Route): string[] {
+export function statedNotAsked(route: Route): string[];
+export function statedNotAsked(route: Route, o: { split: true }): { stated: string[]; noted: string[] };
+export function statedNotAsked(
+  route: Route, o: { split?: true } = {},
+): string[] | { stated: string[]; noted: string[] } {
   const statements: RouteStatement[] = routeStatements(route);
-  return [
-    ...(route.preconditions ?? []),
-    ...statements.map((s) => s.text),
-    ...routeReadings(route).map((r) => r.text),
-  ];
+  // What the authority states without our asking, and what we read into the
+  // gap ourselves. The page has always shown both; the difference between them
+  // is the difference between a source and an opinion.
+  const stated = [...(route.preconditions ?? []), ...statements.map((x) => x.text)];
+  const noted = routeReadings(route).map((r) => r.text);
+  return o.split ? { stated, noted } : [...stated, ...noted];
 }

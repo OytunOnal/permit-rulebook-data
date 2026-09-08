@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import dataset from "../data/dataset.json" with { type: "json" };
 import { validateDataset } from "../src/validate.js";
 import { proseProvenance, renderableTexts } from "../src/prose.js";
-import { scopeWords, statedNotAsked, SCOPE_VALUES } from "../src/scope.js";
+import { scopeLine, scopeWords, statedNotAsked, SCOPE_VALUES } from "../src/scope.js";
 import { declaredPlace, optionMeans, unlockTitleOf } from "../src/verdict.js";
 import { countryPhrase } from "../src/countries.js";
 import { unlocks } from "../src/engine.js";
@@ -81,13 +81,23 @@ describe("s6 — every route declares what the checker asks of it", () => {
     // rule nobody can audit.
     for (const word of ["modelled", "modeled", "modelling", "criterion", "criteria", "pipeline", "coverage"])
       expect(said, word).not.toContain(word);
-    // And where it IS used, it is used in a sentence about the reader: never
-    // bare, never as a verdict, always beside what it was scored against.
+    // And where it IS used it is used in a sentence about the reader: never
+    // bare, never as a verdict, always beside what it was scored against. The
+    // rule holds for the 23 authored reasons exactly as it holds for the words
+    // the code composes (Standards review, 2026-09-08).
+    const ALLOWED = /(?:not scored|scored,|scored against your answers)/;
+    const bare = (text: string): string[] =>
+      // Each use with enough either side to read it: "not scored" needs the
+      // word before, the others the words after.
+      [...text.matchAll(/.{0,4}scored.{0,26}/gi)]
+        .map((m) => m[0])
+        .filter((phrase) => !ALLOWED.test(phrase));
     for (const value of SCOPE_VALUES) {
-      const words = scopeWords(value, 2);
-      if (!words.includes("scored")) continue;
-      expect(words, value).toMatch(/(not scored$|scored(, | against your answers))/);
+      const words = scopeWords(value, 2, 1);
+      expect(bare(words), `${value}: "${words}"`).toEqual([]);
     }
+    for (const route of routes())
+      expect(bare(route.scope.reason), `${route.id}: "${route.scope.reason}"`).toEqual([]);
     // A reason is our own words about our own interview. It never puts an
     // authority in quotation marks in a slot nothing can check them against.
     for (const r of routes())
@@ -292,5 +302,49 @@ describe("an answer a reader can mistake for the one they hold says what it mean
     // And the sentence beside it says which offer.
     expect(optionMeans(offer!.option, ds, profile)).toContain("in the Netherlands itself");
     expect(offer!.routes.some((r) => r.route.id === "nl-hsm-30plus" && r.status === "met")).toBe(true);
+  });
+});
+
+/**
+ * What the source states without our asking and what WE read into the gap are
+ * different claims, and two routes were saying an authority "stated" our own
+ * note (Spec review, 2026-09-08): de-skilled-vocational's two conditions are
+ * both readings, and fr-talent-qualifie has one of each.
+ */
+describe("a reading is ours, and the words say so", () => {
+  const of = (id: string) => routes().find((r) => r.id === id)!;
+
+  it("splits what is stated from what is noted, and counts each", () => {
+    const vocational = statedNotAsked(of("de-skilled-vocational"), { split: true });
+    expect(vocational.stated, "a source statement appeared from nowhere").toEqual([]);
+    expect(vocational.noted.length).toBe(2);
+    expect(scopeLine(of("de-skilled-vocational")))
+      .toBe("quoted and dated · scored, two conditions we note but do not ask");
+
+    const talent = statedNotAsked(of("fr-talent-qualifie"), { split: true });
+    expect(talent.stated.length).toBe(1);
+    expect(talent.noted.length).toBe(1);
+    expect(scopeLine(of("fr-talent-qualifie")))
+      .toBe("quoted and dated · scored, one condition stated but not asked and one condition we note but do not ask");
+  });
+
+  it("the split is the same list the evidence is read from", () => {
+    for (const route of routes()) {
+      const split = statedNotAsked(route, { split: true });
+      expect([...split.stated, ...split.noted], route.id).toEqual(statedNotAsked(route));
+      // And the sentence counts exactly what the split holds.
+      const line = scopeLine(route);
+      if (route.scope.value !== "some-conditions-stated-not-asked") continue;
+      expect(split.stated.length + split.noted.length, route.id).toBeGreaterThan(0);
+      expect(line.includes("stated but not asked"), route.id).toBe(split.stated.length > 0);
+      expect(line.includes("we note but do not ask"), route.id).toBe(split.noted.length > 0);
+    }
+  });
+
+  it("the count is required: nothing prints a number nobody passed", () => {
+    // @ts-expect-error the second argument is not optional any more.
+    expect(() => scopeWords("some-conditions-stated-not-asked")).toBeDefined();
+    expect(scopeWords("some-conditions-stated-not-asked", 1, 0))
+      .toBe("quoted and dated · scored, one condition stated but not asked");
   });
 });

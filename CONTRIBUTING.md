@@ -92,7 +92,10 @@ to it is a decision, not a fallback.
    It is our own sentence about our own interview, so it never states what the
    law requires; the conditions it points at carry their own quotes on the same
    page. Words a reader cannot parse do not go in it: no *modelled*, no
-   *criteria*, no *scored*.
+   *criteria*. *Scored* is allowed only inside the phrase the reader is shown —
+   "scored against your answers", or "scored, two conditions stated but not
+   asked" — and a bare *scored* fails the build, in a reason exactly as in the
+   words the code composes (human, 2026-09-08).
 
    `not_asked` is the same fact in ids: every statement and every reading this
    route names to the reader and never asks about. It is what makes the sentence

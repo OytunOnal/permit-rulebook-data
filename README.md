@@ -53,14 +53,16 @@ Judgment lives in code, language lives in the model: eligibility is computed
 with `if`, never asked of an LLM. Every value in the dataset carries its
 official source URL, a verbatim quote, the retrieval date and its change
 history. A value without provenance fails schema validation and cannot build.
-Every route also declares its scope, in plain words: what the interview asks of
-it and what it does not — `every deciding rule asked`, `some conditions stated,
-not asked`, or `rules quoted, nothing asked` — together with the ids of the
-limbs it names and never asks. A route with no such declaration fails
+Every route also declares its scope, and the page says it in the reader's own
+words: *quoted and dated · scored against your answers*, *quoted and dated ·
+scored, two conditions stated but not asked* (or *… we note but do not ask*,
+where the condition is our reading rather than the source's), or *quoted and
+dated · not scored* — together with the ids of the limbs it names and never
+asks. A route with no such declaration fails
 validation too, and the limbs are held against `data/exclusions.md` in both
 directions.
 
-Permit Rulebook makes no immigration decision and authorities won't consider
+Permit Rulebook makes no immigration decision and no authority is bound by
 these results — it compares published values with what you declare, nothing
 more.
 
