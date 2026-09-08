@@ -68,20 +68,33 @@ jobs:
           else
             git commit -m "watch: state update $(date -u +%F)"
             echo "committed=true" >> "$GITHUB_OUTPUT"
+            # The commit this run just made — not the one it started from. The
+            # site pins the data commit it builds against, and dispatching
+            # $GITHUB_SHA would walk that lock backwards to before this state
+            # existed (Security review, 2026-09-08).
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           fi
           git push
 
       - name: Open issues for new flags only
         if: steps.newflags.outputs.files != ''
-        env: { GH_TOKEN: "${{ github.token }}" }
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          # Through the environment, never interpolated into the script body: a
+          # file name is data, and data in a shell is a command waiting to
+          # happen (Security review, 2026-09-08).
+          FLAGS: "${{ steps.newflags.outputs.files }}"
         run: |
           gh label create source-change --color e4a11b --description "A watched official source changed" --force
           failed=0
           while IFS= read -r f; do
             [ -z "$f" ] && continue
+            # Only a flag file this repository wrote, and only one that exists.
+            case "$f" in watch/flags/*.md) ;; *) echo "::error::refusing $f"; failed=1; continue ;; esac
+            [ -f "$f" ] || { echo "::error::$f is not a file"; failed=1; continue; }
             title=$(head -n1 "$f" | sed 's/^# //')
             gh issue create --title "$title" --body-file "$f" --label source-change || failed=1
-          done <<< "${{ steps.newflags.outputs.files }}"
+          done <<< "$FLAGS"
           exit $failed
 
       - name: Fail the run if any source was unreachable
@@ -89,25 +102,6 @@ jobs:
         run: |
           echo "::error::watch reported unreachable sources — see the Watch sources step"
           exit 1
-
-      # A red run that nobody sees is a watch that has stopped. One issue,
-      # reopened and updated rather than duplicated, with the link to the run
-      # (devils-advocate, 2026-09-08: three failed runs went unnoticed).
-      - name: Say so when the run fails
-        if: failure()
-        env: { GH_TOKEN: "${{ github.token }}" }
-        run: |
-          gh label create watch --color b60205 --description "The daily source watch itself" --force
-          title="watch run failed"
-          body="The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          Commit: ${{ github.sha }}
-          Nothing here says a source changed — it says the check did not finish, so today's sources are unread."
-          existing=$(gh issue list --label watch --state open --search "$title in:title" --json number --jq '.[0].number')
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "$body"
-          else
-            gh issue create --title "$title" --body "$body" --label watch
-          fi
 
       # The site bakes "RULES READ <date>" and promises "checked daily", but it
       # rebuilds only on its own pushes and its own cron. A new state committed
@@ -136,6 +130,9 @@ jobs:
         env:
           DISPATCH_TOKEN: "${{ secrets.DISPATCH_TOKEN }}"
           SITE_REPO: "${{ vars.SITE_REPO || 'OytunOnal/permit-rulebook' }}"
+          # The commit the persist step pushed, through the environment rather
+          # than interpolated into the script body.
+          STATE_SHA: "${{ steps.persist.outputs.sha }}"
         run: |
           if [ -z "$DISPATCH_TOKEN" ]; then
             echo "::error::DISPATCH_TOKEN is not set. The watch committed new state but the site cannot be told to rebuild, so its \"RULES READ\" date will go stale. Create a fine-grained PAT scoped to $SITE_REPO with Metadata: Read-only and Contents: Read and write, then add it to this repository as a secret named DISPATCH_TOKEN (Settings -> Secrets and variables -> Actions). See CONTRIBUTING.md, \"The daily watch and the site rebuild\"."
@@ -143,5 +140,27 @@ jobs:
           fi
           # The dispatch endpoint takes the event type the site listens for; the
           # payload is there for a human reading the site's run, not for the build.
-          payload=$(printf '{"event_type":"dataset-updated","client_payload":{"sha":"%s","reason":"watch state update"}}' "$GITHUB_SHA")
+          payload=$(printf '{"event_type":"dataset-updated","client_payload":{"sha":"%s","reason":"watch state update"}}' "$STATE_SHA")
           curl --fail-with-body --silent --show-error -X POST "https://api.github.com/repos/$SITE_REPO/dispatches" -H "Accept: application/vnd.github+json" -H "Authorization: Bearer $DISPATCH_TOKEN" -H "X-GitHub-Api-Version: 2022-11-28" -d "$payload"
+
+      # A red run that nobody sees is a watch that has stopped. One issue,
+      # reopened and updated rather than duplicated, with the link to the run
+      # (devils-advocate, 2026-09-08: three failed runs went unnoticed).
+      - name: Say so when the run fails
+        # Last, and after the dispatch: an expired DISPATCH_TOKEN fails that
+        # step, and the run that noticed it must still say so (Standards
+        # review, 2026-09-08).
+        if: failure()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh label create watch --color b60205 --description "The daily source watch itself" --force
+          title="watch run failed"
+          body="The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          Commit: ${{ github.sha }}
+          Nothing here says a source changed — it says the check did not finish, so today's sources are unread."
+          existing=$(gh issue list --label watch --state open --search "$title in:title" --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body" --label watch
+          fi

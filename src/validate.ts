@@ -6,6 +6,12 @@ import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import type { Dataset } from "./types.js";
 
+/**
+ * How long the sentence a country-index card prints may be. Measured from the
+ * design: the card gives it two lines at 390 px.
+ */
+export const SUMMARY_FIRST_SENTENCE_MAX = 200;
+
 export interface ValidationError {
   path: string;
   message: string;
@@ -147,6 +153,24 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
 
   for (const n of dataset.notices ?? [])
     checkVocabulary(`/notices/${n.id}`, n.when.field, n.when.value !== undefined ? [n.when.value] : (n.when.values ?? []));
+
+  /**
+   * What a country index prints under a route's name is the summary's FIRST
+   * sentence, whole — never a cut with an ellipsis (Spec review, 2026-09-08).
+   * A card is one line of prose, so the sentence that has to stand alone in it
+   * is bounded here, where the exact rule can be written; the summary itself is
+   * the route page's opening line and may run on.
+   */
+  for (const country of dataset.countries)
+    for (const route of country.routes) {
+      const first = (route.summary ?? "").split(/(?<=\.)\s/)[0] ?? "";
+      if (first.length > SUMMARY_FIRST_SENTENCE_MAX)
+        errors.push({
+          path: `/countries/${country.code}/routes/${route.id}/summary`,
+          message: `its first sentence is ${first.length} characters and a card holds ${SUMMARY_FIRST_SENTENCE_MAX} — say the rest in a second sentence`,
+          keyword: "summaryFirstSentence",
+        });
+    }
 
   /**
    * A pair of answers that cannot both be true is only worth declaring if both

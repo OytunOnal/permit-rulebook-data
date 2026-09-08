@@ -663,3 +663,29 @@ describe("a resolved flag still says what it saw", () => {
     expect(resolution).toContain("2bbd20d8bc77277490c710df1b7f3d0059e0971e328314afd006d0aa8e23d107");
   });
 });
+
+/**
+ * The day the site prints beside "re-read daily" is a claim about EVERY source,
+ * so only a run that read every source may write it. `--only` fetches one entry
+ * to re-baseline it, which is not that (Standards review, 2026-09-08).
+ */
+describe("the watch stamps the day it read everything, and only then", () => {
+  const fetcherFor = (body: string): Fetcher => async () => ({ ok: true, body: new TextEncoder().encode(body) });
+
+  it("a full run records the day it ran", async () => {
+    const list: Watchlist = {
+      entries: [{ id: "one", url: "https://example.org/a", strategy: "html", kind: "value-source" }],
+    };
+    const { nextState } = await runWatch(list, { entries: {} }, fetcherFor("<p>a</p>"), "2026-09-08");
+    expect(nextState.last_run).toBe("2026-09-08");
+  });
+
+  it("the shipped state carries one, and the CLI keeps it through an --only run", () => {
+    expect(shippedState.last_run, "the watch has never stamped a run").toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+    const cli = readFileSync(fileURLToPath(new URL("../src/watch/cli-watch.ts", import.meta.url)), "utf8");
+    // The merge for `--only` keeps the day the last FULL run wrote.
+    expect(cli).toContain("last_run: state.last_run");
+    expect(cli).not.toContain("last_run: nextState.last_run");
+  });
+});
+

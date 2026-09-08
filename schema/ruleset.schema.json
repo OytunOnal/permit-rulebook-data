@@ -824,7 +824,9 @@
           ]
         },
         "summary": {
-          "type": "string"
+          "type": "string",
+          "description": "One or two sentences about the route. Its FIRST sentence stands alone as the card's gist on a country index and is bounded there (see the build's summaryFirstSentence check); the whole summary is the route page's own opening line and may run longer.",
+          "maxLength": 600
         },
         "info_url": {
           "type": "string",

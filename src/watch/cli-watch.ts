@@ -97,8 +97,11 @@ for (const r of reports) {
 if (commit) {
   // With `--only`, every other entry's snapshot is carried over untouched: a
   // targeted re-baseline must not quietly drop the twenty-nine it did not fetch.
+  // A targeted re-baseline is not a run of the watch: `--only` fetches one
+  // entry, so it must not stamp the day every source was last re-read. That
+  // date is a claim about all of them (Standards review, 2026-09-08).
   const merged = only
-    ? { entries: { ...state.entries, ...nextState.entries }, last_run: nextState.last_run }
+    ? { entries: { ...state.entries, ...nextState.entries }, last_run: state.last_run }
     : nextState;
   writeFileSync(statePath, JSON.stringify(merged, null, 2) + "\n");
   log("info", "state committed", {

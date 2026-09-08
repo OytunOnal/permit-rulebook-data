@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import dataset from "../data/dataset.json" with { type: "json" };
-import { validateDataset } from "../src/validate.js";
+import { SUMMARY_FIRST_SENTENCE_MAX, validateDataset } from "../src/validate.js";
 import { proseProvenance, renderableTexts } from "../src/prose.js";
 import { scopeLine, scopeWords, statedNotAsked, SCOPE_VALUES } from "../src/scope.js";
 import { declaredPlace, optionMeans, unlockTitleOf } from "../src/verdict.js";
@@ -319,13 +319,13 @@ describe("a reading is ours, and the words say so", () => {
     expect(vocational.stated, "a source statement appeared from nowhere").toEqual([]);
     expect(vocational.noted.length).toBe(2);
     expect(scopeLine(of("de-skilled-vocational")))
-      .toBe("quoted and dated · scored, two conditions we note but do not ask");
+      .toBe("quoted and dated · scored, two in our own reading, not asked");
 
     const talent = statedNotAsked(of("fr-talent-qualifie"), { split: true });
     expect(talent.stated.length).toBe(1);
     expect(talent.noted.length).toBe(1);
     expect(scopeLine(of("fr-talent-qualifie")))
-      .toBe("quoted and dated · scored, one condition stated but not asked and one condition we note but do not ask");
+      .toBe("quoted and dated · scored, one condition stated but not asked and one in our own reading");
   });
 
   it("the split is the same list the evidence is read from", () => {
@@ -337,14 +337,54 @@ describe("a reading is ours, and the words say so", () => {
       if (route.scope.value !== "some-conditions-stated-not-asked") continue;
       expect(split.stated.length + split.noted.length, route.id).toBeGreaterThan(0);
       expect(line.includes("stated but not asked"), route.id).toBe(split.stated.length > 0);
-      expect(line.includes("we note but do not ask"), route.id).toBe(split.noted.length > 0);
+      expect(line.includes("in our own reading"), route.id).toBe(split.noted.length > 0);
     }
   });
 
-  it("the count is required: nothing prints a number nobody passed", () => {
+  it("the count is required, and nothing prints a number nobody passed", () => {
+    // The type says so; this says what happens if a caller ignores the type,
+    // because `expect(fn).toBeDefined()` cannot fail (Standards review,
+    // 2026-09-08).
     // @ts-expect-error the second argument is not optional any more.
-    expect(() => scopeWords("some-conditions-stated-not-asked")).toBeDefined();
+    const said = scopeWords("some-conditions-stated-not-asked");
+    expect(said).not.toContain("undefined");
+    expect(said).not.toContain("NaN");
     expect(scopeWords("some-conditions-stated-not-asked", 1, 0))
       .toBe("quoted and dated · scored, one condition stated but not asked");
+    // And the reading form never borrows the avoid-list words.
+    for (const words of [scopeWords("some-conditions-stated-not-asked", 0, 2),
+      scopeWords("some-conditions-stated-not-asked", 1, 1)]) {
+      expect(words).not.toContain("we note");
+      expect(words).toContain("in our own reading");
+    }
   });
 });
+
+/**
+ * A country-index card prints the summary's first sentence whole. It used to
+ * be cut at 110 characters with an ellipsis on ten of the twenty-three cards
+ * (Spec review, 2026-09-08); now the sentence is bounded instead, so what a
+ * card shows is always a sentence somebody wrote to stand alone.
+ */
+describe("the sentence a card has to hold is bounded", () => {
+  const firstSentence = (route: { summary?: string }) =>
+    (route.summary ?? "").split(/(?<=[.])\s/)[0] ?? "";
+
+  it("every route's first sentence fits a card, and ends like a sentence", () => {
+    for (const route of routes()) {
+      const first = firstSentence(route);
+      expect(first.length, `${route.id}: ${first.length} characters`)
+        .toBeLessThanOrEqual(SUMMARY_FIRST_SENTENCE_MAX);
+      if (first) expect(first.trimEnd().endsWith("."), `${route.id}: "${first.slice(-40)}"`).toBe(true);
+    }
+  });
+
+  it("and a longer one fails the build rather than being cut", () => {
+    const wrecked = JSON.parse(JSON.stringify(dataset)) as Dataset;
+    const route = wrecked.countries[0]!.routes[0]!;
+    route.summary = `${"A sentence that runs and runs and keeps running ".repeat(6)}.`;
+    const said = validateDataset(wrecked).errors.map((e) => e.keyword);
+    expect(said, "an oversized first sentence passed the build").toContain("summaryFirstSentence");
+  });
+});
+

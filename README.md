@@ -55,8 +55,8 @@ official source URL, a verbatim quote, the retrieval date and its change
 history. A value without provenance fails schema validation and cannot build.
 Every route also declares its scope, and the page says it in the reader's own
 words: *quoted and dated · scored against your answers*, *quoted and dated ·
-scored, two conditions stated but not asked* (or *… we note but do not ask*,
-where the condition is our reading rather than the source's), or *quoted and
+scored, two conditions stated but not asked* (or *… and one in our own
+reading*, where what is not asked is our reading rather than the source's), or *quoted and
 dated · not scored* — together with the ids of the limbs it names and never
 asks. A route with no such declaration fails
 validation too, and the limbs are held against `data/exclusions.md` in both

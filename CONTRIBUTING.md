@@ -140,9 +140,10 @@ to it is a decision, not a fallback.
 - **One route or one value per pull request** where you can. A sweep across
   four countries is hard to read and harder to trust.
 
-## The three labels
+## The labels
 
-The tracker carries exactly three, and they are triage, not severity:
+Three of them are for triage — what a person filing an issue picks — and they
+are triage, not severity:
 
 - **`bug`** — the product does something it promised not to do: a wrong number,
   a quote that does not match its source, a page that breaks.
@@ -151,6 +152,15 @@ The tracker carries exactly three, and they are triage, not severity:
   overreaches.
 - **`new-need`** — a route, a country, a fact or an export that does not exist
   yet.
+
+Two more are the watch's own, created by the workflow and applied by it. They
+say where an issue came from, not what kind of thing it is, and nobody picks
+them by hand (Standards review, 2026-09-08):
+
+- **`source-change`** — a watched official source changed. The issue carries the
+  flag file, and a person reads the diff before any value moves.
+- **`watch`** — the daily run itself failed. It says the check did not finish,
+  which is not the same as a source having changed.
 
 ## The daily watch and the site rebuild
 

@@ -111,16 +111,21 @@ describe("a new dataset state wakes the site", () => {
    */
   it("runs last, so nothing a flag depends on sits behind a step that can fail on the token", () => {
     const names = [...watch.matchAll(/^\s*- name: (.+)$/gm)].map((m) => m[1]!.trim());
-    expect(names[names.length - 1], "the dispatch is not the last step").toBe("Tell the site to rebuild");
+    // The dispatch is the last step that DOES anything; the only thing after it
+    // is the notice that speaks when a step failed — including the dispatch
+    // itself, when its token has expired (Standards review, 2026-09-08).
+    expect(names[names.length - 1], "the failure notice is not last").toBe("Say so when the run fails");
+    expect(names[names.length - 2], "the dispatch is not the last acting step").toBe("Tell the site to rebuild");
 
     // Every step that acts on the flags comes before it — by position, not by
     // reputation: any step whose condition or body reads the flag collection.
+    // The failure notice is exempt: it runs after everything, on failure.
     const at = (name: string) => names.indexOf(name);
     const issues = at("Open issues for new flags only");
     expect(issues, "no step opens issues for the flags").toBeGreaterThan(-1);
     expect(issues).toBeLessThan(at("Tell the site to rebuild"));
     for (const name of names) {
-      if (name === "Tell the site to rebuild") continue;
+      if (name === "Tell the site to rebuild" || name === "Say so when the run fails") continue;
       const body = step(watch, name);
       if (!body.includes("newflags") && !body.includes("flags/")) continue;
       expect(at(name), `${name} runs after a step that can fail on the token`)
@@ -203,8 +208,10 @@ describe("a red run is never silent", () => {
     expect(say).toContain("gh issue list --label watch --state open");
     expect(say).toContain("gh issue comment");
     // It sits after everything that can fail, or it cannot see the failure.
+    // After everything, the dispatch included.
+    expect(names.indexOf("Say so when the run fails")).toBe(names.length - 1);
     expect(names.indexOf("Say so when the run fails"))
-      .toBeGreaterThan(names.indexOf("Fail the run if any source was unreachable"));
+      .toBeGreaterThan(names.indexOf("Tell the site to rebuild"));
   });
 
   it("and it says what a failure means, which is not that a source changed", () => {
@@ -213,3 +220,34 @@ describe("a red run is never silent", () => {
   });
 });
 
+/**
+ * The dispatch used to carry `$GITHUB_SHA` — the commit the run STARTED from,
+ * not the state it had just pushed. The site pins the data commit it builds
+ * against, so that walked the lock backwards to before the new state existed
+ * (Security review, 2026-09-08).
+ */
+describe("the dispatch names the state it just committed", () => {
+  it("the persist step publishes the commit it made", () => {
+    const persist = step(watch, "Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)");
+    expect(persist).toContain('echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"');
+  });
+
+  it("and the dispatch sends that, through the environment", () => {
+    const dispatch = step(watch, "Tell the site to rebuild");
+    expect(dispatch).toContain('STATE_SHA: "${{ steps.persist.outputs.sha }}"');
+    expect(dispatch).toContain('"sha":"%s"');
+    expect(dispatch).toContain('"$STATE_SHA"');
+    // Never the run's starting commit.
+    expect(dispatch).not.toContain("$GITHUB_SHA");
+  });
+
+  it("a flag file reaches the issue step as data, not as script", () => {
+    const issues = step(watch, "Open issues for new flags only");
+    expect(issues).toContain('FLAGS: "${{ steps.newflags.outputs.files }}"');
+    expect(issues).toContain('done <<< "$FLAGS"');
+    // The old shape interpolated the list into the script body.
+    expect(issues).not.toContain('<<< "${{ steps.newflags');
+    // And only a flag file this repository writes is ever opened.
+    expect(issues).toContain("case \"$f\" in watch/flags/*.md)");
+  });
+});

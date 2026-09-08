@@ -26,14 +26,16 @@ export { SCOPE_VALUES } from "./types.js";
 const WORDS: Record<ScopeValue, (stated: number, noted: number) => string> = {
   "every-deciding-rule-asked": () => "quoted and dated · scored against your answers",
   "some-conditions-stated-not-asked": (stated, noted) => {
-    // What the source states and what we merely note are different claims, and
-    // the reader is told which is which: a reading is ours, and two routes were
-    // saying an authority "stated" our own note (Spec review, 2026-09-08).
-    const parts = [
-      stated ? `${countWords(stated)} stated but not asked` : "",
-      noted ? `${countWords(noted)} we note but do not ask` : "",
-    ].filter(Boolean);
-    return `quoted and dated · scored, ${parts.join(" and ")}`;
+    // What the source states and what we read into the gap are different
+    // claims, and the reader is told which is which — in the glossary's words.
+    // A source STATES a condition; what is ours is "in our own reading", never
+    // "we note", and a reading is not called a condition (Standards review,
+    // 2026-09-08).
+    const said = stated ? `${countWords(stated)} stated but not asked` : "";
+    const ours = noted ? `${numberWord(noted)} in our own reading` : "";
+    if (said && ours) return `quoted and dated · scored, ${said} and ${ours}`;
+    if (ours) return `quoted and dated · scored, ${ours}, not asked`;
+    return `quoted and dated · scored, ${said}`;
   },
   "rules-quoted-nothing-asked": () => "quoted and dated · not scored",
 };
@@ -53,6 +55,9 @@ export function countedWords(n: number, one: string, many = `${one}s`): string {
 }
 
 const countWords = (n: number): string => countedWords(n, "condition");
+
+/** The count alone, in the words a sentence reads in. */
+const numberWord = (n: number): string => (n < NUMBER_WORDS.length ? NUMBER_WORDS[n]! : String(n));
 
 /**
  * `stated` is how many conditions the SOURCE states without our asking, and
