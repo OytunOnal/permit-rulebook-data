@@ -304,6 +304,11 @@
               },
               "source_url": {
                 "type": "string"
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Why this reading was superseded, in one line — \"re-read 2026-09-08, unchanged\" for a value confirmed at its source on a new day, or what moved when one did. Without it a superseded entry carrying the same value as the live one reads as a change that never happened."
               }
             }
           }
@@ -477,6 +482,11 @@
               },
               "source_url": {
                 "type": "string"
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Why this reading was superseded, in one line — \"re-read 2026-09-08, unchanged\" for a value confirmed at its source on a new day, or what moved when one did. Without it a superseded entry carrying the same value as the live one reads as a change that never happened."
               }
             }
           }
@@ -540,6 +550,11 @@
               },
               "source_url": {
                 "type": "string"
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Why this reading was superseded, in one line — \"re-read 2026-09-08, unchanged\" for a value confirmed at its source on a new day, or what moved when one did. Without it a superseded entry carrying the same value as the live one reads as a change that never happened."
               }
             }
           }

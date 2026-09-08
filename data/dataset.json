@@ -831,9 +831,17 @@
                 "currency": "EUR",
                 "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
                 "quote": "Für die „große“ Blaue Karte EU muss ein Mindestbruttojahresgehalt erreicht werden, welches im Jahr 2026 50.700 Euro beträgt.",
-                "retrieved_at": "2026-09-04",
+                "retrieved_at": "2026-09-08",
                 "legal_basis": "§ 18g AufenthG",
-                "history": []
+                "history": [
+                  {
+                    "amount": 50700,
+                    "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                    "quote": "Für die „große“ Blaue Karte EU muss ein Mindestbruttojahresgehalt erreicht werden, welches im Jahr 2026 50.700 Euro beträgt.",
+                    "retrieved_at": "2026-09-04",
+                    "note": "re-read 2026-09-08, unchanged"
+                  }
+                ]
               }
             }
           ],

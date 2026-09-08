@@ -161,3 +161,67 @@ describe("an absent quote is a decision, not an essay", () => {
     expect(validateDataset(data).ok).toBe(false);
   });
 });
+
+/**
+ * A value that was read again, and did not move.
+ *
+ * The "value changed" half of the loop had never run before the launch, so the
+ * shape of a re-read was untested: `retrieved_at` moves to the day it was read
+ * and the reading it replaces goes into `history`, append-only, the same way a
+ * changed value does. A superseded entry carrying the SAME value as the live
+ * one reads as a change that never happened, so it says in one line why it is
+ * there — which is what `note` is for (2026-09-08).
+ */
+describe("a re-read is recorded like a change", () => {
+  const historiesOf = (data: {
+    countries: { routes: { id: string; criteria: unknown[] }[] }[];
+  }): { where: string; live: unknown; entry: Record<string, unknown> }[] => {
+    const out: { where: string; live: unknown; entry: Record<string, unknown> }[] = [];
+    const walk = (node: unknown, where: string): void => {
+      if (Array.isArray(node)) return node.forEach((n, i) => walk(n, `${where}/${i}`));
+      if (!node || typeof node !== "object") return;
+      const held = node as Record<string, unknown>;
+      if (Array.isArray(held["history"])) {
+        const live = held["amount"] ?? held["value"] ?? held["text"];
+        for (const [i, entry] of (held["history"] as Record<string, unknown>[]).entries())
+          out.push({ where: `${where}/history/${i}`, live, entry });
+      }
+      for (const [key, value] of Object.entries(held)) if (key !== "history") walk(value, `${where}/${key}`);
+    };
+    walk(data.countries, "/countries");
+    return out;
+  };
+
+  it("every superseded reading is older than the live one, and says why it was superseded", () => {
+    const all = historiesOf(load());
+    for (const { where, live, entry } of all) {
+      const then = entry["retrieved_at"] as string;
+      expect(then, `${where} has no date`).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+      // A reading that says nothing new is a reading that must explain itself.
+      const same = (entry["amount"] ?? entry["value"] ?? entry["text"]) === live;
+      if (same)
+        expect(String(entry["note"] ?? ""), `${where} repeats the live value with no note saying why`)
+          .toMatch(/[a-z]/);
+    }
+  });
+
+  it("the German Blue Card threshold carries the re-read the launch owed", () => {
+    const data = load();
+    const route = data.countries
+      .flatMap((c: { routes: { id: string; criteria: Record<string, unknown>[] }[] }) => c.routes)
+      .find((r: { id: string }) => r.id === "de-blue-card-general");
+    const threshold = route.criteria
+      .find((c: Record<string, unknown>) => c["field"] === "salary_eur_year")!["threshold"] as
+      Record<string, unknown>;
+    const history = threshold["history"] as Record<string, unknown>[];
+    expect(history.length, "the re-read left no trail").toBe(1);
+    expect(history[0]!["amount"], "the re-read invented a movement").toBe(threshold["amount"]);
+    expect(history[0]!["retrieved_at"] as string < (threshold["retrieved_at"] as string),
+      `${history[0]!["retrieved_at"]} is not before ${threshold["retrieved_at"]}`).toBe(true);
+    expect(String(history[0]!["note"] ?? ""), "the re-read does not say it read the same value")
+      .toContain("unchanged");
+    // The sentence the value stands on is the one that was read again.
+    expect(history[0]!["quote"]).toBe(threshold["quote"]);
+    expect(history[0]!["source_url"]).toBe(threshold["source_url"]);
+  });
+});
