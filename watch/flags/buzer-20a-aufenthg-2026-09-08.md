@@ -9,3 +9,14 @@ Intent: § 20a AufenthG — the Opportunity Card's own statute. Backs the caveat
 
 > …(1) Eine Chancenkarte ist eine Aufenthaltserlaubnis zur Suche nach einer Erwerbstätigkeit oder nach Maßnahmen zur Anerke…
 Update the dataset value(s) with quote + retrieval date; move the old value into history.
+
+## Resolved — 2026-09-09 (read by the session)
+
+The same page furniture that raised `buzer-6-beschv` on 2026-09-08 —
+navigation, an ad block, "Frühere Fassungen" — and resolved there the same
+day: no statute text moved. The entry's slice was bound to the statute body in
+commit `3030847`.
+
+Left undone at the time, and recorded here because it cost something: the
+baseline was not re-read with the new slice, so the run of 2026-09-09 flagged
+this entry again, as its own file says. That gap is now a test.

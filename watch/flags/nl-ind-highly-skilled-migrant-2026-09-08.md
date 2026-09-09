@@ -9,3 +9,12 @@ Intent: IND highly skilled migrant requirement list. Backs the recognised-sponso
 
 > …To work in the Netherlands as a highly skilled migrant, you need a residence permit. Only an employer recognised by the …
 Update the dataset value(s) with quote + retrieval date; move the old value into history.
+
+## Resolved — 2026-09-09 (read by the session)
+
+Walked on the day it was raised, in commit `9b2911f`: the IND requirement
+list's own sentence about intra-corporate transferees was added to the dataset
+as a sourced caveat on both NL highly-skilled routes, the entry's slice was
+moved to the lede, and the state was re-baselined in the same commit — the
+snapshot has carried `2f10ebbe` ever since. What was missing was this
+section; the flag was never left open in the data.
