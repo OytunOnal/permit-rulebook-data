@@ -1,20 +1,27 @@
-name: New need — a route, a country or a fact that is not here yet
-description: Something the data does not cover, and you need it to.
+name: New need — something is not here yet, or the product should do something it does not
+description: A route, a country, a fact, an export — or a suggestion about the product itself.
 title: "[new-need] "
 labels: ["new-need"]
 body:
   - type: markdown
     attributes:
       value: |
-        Before you file: `data/exclusions.md` lists every route that was
+        Two kinds of thing belong here, and neither needs an apology: data
+        that is missing (a route, a country, a field, an export) and a
+        suggestion about the product itself (something it should do, or do
+        differently, that is not a defect).
+
+        If it is a route: `data/exclusions.md` lists every route that was
         researched and deliberately left out, with the reason. If yours is
-        there, say so here and say what has changed — that is a stronger case
-        than a fresh request.
+        there, say so and say what has changed — that is a stronger case than
+        a fresh request.
   - type: textarea
     id: need
     attributes:
-      label: What is missing
-      description: The route, the country, the field, or the export.
+      label: What is missing, or what should the product do
+      description: >
+        The route, the country, the field, the export — or the thing you
+        wanted the product to do and it did not.
     validations:
       required: true
   - type: textarea
@@ -23,20 +30,21 @@ body:
       label: Who needs it, and for what
       description: >
         The situation a person is in when this gap costs them something. One
-        concrete case beats a category.
+        concrete case beats a category. If you are the person, say so — that
+        is the strongest case there is.
     validations:
       required: true
   - type: textarea
     id: source
     attributes:
-      label: The official source, if you have it
+      label: The official source, if this is about data
       description: >
         A route only ships when its rules can be quoted from an official page
         with the date they were read. A link here makes it a much shorter job.
+        Leave it empty for a suggestion about the product.
   - type: checkboxes
     id: checks
     attributes:
       label: Before you file
       options:
-        - label: I checked data/exclusions.md for this route.
-          required: true
+        - label: If this is about a route — I checked data/exclusions.md for it.
