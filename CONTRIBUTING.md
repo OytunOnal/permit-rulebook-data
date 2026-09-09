@@ -188,6 +188,29 @@ Two things carry it, and they are deliberately redundant:
   site to rebuild" step here, but only when the run actually committed new
   state. This is the fast path: a real change is published in minutes.
 
+### Moving a slice re-reads its baseline, in the same commit
+
+Some entries in `watch/watchlist.json` carry a `slice`: two markers bounding
+the region of a page that is actually watched, so a page whose ads rotate does
+not report a change every day. The slice decides what is hashed — so moving one
+changes the hash with the authority having touched nothing.
+
+If the baseline is not re-read, the next run reports **our own edit as a source
+change**. That is not hypothetical: the buzer statutes (§ 20a AufenthG, § 6
+BeschV, Anlage AufenthG) were bound to their statute bodies on 2026-09-08, the
+baseline stayed as it was, and the run of 2026-09-09 filed three flags and
+three issues about text that had not moved — today's sliced text was a
+substring of yesterday's, character for character.
+
+So: a commit that moves, adds or removes a slice also re-reads that entry —
+
+    npm run watch -- --only <entry-id>
+
+— and commits the new `watch/state.json` beside the watchlist change, with the
+reason in the entry's own `history`. `npm test` refuses a state whose
+`slice_read` fingerprint is not the slice the watchlist names today, so this
+cannot be forgotten twice.
+
 ### The `DISPATCH_TOKEN` secret
 
 The dispatch step authenticates as a person, not as the workflow: `GITHUB_TOKEN`

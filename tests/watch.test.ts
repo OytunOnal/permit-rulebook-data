@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { htmlToText, normalize } from "../src/watch/normalize.js";
 import {
   checkCoverage, checkQuotes, datasetLearnUrls, datasetQuotes, datasetSourceUrls, runWatch, sha256,
+  sliceFingerprint,
   type Fetcher, type WatchState, type Watchlist,
 } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
@@ -689,3 +690,49 @@ describe("the watch stamps the day it read everything, and only then", () => {
   });
 });
 
+
+/**
+ * A slice decides which region of a page is watched. Move one and the hash
+ * moves with it — the authority having touched nothing — so the next run
+ * reports our own edit as a source change, and a reader who learns that the
+ * flags mean nothing has lost the product's one promise.
+ *
+ * It has happened: the buzer statutes were bound to their bodies on
+ * 2026-09-08 and the baseline was never re-read, so the run of 2026-09-09
+ * filed three flags and three issues about text that had not moved (today's
+ * sliced text was a substring of yesterday's, character for character).
+ *
+ * The rule this case enforces: a commit that moves a slice re-reads that
+ * entry's baseline in the same commit — `npm run watch -- --only <id>`.
+ */
+describe("a slice and the baseline it was read through move together", () => {
+  it("every shipped snapshot was read through the slice the watchlist names today", () => {
+    for (const entry of shippedWatchlist.entries) {
+      const snapshot = shippedState.entries[entry.id];
+      if (!snapshot) continue; // never fetched: the reachability cases own that
+      expect(
+        snapshot.slice_read,
+        `${entry.id}: the slice moved after the baseline was read — re-read it in the ` +
+          `same commit (npm run watch -- --only ${entry.id}), or its next run files our own edit as a source change`,
+      ).toBe(sliceFingerprint(entry));
+    }
+  });
+
+  it("a moved marker re-stamps the snapshot even when the text it selects is unchanged", async () => {
+    const page = "<p>before</p><p>THE BODY</p><p>after</p>";
+    const fetcher: Fetcher = async () => ({ ok: true, body: enc(page) });
+    const sliced = (from: string, to: string): Watchlist => ({
+      entries: [{ id: "one", url: "https://example.org/a", strategy: "html", kind: "value-source", slice: { from, to } }],
+    });
+    const first = await runWatch(sliced("THE", "BODY"), { entries: {} }, fetcher, "2026-09-08");
+    expect(first.nextState.entries.one.slice_read).toBe(sliceFingerprint(sliced("THE", "BODY").entries[0]));
+    // The same words, selected by different markers: the reading does not
+    // change, but what it was read through does.
+    const second = await runWatch(sliced("THE B", "ODY"), first.nextState, fetcher, "2026-09-09");
+    expect(second.reports[0].outcome).toBe("unchanged");
+    expect(second.nextState.entries.one.retrieved_at, "an unchanged reading keeps the day it was first seen")
+      .toBe("2026-09-08");
+    expect(second.nextState.entries.one.slice_read)
+      .toBe(sliceFingerprint(sliced("THE B", "ODY").entries[0]));
+  });
+});
