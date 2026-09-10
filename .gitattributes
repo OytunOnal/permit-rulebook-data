@@ -1,0 +1,10 @@
+# One line ending, everywhere.
+#
+# Git was handing this checkout CRLF on Windows while CI read LF, so code that
+# read a file — the exclusions twin parser, the stylesheets inlined into every
+# route page — behaved differently on the machine the human walks from than in
+# the pipeline. Two gates were green in CI and red here before this line
+# (2026-09-10). Text files are stored and checked out with LF on every
+# platform; the parsers stay defensive, but they no longer carry the product
+# alone.
+* text=auto eol=lf
