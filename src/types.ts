@@ -370,6 +370,18 @@ export interface Route {
   kind: "res-work" | "seek" | "self-employed";
   summary?: string;
   info_url: string;
+  /**
+   * The address this route keeps, whatever it is called.
+   *
+   * A page's URL was derived from its name, so correcting a label moved four
+   * live pages — `/france/ict-seconded-employee/` became
+   * `/france/sent-by-your-employer-abroad/` days after the sitemap went to
+   * Google and Bing, and the Dutch orientation year became a sentence
+   * (human's walk, 2026-09-10). A name is for the reader and changes when it
+   * reads badly; an address is a promise to everyone who linked to it. Set it
+   * once, and only to keep an address that already exists.
+   */
+  slug?: string;
   /** What the interview asks of this route, declared. Required: a route with
    * no scope statement fails validation (s6 decision 3). */
   scope: RouteScope;

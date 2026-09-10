@@ -30,8 +30,20 @@ import { routeReadings, routeStatements } from "./engine.js";
 const ROUTE_ID_IN_PROSE = /`([a-z]{2}-[a-z0-9-]+)`/g;
 const TWIN_BLOCK = /```exclusions\n([\s\S]*?)```/;
 
+/**
+ * A file's line endings belong to whoever checked it out, not to the parser.
+ *
+ * The twin block was matched with a literal `\n` after the fence, so a Windows
+ * working copy — where git hands the file over with CRLF — reported that
+ * `data/exclusions.md` had no twin at all. CI never saw it, because CI checks
+ * out on Linux: the gate was green everywhere except on the machine the
+ * human's own walk ran from (2026-09-10).
+ */
+const lf = (text: string): string => text.split("\r\n").join("\n");
+
 /** The route ids the prose names in backticks, above the twin. */
-export function routesInProse(text: string): Set<string> {
+export function routesInProse(rawText: string): Set<string> {
+  const text = lf(rawText);
   const twin = text.indexOf("```exclusions");
   const prose = twin < 0 ? text : text.slice(0, twin);
   return new Set([...prose.matchAll(ROUTE_ID_IN_PROSE)].map((m) => m[1]));
@@ -39,8 +51,8 @@ export function routesInProse(text: string): Set<string> {
 
 /** The twin: route id to the limb ids the file records for it. `(none)` is a
  * real answer — the file records the route in order to say nothing is excluded. */
-export function excludedLimbs(text: string): Map<string, string[]> {
-  const block = TWIN_BLOCK.exec(text);
+export function excludedLimbs(rawText: string): Map<string, string[]> {
+  const block = TWIN_BLOCK.exec(lf(rawText));
   if (!block) throw new Error("data/exclusions.md has no ```exclusions``` block");
   const out = new Map<string, string[]>();
   for (const line of block[1].split("\n")) {

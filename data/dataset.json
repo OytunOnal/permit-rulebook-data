@@ -641,8 +641,8 @@
         "value": "DZ"
       },
       "kind": "open-question",
-      "title": "Algeria: a separate agreement, and a question no page we found answers",
-      "body": "France does not apply the residence-permit provisions of its own immigration code to Algerian nationals: the Franco-Algerian agreement of 27 December 1968 governs instead. The Conseil d'État said so on 2 March 2026, in a case about a trader's residence certificate rather than a talent card, so its words settle the principle and not the talent cards themselves. The page the administration routes an Algerian reader to is a one-year certificat de résidence; for a salaried job in France it says the certificate will carry the mention salarié, and none of the situations it lists is a passeport talent or an EU Blue Card — read to the end on 2026-09-10. Against that stands the EU directive behind the Blue Card, whose scope article covers third-country nationals admitted for highly qualified employment. We searched service-public, france-visas, the ministry and the ANEF portal on 2026-09-10 for a page saying whether an Algerian national may hold a passeport talent, and found none. So the four talent routes on this site are scored exactly as they are for any other non-EU passport: that is us declining to guess, not an answer.",
+      "title": "Algeria: France applies a different agreement to you",
+      "body": "For Algerian nationals, France applies the agreement of 27 December 1968 instead of its own immigration code — the Conseil d'État said so, in a case about a shopkeeper's permit rather than a talent card. The page France sends an Algerian reader to offers a one-year certificat de résidence: no passeport talent, no EU Blue Card. Against that, the EU directive behind the Blue Card covers third-country nationals and names no exception. We searched the official sites on 2026-09-10 and found no page that settles it — so we do not guess. The four routes below are shown with their rules, and whether they are open to your passport is not something this site can tell you.",
       "source": {
         "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000053612496",
         "quote": "Il suit de là que les dispositions du code de l'entrée et du séjour des étrangers et du droit d'asile qui sont relatives aux différents titres de séjour qui peuvent être délivrés aux étrangers en général et aux conditions de leur délivrance, ne sont pas applicables aux ressortissants algériens, lesquels relèvent à cet égard des règles fixées par l'accord précité.",
@@ -1310,7 +1310,7 @@
             {
               "id": "hosting-agreement-with-a-research-facility",
               "kind": "precondition",
-              "text": "A hosting agreement, or an equivalent contract, concluded with a research facility for a research project",
+              "text": "A hosting agreement — the formal agreement a research institution signs to take you on — or an equivalent contract, concluded with a research facility for a research project",
               "source": {
                 "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
                 "quote": "you will need to have concluded a hosting agreement or corresponding contract with a research facility to carry out a research project",
@@ -1322,7 +1322,8 @@
         },
         {
           "id": "de-ict-card",
-          "name": "ICT Card — intra-corporate transfer (§ 19)",
+          "name": "ICT Card — a transfer within your company (§ 19)",
+          "slug": "ict-card-intra-corporate-transfer",
           "kind": "res-work",
           "summary": "Your company moves you to its German branch for more than 90 days, as a manager, specialist or trainee. Up to three years, or one year for trainees.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
@@ -2011,7 +2012,8 @@
         },
         {
           "id": "fr-ict",
-          "name": "ICT — seconded employee (salarié détaché ICT)",
+          "name": "Sent by your employer abroad (salarié détaché ICT)",
+          "slug": "ict-seconded-employee",
           "kind": "res-work",
           "summary": "Your group moves you to France for an assignment of more than a year, in a senior or expert role. Up to three years, and it cannot be renewed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
@@ -3029,7 +3031,7 @@
             {
               "id": "hosting-agreement-or-contract-with-the-research-body",
               "kind": "precondition",
-              "text": "A hosting agreement or an employment contract with the research body",
+              "text": "A hosting agreement — the formal agreement a research institution signs to take you on — or an employment contract with the research body",
               "source": {
                 "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
                 "quote": "el solicitante de una autorización de residencia para investigación UE deberá presentar un convenio de acogida o contrato de trabajo",
@@ -4117,7 +4119,8 @@
         },
         {
           "id": "nl-ict",
-          "name": "Intra-corporate transferee (Directive 2014/66/EU)",
+          "name": "Sent by your employer abroad (intra-corporate transferee)",
+          "slug": "intra-corporate-transferee",
           "kind": "res-work",
           "summary": "Your company moves you to the Netherlands as a manager, specialist or trainee. The salary has to reach the highly skilled migrant level for your age. Up to three years, or one for trainees.",
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
@@ -4474,7 +4477,8 @@
         },
         {
           "id": "nl-orientation-year",
-          "name": "Orientation year (zoekjaar)",
+          "name": "Orientation year — a year to look for work after studying (zoekjaar)",
+          "slug": "orientation-year",
           "kind": "seek",
           "summary": "A one-year permit to look for work — any job, no separate work permit, and it cannot be extended. The Dutch immigration service (IND) grants it after certain studies, doctorates or research finished in the three years before you apply; its list of qualifying programmes and institutions is longer than the two cases asked about here, so read its own page before ruling yourself out. Having a job offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",

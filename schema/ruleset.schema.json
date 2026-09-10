@@ -1031,6 +1031,11 @@
           "items": {
             "$ref": "#/$defs/routeReading"
           }
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "The address this route keeps when its name changes. Set only to preserve a URL that already exists."
         }
       }
     },
