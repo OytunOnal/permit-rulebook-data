@@ -45,7 +45,8 @@ describe("s6 — every route declares what the checker asks of it", () => {
       expect(r.scope.reason.trim().length, r.id).toBeGreaterThan(40);
       expect(r.scope.reason, r.id).toMatch(/\.$/);
     }
-    expect(routes().length).toBe(23);
+    // 28 since s9: 23 the product scores, five it quotes and does not.
+    expect(routes().length).toBe(28);
     // Authored for the route it is on: two Blue Card routes shipped a
     // byte-identical sentence, which is a template, not a reading.
     const reasons = routes().map((r) => r.scope.reason);
@@ -177,13 +178,15 @@ describe("s6 — every route declares what the checker asks of it", () => {
   });
 
   it("a route the interview asks nothing of says exactly that", () => {
-    // No route in the shipped dataset is in this state. The rule is held over
-    // one that is, so the day the third value is needed it is already decided
-    // rather than argued about.
+    // Held over an invented route since s6, when nothing in the dataset was in
+    // this state. Five are now (see tests/s9.test.ts), and the rule the invented
+    // one carries has changed with them: a route that asks nothing carries no
+    // criteria at all, because a criterion is the one thing here that decides a
+    // case, and the build refuses the combination in both directions.
     const asksNothing: Route = {
       id: "de-quoted-only", name: "Quoted only", kind: "res-work",
       info_url: "https://example.org/",
-      criteria: [{ field: "citizenship", op: "eq", value: "third_country" }],
+      criteria: [],
       scope: {
         value: "rules-quoted-nothing-asked",
         reason: "The rules of this route are quoted here in full; the checker asks nothing about it.",
@@ -209,11 +212,12 @@ describe("s6 — every route declares what the checker asks of it", () => {
 
   it("the reason is declared ours, and counted as ours", () => {
     const reasons = renderableTexts(ds).filter((t) => t.path.endsWith("/scope/reason"));
-    expect(reasons.length).toBe(23);
+    expect(reasons.length).toBe(28);
     for (const t of reasons) expect(t.kind, t.path).toBe("ours");
-    // 8 route readings + these 23 reasons + the 2 contradiction sentences and
-    // the 3 money-question doors added on 2026-09-08.
-    expect(proseProvenance(ds).ours).toBe(8 + 23 + 2 + 3);
+    // 13 route readings + these 28 reasons + the 2 contradiction sentences and
+    // the 3 money-question doors added on 2026-09-08. Five of each arrived with
+    // s9, on the routes that are quoted and not scored.
+    expect(proseProvenance(ds).ours).toBe((8 + 5) + (23 + 5) + 2 + 3);
   });
 });
 

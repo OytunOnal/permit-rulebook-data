@@ -1002,7 +1002,7 @@
         },
         "criteria": {
           "type": "array",
-          "minItems": 1,
+          "description": "The rules that decide this route against a reader's answers. Empty only where the route's scope value says nothing is asked — the build refuses that combination in either direction (see the quotedNothingAsked check), because a route that carries one criterion is scored whatever its scope statement claims, and a scored route with no rules would be met by everybody.",
           "items": {
             "$ref": "#/$defs/criterion"
           }

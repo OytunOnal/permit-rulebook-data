@@ -5,10 +5,11 @@ answered against what the reader declared, every value carrying the authority's
 quote and the day it was read](docs/media/results-2026-09-08.png)](https://permitrulebook.com)
 
 **Every route, quoted and dated.** This repository is the ruleset and the
-engine behind [permitrulebook.com](https://permitrulebook.com): 23
-employment-based routes across Germany, France, Spain and the Netherlands,
-every value carrying the authority's own sentence, the page it came from and
-the day it was read, re-read daily.
+engine behind [permitrulebook.com](https://permitrulebook.com): 28
+employment-based routes across Germany, France, Spain and the Netherlands — 23
+scored against a reader's declared answers and five quoted and dated without
+being scored — every value carrying the authority's own sentence, the page it
+came from and the day it was read, re-read daily.
 
 **Who it is for.** Anyone who needs the rules themselves rather than a verdict —
 a researcher, a relocation team, another site. The data is open, the engine is
@@ -75,7 +76,7 @@ the boundary between them and what crosses it:
 [docs/spine/ARCHITECTURE.md](https://github.com/OytunOnal/permit-rulebook/blob/master/docs/spine/ARCHITECTURE.md).
 
 - `schema/ruleset.schema.json` — the public contract (JSON Schema 2020-12)
-- `data/dataset.json` — the dataset (DE · FR · ES · NL, 23 employment-based routes)
+- `data/dataset.json` — the dataset (DE · FR · ES · NL, 28 employment-based routes: 23 scored, 5 quoted and dated but not scored)
 - `data/exclusions.md` — every researched-but-excluded route with its reason, plus the machine-readable twin the build checks it against
 - `src/engine.ts` — evaluation: band derivation, met/near/hold, gap analysis
 - `src/questions.ts` — question set derived from rule predicates (never desyncs)

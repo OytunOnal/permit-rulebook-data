@@ -327,6 +327,18 @@ export const SCOPE_VALUES = [
 
 export type ScopeValue = (typeof SCOPE_VALUES)[number];
 
+/**
+ * The one scope value that says the product does not rule on this route.
+ *
+ * Named here, beside the values themselves, because four files now decide
+ * something on it — the schema's twin in `validate.ts`, the engine's list of
+ * what `evaluate` returns, the interview's list of what it asks about, and the
+ * site's list of what it offers — and a string spelled out at four call sites
+ * is a fact four files agree on by habit. It is the same reason
+ * `CARVE_OUT_FIELD` is a constant (s9).
+ */
+export const QUOTED_NOT_SCORED: ScopeValue = "rules-quoted-nothing-asked";
+
 export interface RouteScope {
   value: ScopeValue;
   /**

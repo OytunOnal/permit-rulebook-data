@@ -1,5 +1,6 @@
 import {
-  deriveBands, fieldOptions, informativeFields, isRouteAlive, optionEquivalenceClasses, referencedFields,
+  deriveBands, fieldOptions, informativeFields, isRouteAlive, isScored, optionEquivalenceClasses,
+  referencedFields,
 } from "./engine.js";
 import type { Dataset, Profile, Question } from "./types.js";
 
@@ -53,7 +54,10 @@ function liveRouteCount(dataset: Dataset, profile: Profile): number {
   let count = 0;
   for (const country of dataset.countries)
     for (const route of country.routes)
-      if (isRouteAlive(dataset, route, profile)) count++;
+      // A route the product never scores is never one of the routes still
+      // standing: it would count five toward every option alike and call a
+      // number that is not the reader's "routes still alive" (s9).
+      if (isScored(route) && isRouteAlive(dataset, route, profile)) count++;
   return count;
 }
 

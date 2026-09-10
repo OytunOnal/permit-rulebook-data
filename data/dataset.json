@@ -1616,6 +1616,146 @@
               }
             }
           ]
+        },
+        {
+          "id": "de-selbstaendige-taetigkeit",
+          "name": "Self-employment and freelance work (§ 21)",
+          "kind": "self-employed",
+          "summary": "One section of the Residence Act holding two routes: a residence permit for running a business, and an easier one for the liberal professions — doctor, interpreter, artist, writer, architect.",
+          "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/SelbstaendigeTaetigkeit/selbstaendigetaetigkeit-node.html",
+          "scope": {
+            "value": "rules-quoted-nothing-asked",
+            "reason": "This route is not scored, and nothing below asks you anything. The permit is granted on an assessment of your business plan — how sound the idea is, what you have run before, how much capital you are putting in, what it does for jobs and training, and what it adds to innovation and research — weighed together with the local chambers, the trade authorities and the professional bodies. Five judgements and a committee are not something a form can reach, so we state what the statute says, in its own words, with the day we read it.",
+            "not_asked": [
+              "an-economic-interest-and-secured-financing",
+              "the-assessment-weighs-five-things",
+              "the-chambers-and-professional-bodies-are-consulted",
+              "a-business-plan-is-what-is-examined",
+              "over-forty-five-needs-old-age-provision",
+              "at-most-three-years",
+              "graduates-and-researchers-are-judged-differently",
+              "freelance-work-is-granted-on-its-own-terms",
+              "a-treaty-of-reciprocity-can-open-it",
+              "nothing-here-is-a-fact-about-you"
+            ]
+          },
+          "criteria": [],
+          "statements": [
+            {
+              "id": "an-economic-interest-and-secured-financing",
+              "kind": "precondition",
+              "text": "A permit for self-employment may be granted where there is an economic interest or a regional need, where the activity is expected to have positive effects on the economy, and where the financing is secured by your own capital or by a credit commitment.",
+              "source": {
+                "source_url": "https://www.buzer.de/21_AufenthG.htm",
+                "quote": "Einem Ausländer kann eine Aufenthaltserlaubnis zur Ausübung einer selbständigen Tätigkeit erteilt werden, wenn 1. ein wirtschaftliches Interesse oder ein regionales Bedürfnis besteht, 2. die Tätigkeit positive Auswirkungen auf die Wirtschaft erwarten lässt und 3. die Finanzierung der Umsetzung durch Eigenkapital oder durch eine Kreditzusage gesichert ist.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "§ 21 Abs. 1 Satz 1 AufenthG (consolidated mirror, buzer.de)",
+                "history": []
+              }
+            },
+            {
+              "id": "the-assessment-weighs-five-things",
+              "kind": "caveat",
+              "text": "Whether those conditions are met is assessed on the viability of the business idea behind them, your entrepreneurial experience, the amount of capital committed, the effect on employment and training, and the contribution to innovation and research.",
+              "source": {
+                "source_url": "https://www.buzer.de/21_AufenthG.htm",
+                "quote": "Die Beurteilung der Voraussetzungen nach Satz 1 richtet sich insbesondere nach der Tragfähigkeit der zu Grunde liegenden Geschäftsidee, den unternehmerischen Erfahrungen des Ausländers, der Höhe des Kapitaleinsatzes, den Auswirkungen auf die Beschäftigungs- und Ausbildungssituation und dem Beitrag für Innovation und Forschung.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "§ 21 Abs. 1 Satz 2 AufenthG (consolidated mirror, buzer.de)",
+                "history": []
+              }
+            },
+            {
+              "id": "the-chambers-and-professional-bodies-are-consulted",
+              "kind": "caveat",
+              "text": "The bodies with expertise where you plan to work take part in the decision: the chambers, the trade authorities, the public-law professional associations and the authorities that license the profession.",
+              "source": {
+                "source_url": "https://www.buzer.de/21_AufenthG.htm",
+                "quote": "Bei der Prüfung sind die für den Ort der geplanten Tätigkeit fachkundigen Körperschaften, die zuständigen Gewerbebehörden, die öffentlich-rechtlichen Berufsvertretungen und die für die Berufszulassung zuständigen Behörden zu beteiligen.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "§ 21 Abs. 1 Satz 3 AufenthG (consolidated mirror, buzer.de)",
+                "history": []
+              }
+            },
+            {
+              "id": "a-business-plan-is-what-is-examined",
+              "kind": "caveat",
+              "text": "What is examined, and what it is examined from: a business plan, submitted with the application, showing the idea, the experience, the capital, the regional effect on jobs and training, and the contribution to innovation and research.",
+              "source": {
+                "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/SelbstaendigeTaetigkeit/selbstaendigetaetigkeit-node.html",
+                "quote": "The following criteria in particular will be examined by reference to an informative and meaningful business plan, which you must submit when applying for the residence title: the sustainability of your business idea, your business experience, the amount of capital which you propose to invest, the regional impact with regard to employment and training, and the contribution which your enterprise can make to innovation and research.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Federal Office for Migration and Refugees — Self-employment and freelancing",
+                "history": []
+              }
+            },
+            {
+              "id": "over-forty-five-needs-old-age-provision",
+              "kind": "precondition",
+              "text": "If you are over 45, the permit should only be granted where you have adequate provision for old age.",
+              "source": {
+                "source_url": "https://www.buzer.de/21_AufenthG.htm",
+                "quote": "Ausländern, die älter sind als 45 Jahre, soll die Aufenthaltserlaubnis nur erteilt werden, wenn sie über eine angemessene Altersversorgung verfügen.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "§ 21 Abs. 3 AufenthG (consolidated mirror, buzer.de)",
+                "history": []
+              }
+            },
+            {
+              "id": "at-most-three-years",
+              "kind": "caveat",
+              "text": "The permit is granted for three years at most.",
+              "source": {
+                "source_url": "https://www.buzer.de/21_AufenthG.htm",
+                "quote": "Die Aufenthaltserlaubnis wird auf längstens drei Jahre befristet.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "§ 21 Abs. 4 Satz 1 AufenthG (consolidated mirror, buzer.de)",
+                "history": []
+              }
+            },
+            {
+              "id": "graduates-and-researchers-are-judged-differently",
+              "kind": "caveat",
+              "text": "Graduates of German higher-education institutions, and holders of a researcher or scientist permit, are not put through the economic-interest and financing test — but the intended activity has to show a connection to what they studied or researched.",
+              "source": {
+                "source_url": "https://www.buzer.de/21_AufenthG.htm",
+                "quote": "Die beabsichtigte selbständige Tätigkeit muss einen Zusammenhang mit den in der Hochschulausbildung erworbenen Kenntnissen oder der Tätigkeit als Forscher oder Wissenschaftler erkennen lassen.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "§ 21 Abs. 2a Satz 2 AufenthG (consolidated mirror, buzer.de)",
+                "history": []
+              }
+            },
+            {
+              "id": "freelance-work-is-granted-on-its-own-terms",
+              "kind": "caveat",
+              "text": "A permit for freelance work in a liberal profession is granted outside the test above, but any licence the profession needs must already have been granted or promised.",
+              "source": {
+                "source_url": "https://www.buzer.de/21_AufenthG.htm",
+                "quote": "Eine erforderliche Erlaubnis zur Ausübung des freien Berufes muss erteilt worden oder ihre Erteilung zugesagt sein.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "§ 21 Abs. 5 Satz 2 AufenthG (consolidated mirror, buzer.de)",
+                "history": []
+              }
+            },
+            {
+              "id": "a-treaty-of-reciprocity-can-open-it",
+              "kind": "caveat",
+              "text": "The permit may also be granted where a treaty gives reciprocal advantages under international law.",
+              "source": {
+                "source_url": "https://www.buzer.de/21_AufenthG.htm",
+                "quote": "Eine Aufenthaltserlaubnis zur Ausübung einer selbständigen Tätigkeit kann auch erteilt werden, wenn völkerrechtliche Vergünstigungen auf der Grundlage der Gegenseitigkeit bestehen.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "§ 21 Abs. 2 AufenthG (consolidated mirror, buzer.de)",
+                "history": []
+              }
+            }
+          ],
+          "readings": [
+            {
+              "id": "nothing-here-is-a-fact-about-you",
+              "text": "Every limb of this route is a judgement about a plan and a business, reached with bodies outside the immigration office. There is no answer you could give us that would settle any of them, which is why this page states the rules and offers no verdict."
+            }
+          ]
         }
       ]
     },
@@ -2234,6 +2374,120 @@
               }
             }
           ]
+        },
+        {
+          "id": "fr-salarie",
+          "name": "Employee card (salarié / travailleur temporaire)",
+          "kind": "res-work",
+          "summary": "The ordinary employee card: salarié on a permanent contract, travailleur temporaire on a fixed-term one. It is issued only after your employer has obtained a work authorisation for the job itself.",
+          "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F15898",
+          "scope": {
+            "value": "rules-quoted-nothing-asked",
+            "reason": "This route is not scored, and nothing below asks you anything. The card follows a work authorisation your employer applies for, and that decision turns on whether the job was advertised for three weeks with nobody suitable answering, on your employer's own record with the tax, social-security and labour authorities, and on whether the hire is judged out of proportion to the business making it. Those are facts about somebody else, so we state the rules with the authority's own sentences and the day we read them, and we leave the verdict alone.",
+            "not_asked": [
+              "your-employer-applies-for-the-work-authorisation",
+              "the-job-is-advertised-for-three-weeks-first",
+              "a-shortage-occupation-lifts-the-advertising",
+              "your-employers-own-record-is-checked",
+              "a-hire-out-of-proportion-can-be-refused",
+              "the-pay-floor-is-the-smic-or-the-agreement",
+              "a-regulated-profession-adds-its-own-conditions",
+              "no-euro-figure-is-published-for-the-pay-floor"
+            ]
+          },
+          "criteria": [],
+          "statements": [
+            {
+              "id": "your-employer-applies-for-the-work-authorisation",
+              "kind": "precondition",
+              "text": "A work authorisation your employer must apply for online, before you enter France. The card cannot be issued without it.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F15898",
+                "quote": "Votre employeur doit faire sur internet la demande d'autorisation de travail avant votre entrée en France.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "service-public.gouv.fr F15898 — Demander la carte de séjour salarié",
+                "history": []
+              }
+            },
+            {
+              "id": "the-job-is-advertised-for-three-weeks-first",
+              "kind": "precondition",
+              "text": "Before the work authorisation can be applied for, the job must have been advertised through the public employment service for three consecutive weeks within the previous six months, and no suitable candidate must have come forward.",
+              "source": {
+                "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F2728",
+                "quote": "Avant de faire la demande d'autorisation de travail, l'offre d'emploi doit avoir été publiée pendant un délai de 3 semaines consécutives dans les 6 mois précédant le dépôt de cette demande auprès du service public de l'emploi. À la fin des 3 semaines de publication, si aucune candidature valable n'a été reçue, la demande d'autorisation de travail peut être effectuée.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "service-public.gouv.fr F2728 — Publication préalable de l'offre d'emploi",
+                "history": []
+              }
+            },
+            {
+              "id": "a-shortage-occupation-lifts-the-advertising",
+              "kind": "caveat",
+              "text": "Where the job is on the shortage-occupation list, that three-week advertisement is not required at all.",
+              "source": {
+                "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F2728",
+                "quote": "Cependant, la publication préalable de l'offre d'emploi n'est pas obligatoire si l'une des conditions suivantes est remplie : Emploi figurant sur la liste des métiers en tension",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "service-public.gouv.fr F2728 — les cas où la publication n'est pas obligatoire",
+                "history": []
+              }
+            },
+            {
+              "id": "your-employers-own-record-is-checked",
+              "kind": "precondition",
+              "text": "Your employer must be up to date with the social obligations their status or activity puts on them, and must not have been convicted or administratively sanctioned for illegal work, health-and-safety offences, aiding irregular entry or breaching the posted-worker rules.",
+              "source": {
+                "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F2728",
+                "quote": "L'employeur, le donneur d'ordre, l'entreprise utilisatrice ou d'accueil doivent remplir l'ensemble des conditions suivantes : Respecter les obligations sociales liées à leur statut ou à leur activité",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "service-public.gouv.fr F2728 — Conditions liées à l'employeur",
+                "history": []
+              }
+            },
+            {
+              "id": "a-hire-out-of-proportion-can-be-refused",
+              "kind": "caveat",
+              "text": "The work authorisation can be refused where the recruitment plan is plainly out of proportion to the applying business's own economic activity.",
+              "source": {
+                "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F2728",
+                "quote": "L'autorisation de travail peut être refusée si le projet de recrutement est manifestement disproportionné au regard de l'activité économique du demandeur.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "service-public.gouv.fr F2728 — Conditions liées à l'employeur",
+                "history": []
+              }
+            },
+            {
+              "id": "the-pay-floor-is-the-smic-or-the-agreement",
+              "kind": "precondition",
+              "text": "The pay may not be below the French minimum wage, or below the wage the collective agreement covering the business sets where that is higher.",
+              "source": {
+                "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F2728",
+                "quote": "La rémunération ne peut pas être inférieure au Smic (ou au salaire prévu dans la convention collective applicable à l'entreprise, si cette rémunération est plus élevée que le Smic).",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "service-public.gouv.fr F2728 — Conditions de rémunération",
+                "history": []
+              }
+            },
+            {
+              "id": "a-regulated-profession-adds-its-own-conditions",
+              "kind": "precondition",
+              "text": "Where the job is a regulated profession, the conditions that profession sets for practising it have to be met as well.",
+              "source": {
+                "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F2728",
+                "quote": "Le métier exercé par le futur salarié peut être une profession réglementée . Dans cette hypothèse, les conditions réglementaires d'exercice devront être respectées.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "service-public.gouv.fr F2728 — Conditions d'exercice du métier si la profession est réglementée",
+                "history": []
+              }
+            }
+          ],
+          "readings": [
+            {
+              "id": "no-euro-figure-is-published-for-the-pay-floor",
+              "text": "Neither page states a euro figure for the pay floor: it is the minimum wage or the collective agreement, whichever is higher, and which agreement applies depends on the business. There is no number here for an answer to be compared against."
+            }
+          ]
         }
       ]
     },
@@ -2782,6 +3036,273 @@
                 "retrieved_at": "2026-09-07",
                 "legal_basis": "Ley 14/2013, art. 72.2.a)"
               }
+            }
+          ]
+        },
+        {
+          "id": "es-cuenta-ajena",
+          "name": "Employee, general regime (residencia y trabajo por cuenta ajena)",
+          "kind": "res-work",
+          "summary": "The general regime's way in: an employer in Spain applies for a non-EU worker to live and work as an employee. The authorisation lasts as long as the job, up to a year, and is tied to one occupation and one autonomous community.",
+          "info_url": "https://www.inclusion.gob.es/web/migraciones/cuenta-ajena",
+          "scope": {
+            "value": "rules-quoted-nothing-asked",
+            "reason": "This route is not scored, and nothing below asks you anything. Whether it opens at all depends on the national employment situation, which has two doors: your occupation is on a catalogue of hard-to-fill jobs that the public employment service redraws every three months for each autonomous community, or your employer has to satisfy the immigration office that the post could not be filled from the labour market already here. A quarterly regional list and an office's judgement of somebody else's recruiting are not facts you could declare, so we quote the regulation and date it instead.",
+            "not_asked": [
+              "the-national-employment-situation-must-allow-it",
+              "a-quarterly-catalogue-per-region-is-one-door",
+              "otherwise-the-office-weighs-your-employers-search",
+              "your-employer-applies-with-a-signed-contract",
+              "part-time-pay-meets-the-full-time-minimum",
+              "your-employer-must-have-the-means",
+              "the-qualification-the-profession-requires",
+              "one-occupation-one-region-one-year",
+              "the-test-falls-away-for-some-applicants",
+              "the-minimum-wage-is-set-somewhere-else"
+            ]
+          },
+          "criteria": [],
+          "statements": [
+            {
+              "id": "the-national-employment-situation-must-allow-it",
+              "kind": "precondition",
+              "text": "The national employment situation must permit hiring you, on the terms article 75 sets out.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "Que la situación nacional de empleo permita la contratación de la persona trabajadora extranjera en los términos previstos en el artículo 75 o, en el caso de que la autorización se encuadre en un procedimiento de gestión colectiva de contrataciones en origen, en los términos que se establezca en la orden correspondiente.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 74.1.a (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "a-quarterly-catalogue-per-region-is-one-door",
+              "kind": "caveat",
+              "text": "One way through is the catalogue of hard-to-fill occupations, drawn up every three months by the state employment service for each autonomous community and for Ceuta and Melilla.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "A los efectos de determinar la situación nacional de empleo, el Servicio Público de Empleo Estatal elaborará, con periodicidad trimestral, de acuerdo con la información suministrada por los servicios públicos de empleo autonómicos y previa consulta de la Comisión Laboral Tripartita de Inmigración, un catálogo de ocupaciones de difícil cobertura para cada Comunidad Autónoma, así como para las ciudades de Ceuta y Melilla.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 75.1 (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "otherwise-the-office-weighs-your-employers-search",
+              "kind": "caveat",
+              "text": "For an occupation not on that catalogue, your employer must show the immigration office that the vacancy could not be filled from workers already in the internal labour market, and the office weighs the employment service's report and how urgent the hire is.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "Asimismo, se considerará que la situación nacional de empleo permite la contratación en las ocupaciones no calificadas como de difícil cobertura cuando el empleador acredite ante la Oficina de Extranjería la dificultad de cubrir los puestos de trabajo vacantes con trabajadores ya incorporados en el mercado laboral interno. A estos efectos, la oficina de extranjería tendrá en consideración el informe presentado por los Servicios Públicos de Empleo, así como la urgencia de la contratación acreditada por la empresa.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 75.2 (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "your-employer-applies-with-a-signed-contract",
+              "kind": "precondition",
+              "text": "A contract signed by you and by your employer, guaranteeing continuous work for as long as the authorisation runs, whose start date must be conditioned on the authorisation taking effect.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "Que el empleador presente un contrato de trabajo firmado por la persona trabajadora y por él mismo y que se establezca para la persona trabajadora una actividad continuada durante el periodo de vigencia de la autorización inicial de residencia temporal y trabajo por cuenta ajena. La fecha de comienzo del contrato deberá estar condicionada al momento de eficacia de la autorización de residencia temporal y trabajo por cuenta ajena.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 74.1.b (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "part-time-pay-meets-the-full-time-minimum",
+              "kind": "precondition",
+              "text": "For part-time work, the total pay over the year must reach the full-time minimum wage.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "En el caso de que la contratación fuera a tiempo parcial, la retribución total a percibir por la persona solicitante deberá ser igual o superior al salario mínimo interprofesional para jornada completa y en cómputo anual.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 74.1.c (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "your-employer-must-have-the-means",
+              "kind": "precondition",
+              "text": "Your employer must have economic, material or personal means enough for their own business and for what the contract obliges them to pay you.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "Que el empleador cuente con medios económicos, materiales o personales, suficientes para su proyecto empresarial y para hacer frente a las obligaciones asumidas en el contrato frente al trabajador en los términos establecidos en el artículo 76.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 74.1.e (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "the-qualification-the-profession-requires",
+              "kind": "precondition",
+              "text": "You must have the training and, where the profession requires one, the professional qualification the law demands for practising it.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "Que la persona trabajadora tenga la capacitación y, en su caso, la cualificación profesional legalmente exigida para el ejercicio de la profesión.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 74.1.f (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "one-occupation-one-region-one-year",
+              "kind": "caveat",
+              "text": "The first authorisation lasts as long as the work does, up to a year, and is limited to one autonomous community and one occupation.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "La autorización inicial de residencia temporal y trabajo por cuenta ajena tendrá una duración igual a la de la actividad a desarrollar, con el máximo de un año, y se limitará, en lo relativo al ejercicio de la actividad laboral y salvo en los casos previstos por la Ley y los Convenios Internacionales firmados por España, a un ámbito geográfico autonómico y a una ocupación determinada.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 73.4 (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "the-test-falls-away-for-some-applicants",
+              "kind": "caveat",
+              "text": "The employment-situation test is set aside altogether in the cases article 40 of the immigration act lists, and under an international agreement.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "Sin perjuicio de lo previsto en el apartado anterior, no se tendrá en cuenta la situación nacional de empleo en los supuestos establecidos en el artículo 40 de la Ley Orgánica 4/2000, de 11 de enero, o por Convenio internacional.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 74.2 (consolidated text, BOE)",
+                "history": []
+              }
+            }
+          ],
+          "readings": [
+            {
+              "id": "the-minimum-wage-is-set-somewhere-else",
+              "text": "Every pay floor here is written as the minimum wage or a percentage of it, and that wage is set by a separate decree each year. The regulation carries no euro figure, so there is nothing on this page for an answer to be compared against."
+            }
+          ]
+        },
+        {
+          "id": "es-teletrabajo",
+          "name": "International teleworker (teletrabajo de carácter internacional)",
+          "kind": "res-work",
+          "summary": "Living in Spain while working remotely, by computer and telecommunications only, for employers or clients based outside it. A visa from abroad lasts up to a year; a residence authorisation applied for inside Spain lasts up to three.",
+          "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/teletrabajadores",
+          "scope": {
+            "value": "rules-quoted-nothing-asked",
+            "reason": "This route is not scored, and nothing below asks you anything. It turns on a situation this interview never asks about — that you already work remotely for a company trading outside Spain, and have done for at least three months — and on an income floor the law states only as sufficient means for you and your family. The binding figure is not in the law: it is set as a multiple of a minimum wage a separate decree resets each year, in an instruction no fetch of ours can reach. We will not do arithmetic on your behalf and call it a rule, so the rules are quoted here and dated.",
+            "not_asked": [
+              "the-work-is-remote-and-for-companies-outside-spain",
+              "at-most-a-fifth-of-professional-work-from-spain",
+              "a-degree-or-three-years-of-experience",
+              "the-company-must-have-traded-for-a-year",
+              "three-months-with-that-employer-already",
+              "sufficient-means-with-no-figure-in-the-law",
+              "two-doors-a-visa-and-an-authorisation",
+              "free-movement-passports-are-outside-this-section",
+              "the-figure-that-binds-is-not-on-a-page-we-can-read"
+            ]
+          },
+          "criteria": [],
+          "statements": [
+            {
+              "id": "the-work-is-remote-and-for-companies-outside-spain",
+              "kind": "precondition",
+              "text": "Work done remotely for companies based outside Spain, by computer, telematic and telecommunications means only.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "Se halla en situación de residencia por teletrabajo de carácter internacional el nacional de un tercer Estado, autorizado a permanecer en España para ejercer una actividad laboral o profesional a distancia para empresas radicadas fuera del territorio nacional, mediante el uso exclusivo de medios y sistemas informáticos, telemáticos y de telecomunicación.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Ley 14/2013, art. 74 bis.1 (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "at-most-a-fifth-of-professional-work-from-spain",
+              "kind": "caveat",
+              "text": "Working for yourself rather than for an employer, you may take work from a company based in Spain, as long as it is no more than a fifth of what you do.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "En el supuesto de ejercicio de una actividad profesional, se permitirá al titular de la autorización por teletrabajo de carácter internacional trabajar para una empresa ubicada en España, siempre y cuando el porcentaje de dicho trabajo no sea superior al 20 % del total de su actividad profesional.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Ley 14/2013, art. 74 bis.1 (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "a-degree-or-three-years-of-experience",
+              "kind": "precondition",
+              "text": "You must be a graduate or postgraduate of a university, vocational school or business school of recognised standing, or have at least three years of professional experience.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "Podrán solicitar el visado o la autorización de teletrabajo los profesionales cualificados que acrediten ser graduados o postgraduados de universidades de reconocido prestigio, formación profesional y escuelas de negocios de reconocido prestigio o bien con una experiencia profesional mínima de tres años.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Ley 14/2013, art. 74 bis.2 (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "the-company-must-have-traded-for-a-year",
+              "kind": "precondition",
+              "text": "The company or group you work for must have been really and continuously trading for at least a year.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "La existencia de una actividad real y continuada durante al menos un año de la empresa o grupo de empresas con la que el trabajador mantiene relación laboral o profesional.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Ley 14/2013, art. 74 ter.a (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "three-months-with-that-employer-already",
+              "kind": "precondition",
+              "text": "As an employee, you must show the employment relationship with the company outside Spain has run for at least the three months before you apply, and that the company lets you work remotely.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "En el supuesto de una relación laboral, se deberá acreditar la existencia de la misma entre el trabajador y la empresa no localizada en España durante al menos, los últimos tres meses anteriores a la presentación de la solicitud, así como documentación que acredite que dicha empresa permite al trabajador realizar la actividad laboral a distancia.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Ley 14/2013, art. 74 ter.c (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "sufficient-means-with-no-figure-in-the-law",
+              "kind": "precondition",
+              "text": "Economic resources enough for yourself and for the members of your family, for as long as you live in Spain — one of the general requirements this section sets, and it names no amount.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "Contar con recursos económicos suficientes para sí y para los miembros de su familia durante su periodo de residencia en España.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Ley 14/2013, art. 62.3.f (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "two-doors-a-visa-and-an-authorisation",
+              "kind": "caveat",
+              "text": "From outside Spain you apply for a teleworking visa, valid for up to a year. Applied for inside Spain, the residence authorisation runs for up to three years.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "Los extranjeros no residentes en España, que se propongan residir en territorio español con el fin de teletrabajar a distancia para una empresa no ubicada en España, solicitarán el visado para teletrabajo de carácter internacional que tendrá una vigencia máxima de un año, salvo que el período de trabajo sea inferior, en cuyo caso el visado tendrá la misma vigencia que este.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Ley 14/2013, art. 74 quater.1 (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "free-movement-passports-are-outside-this-section",
+              "kind": "caveat",
+              "text": "None of this section applies to citizens of the European Union, or to anyone holding equivalent free-movement rights.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                "quote": "Lo dispuesto en esta sección no será de aplicación a los ciudadanos de la Unión Europea y a aquellos extranjeros que disfruten de derechos de libre circulación equivalentes a los de los ciudadanos de la Unión con base en acuerdos entre la Unión Europea y los Estados miembros, por una parte, y terceros países, por otra.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Ley 14/2013, art. 61.2 (consolidated text, BOE)",
+                "history": []
+              }
+            }
+          ],
+          "readings": [
+            {
+              "id": "the-figure-that-binds-is-not-on-a-page-we-can-read",
+              "text": "The euro amount readers ask about is not in the law. It is a multiple of Spain's minimum wage, fixed in a joint ministerial instruction that refuses our fetches, and the wage it multiplies is reset by decree every year — so we have no current figure we could re-read for you, and we do not publish one we cannot check."
             }
           ]
         }
@@ -4094,6 +4615,159 @@
             {
               "id": "two-of-five-situations-modelled",
               "text": "The Dutch immigration service lists five situations that open this route. We model the two that turn on where and when you studied; the other three — research done here, an Erasmus Mundus master, a permit you already held — are not asked about anywhere on this site."
+            }
+          ]
+        },
+        {
+          "id": "nl-gvva",
+          "name": "Single permit for paid employment (GVVA)",
+          "kind": "res-work",
+          "summary": "One permit combining residence and work, for ordinary paid employment in the Netherlands lasting more than 90 days. The employer normally applies, and the immigration service asks the employee insurance agency whether the work-permit conditions are met.",
+          "info_url": "https://ind.nl/en/residence-permits/work/single-permit-gvva",
+          "scope": {
+            "value": "rules-quoted-nothing-asked",
+            "reason": "This route is not scored, and nothing below asks you anything. The statute makes the permit refusable if there is priority supply on the Dutch labour market for the job, if the vacancy was not reported to the employee insurance agency at least five weeks before the application, or if your employer cannot show enough effort to fill it from that supply — and the agency decides for itself whether the work could have been done from the EU or the wider European Economic Area. Those are facts about your employer's search and somebody else's reading of it, so we quote them, date them, and offer you no verdict.",
+            "not_asked": [
+              "refused-where-there-is-priority-supply",
+              "your-employer-searches-europe-for-three-months",
+              "the-vacancy-is-reported-five-weeks-before",
+              "the-agency-decides-whether-europe-could-do-it",
+              "your-employer-explains-the-selection",
+              "the-four-general-conditions",
+              "no-labour-law-fine-in-five-years",
+              "over-ninety-days-it-is-this-permit",
+              "the-highly-skilled-migrant-permit-escapes-it",
+              "a-permit-that-already-allows-free-work",
+              "a-search-you-cannot-see-and-cannot-declare"
+            ]
+          },
+          "criteria": [],
+          "statements": [
+            {
+              "id": "refused-where-there-is-priority-supply",
+              "kind": "precondition",
+              "text": "The permit must be refused where there is priority supply on the labour market for the job, where the vacancy was not reported to the employee insurance agency at least five weeks before the application, or where your employer cannot show sufficient effort to fill it from that supply.",
+              "source": {
+                "source_url": "https://wetten.overheid.nl/BWBR0007149",
+                "quote": "Onze Minister weigert een tewerkstellingsvergunning of Onze Minister van Veiligheid en Justitie weigert een gecombineerde vergunning: a. indien voor de desbetreffende arbeidsplaats prioriteitgenietend aanbod op de arbeidsmarkt aanwezig is; b. indien het een arbeidsplaats betreft waarvan de beschikbaarheid niet ten minste vijf weken voor het indienen van de aanvraag aan het Uitvoeringsinstituut werknemersverzekeringen is gemeld; c. indien de werkgever niet kan aantonen voldoende inspanningen te hebben gepleegd de arbeidsplaats door prioriteitgenietend aanbod op de arbeidsmarkt te vervullen:",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Wet arbeid vreemdelingen, art. 8 lid 1 (consolidated text, wetten.overheid.nl)",
+                "history": []
+              }
+            },
+            {
+              "id": "your-employer-searches-europe-for-three-months",
+              "kind": "precondition",
+              "text": "Your employer must first spend at least three months trying to find a suitable candidate in the EU, the European Economic Area or Switzerland, searching widely.",
+              "source": {
+                "source_url": "https://www.uwv.nl/nl/werkvergunning/reguliere-arbeidsplaats",
+                "quote": "De werkgever moet eerst minimaal 3 maanden een geschikte kandidaat proberen te vinden in de EU/EER of Zwitserland. De werkgever zoekt uitgebreid. Denk aan internet, (internationale) uitzendbureaus en het plaatsen van advertenties.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "UWV — Werkvergunning reguliere arbeidsplaats",
+                "history": []
+              }
+            },
+            {
+              "id": "the-vacancy-is-reported-five-weeks-before",
+              "kind": "precondition",
+              "text": "The vacancy must be reported to the employee insurance agency at least five weeks before the work permit is applied for.",
+              "source": {
+                "source_url": "https://www.uwv.nl/nl/werkvergunning/reguliere-arbeidsplaats",
+                "quote": "De werkgever meldt de vacature minimaal 5 weken voor de aanvraag van de werkvergunning bij UWV.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "UWV — Werkvergunning reguliere arbeidsplaats",
+                "history": []
+              }
+            },
+            {
+              "id": "the-agency-decides-whether-europe-could-do-it",
+              "kind": "caveat",
+              "text": "The employee insurance agency says plainly that it is the one that checks whether the work could be done by a worker from the EU, the European Economic Area or Switzerland.",
+              "source": {
+                "source_url": "https://www.uwv.nl/nl/werkvergunning/reguliere-arbeidsplaats",
+                "quote": "Wij controleren of het werk gedaan kan worden door een werknemer uit de EU/EER of Zwitserland.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "UWV — Werkvergunning reguliere arbeidsplaats",
+                "history": []
+              }
+            },
+            {
+              "id": "your-employer-explains-the-selection",
+              "kind": "precondition",
+              "text": "An account your employer must send in of how the selection went: how many candidates answered, and which of the requirements each of them did and did not meet.",
+              "source": {
+                "source_url": "https://www.uwv.nl/nl/werkvergunning/reguliere-arbeidsplaats",
+                "quote": "Uitleg over de selectieprocedure (hoeveel kandidaten hebben gereageerd, aan welke eisen voldeden zij wel en niet).",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "UWV — Werkvergunning reguliere arbeidsplaats",
+                "history": []
+              }
+            },
+            {
+              "id": "the-four-general-conditions",
+              "kind": "precondition",
+              "text": "Four general conditions run under every work permit: you hold a valid residence permit, your employer keeps to the terms of employment, your employer has not breached labour law, and your employer arranges a safe and clean place for you to live.",
+              "source": {
+                "source_url": "https://www.uwv.nl/nl/werkvergunning/twv-voorwaarden",
+                "quote": "Er zijn 4 algemene voorwaarden voor een TWV: De buitenlandse werknemer heeft een geldige verblijfsvergunning. De werkgever houdt zich aan de arbeidsvoorwaarden. De werkgever heeft de arbeidswetgeving niet overtreden. De werkgever regelt voor de buitenlandse werknemer een veilige en schone plek om te wonen.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "UWV — Voorwaarden tewerkstellingsvergunning",
+                "history": []
+              }
+            },
+            {
+              "id": "no-labour-law-fine-in-five-years",
+              "kind": "precondition",
+              "text": "Your employer must not have been fined for breaching labour law in the five years before the application.",
+              "source": {
+                "source_url": "https://www.uwv.nl/nl/werkvergunning/twv-voorwaarden",
+                "quote": "De werkgever heeft in de 5 jaar voor de aanvraag geen boete gehad voor overtreding van de arbeidswetgeving.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "UWV — Voorwaarden tewerkstellingsvergunning, Arbeidswetgeving",
+                "history": []
+              }
+            },
+            {
+              "id": "over-ninety-days-it-is-this-permit",
+              "kind": "caveat",
+              "text": "Under 90 days the instrument is a work permit on its own; beyond 90 days it is this combined one.",
+              "source": {
+                "source_url": "https://www.uwv.nl/nl/werkvergunning/reguliere-arbeidsplaats",
+                "quote": "De werkgever vraagt een TWV aan als de werknemer maximaal 90 dagen in Nederland werkt. Als de werknemer langer dan 90 dagen in Nederland werkt vraagt de werkgever een GVVA aan.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "UWV — Werkvergunning reguliere arbeidsplaats",
+                "history": []
+              }
+            },
+            {
+              "id": "the-highly-skilled-migrant-permit-escapes-it",
+              "kind": "caveat",
+              "text": "A highly skilled migrant coming to the Netherlands for more than 90 days escapes all of this: for that route the employer applies for no work permit at all.",
+              "source": {
+                "source_url": "https://www.uwv.nl/nl/werkvergunning/wanneer-geen-werkvergunning",
+                "quote": "Voor een kennismigrant van buiten de EU/EER of Zwitserland die langer dan 90 dagen in Nederland komt werken, hoeft de werkgever geen werkvergunning aan te vragen.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "UWV — Wanneer geen werkvergunning nodig in Nederland",
+                "history": []
+              }
+            },
+            {
+              "id": "a-permit-that-already-allows-free-work",
+              "kind": "caveat",
+              "text": "Anyone whose Dutch residence permit already carries the note that work is freely allowed needs no work permit either.",
+              "source": {
+                "source_url": "https://www.uwv.nl/nl/werkvergunning/wanneer-geen-werkvergunning",
+                "quote": "Werknemers met de aantekening ‘arbeid is vrij toegestaan’ hebben geen werkvergunning nodig.",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "UWV — Wanneer geen werkvergunning nodig in Nederland",
+                "history": []
+              }
+            }
+          ],
+          "readings": [
+            {
+              "id": "a-search-you-cannot-see-and-cannot-declare",
+              "text": "Two of the three grounds for refusing this permit are about how hard your employer looked and what the agency made of it. Neither is a fact about you, and neither is knowable before the application is filed — so there is nothing here we could put to you as a question."
             }
           ]
         }

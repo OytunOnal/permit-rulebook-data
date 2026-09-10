@@ -28,12 +28,22 @@ export const QUOTE_LANGUAGES: ReadonlyArray<readonly [prefix: string, lang: stri
   ["https://www.boe.es/", "es"],
   ["https://www.inclusion.gob.es/", "es"],
   ["https://www.service-public.gouv.fr/", "fr"],
+  // The same service's edition for businesses. The work authorisation behind
+  // the employee card is the employer's application, so the fiche that states
+  // its conditions lives here rather than on the citizens' site (s9).
+  ["https://entreprendre.service-public.gouv.fr/", "fr"],
   // A judgment is published in the language it was handed down in.
   ["https://www.legifrance.gouv.fr/", "fr"],
   // EUR-Lex names the language of the edition in the path itself, so the
   // prefix carries it: the same directive at /FR/ is a different document to
   // read aloud, and nothing here may guess which one a quote came from (s8).
   ["https://eur-lex.europa.eu/legal-content/EN/", "en"],
+  // The Dutch benefits agency and the Dutch statute book. Neither publishes an
+  // English edition of the pages quoted here, so a Dutch quote finally has a
+  // language of its own on this site — the IND's pages are the English edition
+  // and were the only Dutch source until s9.
+  ["https://www.uwv.nl/", "nl"],
+  ["https://wetten.overheid.nl/", "nl"],
 ];
 
 /** The language's name in the reader's language, for the line beside a quote. */
@@ -42,6 +52,7 @@ export const LANGUAGE_NAMES: Readonly<Record<string, string>> = {
   de: "German",
   es: "Spanish",
   fr: "French",
+  nl: "Dutch",
 };
 
 /** The tag for one source, or undefined where no declared prefix covers it. */

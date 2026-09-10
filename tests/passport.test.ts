@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, fieldOptions, informativeFields, isRouteAlive, matchOptions, notices } from "../src/engine.js";
+import { deriveBands, evaluate, fieldOptions, informativeFields, isRouteAlive, isScored, matchOptions, notices } from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
 import { vocabularyErrors, type CountryVocabulary } from "../src/countries.js";
@@ -144,7 +144,9 @@ describe("s5c — notices match through the same predicate the criteria use", ()
     const matched = notices(dataset, explorer);
     expect(matched.every((n) => n.kind !== "no-permit-needed")).toBe(true);
     const results = evaluate(dataset, explorer);
-    expect(results.length).toBe(dataset.countries.flatMap((c) => c.routes).length);
+    // Every route the product scores comes back with a verdict; the five it
+    // states and does not score come back not at all (s9).
+    expect(results.length).toBe(dataset.countries.flatMap((c) => c.routes).filter(isScored).length);
     expect(results.filter((r) => r.status === "met" || r.status === "near")).toEqual([]);
   });
 });

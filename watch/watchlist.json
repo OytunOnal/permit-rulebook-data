@@ -406,6 +406,93 @@
           "note": "Moved from F35600 to F2215 before either was ever read on a schedule: F35600 is the situation-specific view, and F2215 is the fiche the transfer card's callout actually links to (Spec review, 2026-09-10 — the notice claimed the administration routes an Algerian reader there, and it routes them here). Same sentence, and the absence the notice reports was re-checked on this page the same day."
         }
       ]
+    },
+    {
+      "id": "fr-f15898-salarie",
+      "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F15898",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Vérifier si vous êtes concerné par la carte de séjour salarié",
+        "to": "Si votre dossier est complet, vous recevez un récépissé dans l'attente de la réponse de la préfecture."
+      },
+      "note": "The reader's own fiche for the carte « salarié » / « travailleur temporaire ». Backs the sentence that the card follows a work authorisation the employer applies for, on fr-salarie (s9). Sliced to the two steps that state it: the fiche carries a favourites dialog, a share menu and a whole site navigation whose wording moves without the rules moving."
+    },
+    {
+      "id": "fr-f2728-autorisation-de-travail",
+      "url": "https://entreprendre.service-public.gouv.fr/vosdroits/F2728",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Comment faire la demande d'autorisation de travail pour pouvoir embaucher un salarié étranger en France ?",
+        "to": "plus élevée que le Smic)."
+      },
+      "note": "The employer-side fiche for the autorisation de travail — the test that keeps fr-salarie out of the scoring. Backs the three-week advertisement, the shortage-occupation exemption, the employer's own record, the disproportionate-recruitment refusal, the regulated-profession condition and the Smic-or-agreement pay floor. Sliced from the application section to the end of the pay condition: the whole fiche is 96,000 characters of which the rest is navigation, related fiches and a business-form filter. Legifrance, which states the opposabilité in as many words, answers this fetcher with 403 (measured 2026-09-10) and is quoted nowhere."
+    },
+    {
+      "id": "boe-rd-1155-2024",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Artículo 73. Autorización inicial de residencia temporal y trabajo por cuenta ajena.",
+        "to": "se valorarán otros medios económicos y/o los medios de otros miembros de la familia."
+      },
+      "note": "RD 1155/2024, the immigration regulation, consolidated. Backs every condition on es-cuenta-ajena (arts. 73–76). Sliced to those four articles: the consolidated page is 750,000 characters and carries the whole regulation plus a per-article modification history. The BOE's consolidated PDF of the same text is NOT usable here — this project's decoder returns stream and font noise for it, not words (measured 2026-09-10, s9)."
+    },
+    {
+      "id": "buzer-21-aufenthg",
+      "url": "https://www.buzer.de/21_AufenthG.htm",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "(1) 1 Einem Ausländer kann eine Aufenthaltserlaubnis zur Ausübung einer selbständigen Tätigkeit erteilt werden",
+        "to": "erforderlichen Erlaubnisse erteilt wurden oder ihre Erteilung zugesagt ist."
+      },
+      "note": "§ 21 AufenthG — the self-employment and freelance section. Backs every quoted condition on de-selbstaendige-taetigkeit. Sliced from the first Absatz to the end of the last, the same bounding § 6 BeschV and § 20a already carry: buzer rotates ad blocks per request and prints its own version counters (\"§ 21 hat 8 frühere Fassungen\") beside the heading. Official-source re-check tracked by the gesetze human-tier entry."
+    },
+    {
+      "id": "bamf-selbstaendige-taetigkeit",
+      "url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/SelbstaendigeTaetigkeit/selbstaendigetaetigkeit-node.html",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "You can immigrate to Germany if you would like to work here on a self-employed or freelance basis.",
+        "to": "You can obtain a permanent right of residence after five years."
+      },
+      "note": "The federal office's own article for § 21, in English. Backs the business-plan sentence on de-selbstaendige-taetigkeit — the authority saying in its own words what the statute's Beurteilung is made from. Sliced to the article body: this page ends with a rotating public-tender announcement (\"Aufforderung zur Abgabe einer Interessenbekundung\") that has nothing to do with the route, and the four older bamf entries hash it (s9)."
+    },
+    {
+      "id": "wetten-wav-artikel-8",
+      "url": "https://wetten.overheid.nl/BWBR0007149",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Onze Minister weigert een tewerkstellingsvergunning of Onze Minister van Veiligheid en Justitie weigert een gecombineerde vergunning:",
+        "to": "welke limiet is bereikt."
+      },
+      "note": "Wet arbeid vreemdelingen art. 8 — the article that writes the refusal of the single permit itself. Backs the labour-market ground on nl-gvva. Sliced to article 8 lid 1, and the slice is not optional: the statute book prints the day it was consulted (\"Geraadpleegd op …\") on every request, so an unsliced entry would report a change every single day. The undated URL is deliberate — it serves the version in force, and a route page quoting a superseded one would be quoting a law nobody is under."
+    },
+    {
+      "id": "uwv-reguliere-arbeidsplaats",
+      "url": "https://www.uwv.nl/nl/werkvergunning/reguliere-arbeidsplaats",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "The benefits agency's own page for an ordinary vacancy. Backs the three-month European search, the five-week vacancy report, the agency's own sentence that it is the one that checks, the account of the selection, and the 90-day boundary between the two Dutch work permits, all on nl-gvva. Unsliced: the whole page is 4,000 characters and is the article, with no chrome that moves (s9)."
+    },
+    {
+      "id": "uwv-twv-voorwaarden",
+      "url": "https://www.uwv.nl/nl/werkvergunning/twv-voorwaarden",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "The four general conditions of a Dutch work permit, and the five-year labour-law fine. Backs both on nl-gvva. Unsliced for the reason above: 2,900 characters, all of it the article."
+    },
+    {
+      "id": "uwv-wanneer-geen-werkvergunning",
+      "url": "https://www.uwv.nl/nl/werkvergunning/wanneer-geen-werkvergunning",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Who needs no work permit at all. Backs the two carve-outs stated on nl-gvva — the highly skilled migrant permit this site does score, and a residence permit that already allows free work. Unsliced: 7,300 characters, all of it the article."
     }
   ]
 }

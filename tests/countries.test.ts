@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { evaluate, referencedFields, unlocks } from "../src/engine.js";
+import { evaluate, isScored, referencedFields, unlocks } from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
@@ -190,7 +190,10 @@ describe("invariant — DE verdicts are country-independent", () => {
     it(`profile ${i + 1}: destination de vs all agree on every DE route`, () => {
       const de = byId({ ...p, destination: "de" });
       const all = byId({ ...p, destination: "all" });
-      for (const route of dataset.countries.find((c) => c.code === "DE")!.routes) {
+      // The routes the product scores: `evaluate` returns no verdict for a
+      // route in the quoted-not-asked scope, so there is nothing there to
+      // compare between two destinations (s9).
+      for (const route of dataset.countries.find((c) => c.code === "DE")!.routes.filter(isScored)) {
         expect(all[route.id].status, route.id).toBe(de[route.id].status);
         expect(all[route.id].gap_max, route.id).toBe(de[route.id].gap_max);
         expect(all[route.id].gap_points, route.id).toBe(de[route.id].gap_points);

@@ -4,7 +4,7 @@ import { countryVocabulary, vocabularyErrors } from "./countries.js";
 import { deriveBands, fieldOptions, routeStatements } from "./engine.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
-import { CARVE_OUT_FIELD } from "./types.js";
+import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED } from "./types.js";
 import type { Dataset } from "./types.js";
 
 /**
@@ -156,6 +156,28 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
         }
       };
       walk(route.criteria);
+
+      /**
+       * s9: the quoted-not-asked scope is a promise about what the product
+       * does, and a promise a schema does not hold is a wish.
+       *
+       * A criterion is the one thing in this dataset that decides a case, so
+       * carrying one IS being scored — a route claiming the third value beside
+       * a criterion would be told to the reader as "not scored" and would
+       * still turn up on a results screen with a verdict on it. The other
+       * direction matters more: a route with no criteria at all passes every
+       * criterion vacuously, so a scored route that lost its rules would read
+       * as MET for everybody, and nothing else here would notice.
+       */
+      const decides = route.criteria.length > 0;
+      if (decides === (route.scope.value === QUOTED_NOT_SCORED))
+        errors.push({
+          path: `${path}/scope/value`,
+          message: decides
+            ? `${route.id} says its rules are quoted and nothing is asked, and carries ${route.criteria.length} rule(s) that decide it — a route that decides anything is scored`
+            : `${route.id} carries no rule that decides it and does not say so: every criterion of it passes vacuously, so it would be met by every reader`,
+          keyword: "quotedNothingAsked",
+        });
 
       /**
        * s7: a carve-out may only name a passport the citizenship question can

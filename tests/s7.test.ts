@@ -209,7 +209,9 @@ describe("s7 — a carve-out is watched and quote-checked like every other value
     const carveOuts = routes().flatMap((r) => routeStatements(r)).filter((s) => s.except).length;
     expect(carveOuts).toBe(9);
     // 110 since s8: the closure on the French intra-corporate transfer card.
-    expect(proseProvenance(dataset).with_provenance).toBe(110);
+    // 153 since s9, which added forty-three sourced conditions across the five
+    // routes that are quoted and not scored — none of them a carve-out.
+    expect(proseProvenance(dataset).with_provenance).toBe(153);
   });
 
   it("a fresher carve-out is a fresher dataset", () => {

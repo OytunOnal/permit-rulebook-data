@@ -1,5 +1,5 @@
 import { countryOptions } from "./countries.js";
-import { CARVE_OUT_FIELD } from "./types.js";
+import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED } from "./types.js";
 import type {
   Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
   FieldOption, Notice,
@@ -466,6 +466,8 @@ export function informativeFields(dataset: Dataset, profile: Profile): Set<strin
   const fields = new Set<string>();
   for (const country of dataset.countries) {
     for (const route of country.routes) {
+      // A route nothing is asked about asks for no question either (s9).
+      if (!isScored(route)) continue;
       if (hasHardFail(dataset, route, profile)) continue; // dead route
       for (const c of route.criteria)
         for (const f of undecidedFieldsOf(dataset, c, profile)) fields.add(f);
@@ -585,10 +587,28 @@ export function matchOptions(options: FieldOption[], needle: string): FieldOptio
   return matched.sort((a, b) => exact(a) - exact(b));
 }
 
+/**
+ * Whether this product rules on this route at all.
+ *
+ * A route in the quoted-not-asked scope states its rules and asks nothing, so
+ * there is no verdict to reach and none is offered. The predicate exists
+ * because "it falls out naturally" is not a guarantee: an unscored route
+ * carries no criteria, every criterion of it therefore passes vacuously, and
+ * `routeStatus` would call it MET for every reader who ever answered a
+ * question (s9). What the dataset declares is what decides, not an accident of
+ * an empty array.
+ */
+export function isScored(route: Route): boolean {
+  return route.scope.value !== QUOTED_NOT_SCORED;
+}
+
 export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
   const results: RouteResult[] = [];
   for (const country of dataset.countries) {
     for (const route of country.routes) {
+      // A route the product does not score never reaches a results screen, an
+      // unlock row or a count of what a reader was compared against (s9).
+      if (!isScored(route)) continue;
       const criteria = route.criteria.map((c) => evalCriterion(dataset, c, profile));
       const status = routeStatus(criteria);
       const gaps = criteria.filter((c) => c.gap_max !== undefined).map((c) => c.gap_max as number);
