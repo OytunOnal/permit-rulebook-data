@@ -66,6 +66,16 @@ https://www.legifrance.gouv.fr/ceta/id/CETATEXT000053612496
 
 https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883
 
+**What the refusal is, and is not** (session, 2026-09-10): both pages open in
+a real browser — Legifrance renders the decision with its title *"Conseil
+d'État, 2ème - 7ème chambres réunies, 02/03/2026, 500835"* and the sentence
+quoted above is in the text; EUR-Lex renders 127 KB of the directive and
+Article 3(1) is there verbatim, followed by the 3(2) exclusions. So the limit
+is this watch's fetcher, not the page: a person can read both, and so can a
+browser. The human tier is the honest label today; a browser-driven read for
+bot-walled entries is a roadmap candidate, gated on one measurement — whether
+*headless* Chrome from the runner is let through where Node's `fetch` is not.
+
 - [x] **NEW with s8.** Read 2026-09-10. Backs the other side of the notice:
   the directive's own scope. Find Article 3(1) and confirm it word for word:
   "This Directive applies to third-country nationals who apply to be admitted,

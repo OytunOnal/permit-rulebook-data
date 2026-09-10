@@ -379,7 +379,7 @@
       "kind": "value-source",
       "max_age_days": 90,
       "last_verified": "2026-09-10",
-      "note": "Backs the Conseil d'État sentence behind the Algerian talent notice (2e et 7e ch. réunies, 2 mars 2026, n° 500835). Human tier because the site answers this watch's fetcher with HTTP 403 (measured 2026-09-10, with and without a trailing slash); the page is reachable by a person, and one read it on 2026-09-10. There is no mirror to fall back to, so the quote gate reports this sentence as unverifiable rather than counting it verified — which is the honest answer, not a gap. Re-read quarterly: what would move is not the judgment, which is final, but Legifrance's URL for it."
+      "note": "Backs the Conseil d'État sentence behind the Algerian talent notice (2e et 7e ch. réunies, 2 mars 2026, n° 500835). Human tier because the site answers this watch's fetcher with HTTP 403 (measured 2026-09-10, with and without a trailing slash); the page is reachable by a person, and one read it on 2026-09-10. There is no mirror to fall back to, so the quote gate reports this sentence as unverifiable rather than counting it verified — which is the honest answer, not a gap. Re-read quarterly: what would move is not the judgment, which is final, but Legifrance's URL for it. The same page opens in a real browser with the sentence in place (2026-09-10): the limit is this fetcher, not the page."
     },
     {
       "id": "eur-lex-blue-card-directive",
@@ -388,7 +388,7 @@
       "kind": "value-source",
       "max_age_days": 90,
       "last_verified": "2026-09-10",
-      "note": "Backs Article 3(1) of Directive (EU) 2021/1883, the scope sentence that puts every third-country national inside the Blue Card. Human tier because EUR-Lex answers this watch's fetcher with HTTP 202 and an EMPTY body — a bot challenge that a naive reader would record as a successful read of a blank page. Measured 2026-09-10 on this URL, on /EN/TXT/ without HTML, and on the ELI alias; all three behave the same. A person read it on 2026-09-10. Re-read quarterly: a directive's text is amended by another directive, and the consolidated edition is what would move."
+      "note": "Backs Article 3(1) of Directive (EU) 2021/1883, the scope sentence that puts every third-country national inside the Blue Card. Human tier because EUR-Lex answers this watch's fetcher with HTTP 202 and an EMPTY body — a bot challenge that a naive reader would record as a successful read of a blank page. Measured 2026-09-10 on this URL, on /EN/TXT/ without HTML, and on the ELI alias; all three behave the same. A person read it on 2026-09-10. Re-read quarterly: a directive's text is amended by another directive, and the consolidated edition is what would move. The same page opens in a real browser with the sentence in place (2026-09-10): the limit is this fetcher, not the page."
     },
     {
       "id": "fr-f2215-certificat-algerien",
