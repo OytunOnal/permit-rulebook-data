@@ -1323,6 +1323,7 @@
         {
           "id": "de-ict-card",
           "name": "ICT Card — a transfer within your company (§ 19)",
+          "slug": "ict-card-intra-corporate-transfer",
           "kind": "res-work",
           "summary": "Your company moves you to its German branch for more than 90 days, as a manager, specialist or trainee. Up to three years, or one year for trainees.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/ICT/ict-node.html",
@@ -1872,6 +1873,7 @@
         {
           "id": "fr-ict",
           "name": "Sent by your employer abroad (salarié détaché ICT)",
+          "slug": "ict-seconded-employee",
           "kind": "res-work",
           "summary": "Your group moves you to France for an assignment of more than a year, in a senior or expert role. Up to three years, and it cannot be renewed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
@@ -3584,6 +3586,7 @@
         {
           "id": "nl-ict",
           "name": "Sent by your employer abroad (intra-corporate transferee)",
+          "slug": "intra-corporate-transferee",
           "kind": "res-work",
           "summary": "Your company moves you to the Netherlands as a manager, specialist or trainee. The salary has to reach the highly skilled migrant level for your age. Up to three years, or one for trainees.",
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
@@ -3941,6 +3944,7 @@
         {
           "id": "nl-orientation-year",
           "name": "Orientation year — a year to look for work after studying (zoekjaar)",
+          "slug": "orientation-year",
           "kind": "seek",
           "summary": "A one-year permit to look for work — any job, no separate work permit, and it cannot be extended. The Dutch immigration service (IND) grants it after certain studies, doctorates or research finished in the three years before you apply; its list of qualifying programmes and institutions is longer than the two cases asked about here, so read its own page before ruling yourself out. Having a job offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
