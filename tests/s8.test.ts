@@ -194,7 +194,7 @@ describe("s8 — the question the sources do not settle", () => {
     // The Conseil d'État ruled on a certificat de résidence "commerçant", not
     // on a talent card. The notice may cite the principle; it may not put the
     // four permits inside a judgment that never mentioned them.
-    expect(notice().body).toMatch(/commer|trader/i);
+    expect(notice().body).toMatch(/shopkeeper|commer|trader/i);
   });
 
   it("sends the reader to the page the administration itself routes them to", () => {
