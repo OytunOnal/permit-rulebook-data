@@ -36,7 +36,7 @@ const appliedAmounts = (r: RouteResult): number[] =>
 
 /** The quoted amounts a card lists, each marked with whether it applied. */
 const thresholdEntries = (r: RouteResult) =>
-  resultProvenance(r).filter((e) => e.amount !== undefined);
+  resultProvenance(r, {}).filter((e) => e.amount !== undefined);
 
 /** The route's salary disjunction, whichever position it sits in. */
 const salaryOf = (r: RouteResult): CriterionResult =>
@@ -116,7 +116,7 @@ describe("a card names the threshold it was actually measured against", () => {
     // dataset wrote — never a synthesised one.
     for (const profile of [dutchGraduate, { ...dutchGraduate, nl_recent_grad: "no" }, {}])
       for (const r of evaluate(dataset, profile))
-        for (const entry of resultProvenance(r))
+        for (const entry of resultProvenance(r, {}))
           expect([true, false, undefined], r.route.id).toContain(entry.applied);
   });
 
@@ -124,7 +124,7 @@ describe("a card names the threshold it was actually measured against", () => {
     // The strong form: nothing has decided anything on an empty interview, so
     // no value anywhere may carry the ruled-out mark.
     for (const r of evaluate(dataset, {}))
-      for (const entry of resultProvenance(r))
+      for (const entry of resultProvenance(r, {}))
         expect(entry.applied, `${r.route.id}: ${entry.label ?? entry.value.quote.slice(0, 40)}`)
           .not.toBe(false);
   });

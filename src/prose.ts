@@ -230,6 +230,17 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
         // the one field that describes a failure to find one.
         label(`${p}/statements/${i}/unsourced/note`, s.unsourced?.note);
         addBasis(`${p}/statements/${i}/source`, s.source);
+        // A carve-out is a claim about the law in the reader's favour — that
+        // the authority does not apply this condition to their passport — so
+        // it is the authority's position by the same rule as the sentence it
+        // qualifies, and it stands on its own quote or it does not ship. It is
+        // deliberately not covered by the statement's quote: that sentence is
+        // the condition, and lending it sideways is how a claim gets
+        // provenance it never earned (s7).
+        if (s.except) {
+          authority(`${p}/statements/${i}/except/text`, s.except.text, { quote: s.except.source.quote });
+          addBasis(`${p}/statements/${i}/except/source`, s.except.source);
+        }
       });
       // A reading is ours because of where it lives, and for no other reason.
       (route.readings ?? []).forEach((r, i) => ours(`${p}/readings/${i}/text`, r.text));
@@ -286,6 +297,9 @@ export function proseProvenance(dataset: Dataset): ProseProvenance {
       for (const s of route.statements ?? []) {
         if (s.source) with_provenance++;
         if (s.unsourced) declared_unsourced++;
+        // A carve-out is a second sentence an authority is shown to have said,
+        // on a second quote — so it is counted where the first one is.
+        if (s.except) with_provenance++;
       }
       ours += (route.readings ?? []).length;
       // The scope statement's reason is ours, declared and rendered as ours —

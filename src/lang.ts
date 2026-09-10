@@ -1,5 +1,5 @@
 import type { Dataset } from "./types.js";
-import { forEachCriterion, routeStatements } from "./engine.js";
+import { forEachCriterion, routeStatements, statementSources } from "./engine.js";
 
 /**
  * What language a quote is in.
@@ -57,7 +57,10 @@ export function sourceUrls(dataset: Dataset): string[] {
         if (c.op === "gte") urls.add(c.threshold.source_url);
         if (c.op === "points") { urls.add(c.required.source_url); urls.add(c.table.source_url); }
       });
-      for (const s of routeStatements(route)) if (s.source) urls.add(s.source.source_url);
+      // A carve-out's quote is a quote on a page and needs its language tagged
+      // like every other (s7).
+      for (const s of routeStatements(route))
+        for (const value of statementSources(s)) urls.add(value.source_url);
     }
   for (const n of dataset.notices ?? []) urls.add(n.source.source_url);
   return [...urls].sort();

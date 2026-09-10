@@ -1,9 +1,10 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
 import schema from "../schema/ruleset.schema.json" with { type: "json" };
 import { countryVocabulary, vocabularyErrors } from "./countries.js";
-import { deriveBands, fieldOptions } from "./engine.js";
+import { deriveBands, fieldOptions, routeStatements } from "./engine.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
+import { CARVE_OUT_FIELD } from "./types.js";
 import type { Dataset } from "./types.js";
 
 /**
@@ -149,6 +150,25 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
         }
       };
       walk(route.criteria);
+
+      /**
+       * s7: a carve-out may only name a passport the citizenship question can
+       * actually be answered with. A code the vocabulary does not know would
+       * release nobody, and a carve-out that silently releases nobody is worse
+       * than none — the card would state the condition to the very reader the
+       * authority exempts, and nothing would say so.
+       */
+      for (const s of routeStatements(route)) {
+        if (!s.except) continue;
+        const where = `${path}/statements/${s.id}/except`;
+        if (!vocabularyFields.has(CARVE_OUT_FIELD))
+          errors.push({
+            path: where,
+            message: `a carve-out keys on ${CARVE_OUT_FIELD}, which this dataset does not answer from the country vocabulary — nothing here could check the passports it names`,
+            keyword: "carveOutFieldAnswerable",
+          });
+        checkVocabulary(where, CARVE_OUT_FIELD, s.except.citizenship);
+      }
     }
 
   for (const n of dataset.notices ?? [])

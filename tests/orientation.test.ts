@@ -111,10 +111,12 @@ describe("the orientation year states what the source states, and no more", () =
     // three-year deadline for a study programme is not among them — the
     // sentence that states it is already quoted by the criterion that asks
     // which programme, and printing it twice on one card is not provenance.
-    expect(statements.length).toBe(4);
+    // Five since s7: this page states, like every other Dutch route page, that
+    // the application needs a provisional residence permit.
+    expect(statements.length).toBe(5);
     for (const s of statements) {
       expect(s.source!.source_url, s.id).toBe(SOURCE);
-      expect(s.source!.retrieved_at, s.id).toBe("2026-09-07");
+      expect(s.source!.retrieved_at, s.id).toBe(s.id === "mvv-needed" ? "2026-09-10" : "2026-09-07");
       expect(s.source!.quote.length, s.id).toBeGreaterThan(20);
     }
     // And the reading beside them cites nobody, because it quotes nobody.

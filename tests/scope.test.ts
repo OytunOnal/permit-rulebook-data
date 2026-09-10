@@ -139,7 +139,8 @@ describe("s6 — every route declares what the checker asks of it", () => {
   });
 
   it("a twin that names a route the prose does not fails the build", () => {
-    const drifted = exclusions.replace("nl-ict: (none)", "nl-ict: (none)\nde-invented-route: (none)");
+    const drifted = exclusions.replace(
+      "nl-ict: mvv-needed", "nl-ict: mvv-needed\nde-invented-route: (none)");
     expect(twinDisagreesWithProse(drifted)).toContain(
       "de-invented-route is in the twin and named nowhere in the prose",
     );

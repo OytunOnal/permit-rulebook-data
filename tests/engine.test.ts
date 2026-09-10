@@ -230,13 +230,16 @@ describe("provenance and meta", () => {
   it("meta reports the newest retrieved_at across all value kinds", () => {
     expect(datasetMeta(dataset)).toEqual({
       // 0.5.0 since s6: a route carries a required coverage value, which is a
-      // breaking change to the public contract.
-      schema_version: "0.5.0",
+      // breaking change to the public contract. 0.6.0 since s7: a statement may
+      // carry the carve-out that names the passports it does not bind, which is
+      // an optional field and therefore additive.
+      schema_version: "0.6.0",
       dataset_version: "2026.09.07",
-      // A route statement is a provenanced value like any other. The freshest
-      // is now the IND's own sentence about intra-corporate transferees, read
-      // on 2026-09-08 once the watch's slice was widened to cover it.
-      newest_retrieved_at: "2026-09-08",
+      // A route statement is a provenanced value like any other, and so is the
+      // carve-out beside it. The freshest is now the IND's Turkish-citizens
+      // page and its list of the nationalities that need no provisional
+      // residence permit, both read on 2026-09-10.
+      newest_retrieved_at: "2026-09-10",
     });
   });
 });

@@ -1,8 +1,10 @@
 import { countryOptions } from "./countries.js";
+import { CARVE_OUT_FIELD } from "./types.js";
 import type {
   Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
   FieldOption, Notice,
-  PointsBreakdown, PointsItem, Profile, Route, RouteReading, RouteResult, RouteStatement, RouteStatus,
+  PointsBreakdown, PointsItem, Profile, ProvenancedText, Route, RouteReading, RouteResult,
+  RouteStatement, RouteStatus, StatementException,
 } from "./types.js";
 
 export function formatEUR(amount: number): string {
@@ -753,13 +755,47 @@ export function routeReadings(route: Route): RouteReading[] {
   return route.readings ?? [];
 }
 
+/**
+ * Every provenanced value one statement carries: its own quote, and the
+ * carve-out's where the authority names the people the statement does not
+ * bind. One accessor, because a card, a route page, the coverage gate and the
+ * quote gate all have to see both — and a carve-out that four call sites
+ * remembered separately would be a carve-out three of them forgot.
+ *
+ * Order is the reader's: the condition first, then who it does not bind.
+ */
+export function statementSources(s: RouteStatement): ProvenancedText[] {
+  return [...(s.source ? [s.source] : []), ...(s.except ? [s.except.source] : [])];
+}
+
+/**
+ * The carve-out that releases THIS reader from a statement, where the reader
+ * has declared a passport the authority names.
+ *
+ * A silence is not a passport: a reader who has not answered the citizenship
+ * question yet is bound by everything, and so is a route page, which has no
+ * reader at all. The membership test is exact rather than `satisfies` — a
+ * carve-out names passports, and a class is not one.
+ */
+export function carveOutFor(s: RouteStatement, profile: Profile): StatementException | undefined {
+  const answer = profile[CARVE_OUT_FIELD];
+  if (answer === undefined || !s.except) return undefined;
+  return s.except.citizenship.includes(answer) ? s.except : undefined;
+}
+
+/** Whether this statement is one of the conditions this reader is told about. */
+export function bindsReader(s: RouteStatement, profile: Profile): boolean {
+  return carveOutFor(s, profile) === undefined;
+}
+
 /** All provenanced values a route rests on — what the UI must show, quoted and
  * dated. Statements are values too: a route with no threshold used to have
  * nothing to quote, and silence there read as if the promise held. */
 export function routeProvenance(route: Route): ProvenanceEntry[] {
   const entries: ProvenanceEntry[] = [];
   forEachCriterion(route.criteria, (c) => entries.push(...provenancedValuesOf(c)));
-  for (const s of routeStatements(route)) if (s.source) entries.push({ value: s.source });
+  for (const s of routeStatements(route))
+    for (const value of statementSources(s)) entries.push({ value });
   return entries;
 }
 
@@ -808,7 +844,7 @@ function markDecided(results: CriterionResult[], into: Map<Criterion, boolean>):
  * were measured against, instead of printing two and leaving them to guess
  * (human catch 2026-09-07).
  */
-export function resultProvenance(r: RouteResult): ProvenanceEntry[] {
+export function resultProvenance(r: RouteResult, profile: Profile): ProvenanceEntry[] {
   const marks = new Map<Criterion, boolean>();
   markDecided(r.criteria, marks);
   const entries: ProvenanceEntry[] = [];
@@ -818,8 +854,17 @@ export function resultProvenance(r: RouteResult): ProvenanceEntry[] {
       entries.push(applied === undefined ? { ...e } : { ...e, applied });
   });
   // A statement is not a path anyone could have missed: it stands on every
-  // card the route produces.
-  for (const s of routeStatements(r.route)) if (s.source) entries.push({ value: s.source, applied: true });
+  // card the route produces. Where the authority sets it aside for this
+  // reader's passport, the card shows the carve-out instead of the condition,
+  // and the quote list follows the card: one sentence per statement, the one
+  // the reader was actually shown. Printing both would put the exemption list
+  // under a condition it does not lift for them, and the condition's own words
+  // under a sentence saying it does not apply (s7).
+  for (const s of routeStatements(r.route)) {
+    const except = carveOutFor(s, profile);
+    if (except) entries.push({ value: except.source, applied: true });
+    else if (s.source) entries.push({ value: s.source, applied: true });
+  }
   return entries;
 }
 
@@ -836,7 +881,8 @@ export function datasetMeta(dataset: Dataset): DatasetMeta {
   for (const country of dataset.countries)
     for (const route of country.routes)
       for (const s of routeStatements(route))
-        if (s.source && (!newest || s.source.retrieved_at > newest)) newest = s.source.retrieved_at;
+        for (const value of statementSources(s))
+          if (!newest || value.retrieved_at > newest) newest = value.retrieved_at;
   for (const n of dataset.notices ?? [])
     if (!newest || n.source.retrieved_at > newest) newest = n.source.retrieved_at;
   return {

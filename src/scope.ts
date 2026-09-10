@@ -1,5 +1,5 @@
-import type { Route, RouteStatement, ScopeValue } from "./types.js";
-import { routeReadings, routeStatements } from "./engine.js";
+import type { Profile, Route, RouteStatement, ScopeValue } from "./types.js";
+import { bindsReader, routeReadings, routeStatements } from "./engine.js";
 
 export { SCOPE_VALUES } from "./types.js";
 
@@ -35,7 +35,10 @@ const WORDS: Record<ScopeValue, (stated: number, noted: number) => string> = {
     const ours = noted ? `${numberWord(noted)} in our own reading` : "";
     if (said && ours) return `quoted and dated · scored, ${said} and ${ours}`;
     if (ours) return `quoted and dated · scored, ${ours}, not asked`;
-    return `quoted and dated · scored, ${said}`;
+    // A reader whom nothing stated binds (a carve-out took the last one, s7)
+    // is scored against their answers and nothing else — the first form, not
+    // a sentence that ends in a comma (Standards review, 2026-09-10).
+    return said ? `quoted and dated · scored, ${said}` : WORDS["every-deciding-rule-asked"](0, 0);
   },
   "rules-quoted-nothing-asked": () => "quoted and dated · not scored",
 };
@@ -72,9 +75,15 @@ export function scopeWords(value: ScopeValue, stated: number, noted = 0): string
 /**
  * The same words for a route, which knows its own counts — the split comes from
  * `statedNotAsked`, so the sentence and the evidence behind it cannot disagree.
+ *
+ * The reader's answers are an argument since s7, because a condition the
+ * authority sets aside for their passport is not one of the conditions stated
+ * to them, and a line that counted it would be counting a sentence the card no
+ * longer shows. A route page passes nothing: it has no reader, so every
+ * condition stands.
  */
-export function scopeLine(route: Route): string {
-  const split = statedNotAsked(route, { split: true });
+export function scopeLine(route: Route, profile: Profile = {}): string {
+  const split = statedNotAsked(route, { split: true, profile });
   return scopeWords(route.scope.value, split.stated.length, split.noted.length);
 }
 
@@ -91,12 +100,20 @@ export function scopeLine(route: Route): string {
  * the value agrees with the route's own conditions in full is a v1.x candidate
  * recorded with this slice.
  */
-export function statedNotAsked(route: Route): string[];
-export function statedNotAsked(route: Route, o: { split: true }): { stated: string[]; noted: string[] };
+export function statedNotAsked(route: Route, o?: { profile?: Profile }): string[];
 export function statedNotAsked(
-  route: Route, o: { split?: true } = {},
+  route: Route, o: { split: true; profile?: Profile },
+): { stated: string[]; noted: string[] };
+export function statedNotAsked(
+  route: Route, o: { split?: true; profile?: Profile } = {},
 ): string[] | { stated: string[]; noted: string[] } {
-  const statements: RouteStatement[] = routeStatements(route);
+  // A statement the authority itself sets aside for this reader's passport is
+  // not among the conditions stated to them — the carve-out stands in its
+  // place, and it is a release, not a bar (s7). With no profile nothing is set
+  // aside, which is what a route page and a reader who has not answered the
+  // passport question both need.
+  const statements: RouteStatement[] = routeStatements(route)
+    .filter((s) => bindsReader(s, o.profile ?? {}));
   // What the authority states without our asking, and what we read into the
   // gap ourselves. The page has always shown both; the difference between them
   // is the difference between a source and an opinion.

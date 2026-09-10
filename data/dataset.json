@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.5.0",
+  "schema_version": "0.6.0",
   "dataset_version": "2026.09.07",
   "fields": [
     {
@@ -2739,12 +2739,13 @@
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — pay that matches what the job normally pays, an employer on the recognised-sponsor register, and the healthcare register where it applies — are listed with the rules below and never asked, and the orientation year permit that also opens the lower salary is never asked about.",
+            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — pay that matches what the job normally pays, an employer on the recognised-sponsor register, and the healthcare register where it applies — are listed with the rules below and never asked, and the orientation year permit that also opens the lower salary is never asked about. The provisional residence permit this application needs is listed with the rules below too, and your passport decides both whether the Dutch immigration service exempts you from it and whether the recognised-sponsor condition applies to your employer at all.",
             "not_asked": [
               "reduced-also-for-orientation-year-permit-holders",
               "salary-must-match-the-market-rate",
               "employer-must-be-a-recognised-sponsor",
-              "big-register-for-healthcare-professions"
+              "big-register-for-healthcare-professions",
+              "mvv-needed"
             ]
           },
           "criteria": [
@@ -2916,6 +2917,19 @@
                 "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
                 "quote": "This employer is a sponsor recognised by the IND. A recognised sponsor is listed in the public register of recognised sponsors.",
                 "retrieved_at": "2026-09-07"
+              },
+              "except": {
+                "citizenship": [
+                  "TR"
+                ],
+                "text": "Your employer does not have to be a recognised sponsor — for employees with Turkish nationality the Dutch immigration service does not require one, and you can submit the application yourself.",
+                "source": {
+                  "source_url": "https://ind.nl/en/turkish-citizens-and-living-in-the-netherlands",
+                  "quote": "Have you found work as a highly skilled migrant? Or work as a researcher under Directive (EU) 2016/801? Normally, only recognised sponsors can apply for these residence permits. For employees with Turkish nationality, a recognised sponsor is not required. You can also submit the application yourself.",
+                  "retrieved_at": "2026-09-10",
+                  "legal_basis": "Dutch immigration service, Turkish citizens and living in the Netherlands — Obligatory recognised sponsor not required",
+                  "history": []
+                }
               }
             },
             {
@@ -2937,6 +2951,38 @@
                 "quote": "Do you have an employment contract with a company located outside the EU? And are you going to be transferred as a manager, specialist or trainee? Then you are an intra corporate transferee and other requirements apply to you.",
                 "retrieved_at": "2026-09-08"
               }
+            },
+            {
+              "id": "mvv-needed",
+              "kind": "precondition",
+              "text": "This application needs a provisional residence permit (MVV).",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "A valid provisional residence permit (MVV) is needed for this application",
+                "retrieved_at": "2026-09-10"
+              },
+              "except": {
+                "citizenship": [
+                  "AU",
+                  "CA",
+                  "JP",
+                  "MC",
+                  "NZ",
+                  "VA",
+                  "GB",
+                  "US",
+                  "KR",
+                  "CH"
+                ],
+                "text": "You do not need a provisional residence permit (MVV) — the Dutch immigration service names your passport among the nationalities that need none.",
+                "source": {
+                  "source_url": "https://ind.nl/en/mvv-exemptions",
+                  "quote": "You do not need an MVV if you have the nationality of one of these countries. Australia Canada Japan Monaco New Zealand Vatican City United Kingdom United States South Korea Switzerland An EU/EEA Member State",
+                  "retrieved_at": "2026-09-10",
+                  "legal_basis": "Dutch immigration service, MVV exemptions — Your nationality is decisive",
+                  "history": []
+                }
+              }
             }
           ]
         },
@@ -2948,13 +2994,14 @@
           "info_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — pay that matches what the job normally pays, an employer on the recognised-sponsor register, and the healthcare register where it applies — are listed with the rules below and never asked, and neither the orientation year permit that also opens the lower salary nor what happens when you change employer after thirty is asked about.",
+            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — pay that matches what the job normally pays, an employer on the recognised-sponsor register, and the healthcare register where it applies — are listed with the rules below and never asked, and neither the orientation year permit that also opens the lower salary nor what happens when you change employer after thirty is asked about. The provisional residence permit this application needs is listed with the rules below too, and your passport decides both whether the Dutch immigration service exempts you from it and whether the recognised-sponsor condition applies to your employer at all.",
             "not_asked": [
               "reduced-also-for-orientation-year-permit-holders",
               "salary-must-match-the-market-rate",
               "higher-amount-after-a-change-of-employer-past-thirty",
               "employer-must-be-a-recognised-sponsor",
-              "big-register-for-healthcare-professions"
+              "big-register-for-healthcare-professions",
+              "mvv-needed"
             ]
           },
           "criteria": [
@@ -3132,6 +3179,19 @@
                 "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
                 "quote": "This employer is a sponsor recognised by the IND. A recognised sponsor is listed in the public register of recognised sponsors.",
                 "retrieved_at": "2026-09-07"
+              },
+              "except": {
+                "citizenship": [
+                  "TR"
+                ],
+                "text": "Your employer does not have to be a recognised sponsor — for employees with Turkish nationality the Dutch immigration service does not require one, and you can submit the application yourself.",
+                "source": {
+                  "source_url": "https://ind.nl/en/turkish-citizens-and-living-in-the-netherlands",
+                  "quote": "Have you found work as a highly skilled migrant? Or work as a researcher under Directive (EU) 2016/801? Normally, only recognised sponsors can apply for these residence permits. For employees with Turkish nationality, a recognised sponsor is not required. You can also submit the application yourself.",
+                  "retrieved_at": "2026-09-10",
+                  "legal_basis": "Dutch immigration service, Turkish citizens and living in the Netherlands — Obligatory recognised sponsor not required",
+                  "history": []
+                }
               }
             },
             {
@@ -3153,6 +3213,38 @@
                 "quote": "Do you have an employment contract with a company located outside the EU? And are you going to be transferred as a manager, specialist or trainee? Then you are an intra corporate transferee and other requirements apply to you.",
                 "retrieved_at": "2026-09-08"
               }
+            },
+            {
+              "id": "mvv-needed",
+              "kind": "precondition",
+              "text": "This application needs a provisional residence permit (MVV).",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
+                "quote": "A valid provisional residence permit (MVV) is needed for this application",
+                "retrieved_at": "2026-09-10"
+              },
+              "except": {
+                "citizenship": [
+                  "AU",
+                  "CA",
+                  "JP",
+                  "MC",
+                  "NZ",
+                  "VA",
+                  "GB",
+                  "US",
+                  "KR",
+                  "CH"
+                ],
+                "text": "You do not need a provisional residence permit (MVV) — the Dutch immigration service names your passport among the nationalities that need none.",
+                "source": {
+                  "source_url": "https://ind.nl/en/mvv-exemptions",
+                  "quote": "You do not need an MVV if you have the nationality of one of these countries. Australia Canada Japan Monaco New Zealand Vatican City United Kingdom United States South Korea Switzerland An EU/EEA Member State",
+                  "retrieved_at": "2026-09-10",
+                  "legal_basis": "Dutch immigration service, MVV exemptions — Your nationality is decisive",
+                  "history": []
+                }
+              }
             }
           ]
         },
@@ -3164,11 +3256,12 @@
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — the contract of at least six months, and the authorisation to practise a regulated profession — are listed with the rules below and never asked, and the extension and employer-change cases that also open the lower salary are not covered by the questions.",
+            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — the contract of at least six months, and the authorisation to practise a regulated profession — are listed with the rules below and never asked, and the extension and employer-change cases that also open the lower salary are not covered by the questions. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
             "not_asked": [
               "reduced-also-on-extension-or-employer-change",
               "employment-contract-valid-for-six-months",
-              "permission-to-practise-a-regulated-profession"
+              "permission-to-practise-a-regulated-profession",
+              "mvv-needed"
             ]
           },
           "criteria": [
@@ -3393,6 +3486,38 @@
                 "quote": "Do you have a regulated profession, such as doctor or lawyer? Then you must demonstrate that you are allowed to practice this profession in the Netherlands. Are you going to work in individual healthcare? And do you practise a medical profession that is listed in Article 3 and Article 36a of the Individual Healthcare Professions Act (BIG Act)? If so, you must be registered in the BIG register.",
                 "retrieved_at": "2026-09-07"
               }
+            },
+            {
+              "id": "mvv-needed",
+              "kind": "precondition",
+              "text": "This application needs a provisional residence permit (MVV).",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+                "quote": "A valid provisional residence permit (MVV) is needed for this application",
+                "retrieved_at": "2026-09-10"
+              },
+              "except": {
+                "citizenship": [
+                  "AU",
+                  "CA",
+                  "JP",
+                  "MC",
+                  "NZ",
+                  "VA",
+                  "GB",
+                  "US",
+                  "KR",
+                  "CH"
+                ],
+                "text": "You do not need a provisional residence permit (MVV) — the Dutch immigration service names your passport among the nationalities that need none.",
+                "source": {
+                  "source_url": "https://ind.nl/en/mvv-exemptions",
+                  "quote": "You do not need an MVV if you have the nationality of one of these countries. Australia Canada Japan Monaco New Zealand Vatican City United Kingdom United States South Korea Switzerland An EU/EEA Member State",
+                  "retrieved_at": "2026-09-10",
+                  "legal_basis": "Dutch immigration service, MVV exemptions — Your nationality is decisive",
+                  "history": []
+                }
+              }
             }
           ]
         },
@@ -3404,11 +3529,12 @@
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — three months already with the company outside Europe, the manager, specialist or trainee role, and the authorisation to practise a protected profession — are listed with the rules below and never asked.",
+            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — three months already with the company outside Europe, the manager, specialist or trainee role, and the authorisation to practise a protected profession — are listed with the rules below and never asked. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
             "not_asked": [
               "three-months-with-the-company-outside-the-union",
               "a-manager-specialist-or-trainee-post",
-              "permission-to-practise-a-protected-profession"
+              "permission-to-practise-a-protected-profession",
+              "mvv-needed"
             ]
           },
           "criteria": [
@@ -3558,6 +3684,38 @@
                 "quote": "Do you have a protected profession such as a doctor or architect? If so, you must show that you are allowed to practise that profession in the Netherlands.",
                 "retrieved_at": "2026-09-07"
               }
+            },
+            {
+              "id": "mvv-needed",
+              "kind": "precondition",
+              "text": "This application needs a provisional residence permit (MVV).",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
+                "quote": "A valid provisional residence permit (MVV) is needed for this application",
+                "retrieved_at": "2026-09-10"
+              },
+              "except": {
+                "citizenship": [
+                  "AU",
+                  "CA",
+                  "JP",
+                  "MC",
+                  "NZ",
+                  "VA",
+                  "GB",
+                  "US",
+                  "KR",
+                  "CH"
+                ],
+                "text": "You do not need a provisional residence permit (MVV) — the Dutch immigration service names your passport among the nationalities that need none.",
+                "source": {
+                  "source_url": "https://ind.nl/en/mvv-exemptions",
+                  "quote": "You do not need an MVV if you have the nationality of one of these countries. Australia Canada Japan Monaco New Zealand Vatican City United Kingdom United States South Korea Switzerland An EU/EEA Member State",
+                  "retrieved_at": "2026-09-10",
+                  "legal_basis": "Dutch immigration service, MVV exemptions — Your nationality is decisive",
+                  "history": []
+                }
+              }
             }
           ]
         },
@@ -3569,11 +3727,12 @@
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — a research institute on the recognised-sponsor register, and a degree giving access to a doctoral programme — are listed with the rules below and never asked, and the grant or own funds that can stand in for a salary are not asked about either.",
+            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — a research institute on the recognised-sponsor register, and a degree giving access to a doctoral programme — are listed with the rules below and never asked, and the grant or own funds that can stand in for a salary are not asked about either. The provisional residence permit this application needs is listed with the rules below too, and your passport decides both whether the Dutch immigration service exempts you from it and whether the recognised-sponsor condition applies to the institute at all.",
             "not_asked": [
               "other-income-can-meet-this",
               "the-institute-must-be-a-recognised-sponsor",
-              "a-degree-that-opens-a-doctorate"
+              "a-degree-that-opens-a-doctorate",
+              "mvv-needed"
             ]
           },
           "criteria": [
@@ -3660,6 +3819,19 @@
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
                 "quote": "This research institute (hereinafter referred to as: employer) is a recognised sponsor. You can check the public register of recognised sponsors whether your employer has been recognised as a sponsor.",
                 "retrieved_at": "2026-09-07"
+              },
+              "except": {
+                "citizenship": [
+                  "TR"
+                ],
+                "text": "The research institute does not have to be a recognised sponsor — for employees with Turkish nationality the Dutch immigration service does not require one, and you can submit the application yourself.",
+                "source": {
+                  "source_url": "https://ind.nl/en/turkish-citizens-and-living-in-the-netherlands",
+                  "quote": "Have you found work as a highly skilled migrant? Or work as a researcher under Directive (EU) 2016/801? Normally, only recognised sponsors can apply for these residence permits. For employees with Turkish nationality, a recognised sponsor is not required. You can also submit the application yourself.",
+                  "retrieved_at": "2026-09-10",
+                  "legal_basis": "Dutch immigration service, Turkish citizens and living in the Netherlands — Obligatory recognised sponsor not required",
+                  "history": []
+                }
               }
             },
             {
@@ -3670,6 +3842,38 @@
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
                 "quote": "You have a higher education degree. This degree gives you access to the doctoral programme. Your employer determines whether your degree is suitable. Do you not have a suitable degree? Then your employer must declare that you have the appropriate level.",
                 "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "mvv-needed",
+              "kind": "precondition",
+              "text": "This application needs a provisional residence permit (MVV).",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
+                "quote": "A valid provisional residence permit (MVV) is needed for this application",
+                "retrieved_at": "2026-09-10"
+              },
+              "except": {
+                "citizenship": [
+                  "AU",
+                  "CA",
+                  "JP",
+                  "MC",
+                  "NZ",
+                  "VA",
+                  "GB",
+                  "US",
+                  "KR",
+                  "CH"
+                ],
+                "text": "You do not need a provisional residence permit (MVV) — the Dutch immigration service names your passport among the nationalities that need none.",
+                "source": {
+                  "source_url": "https://ind.nl/en/mvv-exemptions",
+                  "quote": "You do not need an MVV if you have the nationality of one of these countries. Australia Canada Japan Monaco New Zealand Vatican City United Kingdom United States South Korea Switzerland An EU/EEA Member State",
+                  "retrieved_at": "2026-09-10",
+                  "legal_basis": "Dutch immigration service, MVV exemptions — Your nationality is decisive",
+                  "history": []
+                }
               }
             }
           ]
@@ -3682,12 +3886,13 @@
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Of the five situations the authority lists, the two that turn on where and when you studied are asked here; three are not — research carried out in the Netherlands, an Erasmus Mundus master's, and a permit you already hold or have held — and three further conditions are listed with the rules below and never asked.",
+            "reason": "Of the five situations the authority lists, the two that turn on where and when you studied are asked here; three are not — research carried out in the Netherlands, an Erasmus Mundus master's, and a permit you already hold or have held — and three further conditions are listed with the rules below and never asked. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
             "not_asked": [
               "no-second-orientation-year",
               "turkish-citizens-differ",
               "the-research-finished-within-three-years",
               "english-where-the-institution-was-abroad",
+              "mvv-needed",
               "two-of-five-situations-modelled"
             ]
           },
@@ -3790,6 +3995,38 @@
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
                 "quote": "If you have completed your course or programme at a designated foreign educational institution, you must also meet one of the following requirements: You obtained a minimum score of 6.0 on a test in the International English Language Testing System (IELTS).",
                 "retrieved_at": "2026-09-07"
+              }
+            },
+            {
+              "id": "mvv-needed",
+              "kind": "precondition",
+              "text": "This application needs a provisional residence permit (MVV).",
+              "source": {
+                "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
+                "quote": "A valid provisional residence permit (MVV) is needed for this application",
+                "retrieved_at": "2026-09-10"
+              },
+              "except": {
+                "citizenship": [
+                  "AU",
+                  "CA",
+                  "JP",
+                  "MC",
+                  "NZ",
+                  "VA",
+                  "GB",
+                  "US",
+                  "KR",
+                  "CH"
+                ],
+                "text": "You do not need a provisional residence permit (MVV) — the Dutch immigration service names your passport among the nationalities that need none.",
+                "source": {
+                  "source_url": "https://ind.nl/en/mvv-exemptions",
+                  "quote": "You do not need an MVV if you have the nationality of one of these countries. Australia Canada Japan Monaco New Zealand Vatican City United Kingdom United States South Korea Switzerland An EU/EEA Member State",
+                  "retrieved_at": "2026-09-10",
+                  "legal_basis": "Dutch immigration service, MVV exemptions — Your nationality is decisive",
+                  "history": []
+                }
               }
             }
           ],

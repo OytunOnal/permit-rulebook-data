@@ -154,8 +154,13 @@ describe("s5e — what is ours is marked as ours", () => {
       // authority demands of an applicant is the authority's position, and it
       // now carries the authority's words or is declared ours below. Two more
       // arrived on 2026-09-08 with the intra-corporate-transferee caveat on
-      // both highly-skilled-migrant routes.
-      with_provenance: 94,
+      // both highly-skilled-migrant routes. Fifteen more arrived with s7: the
+      // provisional residence permit each of the six Dutch pages states, and
+      // the nine carve-outs beside them — three Turkish, six for the ten
+      // passports the IND exempts from that permit. A carve-out is a claim
+      // about the law in the reader's favour, so it is counted where the
+      // authority's other sentences are counted.
+      with_provenance: 109,
       // Ours, declared as ours and shown to the reader as ours: 8 route
       // readings, plus the 23 scope-statement reasons s6 authored — one per route,
       // our own words about our own interview, printed as the page's scope

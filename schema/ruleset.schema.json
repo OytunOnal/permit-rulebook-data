@@ -848,6 +848,9 @@
         },
         "unsourced": {
           "$ref": "#/$defs/unsourcedReason"
+        },
+        "except": {
+          "$ref": "#/$defs/statementException"
         }
       },
       "allOf": [
@@ -855,6 +858,35 @@
           "$ref": "#/$defs/sourcedOrDeclaredUnsourced"
         }
       ]
+    },
+    "statementException": {
+      "type": "object",
+      "description": "Who this statement does not bind, in the authority's own words. Narrow on purpose: the only answer a carve-out may key on today is the passport, because that is the only nationality answer the interview has. There is deliberately no `unsourced` here — a statement may stand on a declared reason no quote was found, because dropping a condition understates what the reader must do, while a carve-out that cannot be quoted tells a reader a rule is off them on our own say-so. A carve-out we cannot quote is a carve-out we do not ship.",
+      "required": [
+        "citizenship",
+        "text",
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "citizenship": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Passport countries, as the `citizenship` field answers them. Whether each one is an answer that field can give is checked against countries.json by the build, which is the only place that knows."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Our plain English, in the register of the statement it qualifies. The quote beside it is the source's own words."
+        },
+        "source": {
+          "$ref": "#/$defs/provenancedText"
+        }
+      }
     },
     "route": {
       "type": "object",

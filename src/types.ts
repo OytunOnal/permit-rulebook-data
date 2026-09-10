@@ -129,7 +129,44 @@ export interface RouteStatement {
   /** Why this statement carries no quote — required when `source` is absent,
    * forbidden when it is present. */
   unsourced?: UnsourcedReason;
+  /** The passports the authority itself says this statement does not bind.
+   * A carve-out is a rule like any other, so it carries its own quote. */
+  except?: StatementException;
 }
+
+/**
+ * Who a Route statement does not bind, in the authority's own words.
+ *
+ * Narrow on purpose. `citizenship` was used in exactly one way in all 23
+ * routes — `eq third_country` — so no route COULD say "for nationals of X this
+ * does not apply", even where an authority says exactly that, and the product
+ * asked which passport a reader would apply with and then scored them against
+ * conditions the IND sets aside for that passport (human walk on the live
+ * site, diagnosed as a class in issue #8). The only field a carve-out may key
+ * on today is the passport, because that is the only nationality answer the
+ * interview has; a carve-out that had to key on anything else would be a
+ * different construct, argued for on its own evidence.
+ *
+ * There is no `unsourced` here, and that absence is the point: a statement may
+ * stand on a declared, dated reason no quote could be found, because dropping
+ * a condition would understate what the reader must do. A carve-out that
+ * cannot be quoted does the opposite — it tells a reader a rule is off them on
+ * our own say-so. A carve-out we cannot quote is a carve-out we do not ship.
+ */
+export interface StatementException {
+  /** Passport countries, as the `citizenship` field answers them. */
+  citizenship: string[];
+  /** Our plain English, in the register of the statement it qualifies. */
+  text: string;
+  source: ProvenancedText;
+}
+
+/**
+ * The one answer a carve-out reads. Named here rather than spelled at each
+ * site that reads it, so the narrowness above is a fact the type system and
+ * the validator share rather than a string three files agree on by habit.
+ */
+export const CARVE_OUT_FIELD = "citizenship";
 
 /**
  * OUR reading of a route — what we modelled, what we did not, and where a

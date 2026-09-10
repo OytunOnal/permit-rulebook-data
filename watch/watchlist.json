@@ -329,6 +329,28 @@
         "to": "Cookies Proclaimer Privacy Sitemap"
       },
       "note": "IND researcher requirement list. Backs the hosting-agreement condition and the other-income caveat on nl-researcher. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
+    },
+    {
+      "id": "ind-turkish-citizens",
+      "url": "https://ind.nl/en/turkish-citizens-and-living-in-the-netherlands",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Obligatory recognised sponsor not required",
+        "to": "IND decides faster on the application of a recognised sponsor"
+      },
+      "note": "IND page for Turkish citizens. Backs the carve-out that releases a Turkish passport from the recognised-sponsor condition on both highly-skilled-migrant routes and on the researcher route. Sliced to the one section the carve-out is quoted from — the IND scopes the carve-out by naming those permits, and a wider slice would watch the self-employment and civic-integration sections that back nothing here. The page’s own \"Last update\" date sits above the slice, or the entry would flag every day, and — the reason the slice is here at all — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
+    },
+    {
+      "id": "ind-mvv-exemptions",
+      "url": "https://ind.nl/en/mvv-exemptions",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Your nationality is decisive",
+        "to": "Situations in which no MVV is needed"
+      },
+      "note": "IND list of the nationalities that need no provisional residence permit. Backs the carve-out on the mvv-needed caveat of all six Dutch routes. Sliced to the nationality list alone: the rest of the page lists situation-based exemptions, which turn on facts this interview never asks and back no value here, and every one of them would flag on a wording change. The page’s own \"Last update\" date sits above the slice, or the entry would flag every day, and — the reason the slice is here at all — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
     }
   ]
 }
