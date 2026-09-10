@@ -1,8 +1,6 @@
 import { countryClasses, countryPhrase } from "./countries.js";
 import { DEFAULT_UNKNOWN_LABEL, UNKNOWN_BAND } from "./questions.js";
-import {
-  decidingCriteria, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields,
-} from "./engine.js";
+import { closedBy, decidingCriteria, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields, } from "./engine.js";
 import type {
   Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
 } from "./types.js";
@@ -195,7 +193,10 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
    * route that will never be theirs however the rest of the interview goes.
    * The quote the sentence stands on rides beside it, like every other value.
    */
-  const closure = r.criteria.find((cr) => cr.outcome === "fail" && cr.criterion.op === "not-in");
+  // The one predicate, read here too: a screen may never file a closed route
+  // under a heading that promises it later (Standards review, 2026-09-10 —
+  // this line was a second copy of `closedBy`).
+  const [closure] = closedBy(r);
 
   for (const cr of r.criteria) {
     if (cr.outcome !== "fail") continue;

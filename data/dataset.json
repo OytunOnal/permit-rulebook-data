@@ -642,7 +642,7 @@
       },
       "kind": "open-question",
       "title": "Algeria: a separate agreement, and a question no page we found answers",
-      "body": "France does not apply the residence-permit provisions of its own immigration code to Algerian nationals: the Franco-Algerian agreement of 27 December 1968 governs instead. The Conseil d'État said so on 2 March 2026, in a case about a trader's residence certificate rather than a talent card, so its words settle the principle and not the talent cards themselves. The page the administration routes an Algerian reader to is a one-year certificat de résidence; for a salaried job in France it says the certificate will carry the mention salarié, and none of the seventeen situations it lists for a first application is a passeport talent or an EU Blue Card — read to the end on 2026-09-10. Against that stands the EU directive behind the Blue Card, whose scope article covers every third-country national admitted for highly qualified employment. We searched service-public, france-visas, the ministry and the ANEF portal on 2026-09-10 for a page saying whether an Algerian national may hold a passeport talent, and found none. So the four talent routes on this site are scored exactly as they are for any other non-EU passport: that is us declining to guess, not an answer.",
+      "body": "France does not apply the residence-permit provisions of its own immigration code to Algerian nationals: the Franco-Algerian agreement of 27 December 1968 governs instead. The Conseil d'État said so on 2 March 2026, in a case about a trader's residence certificate rather than a talent card, so its words settle the principle and not the talent cards themselves. The page the administration routes an Algerian reader to is a one-year certificat de résidence; for a salaried job in France it says the certificate will carry the mention salarié, and none of the situations it lists is a passeport talent or an EU Blue Card — read to the end on 2026-09-10. Against that stands the EU directive behind the Blue Card, whose scope article covers third-country nationals admitted for highly qualified employment. We searched service-public, france-visas, the ministry and the ANEF portal on 2026-09-10 for a page saying whether an Algerian national may hold a passeport talent, and found none. So the four talent routes on this site are scored exactly as they are for any other non-EU passport: that is us declining to guess, not an answer.",
       "source": {
         "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000053612496",
         "quote": "Il suit de là que les dispositions du code de l'entrée et du séjour des étrangers et du droit d'asile qui sont relatives aux différents titres de séjour qui peuvent être délivrés aux étrangers en général et aux conditions de leur délivrance, ne sont pas applicables aux ressortissants algériens, lesquels relèvent à cet égard des règles fixées par l'accord précité.",
@@ -652,10 +652,10 @@
       },
       "sources": [
         {
-          "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F35600/1?idFicheParent=F33952",
+          "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2215",
           "quote": "Le certificat de résidence portera la mention salarié.",
           "retrieved_at": "2026-09-10",
-          "legal_basis": "Fiche F35600 — Certificat de résidence d'1 an pour Algérien, 1re demande, salarié",
+          "legal_basis": "Fiche F2215 — Certificat de résidence d'1 an pour Algérien",
           "history": []
         },
         {
@@ -668,7 +668,7 @@
       ],
       "learn": {
         "label": "The page for Algerian nationals — certificat de résidence d'1 an",
-        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F35600/1?idFicheParent=F33952"
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2215"
       },
       "routes": [
         "fr-talent-qualifie",

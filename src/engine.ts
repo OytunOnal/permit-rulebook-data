@@ -25,9 +25,39 @@ export function formatEURPer(amount: number, period?: "month" | "year"): string 
  * The notices that apply to this profile. A notice states what no route can
  * ("you need no permit at all"); it is stated only on an answer the person
  * actually gave — an unanswered field never matches.
+ *
+ * A notice that names `routes` belongs to those routes and is stated only
+ * where the reader asked about a country one of them is in. Without that, the
+ * Algerian open question stood over a screen showing Germany alone, telling a
+ * reader about four French permits they had not asked for (Spec review,
+ * 2026-09-10). A notice with no `routes` is about the reader rather than about
+ * a route — Decision 1/80 is not one country's — and matches on the answer
+ * alone.
+ *
+ * "Asked about" is the route's own destination criterion, checked against this
+ * profile: `evaluate` returns all 23 routes whatever the reader chose, and the
+ * screen is what narrows them, so the country gate has to be read from the
+ * route rather than from the result.
  */
 export function notices(dataset: Dataset, profile: Profile): Notice[] {
+  const askedAbout = (id: string): boolean => {
+    for (const country of dataset.countries)
+      for (const route of country.routes) {
+        if (route.id !== id) continue;
+        const answer = profile["destination"];
+        if (answer === undefined) return true;
+        for (const c of route.criteria) {
+          if (!("field" in c) || c.field !== "destination") continue;
+          const wanted = c.op === "in" ? c.values : c.op === "eq" ? [c.value] : [];
+          if (!wanted.length) continue;
+          if (!satisfies(dataset, c.field, answer, wanted)) return false;
+        }
+        return true;
+      }
+    return false;
+  };
   return (dataset.notices ?? []).filter((n) => {
+    if (n.routes?.length && !n.routes.some(askedAbout)) return false;
     const answer = profile[n.when.field];
     if (answer === undefined) return false;
     // The SAME predicate the criteria use (see `satisfies`): a country can

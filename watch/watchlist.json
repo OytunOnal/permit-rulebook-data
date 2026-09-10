@@ -391,15 +391,21 @@
       "note": "Backs Article 3(1) of Directive (EU) 2021/1883, the scope sentence that puts every third-country national inside the Blue Card. Human tier because EUR-Lex answers this watch's fetcher with HTTP 202 and an EMPTY body — a bot challenge that a naive reader would record as a successful read of a blank page. Measured 2026-09-10 on this URL, on /EN/TXT/ without HTML, and on the ELI alias; all three behave the same. A person read it on 2026-09-10. Re-read quarterly: a directive's text is amended by another directive, and the consolidated edition is what would move."
     },
     {
-      "id": "fr-f35600-certificat-algerien",
-      "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F35600/1?idFicheParent=F33952",
+      "id": "fr-f2215-certificat-algerien",
+      "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2215",
       "strategy": "html",
       "kind": "value-source",
       "slice": {
         "from": "Les règles diffèrent selon votre situation",
         "to": "Textes de loi"
       },
-      "note": "The page the administration routes an Algerian reader to, and the page the Algerian notice sends them to. It backs one quote — that a salaried job gets a certificat de résidence carrying the mention salarié — and one ABSENCE the notice states in as many words: no passeport talent and no EU Blue Card among the situations it lists. The slice is therefore the whole enumeration, both tabs, from the first situation intro to the statute section — 80,383 of the page's 89,566 characters, cutting the header, the rating widget and the footer. A tighter slice around the one quote would stop watching the very list whose contents the notice reports, which is the thing that can change. Checked 2026-09-10: the sliced region carries no date, no opening hours and no Allo Service Public widget — the three things that made F16922 flag while its values stood still."
+      "note": "The fiche for Algerian nationals, and the page the transfer card's own callout links to («D'autres règles s'appliquent si vous êtes Algérien»). Backs the open-question notice on the four French talent routes: it is where the salarié certificate is stated, and where a passeport talent or an EU Blue Card is not.",
+      "history": [
+        {
+          "changed_at": "2026-09-10",
+          "note": "Moved from F35600 to F2215 before either was ever read on a schedule: F35600 is the situation-specific view, and F2215 is the fiche the transfer card's callout actually links to (Spec review, 2026-09-10 — the notice claimed the administration routes an Algerian reader there, and it routes them here). Same sentence, and the absence the notice reports was re-checked on this page the same day."
+        }
+      ]
     }
   ]
 }

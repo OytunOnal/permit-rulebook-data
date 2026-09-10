@@ -204,6 +204,29 @@ describe("property: when the interview ends, no unanswered question could change
 });
 
 describe("property: a notice is stated only on an answer that was actually given", () => {
+  /**
+   * And, since s8, only where it has something to be about: a notice that
+   * names routes is stated where the reader asked about a country one of them
+   * is in. The Algerian open question stood over a German screen before this
+   * (Spec review, 2026-09-10).
+   */
+  const onThisScreen = (n: { routes?: string[] }, p: Profile): boolean => {
+    if (!n.routes?.length) return true;
+    const asked = p["destination"];
+    if (asked === undefined) return true;
+    return n.routes.some((id) => {
+      for (const country of dataset.countries)
+        for (const route of country.routes)
+          if (route.id === id)
+            return route.criteria.every((c) => {
+              if (!("field" in c) || c.field !== "destination") return true;
+              const values = c.op === "in" ? c.values : c.op === "eq" ? [c.value] : [];
+              return !values.length || values.includes(asked);
+            });
+      return false;
+    });
+  };
+
   it("non-empty exactly when the notice's field carries its matching value (500 random profiles)", () => {
     const rand = lcg(2026);
     for (let i = 0; i < 500; i++) {
@@ -216,7 +239,9 @@ describe("property: a notice is stated only on an answer that was actually given
         const carried = answer === undefined ? [] : [answer,
           ...(fieldOptions(dataset, n.when.field).find((o) => o.value === answer)?.implies ?? [])];
         const wanted = n.when.op === "eq" ? [n.when.value] : (n.when.values ?? []);
-        const applies = answer !== undefined && wanted.some((v) => v !== undefined && carried.includes(v));
+        const applies = answer !== undefined
+          && wanted.some((v) => v !== undefined && carried.includes(v))
+          && onThisScreen(n, p);
         expect(matched.some((m) => m.id === n.id), `${n.id} @ ${JSON.stringify(p[n.when.field])}`).toBe(applies);
       }
     }

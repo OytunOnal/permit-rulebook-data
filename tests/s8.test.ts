@@ -33,7 +33,7 @@ const TALENT = ["fr-talent-qualifie", "fr-talent-blue-card", "fr-talent-innovant
 const ICT_SOURCE = "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952";
 const COUNCIL_SOURCE = "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000053612496";
 const DIRECTIVE_SOURCE = "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883";
-const ALGERIAN_PAGE = "https://www.service-public.gouv.fr/particuliers/vosdroits/F35600/1?idFicheParent=F33952";
+const ALGERIAN_PAGE = "https://www.service-public.gouv.fr/particuliers/vosdroits/F2215";
 
 const topYearBand = (): string => deriveBands(dataset, "salary_eur_year").at(-1)!.id;
 
@@ -220,7 +220,7 @@ describe("s8 — the new sources are watched and quote-checked like every other 
   it("puts every new source on the watchlist", () => {
     const urls = datasetSourceUrls(dataset);
     for (const url of [COUNCIL_SOURCE, DIRECTIVE_SOURCE, ALGERIAN_PAGE]) expect([...urls], url).toContain(url);
-    for (const id of ["legifrance-ce-algerian-titles", "eur-lex-blue-card-directive", "fr-f35600-certificat-algerien"])
+    for (const id of ["legifrance-ce-algerian-titles", "eur-lex-blue-card-directive", "fr-f2215-certificat-algerien"])
       expect(watchlist.entries.find((e) => e.id === id), id).toBeDefined();
   });
 
@@ -240,13 +240,13 @@ describe("s8 — the new sources are watched and quote-checked like every other 
   });
 
   it("slices the page it can read to the enumeration the notice reports, re-baselined in the same change", () => {
-    const entry = watchlist.entries.find((e) => e.id === "fr-f35600-certificat-algerien")!;
+    const entry = watchlist.entries.find((e) => e.id === "fr-f2215-certificat-algerien")!;
     expect(entry.slice).toBeDefined();
     // The watch rule written on 2026-09-09: a change that adds or moves a
     // slice re-reads that entry's baseline in the same change, or the next
     // run files our own edit as the authority's. The same rule reaches the two
     // French fiches whose READING moved when the tooltip artefact was dropped.
-    for (const id of ["fr-f35600-certificat-algerien", "fr-f33952-ict", "fr-f16922-talent"]) {
+    for (const id of ["fr-f2215-certificat-algerien", "fr-f33952-ict", "fr-f16922-talent"]) {
       const e = watchlist.entries.find((x) => x.id === id)!;
       expect(state.entries[id], id).toBeDefined();
       expect(state.entries[id].slice_read, id).toBe(sliceFingerprint(e));
@@ -302,5 +302,68 @@ describe("s8 — what an Algerian national actually applies for is recorded", ()
   it("and the file still agrees with itself and with the routes", () => {
     expect(twinDisagreesWithProse(exclusionsMd)).toEqual([]);
     for (const id of routesInProse(exclusionsMd)) expect(excludedLimbs(exclusionsMd).has(id), id).toBe(true);
+  });
+});
+
+/**
+ * The two the Spec review found, kept as the cases that would have caught them.
+ *
+ * A notice that names routes is about those routes: an Algerian passport
+ * looking only at Germany was shown an open question about four French permits
+ * that were not on the screen. And a criterion may not close a route on a field
+ * whose answers nothing enumerates — a closure nobody can check is a closure
+ * that fails everyone.
+ */
+describe("a notice about routes goes where those routes go", () => {
+  const algerian = (destination: string): Profile => ({ citizenship: "DZ", destination });
+
+  it("stands over a screen that has one of its routes", () => {
+    const shown = notices(dataset, algerian("fr")).map((n) => n.id);
+    expect(shown).toContain("fr-dz-talent-open-question");
+  });
+
+  it("says nothing over a screen that has none of them", () => {
+    for (const destination of ["de", "es", "nl"]) {
+      const shown = notices(dataset, algerian(destination)).map((n) => n.id);
+      expect(shown, destination).not.toContain("fr-dz-talent-open-question");
+    }
+  });
+
+  it("still reaches a reader who asked about every country", () => {
+    const shown = notices(dataset, algerian("all")).map((n) => n.id);
+    expect(shown).toContain("fr-dz-talent-open-question");
+  });
+
+  it("a notice that names no route is about the reader, and follows them everywhere", () => {
+    // Decision 1/80 is not one country's, and the Türkiye notice names no
+    // routes — it must not be narrowed by this rule.
+    for (const destination of ["de", "fr", "es", "nl", "all"]) {
+      const shown = notices(dataset, { citizenship: "TR", destination }).map((n) => n.id);
+      expect(shown, destination).toContain("tr-ankara-rights");
+    }
+  });
+});
+
+describe("a closure names an answer, or it says nothing", () => {
+  /**
+   * The Spec review asked for the third branch build item 2 named — a closure
+   * on "a field with no vocabulary". There is no such guard, and there was no
+   * hole either: `checkVocabulary` is scoped to the fields whose answers come
+   * from countries.json, and every other field is guarded by `checkWords`,
+   * which refuses a criterion naming an answer that carries no noun phrase.
+   * The spec's phrase was mine and it described a validator this repository
+   * does not have; the case below is the one that holds (session, 2026-09-10).
+   */
+  it("refuses a closure whose answer carries no words of its own", () => {
+    const broken = structuredClone(dataset) as Dataset;
+    const route = broken.countries.find((c) => c.code === "FR")!.routes
+      .find((r) => r.id === "fr-ict")!;
+    const closure = route.criteria.find((c) => "op" in c && c.op === "not-in") as
+      { values: string[]; short_reason?: string };
+    closure.values = ["ZZ"];
+    delete closure.short_reason;
+    const result = validateDataset(broken);
+    expect(result.ok, "a closure naming an answer nothing can read was accepted").toBe(false);
+    expect(JSON.stringify(result.errors)).toMatch(/ZZ/);
   });
 });

@@ -736,3 +736,53 @@ describe("a slice and the baseline it was read through move together", () => {
       .toBe(sliceFingerprint(sliced("THE B", "ODY").entries[0]));
   });
 });
+
+
+/**
+ * A read that comes back with nothing is not a read.
+ *
+ * EUR-Lex answers this fetcher with HTTP 202 and an empty body. `res.ok` is
+ * true for 202, so the pass wrote a blank snapshot, called it a good read, and
+ * would have reported "unchanged" forever after (s8, 2026-09-10).
+ */
+describe("an empty body is not a reading", () => {
+  const entry = { id: "one", url: "https://example.org/a", strategy: "html", kind: "value-source" } as const;
+
+  it("reports unreachable rather than hashing nothing", async () => {
+    const empty: Fetcher = async () => ({ ok: true, body: new Uint8Array() });
+    const { reports, nextState } = await runWatch(
+      { entries: [entry] }, { entries: {} }, empty, "2026-09-10",
+    );
+    expect(reports[0]!.outcome).toBe("unreachable");
+    expect(nextState.entries.one, "a blank snapshot was written").toBeUndefined();
+  });
+
+  it("still reads a page that is merely short", async () => {
+    const short: Fetcher = async () => ({ ok: true, body: enc("<p>x</p>") });
+    const { reports } = await runWatch({ entries: [entry] }, { entries: {} }, short, "2026-09-10");
+    expect(reports[0]!.outcome).toBe("baseline");
+  });
+});
+
+/**
+ * service-public ships its definition popovers as an unfilled placeholder —
+ * `<span role="tooltip" data-test="titleContentForDefinition">: titleContent</span>`
+ * — inside the sentence itself. Hashing that text spliced ": titleContent" into
+ * the eligibility line this dataset quotes, and the quote gate could not find
+ * its own sentence (s8, 2026-09-10).
+ */
+describe("a tooltip's placeholder is not part of the page's words", () => {
+  it("reads the sentence without it", () => {
+    const html = "<p>Vous êtes étranger (sauf Européen"
+      + "<span role=\"tooltip\" data-test=\"titleContentForDefinition\">: titleContent</span>"
+      + " ou Algérien)</p>";
+    expect(normalize(htmlToText(html))).toContain("Vous êtes étranger (sauf Européen ou Algérien)");
+    expect(normalize(htmlToText(html))).not.toContain("titleContent");
+  });
+
+  it("keeps what a tooltip is wrapped around when it carries real words", () => {
+    // Only the tooltip's own contents go; the sentence it sits in stays whole.
+    const html = "<p>before <span role=\"tooltip\">hidden</span> after</p>";
+    expect(normalize(htmlToText(html))).toBe("before after");
+  });
+});
