@@ -309,7 +309,7 @@
       "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
       "strategy": "html",
       "kind": "value-source",
-      "note": "Ley 14/2013 (BOE consolidated). Backs the contract, qualification and experience conditions on all four Spanish routes. The salary thresholds do NOT come from here — they are in the UGE PDF."
+      "note": "Ley 14/2013 (BOE consolidated). Backs the contract, qualification and experience conditions on all four Spanish routes. The salary thresholds do NOT come from here — they are in the UGE PDF. Read as HTML for the same reason the RD is: this project's decoder returns stream and font noise for the BOE's consolidated PDFs, not words (measured 2026-09-10, s9). The UGE's own threshold PDF decodes fine — the failure is the BOE's consolidated PDF, not PDFs."
     },
     {
       "id": "nl-ind-highly-skilled-migrant",
@@ -427,7 +427,7 @@
         "from": "Comment faire la demande d'autorisation de travail pour pouvoir embaucher un salarié étranger en France ?",
         "to": "plus élevée que le Smic)."
       },
-      "note": "The employer-side fiche for the autorisation de travail — the test that keeps fr-salarie out of the scoring. Backs the three-week advertisement, the shortage-occupation exemption, the employer's own record, the disproportionate-recruitment refusal, the regulated-profession condition and the Smic-or-agreement pay floor. Sliced from the application section to the end of the pay condition: the whole fiche is 96,000 characters of which the rest is navigation, related fiches and a business-form filter. Legifrance, which states the opposabilité in as many words, answers this fetcher with 403 (measured 2026-09-10) and is quoted nowhere."
+      "note": "The employer-side fiche for the autorisation de travail — the test that keeps fr-salarie out of the scoring. Backs the three-week advertisement, the shortage-occupation exemption, the employer's own record, the disproportionate-recruitment refusal, the regulated-profession condition and the Smic-or-agreement pay floor. Sliced from the application section to the end of the pay condition: the whole fiche is 96,000 characters of which the rest is navigation, related fiches and a business-form filter. Legifrance, which states the opposabilité in as many words, answers this fetcher with 403 (measured 2026-09-10), so no s9 quote comes from it. The one Legifrance page this dataset does quote is the Conseil d'État decision behind the Algerian notice, and that one ships human-tier, re-read by a person every 90 days."
     },
     {
       "id": "boe-rd-1155-2024",
@@ -471,28 +471,28 @@
         "from": "Onze Minister weigert een tewerkstellingsvergunning of Onze Minister van Veiligheid en Justitie weigert een gecombineerde vergunning:",
         "to": "welke limiet is bereikt."
       },
-      "note": "Wet arbeid vreemdelingen art. 8 — the article that writes the refusal of the single permit itself. Backs the labour-market ground on nl-gvva. Sliced to article 8 lid 1, and the slice is not optional: the statute book prints the day it was consulted (\"Geraadpleegd op …\") on every request, so an unsliced entry would report a change every single day. The undated URL is deliberate — it serves the version in force, and a route page quoting a superseded one would be quoting a law nobody is under."
+      "note": "Wet arbeid vreemdelingen art. 8 — the article that writes the refusal of the single permit itself. Backs the labour-market ground on nl-gvva. Sliced to article 8 lid 1, and the slice is not optional: the statute book prints the day it was consulted (\"Geraadpleegd op …\") on every request, so an unsliced entry would report a change every single day. The undated URL is deliberate — it serves the version in force, and a route page quoting a superseded one would be quoting a law nobody is under. The address is the undated one on purpose: wetten.overheid.nl serves the law as it stands there, while the dated form the research quoted (/2024-01-01) is a frozen version that can never change — and a source that cannot change is a watch that can never fire."
     },
     {
       "id": "uwv-reguliere-arbeidsplaats",
       "url": "https://www.uwv.nl/nl/werkvergunning/reguliere-arbeidsplaats",
       "strategy": "html",
       "kind": "value-source",
-      "note": "The benefits agency's own page for an ordinary vacancy. Backs the three-month European search, the five-week vacancy report, the agency's own sentence that it is the one that checks, the account of the selection, and the 90-day boundary between the two Dutch work permits, all on nl-gvva. Unsliced: the whole page is 4,000 characters and is the article, with no chrome that moves (s9)."
+      "note": "The benefits agency's own page for an ordinary vacancy. Backs the three-month European search, the five-week vacancy report, the agency's own sentence that it is the one that checks, the account of the selection, and the 90-day boundary between the two Dutch work permits, all on nl-gvva. Unsliced: the whole page is 4,000 characters and is the article, with no chrome that moves (s9). Watched whole rather than sliced: after normalisation the page is 3–7 KB and is operative text end to end — there is no menu region to cut, so a slice would only be a second thing to keep in step (Spec review, 2026-09-10)."
     },
     {
       "id": "uwv-twv-voorwaarden",
       "url": "https://www.uwv.nl/nl/werkvergunning/twv-voorwaarden",
       "strategy": "html",
       "kind": "value-source",
-      "note": "The four general conditions of a Dutch work permit, and the five-year labour-law fine. Backs both on nl-gvva. Unsliced for the reason above: 2,900 characters, all of it the article."
+      "note": "The four general conditions of a Dutch work permit, and the five-year labour-law fine. Backs both on nl-gvva. Unsliced for the reason above: 2,900 characters, all of it the article. Watched whole rather than sliced: after normalisation the page is 3–7 KB and is operative text end to end — there is no menu region to cut, so a slice would only be a second thing to keep in step (Spec review, 2026-09-10)."
     },
     {
       "id": "uwv-wanneer-geen-werkvergunning",
       "url": "https://www.uwv.nl/nl/werkvergunning/wanneer-geen-werkvergunning",
       "strategy": "html",
       "kind": "value-source",
-      "note": "Who needs no work permit at all. Backs the two carve-outs stated on nl-gvva — the highly skilled migrant permit this site does score, and a residence permit that already allows free work. Unsliced: 7,300 characters, all of it the article."
+      "note": "Who needs no work permit at all. Backs the two carve-outs stated on nl-gvva — the highly skilled migrant permit this site does score, and a residence permit that already allows free work. Unsliced: 7,300 characters, all of it the article. Watched whole rather than sliced: after normalisation the page is 3–7 KB and is operative text end to end — there is no menu region to cut, so a slice would only be a second thing to keep in step (Spec review, 2026-09-10)."
     }
   ]
 }

@@ -167,7 +167,7 @@ describe("s5e — what is ours is marked as ours", () => {
       // Forty-three more arrived with s9: the conditions of the five routes
       // this product states and does not score. A route nothing is asked about
       // is nothing BUT the authority's sentences, so every limb of it is here.
-      with_provenance: 110 + 43,
+      with_provenance: 110 + 44,
       // Ours, declared as ours and shown to the reader as ours: 13 route
       // readings, plus the 28 scope-statement reasons s6 authored — one per route,
       // our own words about our own interview, printed as the page's scope

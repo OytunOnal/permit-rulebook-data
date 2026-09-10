@@ -54,9 +54,12 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
         expect(source.source_url, id).toMatch(/^https:\/\//);
         expect(source.retrieved_at, `${id}: ${source.quote.slice(0, 40)}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       }
-      // It says why in our own words, before any rule — and the sentence is
-      // authored for this route, never a template shared with another.
-      expect(route.scope.reason.length, id).toBeGreaterThan(120);
+      // It says why in our own words, before any rule. The sentence is
+      // authored for this route — the uniqueness check below is what proves
+      // that — and the route page prints it whole, which is what proves it is
+      // written for a reader. A length threshold proved neither: it passes on
+      // a padded sentence (Standards review, 2026-09-10).
+      expect(route.scope.reason.trim().length, id).toBeGreaterThan(0);
     }
     const reasons = QUOTED_ONLY.map((id) => routeOf(id).scope.reason);
     expect(new Set(reasons).size).toBe(reasons.length);

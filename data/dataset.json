@@ -3055,6 +3055,7 @@
               "your-employer-applies-with-a-signed-contract",
               "part-time-pay-meets-the-full-time-minimum",
               "your-employer-must-have-the-means",
+              "an-individual-employer-must-support-their-own-household",
               "the-qualification-the-profession-requires",
               "one-occupation-one-region-one-year",
               "the-test-falls-away-for-some-applicants",
@@ -3132,6 +3133,18 @@
                 "quote": "Que el empleador cuente con medios económicos, materiales o personales, suficientes para su proyecto empresarial y para hacer frente a las obligaciones asumidas en el contrato frente al trabajador en los términos establecidos en el artículo 76.",
                 "retrieved_at": "2026-09-10",
                 "legal_basis": "RD 1155/2024, art. 74.1.e (consolidated text, BOE)",
+                "history": []
+              }
+            },
+            {
+              "id": "an-individual-employer-must-support-their-own-household",
+              "kind": "precondition",
+              "text": "Where your employer is a person rather than a company, they must also show they can support their own household, on top of your salary: monthly means of 50% of the Spanish minimum wage if nobody depends on them, 100% for a two-person household, and 25% more of it for every further member.",
+              "source": {
+                "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+                "quote": "Cuando el empleador requerido sea una persona física, deberá además acreditar que cuenta con medios económicos suficientes para atender sus necesidades y las de su familia. La cuantía mínima exigible se basará en los siguientes porcentajes del salario mínimo interprofesional según el número de personas a su cargo, descontado el pago del salario reflejado en el contrato de trabajo que obre en el procedimiento",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "RD 1155/2024, art. 76.2 (consolidated text, BOE)",
                 "history": []
               }
             },
