@@ -129,6 +129,12 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
           if (c.op === "any") { for (const p of c.paths) walk(p.criteria); continue; }
           if (c.op === "eq") { checkVocabulary(path, c.field, [c.value]); checkWords(path, route.id, c, c.field, [c.value]); continue; }
           if (c.op === "in") { checkVocabulary(path, c.field, c.values); checkWords(path, route.id, c, c.field, c.values); continue; }
+          // s8: a closure lives under the rules `in` already lives under. It
+          // names answers, so it may only name answers the field can take —
+          // and a closure that silently shuts nobody out is worse than none,
+          // because the route it was written to withdraw goes on being offered
+          // to the very passport the authority excludes.
+          if (c.op === "not-in") { checkVocabulary(path, c.field, c.values); checkWords(path, route.id, c, c.field, c.values); continue; }
           // Points keys bypass `satisfies` by design, so a vocabulary field
           // scored by class would silently never match (review).
           if (c.op === "points") {
@@ -171,8 +177,23 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
       }
     }
 
-  for (const n of dataset.notices ?? [])
+  for (const n of dataset.notices ?? []) {
     checkVocabulary(`/notices/${n.id}`, n.when.field, n.when.value !== undefined ? [n.when.value] : (n.when.values ?? []));
+    /**
+     * s8: a notice that says it is about particular routes may only name
+     * routes that exist. The Algerian talent question stands above four
+     * permits and on four route pages; a typo in one id would take the notice
+     * off the page that raises the question and nothing would say so — the
+     * silent never-match this file already refuses for a carve-out.
+     */
+    for (const id of n.routes ?? [])
+      if (!seenIds.has(id))
+        errors.push({
+          path: `/notices/${n.id}/routes`,
+          message: `the notice names route "${id}", which this dataset does not have — it would stand on no page at all`,
+          keyword: "knownNoticeRoute",
+        });
+  }
 
   /**
    * What a country index prints under a route's name is the summary's FIRST

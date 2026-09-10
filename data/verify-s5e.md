@@ -15,6 +15,69 @@
 > This file stays as the record of what the human tier cost and how it closed.
 > Nothing below is a live task.
 
+> **REOPENED — 2026-09-10 (s8), two items, at the top of this file.** The PDF
+> tier stayed closed; a different tier opened. Two of the sources behind the
+> Algerian talent notice answer this host with a bot challenge rather than a
+> page, so no snapshot exists to check their sentences against, and the quote
+> gate reports both as `unverifiable — human tier`. They are written down
+> below, one by one, with the page to open and the exact sentence to find —
+> the rule this file encodes, applied to the case that reopened it. Everything
+> under "1. Quotes that need a person — PDF tier" remains closed.
+
+## 0. Quotes that need a person — bot-gated web tier (2), opened 2026-09-10
+
+Both back the notice `fr-dz-talent-open-question`, which tells a reader with an
+Algerian passport that two authorities disagree and that no page found settles
+it. A wrong quote here does not misinform them mildly: it is the whole of what
+the notice claims either side says.
+
+**Why a person.** Measured 2026-09-10 with this watch's own fetcher and
+user-agent: Legifrance answers **HTTP 403** (with and without a trailing
+slash); EUR-Lex answers **HTTP 202 with an empty body** — on this URL, on
+`/EN/TXT/` without `HTML`, and on the ELI alias. The 202 is the more dangerous
+of the two, because `res.ok` is true for it: the pass would have written a
+blank snapshot and reported "unchanged" ever after. The fetcher now refuses an
+empty body (`src/watch/cli-watch.ts`), and both entries are declared
+`strategy: "human"`, `kind: "value-source"` on the watchlist, re-read quarterly.
+
+### Conseil d'État — `notice:fr-dz-talent-open-question`
+
+https://www.legifrance.gouv.fr/ceta/id/CETATEXT000053612496
+
+- [x] **NEW with s8.** Read 2026-09-10. Backs the sentence saying France
+  applies the 1968 agreement to Algerian nationals instead of its own code.
+  Find this sentence and confirm it word for word: "Il suit de là que les
+  dispositions du code de l'entrée et du séjour des étrangers et du droit
+  d'asile qui sont relatives aux différents titres de séjour qui peuvent être
+  délivrés aux étrangers en général et aux conditions de leur délivrance, ne
+  sont pas applicables aux ressortissants algériens, lesquels relèvent à cet
+  égard des règles fixées par l'accord précité."
+  **A pass:** the words appear in that order, at point 3 of the decision
+  (2e et 7e chambres réunies, 2 mars 2026, n° 500835). **Also confirm the case
+  is still about a certificat de résidence "commerçant"** — the notice's own
+  words say the judgment settles the principle and not the talent cards, and
+  that limit is read off this case's subject.
+  **A fail:** the decision has been superseded or the URL now serves a
+  different one. Do not reword the notice to fit a new judgment; a decision
+  that reaches the talent cards would SETTLE the open question, which is a
+  finding to raise, not a quote to edit.
+
+### Directive (EU) 2021/1883 — `notice:fr-dz-talent-open-question`
+
+https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883
+
+- [x] **NEW with s8.** Read 2026-09-10. Backs the other side of the notice:
+  the directive's own scope. Find Article 3(1) and confirm it word for word:
+  "This Directive applies to third-country nationals who apply to be admitted,
+  or who have been admitted, to the territory of a Member State for the purpose
+  of highly qualified employment under this Directive."
+  **A pass:** the sentence is Article 3(1) of the directive in its English
+  edition, and Article 3(2)'s eight exclusions still name no class defined by a
+  bilateral agreement with one Member State.
+  **A fail:** an amending directive has narrowed the scope article. That is a
+  rule change on every EU Blue Card route, not only this notice — record it and
+  raise it.
+
 
 s5e attached a source, a verbatim quote and a read date to every sentence a card
 can render. **78 of those quotes are now machine-verified** on each `npm run

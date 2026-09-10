@@ -343,6 +343,14 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
     return { criterion: c, outcome: satisfies(dataset, c.field, answer, c.values) ? "pass" : "fail" };
   }
 
+  if (c.op === "not-in") {
+    if (isUnknownAnswer(dataset, c.field, answer)) return { criterion: c, outcome: "unknown" };
+    // The SAME predicate the other operators use, deliberately: a closure
+    // written against a class must shut out every country that class holds,
+    // and one written against a country must not shut out its neighbours.
+    return { criterion: c, outcome: satisfies(dataset, c.field, answer, c.values) ? "fail" : "pass" };
+  }
+
   // gte over a money_band answer
   const bands = deriveBands(dataset, c.field);
   const band = bands.find((b) => b.id === answer);
@@ -460,6 +468,10 @@ function equivalenceKey(dataset: Dataset, field: string, value: string): string 
       forEachCriterion(route.criteria, (c) => {
         if (c.op === "eq" && c.field === field) parts.push(satisfies(dataset, field, value, [c.value]) ? "1" : "0");
         else if (c.op === "in" && c.field === field) parts.push(satisfies(dataset, field, value, c.values) ? "1" : "0");
+        // A closure decides an answer's fate as surely as a requirement does:
+        // an Algerian passport and a Turkish one are not interchangeable to a
+        // route France closes to one of them.
+        else if (c.op === "not-in" && c.field === field) parts.push(satisfies(dataset, field, value, c.values) ? "x" : ".");
         else if (c.op === "points")
           for (const item of c.table.items)
             if (item.field === field) parts.push(`p${pointsFor(dataset, item, value)}`);
@@ -698,7 +710,7 @@ export function forEachCriterion(criteria: Criterion[], fn: (c: Criterion) => vo
   for (const c of criteria) {
     fn(c);
     switch (c.op) {
-      case "eq": case "in": case "gte": case "points":
+      case "eq": case "in": case "not-in": case "gte": case "points":
         break;
       case "any":
         for (const p of c.paths) forEachCriterion(p.criteria, fn);
@@ -725,6 +737,10 @@ export function provenancedValuesOf(c: Criterion): ProvenanceEntry[] {
   const condition: ProvenanceEntry[] = c.source ? [{ value: c.source }] : [];
   switch (c.op) {
     case "eq": case "in": case "any":
+      return condition;
+    // A closure's source is never optional, so the entry is never empty — the
+    // quote IS the closure, and `condition` already holds it.
+    case "not-in":
       return condition;
     case "gte":
       return [...condition, { label: c.threshold_label, value: c.threshold, amount: c.threshold.amount }];
@@ -781,6 +797,39 @@ export function carveOutFor(s: RouteStatement, profile: Profile): StatementExcep
   const answer = profile[CARVE_OUT_FIELD];
   if (answer === undefined || !s.except) return undefined;
   return s.except.citizenship.includes(answer) ? s.except : undefined;
+}
+
+/**
+ * Every provenanced value one notice carries: the authority it leads with, and
+ * the rest it rests on.
+ *
+ * One accessor, for the reason `statementSources` is one: the card, the route
+ * page, the coverage gate, the quote gate and the language gate all have to see
+ * every quote a notice stands on, and a second source that five call sites
+ * remembered separately would be a second source four of them forgot (s8).
+ */
+export function noticeSources(n: Notice): ProvenancedText[] {
+  return [n.source, ...(n.sources ?? [])];
+}
+
+/**
+ * The criteria that shut THIS reader out of a route: the closures their own
+ * declared answers fail.
+ *
+ * A closed route is a third answer beside met, near and hold, and the
+ * distinction is the point of the slice. "Not yet" invites the reader to come
+ * back with a better salary; a permit whose own page says it is not for their
+ * passport will never be theirs, however the rest of the interview goes. Both
+ * repositories read this one predicate, so a screen can never file a closed
+ * route under a heading that promises it later.
+ */
+export function closedBy(r: RouteResult): CriterionResult[] {
+  return r.criteria.filter((cr) => cr.outcome === "fail" && cr.criterion.op === "not-in");
+}
+
+/** Whether this reader's own answers put this route out of their reach for good. */
+export function isClosed(r: RouteResult): boolean {
+  return closedBy(r).length > 0;
 }
 
 /** Whether this statement is one of the conditions this reader is told about. */
@@ -884,7 +933,8 @@ export function datasetMeta(dataset: Dataset): DatasetMeta {
         for (const value of statementSources(s))
           if (!newest || value.retrieved_at > newest) newest = value.retrieved_at;
   for (const n of dataset.notices ?? [])
-    if (!newest || n.source.retrieved_at > newest) newest = n.source.retrieved_at;
+    for (const value of noticeSources(n))
+      if (!newest || value.retrieved_at > newest) newest = value.retrieved_at;
   return {
     schema_version: dataset.schema_version,
     dataset_version: dataset.dataset_version,

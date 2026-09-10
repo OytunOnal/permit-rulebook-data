@@ -232,13 +232,16 @@ describe("provenance and meta", () => {
       // 0.5.0 since s6: a route carries a required coverage value, which is a
       // breaking change to the public contract. 0.6.0 since s7: a statement may
       // carry the carve-out that names the passports it does not bind, which is
-      // an optional field and therefore additive.
-      schema_version: "0.6.0",
-      dataset_version: "2026.09.07",
+      // an optional field and therefore additive. 0.7.0 since s8: a criterion
+      // may exclude answers as well as require them, and a notice may carry a
+      // second source, a link and the routes it qualifies — all additive.
+      schema_version: "0.7.0",
+      dataset_version: "2026.09.10",
       // A route statement is a provenanced value like any other, and so is the
-      // carve-out beside it. The freshest is now the IND's Turkish-citizens
-      // page and its list of the nationalities that need no provisional
-      // residence permit, both read on 2026-09-10.
+      // carve-out beside it, and so is every side of a notice that reports two
+      // authorities disagreeing (s8). The freshest are the French intra-corporate
+      // transfer fiche's own eligibility sentence, the Conseil d'État decision
+      // and Article 3(1) of the Blue Card directive, all read on 2026-09-10.
       newest_retrieved_at: "2026-09-10",
     });
   });

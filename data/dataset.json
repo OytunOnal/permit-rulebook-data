@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.6.0",
-  "dataset_version": "2026.09.07",
+  "schema_version": "0.7.0",
+  "dataset_version": "2026.09.10",
   "fields": [
     {
       "id": "destination",
@@ -632,6 +632,50 @@
         "legal_basis": "EEC–Turkey Association Agreement, Decision 1/80 art. 6 — Your Europe",
         "history": []
       }
+    },
+    {
+      "id": "fr-dz-talent-open-question",
+      "when": {
+        "field": "citizenship",
+        "op": "eq",
+        "value": "DZ"
+      },
+      "kind": "open-question",
+      "title": "Algeria: a separate agreement, and a question no page we found answers",
+      "body": "France does not apply the residence-permit provisions of its own immigration code to Algerian nationals: the Franco-Algerian agreement of 27 December 1968 governs instead. The Conseil d'État said so on 2 March 2026, in a case about a trader's residence certificate rather than a talent card, so its words settle the principle and not the talent cards themselves. The page the administration routes an Algerian reader to is a one-year certificat de résidence; for a salaried job in France it says the certificate will carry the mention salarié, and none of the seventeen situations it lists for a first application is a passeport talent or an EU Blue Card — read to the end on 2026-09-10. Against that stands the EU directive behind the Blue Card, whose scope article covers every third-country national admitted for highly qualified employment. We searched service-public, france-visas, the ministry and the ANEF portal on 2026-09-10 for a page saying whether an Algerian national may hold a passeport talent, and found none. So the four talent routes on this site are scored exactly as they are for any other non-EU passport: that is us declining to guess, not an answer.",
+      "source": {
+        "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000053612496",
+        "quote": "Il suit de là que les dispositions du code de l'entrée et du séjour des étrangers et du droit d'asile qui sont relatives aux différents titres de séjour qui peuvent être délivrés aux étrangers en général et aux conditions de leur délivrance, ne sont pas applicables aux ressortissants algériens, lesquels relèvent à cet égard des règles fixées par l'accord précité.",
+        "retrieved_at": "2026-09-10",
+        "legal_basis": "Conseil d'État, 2e et 7e chambres réunies, 2 mars 2026, n° 500835",
+        "history": []
+      },
+      "sources": [
+        {
+          "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F35600/1?idFicheParent=F33952",
+          "quote": "Le certificat de résidence portera la mention salarié.",
+          "retrieved_at": "2026-09-10",
+          "legal_basis": "Fiche F35600 — Certificat de résidence d'1 an pour Algérien, 1re demande, salarié",
+          "history": []
+        },
+        {
+          "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883",
+          "quote": "This Directive applies to third-country nationals who apply to be admitted, or who have been admitted, to the territory of a Member State for the purpose of highly qualified employment under this Directive.",
+          "retrieved_at": "2026-09-10",
+          "legal_basis": "Directive (EU) 2021/1883, Article 3(1) — Scope",
+          "history": []
+        }
+      ],
+      "learn": {
+        "label": "The page for Algerian nationals — certificat de résidence d'1 an",
+        "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F35600/1?idFicheParent=F33952"
+      },
+      "routes": [
+        "fr-talent-qualifie",
+        "fr-talent-blue-card",
+        "fr-talent-innovante",
+        "fr-talent-mission"
+      ]
     }
   ],
   "countries": [
@@ -1846,6 +1890,22 @@
               "field": "citizenship",
               "op": "eq",
               "value": "third_country"
+            },
+            {
+              "field": "citizenship",
+              "op": "not-in",
+              "values": [
+                "DZ"
+              ],
+              "text": "France does not open this permit to an Algerian passport: its own page states the card is for a foreigner who is not European and not Algerian.",
+              "short_reason": "an Algerian passport",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F33952",
+                "quote": "Vous êtes étranger (sauf Européen ou Algérien)",
+                "retrieved_at": "2026-09-10",
+                "legal_basis": "Fiche F33952 — Qui peut demander la carte de séjour pluriannuelle salarié détaché ICT ?",
+                "history": []
+              }
             },
             {
               "field": "destination",

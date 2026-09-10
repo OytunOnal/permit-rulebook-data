@@ -424,8 +424,10 @@
         "kind": {
           "enum": [
             "no-permit-needed",
-            "extra-rights"
-          ]
+            "extra-rights",
+            "open-question"
+          ],
+          "description": "no-permit-needed replaces the results — there was nothing to compare. extra-rights and open-question sit BESIDE them and never suppress a verdict the rules computed. open-question is its own word because it is its own thing: a notice reporting two authorities disagreeing, and no page found settling them, promises the reader nothing they gain, and `extra-rights` would have said it does (s8)."
         },
         "title": {
           "type": "string",
@@ -437,6 +439,41 @@
         },
         "source": {
           "$ref": "#/$defs/provenancedText"
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/provenancedText"
+          },
+          "description": "The further authorities this notice's words rest on. A notice reporting a DISAGREEMENT cannot stand on one quote: `source` stays the authority it leads with, and these are the rest, in the order the body raises them."
+        },
+        "learn": {
+          "type": "object",
+          "required": [
+            "label",
+            "url"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "url": {
+              "type": "string",
+              "pattern": "^https://"
+            }
+          },
+          "description": "Where this notice sends the reader — an official page, watched like a question's own \"find out yourself\" link, because a notice's source is not always the reader's next step."
+        },
+        "routes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "description": "The routes this notice qualifies, where it qualifies particular ones. A route page has no reader, so nothing on it can match a `when`; without this the question would stand on the results card and be silent on the four pages that raise it. Whether each id is a route is checked by the build."
         }
       }
     },
@@ -736,6 +773,45 @@
               "items": {
                 "type": "string"
               }
+            },
+            "short_reason": {
+              "$ref": "#/$defs/criterionShortReason"
+            },
+            "source": {
+              "$ref": "#/$defs/criterionSource"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "description": "The answers this route is CLOSED to. `eq` and `in` can only name who a rule is for, so a page that writes \"sauf Algérien\" could only be modelled as silence, and France's intra-corporate transfer card was offered to Algerian passports for as long as the route existed (s8). Both `text` and `source` are required: a closure we cannot quote is one told to a reader on our own say-so, and a closure is the one criterion whose verdict line cannot be composed from the answers it names — composing it produces \"Needs Algeria\".",
+          "required": [
+            "field",
+            "op",
+            "values",
+            "text",
+            "source"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "op": {
+              "const": "not-in"
+            },
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              },
+              "description": "Whether each of these is an answer the field can take is checked against countries.json by the build, which is the only place that knows."
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Our plain English for the closure — the sentence a reader is given in place of a verdict. The quote beside it is the source's own words."
             },
             "short_reason": {
               "$ref": "#/$defs/criterionShortReason"

@@ -79,6 +79,11 @@ export function criterionPhrase(dataset: Dataset, c: Criterion): string {
       return valuePhrase(dataset, c.field, c.value);
     case "in":
       return joinOr(c.values.map((v) => valuePhrase(dataset, c.field, v)));
+    // Who the route is closed to, named. A closure never joins a "Needs …"
+    // list — `reasonFor` answers it with its own sentence before it gets there
+    // — so this is the phrase a heading is built from, not a shortfall.
+    case "not-in":
+      return joinOr(c.values.map((v) => valuePhrase(dataset, c.field, v)));
     case "gte":
       return `at least ${formatEURPer(c.threshold.amount, fieldOf(dataset, c.field)?.period)}`;
     case "points":
@@ -150,8 +155,9 @@ export function isPlacedElsewhere(r: RouteResult, profile: Profile): boolean {
 
 export interface ReasonRow {
   /** needs: a shortfall · moot: already covered · where: another country ·
-   * unknown: an answer of "I don't know" that still binds. */
-  kind: "needs" | "moot" | "where" | "unknown";
+   * unknown: an answer of "I don't know" that still binds · closed: the
+   * authority's own page does not open this route to an answer they gave. */
+  kind: "needs" | "moot" | "where" | "unknown" | "closed";
   text: string;
 }
 
@@ -180,8 +186,23 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
   // assuming it.
   const unknownAnswer = (field: string) => answerLabel(dataset, field, profile[field]);
 
+  /**
+   * A route the authority closes to an answer this reader gave.
+   *
+   * It says so in the dataset's own sentence and in no other words: a closure
+   * is the one criterion whose reason cannot be composed from the answers it
+   * names, because composing it produces "Needs Algeria" — a shortfall, on a
+   * route that will never be theirs however the rest of the interview goes.
+   * The quote the sentence stands on rides beside it, like every other value.
+   */
+  const closure = r.criteria.find((cr) => cr.outcome === "fail" && cr.criterion.op === "not-in");
+
   for (const cr of r.criteria) {
     if (cr.outcome !== "fail") continue;
+    if (cr.criterion.op === "not-in") {
+      rows.push({ kind: "closed", text: cr.criterion.text });
+      continue;
+    }
     const already = mootWith(dataset, cr, profile);
     if (already) {
       moot.push(already);
@@ -214,6 +235,12 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
     });
 
   const parts = { needs, unknown: unknownSubjects, moot };
+
+  // Before every other verdict: nothing else about a route is news once the
+  // authority has said it is not this reader's, and a line about a salary they
+  // are short of would read as an invitation back.
+  if (closure && closure.criterion.op === "not-in")
+    return { line: closure.criterion.text, rows, parts };
 
   if (r.status === "met")
     return { line: r.route.summary ?? "Every published condition we check appears met by your declaration.", rows, parts };

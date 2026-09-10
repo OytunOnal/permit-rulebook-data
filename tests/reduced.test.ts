@@ -221,8 +221,17 @@ describe("s5c — the two French talent routes the dataset had excluded", () => 
 
   it("the new routes mirror the existing French citizenship, destination and localization criteria", () => {
     const routes = dataset.countries.find((c) => c.code === "FR")!.routes;
+    /**
+     * The two criteria every French route opens with: who it is for, and where
+     * it applies. Selected by what they say rather than by where they sit —
+     * `fr-ict` gained a third in s8, the closure naming who the permit is NOT
+     * for, and a slice of the first two silently stopped comparing the
+     * destination criterion at all.
+     */
     const shape = (id: string) =>
-      JSON.stringify(routes.find((r) => r.id === id)!.criteria.slice(0, 2));
+      JSON.stringify(routes.find((r) => r.id === id)!.criteria.filter(
+        (c) => (c.op === "eq" && c.field === "citizenship") || (c.op === "in" && c.field === "destination"),
+      ));
     expect(shape("fr-talent-innovante")).toBe(shape("fr-talent-qualifie"));
     expect(shape("fr-talent-mission")).toBe(shape("fr-ict"));
     for (const id of ["fr-talent-innovante", "fr-talent-mission"]) {

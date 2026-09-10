@@ -1,5 +1,5 @@
 import type { Dataset } from "./types.js";
-import { forEachCriterion, routeStatements, statementSources } from "./engine.js";
+import { forEachCriterion, noticeSources, routeStatements, statementSources } from "./engine.js";
 
 /**
  * What language a quote is in.
@@ -28,6 +28,12 @@ export const QUOTE_LANGUAGES: ReadonlyArray<readonly [prefix: string, lang: stri
   ["https://www.boe.es/", "es"],
   ["https://www.inclusion.gob.es/", "es"],
   ["https://www.service-public.gouv.fr/", "fr"],
+  // A judgment is published in the language it was handed down in.
+  ["https://www.legifrance.gouv.fr/", "fr"],
+  // EUR-Lex names the language of the edition in the path itself, so the
+  // prefix carries it: the same directive at /FR/ is a different document to
+  // read aloud, and nothing here may guess which one a quote came from (s8).
+  ["https://eur-lex.europa.eu/legal-content/EN/", "en"],
 ];
 
 /** The language's name in the reader's language, for the line beside a quote. */
@@ -62,7 +68,10 @@ export function sourceUrls(dataset: Dataset): string[] {
       for (const s of routeStatements(route))
         for (const value of statementSources(s)) urls.add(value.source_url);
     }
-  for (const n of dataset.notices ?? []) urls.add(n.source.source_url);
+  // Every side of a notice that reports a disagreement, not only the one it
+  // leads with — a quote nothing tags the language of is read aloud in ours.
+  for (const n of dataset.notices ?? [])
+    for (const value of noticeSources(n)) urls.add(value.source_url);
   return [...urls].sort();
 }
 

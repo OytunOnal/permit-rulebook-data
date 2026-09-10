@@ -20,10 +20,26 @@ function codePoint(n: number, literal: string): string {
   return Number.isInteger(n) && n >= 0 && n <= 0x10ffff ? String.fromCodePoint(n) : literal;
 }
 
+/**
+ * An element a reader reaches only by hovering it, and its contents.
+ *
+ * service-public marks the definition popover beside a defined word with
+ * `role="tooltip"`, and ships it holding the literal, unsubstituted placeholder
+ * `: titleContent` — the site fills it from `data-definition` in the browser.
+ * Stripping tags alone therefore read the eligibility list of the ICT card as
+ * "Vous êtes étranger (sauf Européen : titleContent ou Algérien)", so the
+ * authority's own sentence — the one that closes the permit to an Algerian
+ * passport — could not be quoted verbatim and verified against its own page
+ * (s8). The rule is ARIA's, not this site's: text a reader reaches by hovering
+ * is not part of the sentence it sits inside.
+ */
+const TOOLTIP = /<([a-z][a-z0-9]*)\b[^>]*\brole=["']tooltip["'][^>]*>[\s\S]*?<\/\1>/gi;
+
 export function htmlToText(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(TOOLTIP, " ")
     .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/&#x([0-9a-fA-F]+);/g, (m, h) => codePoint(parseInt(h, 16), m))

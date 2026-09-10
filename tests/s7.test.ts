@@ -208,7 +208,8 @@ describe("s7 — a carve-out is watched and quote-checked like every other value
     expect(quotedWithoutProvenance(dataset)).toEqual([]);
     const carveOuts = routes().flatMap((r) => routeStatements(r)).filter((s) => s.except).length;
     expect(carveOuts).toBe(9);
-    expect(proseProvenance(dataset).with_provenance).toBe(109);
+    // 110 since s8: the closure on the French intra-corporate transfer card.
+    expect(proseProvenance(dataset).with_provenance).toBe(110);
   });
 
   it("a fresher carve-out is a fresher dataset", () => {

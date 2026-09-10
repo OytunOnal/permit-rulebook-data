@@ -1,3 +1,4 @@
+import { noticeSources } from "./engine.js";
 import type { Criterion, Dataset } from "./types.js";
 
 /**
@@ -47,8 +48,16 @@ export interface RenderableText {
   text: string;
   /** What this slot declares the text to be. */
   kind: RenderableKind;
-  /** The words of the authority this sentence quotes, where one is attached. */
-  quote?: string;
+  /**
+   * The words of the authorities this sentence quotes, where any are attached.
+   *
+   * A list, not one string, because a sentence may honestly rest on more than
+   * one authority: a notice that reports the Conseil d'État and the EU
+   * directive disagreeing stands on both, and a single slot could only have
+   * covered one of them — leaving the other half of its body unsourced, or
+   * lending the first quote to words it does not contain (s8).
+   */
+  quotes?: string[];
   /** An `authority` text may stand without a quote only behind a declared,
    * dated reason there is none — the reason a card prints to the reader. */
   declared_absence?: boolean;
@@ -168,7 +177,7 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
    * which no source quote covered (found by this gate, 2026-09-07).
    */
   const addBasis = (path: string, v: { legal_basis?: string; quote: string } | undefined) => {
-    if (v) label(`${path}/legal_basis`, v.legal_basis, { quote: v.quote });
+    if (v) label(`${path}/legal_basis`, v.legal_basis, { quotes: [v.quote] });
   };
 
   const walkCriteria = (criteria: Criterion[], base: string): void => {
@@ -178,22 +187,27 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
       // nothing else. The threshold's quote sits beside an amount and covers
       // the amount's own label and citation, below. Lending a quote sideways
       // is how a claim gets provenance it never earned.
-      const quote = c.source?.quote;
-      label(`${p}/short_reason`, c.short_reason, { quote });
+      const quotes = c.source ? [c.source.quote] : [];
+      label(`${p}/short_reason`, c.short_reason, { quotes });
       addBasis(`${p}/source`, c.source);
+      // A closure's own sentence IS a claim about the law — that an authority
+      // does not open this route to somebody — so it is the authority's
+      // position by the same rule as a statement, and it stands on the quote
+      // the criterion is required to carry (s8).
+      if (c.op === "not-in") authority(`${p}/text`, c.text, { quotes });
       if (c.op === "gte") {
         // The label belongs to the amount and renders on its line, so the
         // amount's quote is the provenance beside it — the same rule as the
         // citation below. Provenance covers the value it is attached to and
         // nothing else; that is what stops a quote being lent to a sentence.
-        label(`${p}/threshold_label`, c.threshold_label, { quote: c.threshold.quote });
+        label(`${p}/threshold_label`, c.threshold_label, { quotes: [c.threshold.quote] });
         addBasis(`${p}/threshold`, c.threshold);
       }
       if (c.op === "points") { addBasis(`${p}/required`, c.required); addBasis(`${p}/table`, c.table); }
       if (c.op === "any") {
-        label(`${p}/label`, c.label, { quote });
+        label(`${p}/label`, c.label, { quotes });
         c.paths.forEach((path, j) => {
-          label(`${p}/paths/${j}/label`, path.label, { quote });
+          label(`${p}/paths/${j}/label`, path.label, { quotes });
           walkCriteria(path.criteria, `${p}/paths/${j}`);
         });
       }
@@ -220,7 +234,7 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
         // definition of the term. It stands on a quote, or on the declared and
         // dated reason there is none, which the card prints to the reader.
         authority(`${p}/statements/${i}/text`, s.text, {
-          quote: s.source?.quote, declared_absence: s.unsourced !== undefined,
+          quotes: s.source ? [s.source.quote] : [], declared_absence: s.unsourced !== undefined,
         });
         // The prose beside an absent quote explains what was tried. It is not
         // a reading — it renders under a heading that says the official wording
@@ -238,7 +252,7 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
         // the condition, and lending it sideways is how a claim gets
         // provenance it never earned (s7).
         if (s.except) {
-          authority(`${p}/statements/${i}/except/text`, s.except.text, { quote: s.except.source.quote });
+          authority(`${p}/statements/${i}/except/text`, s.except.text, { quotes: [s.except.source.quote] });
           addBasis(`${p}/statements/${i}/except/source`, s.except.source);
         }
       });
@@ -256,9 +270,16 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
     }
 
   (dataset.notices ?? []).forEach((n, i) => {
-    authority(`/notices/${i}/title`, n.title, { quote: n.source.quote });
-    authority(`/notices/${i}/body`, n.body, { quote: n.source.quote });
-    addBasis(`/notices/${i}/source`, n.source);
+    // Every quote the notice stands on covers its title and its body: a notice
+    // that reports a disagreement says one side in one sentence and the other
+    // in the next, and either half may be the one carrying quotation marks.
+    const quotes = noticeSources(n).map((s) => s.quote);
+    authority(`/notices/${i}/title`, n.title, { quotes });
+    authority(`/notices/${i}/body`, n.body, { quotes });
+    // The link a notice hands the reader is a button's words, like a
+    // question's own "find out yourself" label (s8).
+    label(`/notices/${i}/learn/label`, n.learn?.label);
+    for (const [j, source] of noticeSources(n).entries()) addBasis(`/notices/${i}/sources/${j}`, source);
   });
 
   return out;
@@ -344,7 +365,7 @@ export function quotedWithoutProvenance(dataset: Dataset): QuotationOffence[] {
     // leave.
     if (t.kind === "ours") continue;
 
-    if (t.kind === "authority" && !t.quote && !t.declared_absence) {
+    if (t.kind === "authority" && !t.quotes?.length && !t.declared_absence) {
       out.push({ ...t, reason: "no-source" });
       continue;
     }
@@ -352,9 +373,13 @@ export function quotedWithoutProvenance(dataset: Dataset): QuotationOffence[] {
     if (!QUOTATION_MARK.test(t.text)) continue;
     const spans = quotedSpans(t.text);
     if (!spans.length) { out.push({ ...t, reason: "unbalanced" }); continue; }
-    if (!t.quote) { out.push({ ...t, reason: "no-source" }); continue; }
-    const source = flatten(t.quote);
-    if (spans.some((s) => !source.includes(s))) out.push({ ...t, reason: "quote-does-not-cover" });
+    if (!t.quotes?.length) { out.push({ ...t, reason: "no-source" }); continue; }
+    // Each span against each quote WHOLE — never against the quotes joined,
+    // which would let a run straddle the seam between two sources and be
+    // covered by neither.
+    const sources = t.quotes.map(flatten);
+    if (spans.some((s) => !sources.some((q) => q.includes(s))))
+      out.push({ ...t, reason: "quote-does-not-cover" });
   }
   return out;
 }

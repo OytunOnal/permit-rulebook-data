@@ -42,7 +42,14 @@ const fetcher: Fetcher = async (url) => {
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) return { ok: false, status: res.status, error: `HTTP ${res.status}` };
-    return { ok: true, body: new Uint8Array(await res.arrayBuffer()) };
+    const body = new Uint8Array(await res.arrayBuffer());
+    // An empty body is not a page, whatever the status line says. EUR-Lex
+    // answers this fetcher with `202 Accepted` and nothing at all — a bot
+    // challenge — and `res.ok` is true for it, so the pass would have recorded
+    // a blank snapshot as a successful read and reported "unchanged" ever
+    // after (measured 2026-09-10, s8).
+    if (body.byteLength === 0) return { ok: false, status: res.status, error: `HTTP ${res.status} with an empty body` };
+    return { ok: true, body };
   } catch (e) {
     return { ok: false, error: String(e) };
   }

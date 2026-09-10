@@ -159,8 +159,12 @@ describe("s5e — what is ours is marked as ours", () => {
       // the nine carve-outs beside them — three Turkish, six for the ten
       // passports the IND exempts from that permit. A carve-out is a claim
       // about the law in the reader's favour, so it is counted where the
-      // authority's other sentences are counted.
-      with_provenance: 109,
+      // authority's other sentences are counted. One more arrived with s8: the
+      // sentence saying France does not open its intra-corporate transfer card
+      // to an Algerian passport, which stands on that fiche's own eligibility
+      // line — a criterion that CLOSES a route is a claim about the law like
+      // any other, and it does not ship without the authority's words.
+      with_provenance: 110,
       // Ours, declared as ours and shown to the reader as ours: 8 route
       // readings, plus the 23 scope-statement reasons s6 authored — one per route,
       // our own words about our own interview, printed as the page's scope

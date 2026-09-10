@@ -38,11 +38,54 @@ export interface Notice {
   id: string;
   when: { field: string; op: "eq" | "in"; value?: string; values?: string[] };
   /** no-permit-needed replaces the results (nothing to compare); extra-rights
-   * sits BESIDE them and never suppresses a verdict the rules computed. */
-  kind: "no-permit-needed" | "extra-rights";
+   * and open-question sit BESIDE them and never suppress a verdict the rules
+   * computed.
+   *
+   * `open-question` is its own word because it is its own thing. A notice that
+   * reports two authorities disagreeing, and no page found settling them,
+   * shipped for one day under `extra-rights` in draft — a name that promises
+   * the reader something they gain, on a notice whose whole content is that
+   * nobody knows (s8). One fact with two names is two facts; a second fact
+   * wearing the first one's name is worse. */
+  kind: "no-permit-needed" | "extra-rights" | "open-question";
   title: string;
   body: string;
   source: ProvenancedText;
+  /**
+   * The further authorities this notice's words rest on.
+   *
+   * A notice used to stand on exactly one quote, which is right while it
+   * reports one authority's position. It cannot report a DISAGREEMENT that
+   * way: the Conseil d'État's sentence and the EU directive's Article 3 are
+   * the two sides of the Algerian talent question, and a single slot could
+   * only have carried one of them — leaving the other side of the notice's own
+   * body with no source, or borrowing the first quote to cover words it does
+   * not contain (s8). `source` stays the authority the notice leads with;
+   * these are the rest, in the order the body raises them.
+   */
+  sources?: ProvenancedText[];
+  /**
+   * Where this notice sends the reader — the same shape a question's "find out
+   * yourself" link takes, and the same promise: an official page, watched, so
+   * a dead one cannot strand the reader it was written for.
+   *
+   * It exists because a notice's source is not always the reader's next step.
+   * The Algerian notice quotes a court and a directive, and the page a reader
+   * with an Algerian passport actually needs is the one the administration
+   * itself routes them to — neither of the two it cites (s8).
+   */
+  learn?: { label: string; url: string };
+  /**
+   * The routes this notice qualifies, where it qualifies particular ones.
+   *
+   * A route page has no reader, so nothing on it can match a `when`. Without
+   * this the unsettled Algerian talent question would have stood on the
+   * results card and been silent on the four route pages that raise it — "a
+   * page is never quieter than a card" (s8). Naming the routes is also the
+   * only way to say that the question is about THESE four permits and not
+   * about an Algerian passport in general.
+   */
+  routes?: string[];
 }
 
 /** One scoring item of a points system: answer value → points awarded. */
@@ -94,6 +137,26 @@ interface CriterionExtras {
 export type Criterion =
   | ({ field: string; op: "eq"; value: string } & CriterionExtras)
   | ({ field: string; op: "in"; values: string[] } & CriterionExtras)
+  /**
+   * The answers this route is CLOSED to — the operator the dataset has needed
+   * since a route first had to say "not you".
+   *
+   * `eq` and `in` can only name who a rule is for, so a page that writes
+   * "sauf Algérien" had to be modelled as silence: France's intra-corporate
+   * transfer card was offered to Algerian passports for as long as the route
+   * existed, because the only thing its citizenship criterion could say was
+   * `eq third_country`, which an Algerian passport satisfies (s8).
+   *
+   * Both extras below are required, and neither is a formality. `source`,
+   * because a closure we cannot quote is a closure told to a reader on our own
+   * say-so — the rule `StatementException` already lives under, and the
+   * heavier failure of the two: a condition we overstate costs a reader work,
+   * a route we wrongly close costs them the route. `text`, because a criterion
+   * that shuts someone out is the one criterion whose verdict line cannot be
+   * built from the answers it names — "Needs Algeria" is what composing it
+   * would produce.
+   */
+  | ({ field: string; op: "not-in"; values: string[]; text: string; source: ProvenancedText } & CriterionExtras)
   | ({ field: string; op: "gte"; threshold: ProvenancedAmount; threshold_label?: string } & CriterionExtras)
   | ({ op: "points"; required: ProvenancedNumber; table: PointsTable } & CriterionExtras)
   /** Disjunction: the criterion passes when ANY path's criteria all pass (e.g. §20a "Fachkraft ODER Punktzahl"). */

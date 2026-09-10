@@ -67,8 +67,11 @@ append-only.
 
 Where a source is one nothing here can fetch — the operative text never reaches
 a machine — it belongs on the human tier, which carries a verification age and
-raises reminders rather than being fetched. The tier is empty today, and adding
-to it is a decision, not a fallback.
+raises reminders rather than being fetched. Adding to it is a decision, not a
+fallback: say in the entry's `note` what the fetch actually did, with the day
+you measured it, and write the sentence down in `data/verify-s5e.md` so a
+person can find it. Two sources are on it as of 2026-09-10 — Legifrance answers
+this watch with HTTP 403, EUR-Lex with a 202 and an empty body.
 
 ## How a route is added
 
@@ -80,12 +83,21 @@ to it is a decision, not a fallback.
    `<cc>-<slug>`; `name` is what the authority calls it, in English; every
    rule the interview will ask is a criterion, and every number is a threshold
    with its provenance.
-3. **Anything the interview cannot ask is stated, not invented.** A condition
+3. **A route the authority closes to somebody says so as a rule.** Where a
+   page states who a permit is *not* for — "sauf Algérien" — that is a
+   criterion, `not-in`, and not a silence. It carries two things the other
+   operators leave optional and this one requires: the authority's `source`,
+   because a closure told on our own say-so costs a reader the route rather
+   than some work, and `text`, our plain English of it, because it is the one
+   criterion whose verdict line cannot be composed from the answers it names.
+   A route it closes leaves the results entirely — it is not "not yet" — and
+   the reason stands in its own section with the quote under it.
+4. **Anything the interview cannot ask is stated, not invented.** A condition
    the authority applies that no question can reach goes in `statements` as a
    `precondition`, with its quote. A qualification the source puts on its own
    answer goes in as a `caveat` — it fails nobody. Our own reading of the route
    goes in `readings`, where the page shows it as ours.
-4. **Declare the scope statement.** Every route carries exactly one value, and
+5. **Declare the scope statement.** Every route carries exactly one value, and
    the build fails without it:
 
    | value | what it says to a reader |
@@ -120,7 +132,7 @@ to it is a decision, not a fallback.
      route's `not_asked`, and every id in `not_asked` must be a statement or a
      reading the route actually carries.
 
-5. **Record the exclusion in both halves of `data/exclusions.md`.** The file is
+6. **Record the exclusion in both halves of `data/exclusions.md`.** The file is
    prose for a person, and it ends in a fenced ```` ```exclusions ```` block that
    says the same facts in route ids and limb ids. The two are held to each
    other: a route in the prose and missing from the block, or the other way
@@ -128,10 +140,10 @@ to it is a decision, not a fallback.
    row, add its line to the block, and use `(none)` where the file records a
    route in order to say nothing of it is excluded.
 
-6. **Add every new source to the watchlist.** `npm run watch:coverage` enforces
+7. **Add every new source to the watchlist.** `npm run watch:coverage` enforces
    it in both directions: a dataset source nothing watches fails, and a watched
    source backing no value fails.
-7. **Add the questions' words.** A criterion may only name an answer the
+8. **Add the questions' words.** A criterion may only name an answer the
    dataset can put into words — give the option a `short`, or the criterion a
    `short_reason`. There is no fallback to a field id; the build fails instead.
 
@@ -141,7 +153,11 @@ to it is a decision, not a fallback.
 - **The source, linked**, and for every changed value the quote and the date
   you read it — in the diff, not only in the description.
 - **`npm run check` green**, pasted or run in CI: schema valid, watch coverage
-  both ways, quote fidelity `ok`, `human_tier: 0`, suite green.
+  both ways, quote fidelity `ok`, suite green — and `human_tier` either `0` or
+  a number every item of which is written down in `data/verify-s5e.md` with
+  its page and its sentence. It read `human_tier: 0` until 2026-09-10, which
+  was a rule the repository could only keep by refusing sources it can read
+  and a machine cannot; what it always meant is that no quote passes silently.
 - **A test for anything behavioural.** A rule that changed a verdict without a
   test that would have caught it going wrong is not finished.
 - **No destructive edit of history.** If a diff deletes a `history` entry or
