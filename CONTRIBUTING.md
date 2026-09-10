@@ -182,8 +182,14 @@ goes stale while it is still printed.
 
 Two things carry it, and they are deliberately redundant:
 
-- **A daily schedule on the site**, at 06:40 UTC, comfortably after this watch
-  has finished and committed. It rebuilds even if every signal fails.
+- **A daily schedule on the site**, at 06:40 UTC. Written as the path that
+  "rebuilds even if every signal fails" — and, as of 2026-09-10, it has not
+  fired once since it was added on 2026-09-08. GitHub's scheduler is
+  best-effort: this watch's own 05:17 UTC schedule fires every day, three to
+  four hours late. So the daily rebuild that actually happens is the dispatch
+  below, fired by this watch's daily heartbeat commit; the site's schedule is
+  a second try, not a guarantee. If a day passes with neither, the fallback is
+  a person: `gh workflow run pages.yml -R OytunOnal/permit-rulebook`.
 - **A `repository_dispatch` of type `dataset-updated`**, fired by the "Tell the
   site to rebuild" step here, but only when the run actually committed new
   state. This is the fast path: a real change is published in minutes.
@@ -204,7 +210,7 @@ substring of yesterday's, character for character.
 
 So: a commit that moves, adds or removes a slice also re-reads that entry —
 
-    npm run watch -- --only <entry-id>
+    npm run watch:sources -- --only=<entry-id>
 
 — and commits the new `watch/state.json` beside the watchlist change, with the
 reason in the entry's own `history`. `npm test` refuses a state whose

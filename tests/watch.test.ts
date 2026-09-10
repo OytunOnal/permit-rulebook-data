@@ -703,7 +703,7 @@ describe("the watch stamps the day it read everything, and only then", () => {
  * sliced text was a substring of yesterday's, character for character).
  *
  * The rule this case enforces: a commit that moves a slice re-reads that
- * entry's baseline in the same commit — `npm run watch -- --only <id>`.
+ * entry's baseline in the same commit — `npm run watch:sources -- --only=<id>`.
  */
 describe("a slice and the baseline it was read through move together", () => {
   it("every shipped snapshot was read through the slice the watchlist names today", () => {
@@ -713,7 +713,7 @@ describe("a slice and the baseline it was read through move together", () => {
       expect(
         snapshot.slice_read,
         `${entry.id}: the slice moved after the baseline was read — re-read it in the ` +
-          `same commit (npm run watch -- --only ${entry.id}), or its next run files our own edit as a source change`,
+          `same commit (npm run watch:sources -- --only=${entry.id}), or its next run files our own edit as a source change`,
       ).toBe(sliceFingerprint(entry));
     }
   });
