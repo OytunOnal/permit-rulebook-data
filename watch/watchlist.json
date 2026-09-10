@@ -111,7 +111,17 @@
       "url": "https://europa.eu/youreurope/citizens/work/work-abroad/work-permits/index_en.htm",
       "strategy": "html",
       "kind": "value-source",
-      "note": "Backs the eu-free-movement notice (EU nationals need no work permit). Your Europe restates the TFEU art. 45 position; a change here changes what the tool tells every EU passport holder."
+      "note": "Backs the eu-free-movement notice (EU nationals need no work permit). Your Europe restates the TFEU art. 45 position; a change here changes what the tool tells every EU passport holder.",
+      "slice": {
+        "from": "As an EU national you generally don't need a work permit",
+        "to": "your right to work in an EU country depends on the national laws of that country."
+      },
+      "history": [
+        {
+          "changed_at": "2026-09-10",
+          "note": "Slice added, from the sentence this dataset quotes to the end of the page's own nationality sections. The entry hashed the whole page, including Your Europe's site-wide navigation menu: on 2026-09-10 two submenu items under 'Package travel and timeshare' swapped places and the run reported a changed value source. Same length, same words, nothing about work permits. The bound keeps the EU sentence, the Türkiye section and the agreement-country list — everything a change to would change what this product says — and leaves the menu out."
+        }
+      ]
     },
     {
       "id": "nl-ind-required-amounts",
