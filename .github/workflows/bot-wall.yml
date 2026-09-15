@@ -54,3 +54,34 @@ jobs:
       - name: Read the walls with a headless browser
         working-directory: site
         run: node scripts/bot-wall.mjs --data ../data
+
+      # "Unreachable" is a verdict, not a diagnosis. The two Spanish sources
+      # answer a developer machine with HTTP 200 and this runner with nothing,
+      # and which nothing it is decides the fix — a 403 is a wall, a timeout is
+      # a route, a TLS error is neither. The watch's own fetcher is used rather
+      # than a hand-rolled one so the answer is about the thing that actually
+      # fails.
+      - name: Ask the watch's own fetcher what it gets, from here
+        working-directory: data
+        run: |
+          npm ci
+          npm run build
+          node -e "
+            const urls = [
+              'https://www.inclusion.gob.es/web/unidadgrandesempresas/autorizaciones-y-requisitos',
+              'https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf',
+              'https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883',
+            ];
+            (async () => {
+              for (const url of urls) {
+                const started = Date.now();
+                try {
+                  const r = await fetch(url, { redirect: 'follow' });
+                  const body = await r.arrayBuffer();
+                  console.log(url.slice(0, 70), '->', r.status, r.statusText, '| bytes', body.byteLength, '| ms', Date.now() - started);
+                } catch (e) {
+                  console.log(url.slice(0, 70), '-> THREW', e.name + ':', String(e.message).slice(0, 60), '| cause', String(e.cause).slice(0, 80), '| ms', Date.now() - started);
+                }
+              }
+            })();
+          "
