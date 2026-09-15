@@ -351,6 +351,7 @@
     {
       "code": "FR",
       "name": "France",
+      "adjective": "French",
       "aliases": [
         "Frankreich"
       ]
@@ -370,6 +371,7 @@
     {
       "code": "DE",
       "name": "Germany",
+      "adjective": "German",
       "aliases": [
         "Deutschland"
       ]
@@ -635,6 +637,7 @@
       "code": "NL",
       "name": "Netherlands",
       "article": "the",
+      "adjective": "Dutch",
       "aliases": [
         "Holland"
       ]
@@ -821,6 +824,7 @@
     {
       "code": "ES",
       "name": "Spain",
+      "adjective": "Spanish",
       "aliases": [
         "España"
       ]

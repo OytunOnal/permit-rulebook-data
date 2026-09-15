@@ -22,8 +22,12 @@ export interface CountryVocabulary {
   classes: Record<string, CountryClass>;
   /** ISO 3166-1 alpha-2. A vocabulary, not a rule: no per-country provenance. */
   /** `article` is the word the name takes inside a sentence ("the"
-   * Netherlands) — a fact about the country, kept beside its name. */
-  countries: { code: string; name: string; article?: string; aliases?: string[] }[];
+   * Netherlands) — a fact about the country, kept beside its name. So is
+   * `adjective`: the word a sentence uses for a thing OF that country, which
+   * English does not derive from the name ("Spain" → "Spanish", "the
+   * Netherlands" → "Dutch"). It is carried for the countries this product
+   * writes prose about, which is the ones it ships routes for. */
+  countries: { code: string; name: string; article?: string; adjective?: string; aliases?: string[] }[];
 }
 
 export interface VocabularyError {
@@ -82,6 +86,18 @@ export function countryPhrase(
   const country = vocab.countries.find((c) => c.code === code);
   if (!country) return undefined;
   return country.article ? `${country.article} ${country.name}` : country.name;
+}
+
+/**
+ * The word a sentence uses for a thing OF a country — "a Spanish source", "a
+ * Dutch page". English does not derive it from the name, so it is data beside
+ * the name like the article is, and it is absent for the countries nothing
+ * writes prose about.
+ */
+export function countryAdjective(
+  code: string, vocab: CountryVocabulary = countryVocabulary,
+): string | undefined {
+  return vocab.countries.find((c) => c.code === code)?.adjective;
 }
 
 export function countryOptions(): FieldOption[] {

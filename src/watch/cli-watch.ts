@@ -107,8 +107,11 @@ if (commit) {
   // A targeted re-baseline is not a run of the watch: `--only` fetches one
   // entry, so it must not stamp the day every source was last re-read. That
   // date is a claim about all of them (Standards review, 2026-09-08).
+  // `unread` travels with `last_run` for the same reason: it is a claim about
+  // a whole pass, and one entry fetched on purpose says nothing about the
+  // twenty-nine that were not (s11).
   const merged = only
-    ? { entries: { ...state.entries, ...nextState.entries }, last_run: state.last_run }
+    ? { entries: { ...state.entries, ...nextState.entries }, last_run: state.last_run, unread: state.unread }
     : nextState;
   writeFileSync(statePath, JSON.stringify(merged, null, 2) + "\n");
   log("info", "state committed", {
