@@ -104,7 +104,18 @@ export function usesCountryVocabulary(dataset: Dataset): boolean {
  * class's treaty. Coverage still requires it to be watched; a sentence about
  * what a reader is looking at cannot name a country for it.
  */
+/**
+ * The walk, kept per dataset — the same shape `verdict.ts` keeps its field
+ * index in, and for the same reason. Every page of a build asks this question
+ * once through its footer, and thirty-four walks of every route's provenance
+ * to answer a question whose answer cannot have changed is the second walk the
+ * footer was already written to avoid (Standards review, 2026-09-15).
+ */
+const walkCache = new WeakMap<Dataset, Map<string, Set<string>>>();
+
 export function datasetSourceCountries(dataset: Dataset): Map<string, Set<string>> {
+  const cached = walkCache.get(dataset);
+  if (cached) return cached;
   const urls = new Map<string, Set<string>>();
   const add = (url: string, country?: string) => {
     const owners = urls.get(url) ?? new Set<string>();
@@ -132,6 +143,7 @@ export function datasetSourceCountries(dataset: Dataset): Map<string, Set<string
   if (usesCountryVocabulary(dataset))
     for (const cls of Object.values(countryVocabulary.classes))
       for (const source of cls.sources ?? []) add(source.source_url);
+  walkCache.set(dataset, urls);
   return urls;
 }
 
@@ -167,11 +179,29 @@ export function unreadSources(dataset: Dataset, state: WatchState): UnreadSource
   const out: UnreadSource[] = [];
   for (const entry of state.unread ?? []) {
     const countries = cited.get(entry.url);
+    // Nothing a reader is looking at rests on it.
+    if (!countries?.size) continue;
     const snapshot = state.entries[entry.id];
-    if (!countries?.size || !snapshot) continue;
+    // Never read at all: there is no day to say it has not answered since, so
+    // this sentence cannot hold it. It is not dropped in silence — `npm run
+    // check` prints it beside the ones that are reported, under
+    // `never_read` — and what it would take to say it here is a date from the
+    // dataset values themselves rather than from a snapshot that does not
+    // exist (Standards review, 2026-09-15).
+    if (!snapshot) continue;
     out.push({ id: entry.id, url: entry.url, last_read: snapshot.retrieved_at, countries: [...countries] });
   }
   return out.sort((a, b) => a.last_read.localeCompare(b.last_read) || a.id.localeCompare(b.id));
+}
+
+/**
+ * Sources the run could not read that back values and have never been read —
+ * the half of the answer the sentence cannot carry, counted so that nobody has
+ * to find it by reading this function. `npm run check` prints it.
+ */
+export function unreadNeverRead(dataset: Dataset, state: WatchState): UnreadEntry[] {
+  const cited = datasetSourceCountries(dataset);
+  return (state.unread ?? []).filter((e) => cited.get(e.url)?.size && !state.entries[e.id]);
 }
 
 /** The countries named, staler first, each with how many of its sources went unread. */
@@ -181,7 +211,17 @@ function byCountry(sources: UnreadSource[]): { adjective: string; count: number 
   // sentence wants: the country the date comes from is named first.
   for (const source of sources)
     for (const code of source.countries) counts.set(code, (counts.get(code) ?? 0) + 1);
-  return [...counts].map(([code, count]) => ({ adjective: countryAdjective(code) ?? code, count }));
+  return [...counts].map(([code, count]) => {
+    const adjective = countryAdjective(code);
+    // CONTRIBUTING §8: there is no fallback to an id in something a person
+    // reads. "A ES source has not answered" is not a sentence, and a fallback
+    // is also what would stop the check on the vocabulary from ever biting.
+    if (!adjective)
+      throw new Error(
+        `${code} has no adjective in the country vocabulary, so a sentence cannot name it — `
+        + "add one beside the name in data/countries.json");
+    return { adjective, count };
+  });
 }
 
 /**
@@ -202,7 +242,30 @@ function byCountry(sources: UnreadSource[]): { adjective: string; count: number 
  * have", "two Dutch and a Spanish source have".
  */
 export function unreadSentence(sources: UnreadSource[]): string {
-  if (!sources.length) return "";
+  const clause = unreadClause(sources);
+  return clause ? `${clause.before}${clause.since}${clause.after}` : "";
+}
+
+/**
+ * The same clause with its date held apart, for a page that marks dates up.
+ *
+ * Every other date on this site is wrapped in `<time datetime>` — two of them
+ * in the paragraph this sentence joins — and a renderer cannot mark up a date
+ * inside a string it has to escape whole. So the sentence hands over the day it
+ * names, and the page decides what to wrap it in (Standards review,
+ * 2026-09-15).
+ */
+export interface UnreadClause {
+  /** Everything up to the date, ending in a space. */
+  before: string;
+  /** The oldest reading among the sources named — never the run's own day. */
+  since: string;
+  /** The rest, beginning at the semicolon. */
+  after: string;
+}
+
+export function unreadClause(sources: UnreadSource[]): UnreadClause | undefined {
+  if (!sources.length) return undefined;
   const groups = byCountry(sources);
   const phrases = groups.map((g, i) => {
     const last = i === groups.length - 1;
@@ -211,8 +274,11 @@ export function unreadSentence(sources: UnreadSource[]): string {
   });
   const subject = joinAnd(phrases);
   const many = sources.length > 1;
-  return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} ${many ? "have" : "has"} not answered since ${
-    sources[0]!.last_read}; the values ${many ? "they back" : "it backs"} still show that date.`;
+  return {
+    before: `${subject.charAt(0).toUpperCase()}${subject.slice(1)} ${many ? "have" : "has"} not answered since `,
+    since: sources[0]!.last_read,
+    after: `; the values ${many ? "they back" : "it backs"} still show that date.`,
+  };
 }
 
 /**

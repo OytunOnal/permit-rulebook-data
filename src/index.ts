@@ -15,8 +15,9 @@ export { scopeWords, scopeLine, statedNotAsked, countedWords, NUMBER_WORDS, SCOP
 export { routesInProse, excludedLimbs, twinDisagreesWithProse, limbIdsOf, scopeDisagreesWithExclusions } from "./exclusions.js";
 export { countryClasses, countryOptions, classOfCountry, countryAdjective, countryPhrase, countryVocabulary } from "./countries.js";
 export type { CountryClass, CountryVocabulary } from "./countries.js";
-// What the watch left behind, and what a page owes a reader because of it. The
-// state's shape and the derivations over it — never the watch itself, which
-// fetches and hashes and belongs to Node (s11).
-export { datasetSourceCountries, datasetSourceUrls, unreadSentence, unreadSources } from "./watch/state.js";
-export type { Snapshot, UnreadEntry, UnreadSource, WatchState } from "./watch/state.js";
+// What the watch left behind, and what a page owes a reader because of it —
+// never the watch itself, which fetches and hashes and belongs to Node. The
+// walk from a source to the values it backs stays inside the package: the site
+// asks what went unread, not how that is worked out (s11).
+export { unreadClause, unreadSentence, unreadSources } from "./watch/state.js";
+export type { UnreadClause, UnreadSource, WatchState } from "./watch/state.js";

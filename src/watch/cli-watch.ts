@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { runWatch, STRATEGIES, type Fetcher, type WatchReport, type WatchState, type Watchlist } from "./core.js";
+import { mergeTargetedRun, runWatch, STRATEGIES, type Fetcher, type WatchReport, type WatchState, type Watchlist } from "./core.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -103,16 +103,12 @@ for (const r of reports) {
 
 if (commit) {
   // With `--only`, every other entry's snapshot is carried over untouched: a
-  // targeted re-baseline must not quietly drop the twenty-nine it did not fetch.
-  // A targeted re-baseline is not a run of the watch: `--only` fetches one
-  // entry, so it must not stamp the day every source was last re-read. That
-  // date is a claim about all of them (Standards review, 2026-09-08).
-  // `unread` travels with `last_run` for the same reason: it is a claim about
-  // a whole pass, and one entry fetched on purpose says nothing about the
-  // twenty-nine that were not (s11).
-  const merged = only
-    ? { entries: { ...state.entries, ...nextState.entries }, last_run: state.last_run, unread: state.unread }
-    : nextState;
+  // targeted re-baseline must not quietly drop the twenty-nine it did not
+  // fetch, and it must not stamp the day every source was last re-read. What
+  // it may say something about is the one entry it did fetch. The rule lives
+  // beside the code that writes a full run's state, where it can be read by a
+  // test rather than by a grep over this file.
+  const merged = only ? mergeTargetedRun(state, nextState, watchlist) : nextState;
   writeFileSync(statePath, JSON.stringify(merged, null, 2) + "\n");
   log("info", "state committed", {
     entries: Object.keys(merged.entries).length, only: only ?? null, last_run: merged.last_run,

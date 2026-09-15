@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "./core.js";
 import { proseProvenance } from "../prose.js";
+import { unreadNeverRead, unreadSources } from "./state.js";
 import type { Dataset } from "../types.js";
 
 const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
@@ -32,6 +33,28 @@ console.log(JSON.stringify({
  * a gate: nothing here can fail, it is a measurement a person reads on every
  * `npm run check`.
  */
+/**
+ * What the last run did not read, of the sources a reader is looking at.
+ *
+ * Not a gate — a run that could not reach a source has already failed with its
+ * own exit code, and this file's two gates are about the dataset. It is a
+ * measurement a person reads on every `npm run check`, and it is here because
+ * the alternative is that the only way to know which sources went unread is to
+ * open `/data/` in a browser. `never_read` is the half the page cannot say:
+ * a source that has never been read has no day to have not answered since
+ * (Standards review, 2026-09-15).
+ */
+const unread = unreadSources(dataset, state);
+const neverRead = unreadNeverRead(dataset, state);
+console.log(JSON.stringify({
+  ts: ts(),
+  level: unread.length || neverRead.length ? "warn" : "info",
+  msg: "unread sources",
+  last_run: state.last_run ?? null,
+  reported: unread.map((u) => ({ id: u.id, last_read: u.last_read, countries: u.countries })),
+  never_read: neverRead.map((e) => e.id),
+}));
+
 const prose = proseProvenance(dataset);
 console.log(JSON.stringify({
   ts: ts(),

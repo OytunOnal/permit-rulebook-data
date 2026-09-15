@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { runWatch, type Fetcher, type Watchlist } from "../src/watch/core.js";
+import { mergeTargetedRun, runWatch, type Fetcher, type Watchlist } from "../src/watch/core.js";
 import {
-  unreadSentence, unreadSources,
+  unreadClause, unreadNeverRead, unreadSentence, unreadSources,
   type UnreadSource, type Snapshot, type WatchState,
 } from "../src/watch/state.js";
 import { countryAdjective } from "../src/countries.js";
@@ -204,5 +204,91 @@ describe("the state this repository ships today", () => {
       expect(source.countries.length, source.id).toBeGreaterThan(0);
       expect(source.last_read <= (shippedState.last_run ?? ""), source.id).toBe(true);
     }
+  });
+});
+
+describe("a targeted re-baseline, which is not a run", () => {
+  const list = (...ids: string[]): Watchlist => ({
+    entries: ids.map((id) => ({
+      id, url: id === "es-uge-umbral-pdf" ? UMBRAL : FACHKRAFT,
+      strategy: "html" as const, kind: "value-source" as const,
+    })),
+  });
+
+  /**
+   * `npm run watch:sources -- --only=<entry-id>` is the step CONTRIBUTING
+   * documents for re-baselining an entry whose slice a curator moved. The pass
+   * fetches that source and nothing else — so the day the last FULL run wrote
+   * stands, and so does everything it said about the sources this pass never
+   * asked for. What cannot stand is its verdict on the one it just read.
+   */
+  it("drops the entry it has just read from the unread list", () => {
+    const previous = stateWith([{ id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-07" }],
+      { "bamf-fachkraft": "2026-09-02" });
+    const pass: WatchState = {
+      entries: { "es-uge-umbral-pdf": snapshot("2026-09-16") }, last_run: "2026-09-16", unread: [],
+    };
+    const merged = mergeTargetedRun(previous, pass, list("es-uge-umbral-pdf"));
+    expect(merged.unread).toEqual([]);
+    expect(merged.last_run).toBe(LAST_RUN);
+    // The lie this exists to prevent, in the words the page would have used.
+    expect(unreadSentence(unreadSources(dataset, merged))).toBe("");
+  });
+
+  it("keeps what the last run said about every source it did not fetch", () => {
+    const previous = stateWith([{ id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-07" }],
+      { "bamf-fachkraft": "2026-09-02" });
+    const pass: WatchState = {
+      entries: { "bamf-fachkraft": snapshot("2026-09-16") }, last_run: "2026-09-16", unread: [],
+    };
+    const merged = mergeTargetedRun(previous, pass, list("bamf-fachkraft"));
+    expect(merged.unread).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL }]);
+    expect(unreadSentence(unreadSources(dataset, merged)))
+      .toBe("A Spanish source has not answered since 2026-09-07; the values it backs still show that date.");
+  });
+
+  it("adds the entry it could not read, and leaves a state that never had a list without one", () => {
+    const previous: WatchState = { entries: { "bamf-fachkraft": snapshot("2026-09-02") }, last_run: LAST_RUN };
+    const clean = mergeTargetedRun(previous, {
+      entries: { "bamf-fachkraft": snapshot("2026-09-16") }, last_run: "2026-09-16", unread: [],
+    }, list("bamf-fachkraft"));
+    expect(clean.unread, "an empty list is a claim about a pass that made none").toBeUndefined();
+
+    const refused = mergeTargetedRun(previous, {
+      entries: {}, last_run: "2026-09-16", unread: [{ id: "bamf-fachkraft", url: FACHKRAFT }],
+    }, list("bamf-fachkraft"));
+    expect(refused.unread).toEqual([{ id: "bamf-fachkraft", url: FACHKRAFT }]);
+  });
+});
+
+describe("what the sentence refuses to do", () => {
+  it("never puts an id where a reader expects a country", () => {
+    // CONTRIBUTING §8: no fallback to an id in prose. A country with no
+    // adjective stops the build instead of shipping "a ES source".
+    const nowhere = { ...dataset, countries: [{ code: "ZZ", name: "Nowhere", routes: [] }] } as Dataset;
+    const sources: UnreadSource[] = [{ id: "x", url: UMBRAL, last_read: "2026-09-07", countries: ["ZZ"] }];
+    expect(() => unreadSentence(sources)).toThrow(/ZZ has no adjective/);
+    expect(nowhere.countries[0]!.code).toBe("ZZ");
+  });
+
+  it("hands the date over separately, so a page can mark it up", () => {
+    const sources = unreadSources(dataset, stateWith([{ id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-07" }]));
+    const clause = unreadClause(sources)!;
+    expect(clause.since).toBe("2026-09-07");
+    expect(clause.before).toBe("A Spanish source has not answered since ");
+    expect(clause.after).toBe("; the values it backs still show that date.");
+    expect(`${clause.before}${clause.since}${clause.after}`).toBe(unreadSentence(sources));
+    expect(unreadClause([])).toBeUndefined();
+  });
+
+  it("a source it could not read and has never read is counted, not swallowed", () => {
+    // No snapshot means no day to have not answered since, so the sentence
+    // cannot hold it — but `npm run check` prints it, and this is the case
+    // that says where it went.
+    const state: WatchState = { entries: {}, last_run: LAST_RUN, unread: [{ id: "es-uge-umbral-pdf", url: UMBRAL }] };
+    expect(unreadSources(dataset, state)).toEqual([]);
+    expect(unreadNeverRead(dataset, state)).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL }]);
+    // A sentinel backs no value and is not reported by either.
+    expect(unreadNeverRead(dataset, { entries: {}, unread: [{ id: "es-uge-index", url: UGE_INDEX }] })).toEqual([]);
   });
 });

@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { htmlToText, normalize } from "../src/watch/normalize.js";
 import {
-  checkCoverage, checkQuotes, datasetLearnUrls, datasetQuotes, datasetSourceUrls, runWatch, sha256,
-  sliceFingerprint,
+  checkCoverage, checkQuotes, datasetLearnUrls, datasetQuotes, datasetSourceUrls, mergeTargetedRun,
+  runWatch, sha256, sliceFingerprint,
   type Fetcher, type WatchState, type Watchlist,
 } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
@@ -681,12 +681,20 @@ describe("the watch stamps the day it read everything, and only then", () => {
     expect(nextState.last_run).toBe("2026-09-08");
   });
 
-  it("the shipped state carries one, and the CLI keeps it through an --only run", () => {
+  it("the shipped state carries one, and a targeted re-baseline keeps it", () => {
     expect(shippedState.last_run, "the watch has never stamped a run").toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
-    const cli = readFileSync(fileURLToPath(new URL("../src/watch/cli-watch.ts", import.meta.url)), "utf8");
-    // The merge for `--only` keeps the day the last FULL run wrote.
-    expect(cli).toContain("last_run: state.last_run");
-    expect(cli).not.toContain("last_run: nextState.last_run");
+    // This used to grep cli-watch.ts for `last_run: state.last_run`, which a
+    // rename silences and a comment satisfies. The rule it was written for is
+    // in `mergeTargetedRun` now, where it can be asked rather than read
+    // (DECISIONS, 2026-09-14: a test that proves its claim by grepping
+    // identifiers).
+    const previous: WatchState = { entries: { one: { hash: "a", retrieved_at: "2026-09-02", history: [] } }, last_run: "2026-09-08" };
+    const pass: WatchState = { entries: { one: { hash: "b", retrieved_at: "2026-09-12", history: [] } }, last_run: "2026-09-12", unread: [] };
+    const merged = mergeTargetedRun(previous, pass, {
+      entries: [{ id: "one", url: "https://example.org/a", strategy: "html", kind: "value-source" }],
+    });
+    expect(merged.last_run).toBe("2026-09-08");
+    expect(merged.entries.one!.retrieved_at).toBe("2026-09-12");
   });
 });
 
