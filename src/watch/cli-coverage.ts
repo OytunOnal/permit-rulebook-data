@@ -41,7 +41,7 @@ console.log(JSON.stringify({
  * measurement a person reads on every `npm run check`, and it is here because
  * the alternative is that the only way to know which sources went unread is to
  * open `/data/` in a browser. `never_read` is the half the page cannot say:
- * a source that has never been read has no day to have not answered since
+ * a source that has never been read has no day on which its values were read
  * (Standards review, 2026-09-15).
  */
 const unread = unreadSources(dataset, state);

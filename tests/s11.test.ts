@@ -88,7 +88,7 @@ describe("the sources the last run did not read", () => {
       { id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-07" },
     ]);
     const sentence = unreadSentence(unreadSources(dataset, state));
-    expect(sentence).toContain("since 2026-09-07");
+    expect(sentence).toContain("were read on 2026-09-07.");
     expect(sentence).not.toContain(LAST_RUN);
   });
 });
@@ -101,19 +101,19 @@ describe("the exception clause, in the shapes it has to read in", () => {
     expect(sentenceFor([
       { id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-07" },
       { id: "boe-ley-14-2013", url: "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074", read: "2026-09-09" },
-    ])).toBe("Two Spanish sources have not answered since 2026-09-07; the values they back still show that date.");
+    ])).toBe("Two Spanish sources did not answer on the last run; the values they back were read on 2026-09-07.");
   });
 
   it("one country, one source", () => {
     expect(sentenceFor([{ id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-07" }]))
-      .toBe("A Spanish source has not answered since 2026-09-07; the values it backs still show that date.");
+      .toBe("A Spanish source did not answer on the last run; the values it backs were read on 2026-09-07.");
   });
 
   it("two countries, one source each", () => {
     expect(sentenceFor([
       { id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-07" },
       { id: "nl-ind-orientation-year", url: ORIENTATION, read: "2026-09-11" },
-    ])).toBe("A Spanish and a Dutch source have not answered since 2026-09-07; the values they back still show that date.");
+    ])).toBe("A Spanish and a Dutch source did not answer on the last run; the values they back were read on 2026-09-07.");
   });
 
   it("two countries, more than one source in one of them", () => {
@@ -121,7 +121,7 @@ describe("the exception clause, in the shapes it has to read in", () => {
       { id: "nl-ind-orientation-year", url: ORIENTATION, read: "2026-09-04" },
       { id: "nl-ind-blue-card", url: NL_BLUE_CARD, read: "2026-09-07" },
       { id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-11" },
-    ])).toBe("Two Dutch and a Spanish source have not answered since 2026-09-04; the values they back still show that date.");
+    ])).toBe("Two Dutch and a Spanish source did not answer on the last run; the values they back were read on 2026-09-04.");
   });
 
   it("three countries read as a list", () => {
@@ -130,8 +130,8 @@ describe("the exception clause, in the shapes it has to read in", () => {
       { id: "nl-ind-orientation-year", url: ORIENTATION, read: "2026-09-04" },
       { id: "nl-ind-blue-card", url: NL_BLUE_CARD, read: "2026-09-05" },
       { id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-11" },
-    ])).toBe("A German, two Dutch and a Spanish source have not answered since 2026-09-02; "
-      + "the values they back still show that date.");
+    ])).toBe("A German, two Dutch and a Spanish source did not answer on the last run; "
+      + "the values they back were read on 2026-09-02.");
   });
 
   it("none of them citable to a country: nothing is said", () => {
@@ -244,7 +244,7 @@ describe("a targeted re-baseline, which is not a run", () => {
     const merged = mergeTargetedRun(previous, pass, list("bamf-fachkraft"));
     expect(merged.unread).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL }]);
     expect(unreadSentence(unreadSources(dataset, merged)))
-      .toBe("A Spanish source has not answered since 2026-09-07; the values it backs still show that date.");
+      .toBe("A Spanish source did not answer on the last run; the values it backs were read on 2026-09-07.");
   });
 
   it("adds the entry it could not read, and leaves a state that never had a list without one", () => {
@@ -275,14 +275,14 @@ describe("what the sentence refuses to do", () => {
     const sources = unreadSources(dataset, stateWith([{ id: "es-uge-umbral-pdf", url: UMBRAL, read: "2026-09-07" }]));
     const clause = unreadClause(sources)!;
     expect(clause.since).toBe("2026-09-07");
-    expect(clause.before).toBe("A Spanish source has not answered since ");
-    expect(clause.after).toBe("; the values it backs still show that date.");
+    expect(clause.before).toBe("A Spanish source did not answer on the last run; the values it backs were read on ");
+    expect(clause.after).toBe(".");
     expect(`${clause.before}${clause.since}${clause.after}`).toBe(unreadSentence(sources));
     expect(unreadClause([])).toBeUndefined();
   });
 
   it("a source it could not read and has never read is counted, not swallowed", () => {
-    // No snapshot means no day to have not answered since, so the sentence
+    // No snapshot means no day on which its values were read, so the sentence
     // cannot hold it — but `npm run check` prints it, and this is the case
     // that says where it went.
     const state: WatchState = { entries: {}, last_run: LAST_RUN, unread: [{ id: "es-uge-umbral-pdf", url: UMBRAL }] };

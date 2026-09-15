@@ -182,7 +182,7 @@ export function unreadSources(dataset: Dataset, state: WatchState): UnreadSource
     // Nothing a reader is looking at rests on it.
     if (!countries?.size) continue;
     const snapshot = state.entries[entry.id];
-    // Never read at all: there is no day to say it has not answered since, so
+    // Never read at all: there is no day on which its values were read, so
     // this sentence cannot hold it. It is not dropped in silence — `npm run
     // check` prints it beside the ones that are reported, under
     // `never_read` — and what it would take to say it here is a date from the
@@ -232,8 +232,19 @@ function byCountry(sources: UnreadSource[]): { adjective: string; count: number 
  *
  * The human's wording, 2026-09-15:
  *
- * > Two Spanish sources have not answered since 2026-09-07; the values they
- * > back still show that date.
+ * > Four Dutch sources did not answer on the last run; the values they back
+ * > were read on 2026-09-07.
+ *
+ * It said "have not answered **since** 2026-09-07" until the walk that was
+ * meant to approve it: built against a real run, the page named four IND
+ * sources that had reported `unchanged` from the runner that same morning.
+ * They answered. Their snapshots read 2026-09-07 because that is the day the
+ * *reading* was taken, and an unchanged page keeps its date — the same
+ * conflation this module exists because of, surviving in the copy after it had
+ * been driven out of the derivation. `retrieved_at` is not "last read", and
+ * nothing in this system knows a last-read date, so the sentence claims no
+ * duration: it says which sources the last run did not reach, and the day the
+ * values they back were read. Two facts the state actually holds.
  *
  * Numbers are spelled, because it is prose. A country contributing one source
  * takes the article rather than "one": "a Spanish and a Dutch source" is how
@@ -275,9 +286,10 @@ export function unreadClause(sources: UnreadSource[]): UnreadClause | undefined 
   const subject = joinAnd(phrases);
   const many = sources.length > 1;
   return {
-    before: `${subject.charAt(0).toUpperCase()}${subject.slice(1)} ${many ? "have" : "has"} not answered since `,
+    before: `${subject.charAt(0).toUpperCase()}${subject.slice(1)} did not answer on the last run; the values ${
+      many ? "they back were" : "it backs were"} read on `,
     since: sources[0]!.last_read,
-    after: `; the values ${many ? "they back" : "it backs"} still show that date.`,
+    after: ".",
   };
 }
 
