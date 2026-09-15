@@ -786,3 +786,36 @@ describe("a tooltip's placeholder is not part of the page's words", () => {
     expect(normalize(htmlToText(html))).toBe("before after");
   });
 });
+
+/**
+ * The name the watch gives, and the URL that may not be inside it.
+ *
+ * It used to read `permit-rulebook-watch/0.1 (+https://github.com/…)` — the
+ * conventional shape for a crawler — and `inclusion.gob.es` answered 403 to
+ * exactly that. The watch failed every day from 2026-09-11 to 15 and Spain's
+ * salary threshold went unread for eight days while the site still said
+ * "re-read daily". Measured the same minute against the same host: the full
+ * string 403, the same string with a browser token in front of it 403, and
+ * `permit-rulebook-watch/0.1` alone 200 with 299,066 bytes. The filter
+ * objects to an address inside the name, not to a reader that names itself.
+ *
+ * So the rule is not "identify less". It is: say who you are in the name,
+ * and put where to find you beside it (data #18, 2026-09-15).
+ */
+describe("the watch says who is asking", () => {
+  const source = readFileSync(new URL("../src/watch/cli-watch.ts", import.meta.url), "utf8");
+  const headers = source.slice(source.indexOf("const fetcher"), source.indexOf("signal:"));
+
+  it("names itself", () => {
+    expect(headers).toContain("permit-rulebook-watch");
+  });
+
+  it("carries no address inside the name", () => {
+    const ua = /"user-agent":\s*"([^"]*)"/.exec(headers)?.[1] ?? "";
+    expect(ua, "the User-Agent").not.toMatch(/https?:\/\//);
+  });
+
+  it("still says where to find whoever sent it", () => {
+    expect(headers).toContain("https://github.com/OytunOnal/permit-rulebook-data");
+  });
+});

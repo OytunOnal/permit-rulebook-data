@@ -38,7 +38,25 @@ const fetcher: Fetcher = async (url) => {
   try {
     const res = await fetch(url, {
       redirect: "follow",
-      headers: { "user-agent": "permit-rulebook-watch/0.1 (+https://github.com/OytunOnal/permit-rulebook-data) change-detection" },
+      // Who is asking, and where to find whoever sent it — but the address
+      // travels beside the name rather than inside it.
+      //
+      // The name used to carry the repository in parentheses, the way a
+      // crawler conventionally does, and `inclusion.gob.es` answered 403 to
+      // exactly that: the watch failed every day from 2026-09-11 to 15 and
+      // Spain's salary threshold went unread for eight days while the site
+      // still said "re-read daily". Measured on 2026-09-15, same host, same
+      // minute: the full string 403, the string without its trailing purpose
+      // word 403, `Mozilla/5.0 (compatible; …; +https://…)` 403 — and
+      // `permit-rulebook-watch/0.1` **200**, 299,066 bytes. The filter objects
+      // to a URL inside the User-Agent, not to a reader that names itself. So
+      // the name stays, unique enough to find this repository by, and the link
+      // moves to a header of its own, which the same host serves happily
+      // (data #18).
+      headers: {
+        "user-agent": "permit-rulebook-watch/0.1",
+        "x-source-contact": "https://github.com/OytunOnal/permit-rulebook-data",
+      },
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) return { ok: false, status: res.status, error: `HTTP ${res.status}` };
