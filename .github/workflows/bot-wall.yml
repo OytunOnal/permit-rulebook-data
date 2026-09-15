@@ -31,6 +31,11 @@ permissions:
 jobs:
   measure:
     runs-on: ubuntu-latest
+    # Reading pages and two checkouts. It writes nothing, so it asks for
+    # nothing else — and it says so here, because this repository requires
+    # every job to state its own ceiling rather than inherit one.
+    permissions:
+      contents: read
     steps:
       - name: Check out the ruleset (the watchlist the URLs come from)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
