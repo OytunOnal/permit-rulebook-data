@@ -1,0 +1,92 @@
+# One measurement, run by hand, deleted with the decision it informs.
+#
+# Four of this project's sources refuse the watch's fetcher, each differently:
+# Legifrance answers 403, EUR-Lex answers 202 with an empty body, the IND hands
+# back a page of navigation with no rules in it, and the UGE pages answer a
+# developer machine but not this runner — which is why the watch has failed
+# every day since 2026-09-11.
+#
+# The roadmap carries a candidate, a `browser` watch strategy, gated since
+# 2026-09-10 on one unmeasured thing: whether headless Chrome FROM THIS RUNNER
+# is let through where `fetch` is refused. A wall that opens for a browser on a
+# home connection may still refuse a datacentre address, and if it does, the
+# strategy buys nothing.
+#
+# It lives here rather than in the site repository because a push there lands on
+# a product path and would deploy the live site for a measurement. Nothing in
+# this repository triggers on push, so this file costs nothing until someone
+# runs it. It reads pages and writes nothing: no commit, no deploy, no dispatch.
+name: bot-wall measurement
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_ref:
+        description: "The site ref carrying scripts/bot-wall.mjs"
+        default: "bot-wall"
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    # Reading pages and two checkouts. It writes nothing, so it asks for
+    # nothing else — and it says so here, because this repository requires
+    # every job to state its own ceiling rather than inherit one.
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the ruleset (the watchlist the URLs come from)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: data
+
+      - name: Check out the site (the browser driver and the script)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          repository: OytunOnal/permit-rulebook
+          ref: ${{ inputs.site_ref }}
+          path: site
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version: 22 }
+
+      - name: Say which Chrome answered
+        working-directory: site
+        run: node -e "import('./scripts/chrome.mjs').then(m => console.log(m.chromePath()))"
+
+      - name: Read the walls with a headless browser
+        working-directory: site
+        run: node scripts/bot-wall.mjs --data ../data
+
+      # "Unreachable" is a verdict, not a diagnosis. The two Spanish sources
+      # answer a developer machine with HTTP 200 and this runner with nothing,
+      # and which nothing it is decides the fix — a 403 is a wall, a timeout is
+      # a route, a TLS error is neither. The watch's own fetcher is used rather
+      # than a hand-rolled one so the answer is about the thing that actually
+      # fails.
+      - name: Ask the watch's own fetcher what it gets, from here
+        working-directory: data
+        run: |
+          npm ci
+          npm run build
+          node -e "
+            const urls = [
+              'https://www.inclusion.gob.es/web/unidadgrandesempresas/autorizaciones-y-requisitos',
+              'https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf',
+              'https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883',
+            ];
+            (async () => {
+              for (const url of urls) {
+                const started = Date.now();
+                try {
+                  const r = await fetch(url, { redirect: 'follow' });
+                  const body = await r.arrayBuffer();
+                  console.log(url.slice(0, 70), '->', r.status, r.statusText, '| bytes', body.byteLength, '| ms', Date.now() - started);
+                } catch (e) {
+                  console.log(url.slice(0, 70), '-> THREW', e.name + ':', String(e.message).slice(0, 60), '| cause', String(e.cause).slice(0, 80), '| ms', Date.now() - started);
+                }
+              }
+            })();
+          "
