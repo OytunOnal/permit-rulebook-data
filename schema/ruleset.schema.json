@@ -1036,6 +1036,20 @@
           "type": "string",
           "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
           "description": "The address this route keeps when its name changes. Set only to preserve a URL that already exists."
+        },
+        "situations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "offer",
+              "ict",
+              "research",
+              "none"
+            ]
+          },
+          "description": "The situations this route would ask about if it were scored — the `situation` field's option ids. Today it is only for a route in the rules-quoted-nothing-asked scope: a scored route's criteria already say which situations it takes, and the interview derives that (see situationsAsked); a typed list beside a derived one would be a second answer, so the build refuses it there. It exists so the interview can point a reader whose situation no scored route in their country takes at the quoted route that would have asked about it (s19)."
         }
       }
     },

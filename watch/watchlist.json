@@ -59,10 +59,10 @@
       "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
       "strategy": "html",
       "kind": "value-source",
-      "note": "Backs the FR talent thresholds (EUR 39,582 salarié qualifié; EUR 59,373 Blue Card). All talent amounts live in this fiche's accordions, and the slice is those accordions: from the first one to the line that begins the prefecture procedure. Everything after it backs no value and moves on its own — the postcode-driven preface widget, and the Allo Service Public opening hours, which carry a line like \"Horaires exceptionnels le mardi 8 septembre\" and changed under the entry on 2026-09-05 while every quoted amount stood still.",
+      "note": "Backs the FR talent thresholds (EUR 39,582 salarié qualifié; EUR 59,373 Blue Card) and, since s19, the chercheur conditions quoted on fr-talent-chercheur. All talent amounts live in this fiche's accordions, and the slice is those accordions from the first (Salarié qualifié) through the Chercheur one, ending where the Porteur de projet accordion begins. Everything after it backs no value and moves on its own — the postcode-driven preface widget, and the Allo Service Public opening hours, which carry a line like \"Horaires exceptionnels le mardi 8 septembre\" and changed under the entry on 2026-09-05 while every quoted amount stood still.",
       "slice": {
         "from": "Salarié qualifié",
-        "to": "Faire la démarche auprès de la préfecture"
+        "to": "Porteur de projet"
       },
       "history": [
         {
@@ -72,6 +72,10 @@
         {
           "changed_at": "2026-09-10",
           "note": "Reading changed, not the page: the watch's HTML extraction now drops the contents of elements marked role=\"tooltip\". service-public ships the definition popover beside a defined word holding the literal, unsubstituted placeholder \": titleContent\", which the old extraction spliced into the sentence it sits inside — this fiche's eligibility list read \"Vous êtes étranger (sauf Européen : titleContent ou Algérien)\", so the authority's own sentence could not be quoted verbatim and verified against its own page. Nine occurrences here, seven on F16922; no shipped quote depended on any of them. The baseline was re-read in the same change, so the `changed` this raises is our reading and not the authority's."
+        },
+        {
+          "changed_at": "2026-09-16",
+          "note": "Slice widened from the salarié qualifié procedure's start to the beginning of the Porteur de projet accordion, so the Chercheur accordion is read: the researcher card is a tab of this same fiche, not a fiche of its own, and a second watch entry on one URL would shadow the first in the quote gate, which keys entries by URL. The watched region grows from 25,903 to 38,256 characters and takes in the salarié qualifié tab's later steps — the préfecture postcode widget (Pivot Local) and the appeal steps — which are static text on the page today. Every talent amount still verifies, and the nine chercheur quotes verify through this slice. The baseline was re-read in the same change (npm run watch:sources -- --only=fr-f16922-talent --commit), so the `changed` this raises is our reading and not the authority's."
         }
       ]
     },

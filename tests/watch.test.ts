@@ -519,6 +519,11 @@ describe("the highly-skilled-migrant slice", () => {
  * changes with the calendar. Quote fidelity verified every FR quote against the
  * new snapshot that same day and still does, so nothing had happened to a
  * value. The slice is now the accordions the entry's own intent names.
+ *
+ * Widened on 2026-09-16 (s19): the researcher card is the Chercheur tab of
+ * this same fiche, so the slice runs on from the salarié qualifié procedure to
+ * the start of the Porteur de projet tab. Still the accordions, still not the
+ * contact panel.
  */
 describe("the FR talent fiche's slice", () => {
   const entry = shippedWatchlist.entries.find((e) => e.id === "fr-f16922-talent")!;
@@ -526,8 +531,11 @@ describe("the FR talent fiche's slice", () => {
 
   it("is bounded to the accordions, not the whole fiche", () => {
     expect(entry.slice?.from).toBe("Salarié qualifié");
-    expect(entry.slice?.to).toBe("Faire la démarche auprès de la préfecture");
-    expect(snapshot.text!.length).toBeLessThan(30_000);
+    expect(entry.slice?.to).toBe("Porteur de projet");
+    // 38,256 characters on 2026-09-16 against the fiche's 86,807; the Chercheur
+    // tab is inside, the tabs after it and the contact panel are not.
+    expect(snapshot.text!.length).toBeLessThan(40_000);
+    expect(snapshot.text).toContain("Chercheur La carte de séjour « talent chercheur »");
   });
 
   it("keeps the opening-hours widget out of the hash", () => {

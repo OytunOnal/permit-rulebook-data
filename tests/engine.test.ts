@@ -235,14 +235,16 @@ describe("provenance and meta", () => {
       // an optional field and therefore additive. 0.7.0 since s8: a criterion
       // may exclude answers as well as require them, and a notice may carry a
       // second source, a link and the routes it qualifies — all additive.
-      schema_version: "0.7.0",
-      dataset_version: "2026.09.10",
+      // 0.8.0 since s19: a quoted route may say which situations it would ask
+      // about, an optional field on routes nothing is asked about — additive.
+      schema_version: "0.8.0",
+      dataset_version: "2026.09.16",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two
-      // authorities disagreeing (s8). The freshest are the French intra-corporate
-      // transfer fiche's own eligibility sentence, the Conseil d'État decision
-      // and Article 3(1) of the Blue Card directive, all read on 2026-09-10.
-      newest_retrieved_at: "2026-09-10",
+      // authorities disagreeing (s8). The freshest are the nine sentences of
+      // the talent fiche's Chercheur tab, read on 2026-09-16 for France's
+      // researcher card (s19).
+      newest_retrieved_at: "2026-09-16",
     });
   });
 });

@@ -1,5 +1,5 @@
 import type { Profile, Route, RouteStatement, ScopeValue } from "./types.js";
-import { bindsReader, routeReadings, routeStatements } from "./engine.js";
+import { bindsReader, forEachCriterion, provenancedValuesOf, routeReadings, routeStatements } from "./engine.js";
 
 export { SCOPE_VALUES } from "./types.js";
 
@@ -88,6 +88,30 @@ export function scopeLine(route: Route, profile: Profile = {}): string {
 }
 
 /**
+ * Whether a criterion of this route stands on the same sentence this statement
+ * quotes — in which case the interview asks it, whatever the statement's own
+ * slot says.
+ *
+ * On es-researcher the hosting-agreement sentence was quoted twice: by the
+ * situation gate the interview asks, and by a precondition the scope named as
+ * not asked. The card said "scored, one condition stated but not asked" two
+ * lines above "Asked in the interview — you declared …" (s19, from the site
+ * half's build). One sentence is one fact; the criterion is what decides
+ * whether it is asked. Exact match on the quote: a criterion that quotes a
+ * fragment of a statement's sentence, or a longer one, is not held to be the
+ * same sentence here.
+ */
+export function askedByCriterion(route: Route, statement: RouteStatement): boolean {
+  if (!statement.source) return false;
+  let asked = false;
+  forEachCriterion(route.criteria, (c) => {
+    for (const p of provenancedValuesOf(c))
+      if (p.value.quote === statement.source!.quote) asked = true;
+  });
+  return asked;
+}
+
+/**
  * Everything this route puts in front of a reader that the interview never
  * asks about: the conditions the authority applies beside the ones we ask
  * (preconditions, whether bare or carrying their quote), the qualifications the
@@ -113,7 +137,11 @@ export function statedNotAsked(
   // aside, which is what a route page and a reader who has not answered the
   // passport question both need.
   const statements: RouteStatement[] = routeStatements(route)
-    .filter((s) => bindsReader(s, o.profile ?? {}));
+    .filter((s) => bindsReader(s, o.profile ?? {}))
+    // A statement whose sentence a criterion quotes is asked — the interview
+    // put the question, and counting its sentence as "not asked" beside the
+    // reader's own answer to it is the contradiction s19 removed.
+    .filter((s) => !askedByCriterion(route, s));
   // What the authority states without our asking, and what we read into the
   // gap ourselves. The page has always shown both; the difference between them
   // is the difference between a source and an opinion.

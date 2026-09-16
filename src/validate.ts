@@ -2,9 +2,10 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import schema from "../schema/ruleset.schema.json" with { type: "json" };
 import { countryVocabulary, vocabularyErrors } from "./countries.js";
 import { deriveBands, fieldOptions, routeStatements } from "./engine.js";
+import { askedByCriterion } from "./scope.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
-import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED } from "./types.js";
+import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type { Dataset } from "./types.js";
 
 /**
@@ -178,6 +179,47 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
             : `${route.id} carries no rule that decides it and does not say so: every criterion of it passes vacuously, so it would be met by every reader`,
           keyword: "quotedNothingAsked",
         });
+
+      /**
+       * s19: a statement whose sentence a criterion of this route quotes is
+       * asked — the interview puts the question — so the scope may not name
+       * it as "not asked". The scope line is derived by that rule in
+       * `statedNotAsked`; the authored list is held to it here, because a
+       * list the line no longer reads would go on telling data/exclusions.md
+       * that the sentence is unasked.
+       */
+      for (const s of routeStatements(route))
+        if (route.scope.not_asked.includes(s.id) && askedByCriterion(route, s))
+          errors.push({
+            path: `${path}/scope/not_asked`,
+            message: `${route.id} names "${s.id}" as not asked, and a criterion of the route quotes the same sentence — the interview asks it`,
+            keyword: "notAskedButQuotedByCriterion",
+          });
+
+      /**
+       * s19: `situations` says what a route WOULD ask if it were scored, so it
+       * has nothing to say on a route that is — the criteria already say which
+       * situations a scored route takes, and `situationsAsked` derives it from
+       * them. A typed list beside the derived answer is a second answer, and
+       * the day the two disagreed nothing would say which one the interview
+       * read. And it may only name an answer the situation question offers: a
+       * quoted route pointing at "sabbatical" would be linked from no option
+       * and nothing would notice.
+       */
+      if (route.situations && route.scope.value !== QUOTED_NOT_SCORED)
+        errors.push({
+          path: `${path}/situations`,
+          message: `${route.id} is scored and lists the situations it would ask about — its criteria already say which it takes, and the interview derives that`,
+          keyword: "situationsOnScoredRoute",
+        });
+      const offered = new Set(fieldOptions(dataset, SITUATION_FIELD).map((o) => o.value));
+      for (const s of route.situations ?? [])
+        if (!offered.has(s))
+          errors.push({
+            path: `${path}/situations`,
+            message: `${route.id} would ask about "${s}", which the ${SITUATION_FIELD} question does not offer — no option could point at it`,
+            keyword: "knownSituation",
+          });
 
       /**
        * s7: a carve-out may only name a passport the citizenship question can

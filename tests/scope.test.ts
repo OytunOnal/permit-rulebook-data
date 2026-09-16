@@ -45,8 +45,9 @@ describe("s6 — every route declares what the checker asks of it", () => {
       expect(r.scope.reason.trim().length, r.id).toBeGreaterThan(40);
       expect(r.scope.reason, r.id).toMatch(/\.$/);
     }
-    // 28 since s9: 23 the product scores, five it quotes and does not.
-    expect(routes().length).toBe(28);
+    // 28 since s9: 23 the product scores, five it quotes and does not. 29
+    // since s19: France's researcher card, quoted and not scored.
+    expect(routes().length).toBe(29);
     // Authored for the route it is on: two Blue Card routes shipped a
     // byte-identical sentence, which is a template, not a reading.
     const reasons = routes().map((r) => r.scope.reason);
@@ -212,12 +213,13 @@ describe("s6 — every route declares what the checker asks of it", () => {
 
   it("the reason is declared ours, and counted as ours", () => {
     const reasons = renderableTexts(ds).filter((t) => t.path.endsWith("/scope/reason"));
-    expect(reasons.length).toBe(28);
+    expect(reasons.length).toBe(29);
     for (const t of reasons) expect(t.kind, t.path).toBe("ours");
     // 13 route readings + these 28 reasons + the 2 contradiction sentences and
     // the 3 money-question doors added on 2026-09-08. Five of each arrived with
-    // s9, on the routes that are quoted and not scored.
-    expect(proseProvenance(ds).ours).toBe((8 + 5) + (23 + 5) + 2 + 3);
+    // s9, on the routes that are quoted and not scored; one of each with s19,
+    // on France's researcher card.
+    expect(proseProvenance(ds).ours).toBe((8 + 5 + 1) + (23 + 5 + 1) + 2 + 3);
   });
 });
 
@@ -327,11 +329,16 @@ describe("a reading is ours, and the words say so", () => {
     expect(scopeLine(of("de-skilled-vocational")))
       .toBe("quoted and dated · scored, two in our own reading, not asked");
 
+    // The one stated condition — the contract of more than three months — is
+    // the sentence the situation gate quotes, and a sentence a criterion
+    // quotes is asked (s19); what is left is the reading, which is ours.
     const talent = statedNotAsked(of("fr-talent-qualifie"), { split: true });
-    expect(talent.stated.length).toBe(1);
+    expect(talent.stated.length).toBe(0);
     expect(talent.noted.length).toBe(1);
     expect(scopeLine(of("fr-talent-qualifie")))
-      .toBe("quoted and dated · scored, one condition stated but not asked and one in our own reading");
+      .toBe("quoted and dated · scored, one in our own reading, not asked");
+    // Both forms at once, on a route where a stated condition survives beside
+    // a reading: none does today, so the words are held on their own below.
   });
 
   it("the split is the same list the evidence is read from", () => {

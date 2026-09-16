@@ -163,8 +163,10 @@ describe("s14 — the quote gate reports the IND sentences as unverifiable, not 
     // 171 on 2026-09-16 with the twelve HSM quotes missing; the other
     // twenty-six IND sentences were "verified" against snapshots of pages that
     // are a form now. 171 − 26 = 145. The scenario's 171 is the number from
-    // before the move, when the stale pages still counted.
-    expect(result.verified).toBe(145);
+    // before the move, when the stale pages still counted. 154 since s19: the
+    // nine chercheur sentences on France's researcher card, verified through
+    // the talent fiche's widened slice.
+    expect(result.verified).toBe(145 + 9);
   });
 });
 

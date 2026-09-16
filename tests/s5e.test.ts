@@ -167,7 +167,8 @@ describe("s5e — what is ours is marked as ours", () => {
       // Forty-three more arrived with s9: the conditions of the five routes
       // this product states and does not score. A route nothing is asked about
       // is nothing BUT the authority's sentences, so every limb of it is here.
-      with_provenance: 110 + 44,
+      // Nine more with s19: France's researcher card, quoted the same way.
+      with_provenance: 110 + 44 + 9,
       // Ours, declared as ours and shown to the reader as ours: 13 route
       // readings, plus the 28 scope-statement reasons s6 authored — one per route,
       // our own words about our own interview, printed as the page's scope
@@ -175,8 +176,9 @@ describe("s5e — what is ours is marked as ours", () => {
       // shows and the three doors a money question offers a reader none of its
       // amounts fits. All five are read by a person and none is quoted from
       // anyone, so they are counted here. The five that arrived with s9 are the
-      // sentence each unscored route carries saying why we do not score it.
-      ours: (8 + 5) + (23 + 5) + 2 + 3,
+      // sentence each unscored route carries saying why we do not score it, and
+      // s19 added one more of each on France's researcher card.
+      ours: (8 + 5 + 1) + (23 + 5 + 1) + 2 + 3,
       // Standing on a declared, dated reason no quote could be found — the one
       // exception, and an attributable decision rather than a blank. It is
       // zero: the last one was the es-blue-card shortage-occupation caveat,
@@ -196,8 +198,10 @@ describe("s5e — what is ours is marked as ours", () => {
     // from one only by a kind enum checked at nine sites across two repos.
     // Thirteen since s9: one on each of the five routes that are quoted and
     // not scored, saying in our words what no authority says — that the figure
-    // is not published, that the search is not ours to see.
-    expect(readings().length).toBe(8 + 5);
+    // is not published, that the search is not ours to see. Fourteen since
+    // s19: the talent fiche names the researcher's agreement two ways, and
+    // whether that is one instrument or two is ours to say we do not know.
+    expect(readings().length).toBe(8 + 5 + 1);
     for (const route of routes())
       for (const s of routeStatements(route))
         expect(["precondition", "caveat"], `${route.id}:${s.id}`).toContain(s.kind);
@@ -462,6 +466,8 @@ describe("s5e — this slice moves prose, not numbers", () => {
       "nl-blue-card", "nl-hsm-30plus", "nl-hsm-under30", "nl-ict", "nl-orientation-year", "nl-researcher",
       // The five s9 added — quoted and dated, scored by nothing.
       "de-selbstaendige-taetigkeit", "es-cuenta-ajena", "es-teletrabajo", "fr-salarie", "nl-gvva",
+      // And the one s19 added the same way: France's researcher card.
+      "fr-talent-chercheur",
     ].sort());
   });
 
