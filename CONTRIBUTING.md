@@ -70,8 +70,11 @@ a machine — it belongs on the human tier, which carries a verification age and
 raises reminders rather than being fetched. Adding to it is a decision, not a
 fallback: say in the entry's `note` what the fetch actually did, with the day
 you measured it, and write the sentence down in `data/verify-s5e.md` so a
-person can find it. Two sources are on it as of 2026-09-10 — Legifrance answers
-this watch with HTTP 403, EUR-Lex with a 202 and an empty body.
+person can find it. Two sources went on it on 2026-09-10 — Legifrance answers
+this watch with HTTP 403, EUR-Lex with a 202 and an empty body — and five more
+on 2026-09-16: the IND's route pages render their requirements behind a "Your
+situation" form whose result has no address of its own, so there is nothing to
+fetch (s14; the road back is a headless-browser strategy, data #17).
 
 ## How a route is added
 

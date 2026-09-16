@@ -328,7 +328,10 @@ describe("a page that answers with a shell is unreachable, not changed", () => {
   it("every watched page on such a host carries a slice marker", () => {
     for (const e of proneEntries())
       expect(e.slice, `${e.id}: no slice marker — a shell from here would report as a change`).toBeDefined();
-    expect(proneEntries().length).toBeGreaterThanOrEqual(10);
+    // Fourteen until 2026-09-16; the five IND route pages went behind a form
+    // and to the human tier that day (s14), which fetches nothing and so
+    // needs no marker. Nine machine-watched pages remain on these two hosts.
+    expect(proneEntries().length).toBeGreaterThanOrEqual(9);
   });
 
   it("the markers bracket every quote the dataset takes from those pages", () => {
@@ -349,13 +352,20 @@ describe("a page that answers with a shell is unreachable, not changed", () => {
     expect(checkQuotes(dataset, shippedWatchlist, sliced).missing).toEqual([]);
   });
 
+  /** The IND page still read by machine: the salary amounts, sixteen
+   * dataset values on it. The orientation-year page played this part until
+   * 2026-09-16, when it went behind the IND's "Your situation" form and to the
+   * human tier (s14) — a human entry fetches nothing, so it cannot be shown a
+   * shell. */
+  const AMOUNTS = "nl-ind-required-amounts";
+
   it("a shell reports unreachable, leaves the snapshot alone, and the quotes stay verified", async () => {
-    const entry = shippedWatchlist.entries.find((e) => e.id === "nl-ind-orientation-year")!;
+    const entry = shippedWatchlist.entries.find((e) => e.id === AMOUNTS)!;
     const before = checkQuotes(dataset, shippedWatchlist, shippedState);
     const list: Watchlist = { entries: [entry] };
     const { reports, nextState } = await runWatch(
       list, shippedState,
-      okFetcher({ [entry.url]: shell("Residence permit for orientation year | IND") }),
+      okFetcher({ [entry.url]: shell("Required amounts income requirements | IND") }),
       "2026-09-08",
     );
 
@@ -375,11 +385,11 @@ describe("a page that answers with a shell is unreachable, not changed", () => {
   it("without the marker the same shell reports 'changed' — which is why the marker is there", async () => {
     // The counterfactual, kept executable: this is what the watchlist did
     // before this review, and the flag file it would have produced.
-    const entry = shippedWatchlist.entries.find((e) => e.id === "nl-ind-orientation-year")!;
+    const entry = shippedWatchlist.entries.find((e) => e.id === AMOUNTS)!;
     const unsliced: Watchlist = { entries: [{ ...entry, slice: undefined }] };
     const { reports, nextState } = await runWatch(
       unsliced, shippedState,
-      okFetcher({ [entry.url]: shell("Residence permit for orientation year | IND") }),
+      okFetcher({ [entry.url]: shell("Required amounts income requirements | IND") }),
       "2026-09-08",
     );
     expect(reports[0].outcome).toBe("changed");
@@ -440,7 +450,7 @@ describe("learn links are watched for liveness, and only for liveness", () => {
 });
 
 /**
- * The slice that was widened on 2026-09-08, and why it must stay where it is.
+ * The slice that was widened on 2026-09-08, and what became of it.
  *
  * The IND states, above its requirement list, that a person on a contract with
  * a company outside the EU who is being transferred as a manager, specialist or
@@ -449,25 +459,24 @@ describe("learn links are watched for liveness, and only for liveness", () => {
  * characters above the old `from` marker, where nothing watched it. The marker
  * moved down to the page's own lede — below the rotating mega-menu, and below
  * the page's "Last update" date, which would otherwise flag every day.
+ *
+ * On 2026-09-16 the page went behind the IND's "Your situation" form, whose
+ * result has no address, and the entry went to the human tier with no slice at
+ * all (s14). The two moves are the entry's history, and both must stay legible
+ * to a reader of the flags they raised; the sentence itself is unchanged in
+ * the dataset and is now a line on the human checklist.
  */
 describe("the highly-skilled-migrant slice", () => {
   const entry = shippedWatchlist.entries
     .find((e) => e.id === "nl-ind-highly-skilled-migrant")!;
-  const snapshot = shippedState.entries["nl-ind-highly-skilled-migrant"];
   const SENTENCE = "Do you have an employment contract with a company located outside the EU?"
     + " And are you going to be transferred as a manager, specialist or trainee?"
     + " Then you are an intra corporate transferee and other requirements apply to you.";
 
-  it("starts at the lede, so the sentence is inside it", () => {
-    expect(entry.slice?.from).toBe("To work in the Netherlands as a highly skilled migrant");
-    expect(snapshot.text, "the snapshot predates the widened slice").toContain(SENTENCE);
-    // Everything the old, narrower slice covered is still covered.
-    expect(snapshot.text).toContain("Requirements");
-  });
-
-  it("keeps the page's own date outside it, or the entry flags every day", () => {
-    expect(snapshot.text).not.toContain("Last update");
-    expect(entry.slice?.from.startsWith("Last update")).toBe(false);
+  it("is gone, with the page: a human-tier entry watches no region and keeps no snapshot", () => {
+    expect(entry.strategy).toBe("human");
+    expect(entry.slice).toBeUndefined();
+    expect(shippedState.entries["nl-ind-highly-skilled-migrant"]).toBeUndefined();
   });
 
   it("records that a person moved the marker, so the flag is not read as the page changing", () => {
@@ -475,6 +484,13 @@ describe("the highly-skilled-migrant slice", () => {
     expect(moved, "a deliberate slice change with no history entry").toBeDefined();
     expect(moved!.note).toMatch(/intra corporate transferee/i);
     expect(moved!.note).toMatch(/moved/i);
+  });
+
+  it("records that the page went behind a form, so the flag of 2026-09-16 is not read as the IND rewriting a rule", () => {
+    const formed = entry.history?.find((h) => h.changed_at === "2026-09-16");
+    expect(formed, "a strategy change with no history entry").toBeDefined();
+    expect(formed!.note).toMatch(/form/i);
+    expect(formed!.note).toMatch(/human/);
   });
 
   it("the quote the widened slice exists for is in the dataset, dated the day it was read", () => {
