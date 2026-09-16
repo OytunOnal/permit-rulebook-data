@@ -158,24 +158,20 @@
     {
       "id": "nl-ind-orientation-year",
       "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
-      "strategy": "html",
+      "strategy": "human",
       "kind": "value-source",
-      "slice": {
-        "from": "Requirements",
-        "to": "Cookies Proclaimer Privacy Sitemap"
-      },
-      "note": "IND orientation-year requirement list. Human tier until 2026-09-07, on the reading that IND route pages render client-side; a fetch from here now returns the full list, so it is machine-watched and its quotes are checked (s5e). Backs the two statements on nl-orientation-year and the study-programme limbs of its criteria. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
+      "max_age_days": 90,
+      "last_verified": "2026-09-16",
+      "note": "Backs eight quotes on nl-orientation-year: the three study-programme limbs of its criteria and the five statements (no second orientation year, the research finished within three years, English where the institution was abroad, the Turkish-citizens caveat and the MVV precondition). Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 16 September 2026. The slice marker had reported this page unreachable since the form arrived, so its snapshot was the old page and its quotes still \"verified\" against it. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did."
     },
     {
       "id": "nl-ind-blue-card",
       "url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
-      "strategy": "html",
+      "strategy": "human",
       "kind": "value-source",
-      "slice": {
-        "from": "Requirements",
-        "to": "Cookies Proclaimer Privacy Sitemap"
-      },
-      "note": "IND European Blue Card requirement list. Same move off the human tier (s5e). Backs the contract length, the diploma leg and the IT 3-in-7 experience rule. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
+      "max_age_days": 90,
+      "last_verified": "2026-09-16",
+      "note": "Backs seven quotes on nl-blue-card: the six-month contract condition, the diploma leg, the five-year and the IT 3-in-7 experience rules, and the six-month-contract, regulated-profession and MVV preconditions. Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 15 June 2026. The slice marker had reported this page unreachable since the form arrived, so its snapshot was the old page and its quotes still \"verified\" against it. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did."
     },
     {
       "id": "eu-countries-list",
@@ -314,41 +310,39 @@
     {
       "id": "nl-ind-highly-skilled-migrant",
       "url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
-      "strategy": "html",
+      "strategy": "human",
       "kind": "value-source",
-      "slice": {
-        "from": "To work in the Netherlands as a highly skilled migrant",
-        "to": "Cookies Proclaimer Privacy Sitemap"
-      },
-      "note": "IND highly skilled migrant requirement list. Backs the recognised-sponsor contract condition, the market-rate precondition and the intra-corporate-transferee statement on both HSM routes. Sliced from the page's own lede to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`. The lede is the first line below the rotating menu and below the page's own \"Last update\" date, which must stay outside the slice or the entry flags every day.",
+      "max_age_days": 90,
+      "last_verified": "2026-09-16",
+      "note": "Backs twelve quotes on the two highly-skilled-migrant routes (six each on nl-hsm-30plus and nl-hsm-under30): the recognised-sponsor contract condition, the market-rate precondition, the recognised-sponsor and BIG-register preconditions, the intra-corporate-transferee caveat and the MVV precondition. Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 11 September 2026 — the run of 2026-09-16 read the form's shell as a change and put all twelve quotes into `missing`; the watchlist history below records the move. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did.",
       "history": [
         {
           "changed_at": "2026-09-08",
           "note": "Slice `from` moved from \"Requirements\" to the page's lede, widening the watched region by one paragraph. The IND states there that a person on a contract with a company outside the EU, transferred as a manager, specialist or trainee, is an intra corporate transferee and other requirements apply — a sentence that changes who each HSM route is for, and which sat 64 characters above the old marker where nothing watched it. The `changed` flag this raised on 2026-09-08 is that move, not a change by the authority."
+        },
+        {
+          "changed_at": "2026-09-16",
+          "note": "Strategy moved from `html` (sliced from the lede to the footer) to `human`, and the slice removed. The page became a \"Your situation\" form whose result has no address, so the run of 2026-09-16 read a ~700-character shell as a change and put every quote on both HSM routes into `missing`. The `changed` flag of that day is the form arriving, not the IND rewriting a requirement; the sentences stand as read, dated, and a person confirms them quarterly (s14)."
         }
       ]
     },
     {
       "id": "nl-ind-ict",
       "url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
-      "strategy": "html",
+      "strategy": "human",
       "kind": "value-source",
-      "slice": {
-        "from": "Requirements",
-        "to": "Cookies Proclaimer Privacy Sitemap"
-      },
-      "note": "IND intra-corporate transferee requirement list. Backs the three-months-outside-the-EU condition and the market-rate salary rule on nl-ict. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
+      "max_age_days": 90,
+      "last_verified": "2026-09-16",
+      "note": "Backs six quotes on nl-ict: the three-months-outside-the-EU condition, the market-rate salary rule, and the three-months, manager-specialist-or-trainee, protected-profession and MVV preconditions. Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 15 June 2026. The slice marker had reported this page unreachable since the form arrived, so its snapshot was the old page and its quotes still \"verified\" against it. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did."
     },
     {
       "id": "nl-ind-researcher",
       "url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
-      "strategy": "html",
+      "strategy": "human",
       "kind": "value-source",
-      "slice": {
-        "from": "Requirements",
-        "to": "Cookies Proclaimer Privacy Sitemap"
-      },
-      "note": "IND researcher requirement list. Backs the hosting-agreement condition and the other-income caveat on nl-researcher. Sliced from the requirement list to the footer: the mega-menu above it rotates, and — the reason the slice is here — ind.nl answered a bare fetch from this host with a 1.4 kB app shell on 2026-09-07 while serving the full page minutes either side of it. A shell carries no marker, so it reports unreachable and the snapshot stands, instead of reporting a change that would put every quote on this page into `missing`."
+      "max_age_days": 90,
+      "last_verified": "2026-09-16",
+      "note": "Backs five quotes on nl-researcher: the contract-or-host-agreement condition, the other-income caveat, and the recognised-sponsor, doctorate-degree and MVV preconditions. Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 18 August 2026. The slice marker had reported this page unreachable since the form arrived, so its snapshot was the old page and its quotes still \"verified\" against it. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did."
     },
     {
       "id": "ind-turkish-citizens",
