@@ -39,9 +39,10 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
       expect(route.scope.value, id).toBe(QUOTED_NOT_SCORED);
       expect(scopeLine(route), id).toBe("quoted and dated · not scored");
     }
-    // 23 scored, five quoted and not scored.
+    // 23 scored, five quoted and not scored — six since s19, when France's
+    // researcher card joined them (tests/s19.test.ts holds that one).
     expect(routes().filter(isScored).length).toBe(23);
-    expect(routes().filter((r) => !isScored(r)).length).toBe(5);
+    expect(routes().filter((r) => !isScored(r)).length).toBe(5 + 1);
   });
 
   it("each states its rules as the authority does, with a quote and a day", () => {

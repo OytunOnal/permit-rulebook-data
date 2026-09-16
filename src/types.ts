@@ -232,6 +232,16 @@ export interface StatementException {
 export const CARVE_OUT_FIELD = "citizenship";
 
 /**
+ * The two answers the interview takes before any route is scored, and the two
+ * `situationsAsked` walks: where the reader is going, and what they hold. Named
+ * for the same reason as the carve-out's field — the derivation, the validator
+ * and the `situations` list on a quoted route all read the same answer, and
+ * that should be one fact rather than a string three sites agree on (s19).
+ */
+export const DESTINATION_FIELD = "destination";
+export const SITUATION_FIELD = "situation";
+
+/**
  * OUR reading of a route — what we modelled, what we did not, and where a
  * number came from a page no machine re-reads.
  *
@@ -393,6 +403,19 @@ export interface Route {
   statements?: RouteStatement[];
   /** Our own readings of this route — declared ours, never an authority's. */
   readings?: RouteReading[];
+  /**
+   * The situations this route would ask about if it were scored — ids of the
+   * `situation` field's options.
+   *
+   * Only on a route nothing is asked about (the quoted-not-scored scope): a
+   * scored route's criteria already say which situations it takes, and
+   * `situationsAsked` derives that, so a typed list beside it would be a
+   * second answer and the build refuses it there. It exists for the reader
+   * whose situation no scored route in their country takes: the interview can
+   * name the quoted route that would have asked, and where its rules are read
+   * (s19).
+   */
+  situations?: string[];
 }
 
 export interface Country {

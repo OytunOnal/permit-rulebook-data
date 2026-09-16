@@ -211,11 +211,14 @@ describe("s7 — a carve-out is watched and quote-checked like every other value
     // 110 since s8: the closure on the French intra-corporate transfer card.
     // 154 since s9, which added forty-three sourced conditions across the five
     // routes that are quoted and not scored — none of them a carve-out — and one
-    // more when the Spec review found article 76.2 read but not stated.
-    expect(proseProvenance(dataset).with_provenance).toBe(154);
+    // more when the Spec review found article 76.2 read but not stated. 163
+    // since s19: the nine sentences of France's researcher card, quoted and not
+    // scored like the five before it.
+    expect(proseProvenance(dataset).with_provenance).toBe(154 + 9);
   });
 
   it("a fresher carve-out is a fresher dataset", () => {
-    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-09-10");
+    // 2026-09-16 since s19: the chercheur tab of the talent fiche, read that day.
+    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-09-16");
   });
 });

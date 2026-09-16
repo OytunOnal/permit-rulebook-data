@@ -246,11 +246,14 @@ describe("s8 — the new sources are watched and quote-checked like every other 
     // slice re-reads that entry's baseline in the same change, or the next
     // run files our own edit as the authority's. The same rule reaches the two
     // French fiches whose READING moved when the tooltip artefact was dropped.
+    // The talent fiche was re-read once more on 2026-09-16, when s19 widened
+    // its slice to the Chercheur tab — the same rule, applied again.
+    const reRead: Record<string, string> = { "fr-f16922-talent": "2026-09-16" };
     for (const id of ["fr-f2215-certificat-algerien", "fr-f33952-ict", "fr-f16922-talent"]) {
       const e = watchlist.entries.find((x) => x.id === id)!;
       expect(state.entries[id], id).toBeDefined();
       expect(state.entries[id].slice_read, id).toBe(sliceFingerprint(e));
-      expect(state.entries[id].retrieved_at, id).toBe("2026-09-10");
+      expect(state.entries[id].retrieved_at, id).toBe(reRead[id] ?? "2026-09-10");
     }
   });
 
@@ -285,7 +288,8 @@ describe("s8 — the new sources are watched and quote-checked like every other 
   });
 
   it("a fresher source is a fresher dataset", () => {
-    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-09-10");
+    // 2026-09-16 since s19: the chercheur tab of the talent fiche, read that day.
+    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-09-16");
     const bumped = clone();
     bumped.notices!.find((n) => n.id === "fr-dz-talent-open-question")!.sources![0].retrieved_at = "2099-01-01";
     expect(datasetMeta(bumped).newest_retrieved_at).toBe("2099-01-01");

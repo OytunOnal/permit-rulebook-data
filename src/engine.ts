@@ -1,5 +1,5 @@
 import { countryOptions } from "./countries.js";
-import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED } from "./types.js";
+import { CARVE_OUT_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type {
   Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
   FieldOption, Notice,
@@ -474,6 +474,45 @@ export function informativeFields(dataset: Dataset, profile: Profile): Set<strin
     }
   }
   return fields;
+}
+
+/**
+ * Which situations a destination's scored routes accept — for every answer
+ * the destination question offers, the set of `situation` answers under which
+ * at least one scored route is still alive.
+ *
+ * Derived, never typed: a route accepts a situation when the engine, given
+ * only that destination and that situation, has not hard-failed it — the same
+ * `eq`/`in`/disjunction reading every verdict uses, through the same
+ * `implies` and `not-in` rules. A route that reads no situation gate at all
+ * (the Opportunity Card, the orientation year) accepts every answer, the
+ * fallback included, because that is what the engine does with it. The
+ * four-country answer needs no union step of its own: every route's
+ * destination gate accepts it, so it falls out of the same walk.
+ *
+ * The keys are the destination question's answers — `de`, `fr`, `all` — not
+ * country codes, because the interview reads this after that answer and
+ * before the situation one, and "all" is an answer, not a country. A
+ * researcher with a French hosting agreement was shown "Nothing open" for a
+ * route that was merely absent; this is the fact the screen needed and nothing
+ * derived (v1.1 gate B1, s19).
+ */
+export function situationsAsked(dataset: Dataset): Map<string, Set<string>> {
+  const asked = new Map<string, Set<string>>();
+  // "I don't know" is not a situation; it leaves every gate undecided.
+  const answers = (field: string) => fieldOptions(dataset, field).filter((o) => !o.is_unknown).map((o) => o.value);
+  const situations = answers(SITUATION_FIELD);
+  for (const destination of answers(DESTINATION_FIELD)) {
+    const accepted = new Set<string>();
+    for (const situation of situations) {
+      const profile: Profile = { [DESTINATION_FIELD]: destination, [SITUATION_FIELD]: situation };
+      for (const country of dataset.countries)
+        for (const route of country.routes)
+          if (isScored(route) && isRouteAlive(dataset, route, profile)) { accepted.add(situation); break; }
+    }
+    asked.set(destination, accepted);
+  }
+  return asked;
 }
 
 /** One representative answer plus the number of options it stands for. */

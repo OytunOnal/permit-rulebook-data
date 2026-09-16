@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.7.0",
-  "dataset_version": "2026.09.10",
+  "schema_version": "0.8.0",
+  "dataset_version": "2026.09.16",
   "fields": [
     {
       "id": "destination",
@@ -1772,9 +1772,8 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; the contract length the authority states is listed with the rules below and never asked, and which card fits a degree earned outside France is our own reading, not the authority's words.",
+            "reason": "Every rule that decides this route is a question you answer; the contract of more than three months is the sentence the situation question stands on, and which card fits a degree earned outside France is our own reading, not the authority's words.",
             "not_asked": [
-              "employment-contract-of-more-than-three-months",
               "foreign-degrees-belong-on-the-blue-card"
             ]
           },
@@ -1887,9 +1886,8 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; the six-month contract the authority states is listed with the rules below and never asked, and the shorter experience France allows for some listed professions is not checked here — this page judges you on the general rule.",
+            "reason": "Every rule that decides this route is a question you answer; the six-month contract is the sentence the situation question stands on, and the shorter experience France allows for some listed professions is not checked here — this page judges you on the general rule.",
             "not_asked": [
-              "employment-contract-of-at-least-six-months",
               "listed-professions-not-modelled"
             ]
           },
@@ -2154,12 +2152,9 @@
           "summary": "For a job at a company France officially recognises as innovative, in work tied to its research and development. The salary threshold is the same as the qualified-employee card, and no French degree is needed.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "scope": {
-            "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — that the work is tied to the company's research and development, and the recognition the company itself must hold — are listed with the rules below and never asked.",
-            "not_asked": [
-              "work-tied-to-the-research-and-development-project",
-              "a-young-innovative-company-or-one-the-ministry-recognises"
-            ]
+            "value": "every-deciding-rule-asked",
+            "reason": "Every rule that decides this route is a question you answer: the work tied to the company's research and development is the situation you declare, and the recognition the company itself must hold is the employer question. Both are stated in the authority's words beside your answers.",
+            "not_asked": []
           },
           "criteria": [
             {
@@ -2270,10 +2265,9 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — three months with the company group, and the move between companies of that group — are listed with the rules below and never asked.",
+            "reason": "Every rule that decides this route is a question you answer; the move between companies of one group is the situation you declare, and one condition the authority states — three months with the company group already — is listed with the rules below and never asked.",
             "not_asked": [
-              "three-months-with-the-group-already",
-              "a-move-inside-one-company-or-group"
+              "three-months-with-the-group-already"
             ]
           },
           "criteria": [
@@ -2488,6 +2482,150 @@
             {
               "id": "no-euro-figure-is-published-for-the-pay-floor",
               "text": "Neither page states a euro figure for the pay floor: it is the minimum wage or the collective agreement, whichever is higher, and which agreement applies depends on the business. There is no number here for an answer to be compared against."
+            }
+          ]
+        },
+        {
+          "id": "fr-talent-chercheur",
+          "name": "Talent — researcher (chercheur)",
+          "kind": "res-work",
+          "summary": "France's researcher card: a hosting agreement with an approved research or higher-education body, a master's-level degree, and research or university teaching as the purpose of the stay. Quoted here, not scored — the fiche's pay floor names no period, and which agreement it hangs on is not said.",
+          "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+          "slug": "talent-researcher",
+          "situations": [
+            "research"
+          ],
+          "scope": {
+            "value": "rules-quoted-nothing-asked",
+            "reason": "This route is not scored, and nothing below asks you anything. The fiche's gates are a hosting agreement with an approved body, a degree at least equivalent to a master's and a pay floor it states without a period, and the card's length follows a contract this interview never sees. We state the rules with the authority's own sentences and the day we read them, and leave the verdict alone; the situation question's research answer is the one this route would have asked about.",
+            "not_asked": [
+              "the-card-is-for-a-researcher-and-lets-you-work",
+              "every-condition-below-must-hold",
+              "a-hosting-agreement-with-an-approved-research-body",
+              "a-degree-at-least-equivalent-to-a-masters",
+              "research-or-university-level-teaching-is-the-purpose",
+              "a-pay-floor-for-a-research-stay-agreement",
+              "valid-for-the-contract-up-to-four-years",
+              "under-a-year-it-is-a-visa-not-a-card",
+              "open-to-a-researcher-already-in-another-eu-country",
+              "the-fiche-gives-two-names-for-the-agreement"
+            ]
+          },
+          "criteria": [],
+          "statements": [
+            {
+              "id": "the-card-is-for-a-researcher-and-lets-you-work",
+              "kind": "caveat",
+              "text": "The card is the researcher's own: it lets you live in France and work, and your employer does not have to apply for a work authorisation.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "La carte de séjour « talent chercheur » vous autorise à séjourner en France. Elle vous autorise à travailler. Votre employeur n'a pas à demander d'autorisation de travail",
+                "retrieved_at": "2026-09-16",
+                "legal_basis": "service-public.gouv.fr F16922 — Carte talent, onglet Chercheur — ce que la carte autorise",
+                "history": []
+              }
+            },
+            {
+              "id": "every-condition-below-must-hold",
+              "kind": "precondition",
+              "text": "All of the following conditions together — the degree, the purpose of the stay and the hosting agreement; none of them alone.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Vous pouvez obtenir une carte de séjour « talent-chercheur » si vous remplissez toutes les conditions suivantes :",
+                "retrieved_at": "2026-09-16",
+                "legal_basis": "service-public.gouv.fr F16922 — Carte talent, onglet Chercheur — 1 Vérifier si vous remplissez les conditions",
+                "history": []
+              }
+            },
+            {
+              "id": "a-hosting-agreement-with-an-approved-research-body",
+              "kind": "precondition",
+              "text": "A hosting agreement (convention d'accueil) concluded with an approved public or private body whose mission is research or higher education. The agreement must state that you are a researcher, and the purpose and duration of your stay in France.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir une convention d'accueil souscrite avec un organisme public ou privé agréé ayant mission de recherche ou d'enseignement supérieur. La convention doit indiquer que vous êtes chercheur et l'objet et la durée de votre séjour en France.",
+                "retrieved_at": "2026-09-16",
+                "legal_basis": "service-public.gouv.fr F16922 — Carte talent, onglet Chercheur — 1 Vérifier si vous remplissez les conditions",
+                "history": []
+              }
+            },
+            {
+              "id": "a-degree-at-least-equivalent-to-a-masters",
+              "kind": "precondition",
+              "text": "A degree at least equivalent to a master's.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Avoir un diplôme au moins équivalent au master",
+                "retrieved_at": "2026-09-16",
+                "legal_basis": "service-public.gouv.fr F16922 — Carte talent, onglet Chercheur — 1 Vérifier si vous remplissez les conditions",
+                "history": []
+              }
+            },
+            {
+              "id": "research-or-university-level-teaching-is-the-purpose",
+              "kind": "precondition",
+              "text": "Research work, or teaching at university level, as the purpose of the stay in France.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Venir en France pour mener des travaux de recherche ou dispenser un enseignement de niveau universitaire",
+                "retrieved_at": "2026-09-16",
+                "legal_basis": "service-public.gouv.fr F16922 — Carte talent, onglet Chercheur — 1 Vérifier si vous remplissez les conditions",
+                "history": []
+              }
+            },
+            {
+              "id": "a-pay-floor-for-a-research-stay-agreement",
+              "kind": "precondition",
+              "text": "A minimum pay of €2,200 gross applies to a researcher who has signed a research-stay agreement (convention de séjour de recherche). The fiche names no period for the figure.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Un seuil de rémunération minimal de 2 200 € brut s’applique pour le chercheur qui a signé une convention de séjour de recherche.",
+                "retrieved_at": "2026-09-16",
+                "legal_basis": "service-public.gouv.fr F16922 — Carte talent, onglet Chercheur — À noter, sous les conditions",
+                "history": []
+              }
+            },
+            {
+              "id": "valid-for-the-contract-up-to-four-years",
+              "kind": "caveat",
+              "text": "The card is valid for the same period as your employment contract, up to a maximum of four years.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "La carte est valable pour une durée identique à celle du contrat de travail dans la limite d'une durée maximale de 4 ans.",
+                "retrieved_at": "2026-09-16",
+                "legal_basis": "service-public.gouv.fr F16922 — Carte talent, onglet Chercheur — 7 Aller chercher la carte de séjour",
+                "history": []
+              }
+            },
+            {
+              "id": "under-a-year-it-is-a-visa-not-a-card",
+              "kind": "caveat",
+              "text": "For a stay of under twelve months the consulate issues a long-stay visa standing as a residence permit, marked \"talent\", rather than the card.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Si la durée de votre séjour est inférieure à 12 mois , le consulat vous délivre un visa de long séjour valant titre de séjour portant la mention \"talent\".",
+                "retrieved_at": "2026-09-16",
+                "legal_basis": "service-public.gouv.fr F16922 — Carte talent, onglet Chercheur — 2 Vérifier les démarches à effectuer, Vous habitez à l'étranger",
+                "history": []
+              }
+            },
+            {
+              "id": "open-to-a-researcher-already-in-another-eu-country",
+              "kind": "caveat",
+              "text": "The card is also granted to a researcher in another EU country who comes to carry out part of their work in France for more than three months; no long-stay visa is needed in that case.",
+              "source": {
+                "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                "quote": "Cette carte vous est aussi accordée si vous êtes chercheur dans un autre pays de l'UE et que vous venez mener une partie de vos travaux pour plus de 3 mois en France.",
+                "retrieved_at": "2026-09-16",
+                "legal_basis": "service-public.gouv.fr F16922 — Carte talent, onglet Chercheur — ce que la carte autorise",
+                "history": []
+              }
+            }
+          ],
+          "readings": [
+            {
+              "id": "the-fiche-gives-two-names-for-the-agreement",
+              "text": "The fiche lists a convention d'accueil among the conditions and hangs its pay floor on a convention de séjour de recherche, without saying whether they are one instrument or two; nothing here reads the difference, and no question could ask it."
             }
           ]
         }
@@ -2969,11 +3107,9 @@
           "summary": "A Spanish university, R&D centre or business school has agreed to host you. Three years, plus a year afterwards to look for work or start a business.",
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/investigadores",
           "scope": {
-            "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; one condition the authority states — the hosting agreement or contract with the research body — is listed with the rules below and never asked.",
-            "not_asked": [
-              "hosting-agreement-or-contract-with-the-research-body"
-            ]
+            "value": "every-deciding-rule-asked",
+            "reason": "Every rule that decides this route is a question you answer; the hosting agreement or contract with the research body is the situation you declare, and the page states it in the authority's words beside your answer.",
+            "not_asked": []
           },
           "criteria": [
             {
@@ -3852,10 +3988,9 @@
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — the contract of at least six months, and the authorisation to practise a regulated profession — are listed with the rules below and never asked, and the extension and employer-change cases that also open the lower salary are not covered by the questions. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
+            "reason": "Every rule that decides this route is a question you answer; the contract of at least six months is the sentence the situation question stands on, one condition the authority states — the authorisation to practise a regulated profession — is listed with the rules below and never asked, and the extension and employer-change cases that also open the lower salary are not covered by the questions. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
             "not_asked": [
               "reduced-also-on-extension-or-employer-change",
-              "employment-contract-valid-for-six-months",
               "permission-to-practise-a-regulated-profession",
               "mvv-needed"
             ]
@@ -4126,9 +4261,8 @@
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; three conditions the authority states — three months already with the company outside Europe, the manager, specialist or trainee role, and the authorisation to practise a protected profession — are listed with the rules below and never asked. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
+            "reason": "Every rule that decides this route is a question you answer; the three months already with the company outside Europe is the sentence the transfer question stands on, and two conditions the authority states — the manager, specialist or trainee role, and the authorisation to practise a protected profession — are listed with the rules below and never asked. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
             "not_asked": [
-              "three-months-with-the-company-outside-the-union",
               "a-manager-specialist-or-trainee-post",
               "permission-to-practise-a-protected-profession",
               "mvv-needed"
