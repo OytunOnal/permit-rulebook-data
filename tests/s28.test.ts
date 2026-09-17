@@ -49,7 +49,7 @@ describe("a learn label is what the reader does there", () => {
     for (const d of doors()) expect(d.label, d.field).not.toMatch(/\.( |$)/);
   });
 
-  it("the four are the sentences the scenario decided, and none carries a history line", () => {
+  it("the four are the sentences the scenario decided", () => {
     expect(Object.fromEntries(doors().map((d) => [d.field, d.label]))).toEqual({
       recognition_de: "Check your degree in the official Anabin database",
       occupation_shortage:
@@ -62,12 +62,11 @@ describe("a learn label is what the reader does there", () => {
       top200_grad:
         "See the designated foreign institutions on the orientation-year page of the Dutch immigration service (IND)",
     });
-    // Our sentences, not the authority's: a door has no quote and no history.
-    for (const d of doors()) expect(Object.keys(d).sort()).toEqual(["field", "label", "url"]);
   });
 
-  it("the dataset carries the day of the change, and the schema did not move", () => {
-    expect(datasetMeta(ds).dataset_version).toBe("2026.09.17");
+  it("the schema did not move: a label change is a data change", () => {
+    // The version is a date and already read today's (s23); the schema's own
+    // `required` and `additionalProperties: false` hold a door to label + url.
     expect(datasetMeta(ds).schema_version).toBe("0.8.1");
   });
 });
