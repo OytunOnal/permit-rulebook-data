@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.8.0",
+  "schema_version": "0.8.1",
   "dataset_version": "2026.09.17",
   "fields": [
     {
@@ -187,54 +187,47 @@
       ]
     },
     {
-      "id": "experience",
-      "label": "Skilled work experience related to your qualification, in years?",
-      "short_label": "Experience",
-      "subject": "your skilled work experience",
+      "id": "experience_5y",
+      "label": "Related skilled work experience in the last five years?",
+      "short_label": "Experience (last 5 years)",
+      "subject": "your related experience in the last five years",
       "type": "enum",
       "kind": "improvable",
       "options": [
         {
           "value": "lt2",
           "label": "Under 2 years",
-          "short": "under 2 years of related experience"
+          "short": "under 2 years of related experience in the last five"
         },
         {
-          "value": "y2in5",
-          "label": "2+ years within the last 5",
-          "short": "2+ years of related experience"
-        },
-        {
-          "value": "y3in7",
-          "label": "3+ years within the last 7",
-          "short": "3+ years of related experience",
-          "implies": [
-            "y2in5"
-          ]
-        },
-        {
-          "value": "y5in7",
-          "label": "5+ years within the last 7",
-          "short": "5+ years of related experience"
+          "value": "2plus",
+          "label": "2 years or more",
+          "short": "2+ years of related experience in the last five"
         }
       ]
     },
     {
       "id": "experience_7y",
-      "label": "Do you have at least 3 years of relevant experience within the last 7?",
-      "short_label": "Experience, last 7 years",
-      "subject": "your relevant experience in the last 7 years",
+      "label": "And in the last seven years?",
+      "short_label": "Experience (last 7 years)",
+      "subject": "your related experience in the last seven years",
       "type": "enum",
       "kind": "improvable",
       "options": [
         {
-          "value": "yes",
-          "label": "Yes",
-          "short": "3+ years of experience in the last 7"
+          "value": "lt3",
+          "label": "Under 3 years",
+          "short": "under 3 years of related experience in the last seven"
         },
         {
-          "value": "no",
-          "label": "No"
+          "value": "3to5",
+          "label": "3 to under 5 years",
+          "short": "3 to under 5 years of related experience in the last seven"
+        },
+        {
+          "value": "5plus",
+          "label": "5 years or more",
+          "short": "5+ years of related experience in the last seven"
         }
       ]
     },
@@ -1148,16 +1141,23 @@
               ]
             },
             {
-              "field": "experience",
-              "op": "in",
-              "values": [
-                "y2in5",
-                "y5in7"
-              ],
+              "field": "experience_5y",
+              "op": "eq",
+              "value": "2plus",
               "source": {
                 "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/04-2026/berufserfahrene",
                 "quote": "Innerhalb der letzten fünf Jahren muss eine mindestens zweijährige, einschlägige Berufserfahrung auf dem Niveau einer Fachkraft gesammelt worden sein.",
-                "retrieved_at": "2026-09-02"
+                "retrieved_at": "2026-09-02",
+                "history": [
+                  {
+                    "retrieved_at": "2026-09-02",
+                    "quote": "Innerhalb der letzten fünf Jahren muss eine mindestens zweijährige, einschlägige Berufserfahrung auf dem Niveau einer Fachkraft gesammelt worden sein.",
+                    "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/04-2026/berufserfahrene",
+                    "reason": "rule-rekeyed",
+                    "checked_at": "2026-09-17",
+                    "note": "s25 (v1.1 critique F2): read experience in [y2in5, y5in7] before, experience_5y eq 2plus after."
+                  }
+                ]
               }
             },
             {
@@ -1563,11 +1563,18 @@
                             }
                           },
                           {
-                            "field": "experience",
-                            "points": {
-                              "y2in5": 2,
-                              "y5in7": 3
-                            }
+                            "rows": [
+                              {
+                                "field": "experience_5y",
+                                "value": "2plus",
+                                "points": 2
+                              },
+                              {
+                                "field": "experience_7y",
+                                "value": "5plus",
+                                "points": 3
+                              }
+                            ]
                           },
                           {
                             "field": "occupation_shortage",
@@ -1594,6 +1601,16 @@
                             "points": {
                               "yes": 1
                             }
+                          }
+                        ],
+                        "history": [
+                          {
+                            "retrieved_at": "2026-09-02",
+                            "quote": "Die Mindestpunktzahl beträgt sechs Punkte.",
+                            "source_url": "https://www.buzer.de/Anlage_AufenthG.htm",
+                            "reason": "rule-rekeyed",
+                            "checked_at": "2026-09-17",
+                            "note": "s25 (v1.1 critique F2): the experience item read {field: experience, points: {y2in5: 2, y5in7: 3}} before; after, one item with two rows — experience_5y = 2plus for 2 points (§ 20b Abs. 1 Nr. 7) and experience_7y = 5plus for 3 points (Nr. 6) — one item, so the reader scores the higher row and never the sum."
                           }
                         ]
                       }
@@ -1886,9 +1903,10 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; the six-month contract is the sentence the situation question stands on, and the shorter experience France allows for some listed professions is not checked here — this page judges you on the general rule.",
+            "reason": "Every rule that decides this route is a question you answer; the six-month contract is the sentence the situation question stands on, and the shorter experience France allows for some listed professions is not checked here — this page judges you on the general rule. The five years of experience it accepts instead of a diploma have no window, so your answer about the last seven years stands in for them.",
             "not_asked": [
-              "listed-professions-not-modelled"
+              "listed-professions-not-modelled",
+              "seven-year-answer-is-a-floor"
             ]
           },
           "criteria": [
@@ -1960,9 +1978,9 @@
                   "label": "5 years of comparable experience",
                   "criteria": [
                     {
-                      "field": "experience",
+                      "field": "experience_7y",
                       "op": "eq",
-                      "value": "y5in7"
+                      "value": "5plus"
                     }
                   ]
                 }
@@ -1971,7 +1989,17 @@
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un diplôme sanctionnant au moins 3 années d'études supérieures ou 5 années d'expérience professionnelle de niveau comparable",
                 "retrieved_at": "2026-09-07",
-                "legal_basis": "Fiche F16922 — carte bleue européenne"
+                "legal_basis": "Fiche F16922 — carte bleue européenne",
+                "history": [
+                  {
+                    "retrieved_at": "2026-09-07",
+                    "quote": "Avoir un diplôme sanctionnant au moins 3 années d'études supérieures ou 5 années d'expérience professionnelle de niveau comparable",
+                    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                    "reason": "rule-rekeyed",
+                    "checked_at": "2026-09-17",
+                    "note": "s25 (v1.1 critique F2): read experience eq y5in7 before, experience_7y eq 5plus after."
+                  }
+                ]
               }
             },
             {
@@ -1993,6 +2021,10 @@
             {
               "id": "listed-professions-not-modelled",
               "text": "For some listed professions France counts three years of experience in the last seven instead of five. We do not model that list, so this card judges you on the general rule."
+            },
+            {
+              "id": "seven-year-answer-is-a-floor",
+              "text": "Our question asks about the last seven years; the fiche names no window for its five, so five or more there meets the rule, and experience older than seven years — which the rule also counts — is not something this card can see."
             }
           ],
           "statements": [
@@ -2643,13 +2675,14 @@
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; the unit that handles the application is listed with the rules below and never asked, and two things the source adds — the shortage-occupation list behind the lower salary, and Spain's shorter experience route for some professions — are not checked here.",
+            "reason": "Every rule that decides this route is a question you answer; the unit that handles the application is listed with the rules below and never asked, and two things the source adds — the shortage-occupation list behind the lower salary, and Spain's shorter experience route for some professions — are not checked here. The five years of experience it accepts instead of a degree have no window, so your answer about the last seven years stands in for them.",
             "not_asked": [
               "reduced-also-for-shortage-occupations",
               "handled-by-the-large-companies-unit",
               "reduced-also-for-a-qualification-earned-in-the-last-three-years",
               "it-professionals-limb-not-modelled",
-              "lower-salary-applied-with-no-institution-limit"
+              "lower-salary-applied-with-no-institution-limit",
+              "seven-year-answer-is-a-floor"
             ]
           },
           "criteria": [
@@ -2721,14 +2754,32 @@
                   "label": "5 years of comparable experience",
                   "criteria": [
                     {
-                      "field": "experience",
+                      "field": "experience_7y",
                       "op": "eq",
-                      "value": "y5in7",
+                      "value": "5plus",
                       "source": {
                         "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
                         "quote": "acrediten un mínimo de cinco años de conocimientos, capacidades y competencias avalados por una experiencia profesional que pueda considerarse equiparable a dicha cualificación",
                         "retrieved_at": "2026-09-07",
-                        "legal_basis": "Ley 14/2013, art. 71 bis.2"
+                        "legal_basis": "Ley 14/2013, art. 71.2 a)",
+                        "history": [
+                          {
+                            "retrieved_at": "2026-09-07",
+                            "quote": "acrediten un mínimo de cinco años de conocimientos, capacidades y competencias avalados por una experiencia profesional que pueda considerarse equiparable a dicha cualificación",
+                            "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                            "reason": "rule-rekeyed",
+                            "checked_at": "2026-09-17",
+                            "note": "s25 (v1.1 critique F2): read experience eq y5in7 before, experience_7y eq 5plus after."
+                          },
+                          {
+                            "retrieved_at": "2026-09-07",
+                            "quote": "acrediten un mínimo de cinco años de conocimientos, capacidades y competencias avalados por una experiencia profesional que pueda considerarse equiparable a dicha cualificación",
+                            "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                            "reason": "citation-corrected",
+                            "checked_at": "2026-09-17",
+                            "note": "The citation beside the quote was wrong, not the quote: legal_basis said \"Ley 14/2013, art. 71 bis.2\", and the sentence \"acrediten un mínimo de cinco años…\" lives in art. 71.2 a) (the Blue Card modality of the highly qualified authorisation) — in the watch snapshot of 2026-09-07 (boe-ley-14-2013) it sits at character offset 213627, under \"Artículo 71.\" (212189) and before \"Artículo 71 bis.\" (216234), whose paragraph 1 a) only refers back to \"la cualificación establecida en el artículo 71.2 a)\". (s25 build, 2026-09-17)."
+                          }
+                        ]
                       }
                     }
                   ]
@@ -2738,7 +2789,17 @@
                 "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
                 "quote": "una cualificación derivada de una formación de enseñanza superior de duración mínima de tres años y equivalente al menos al Nivel 2 del Marco Español de Cualificaciones para la Educación Superior",
                 "retrieved_at": "2026-09-07",
-                "legal_basis": "Ley 14/2013, art. 71 bis.2"
+                "legal_basis": "Ley 14/2013, art. 71.2 a)",
+                "history": [
+                  {
+                    "retrieved_at": "2026-09-07",
+                    "quote": "una cualificación derivada de una formación de enseñanza superior de duración mínima de tres años y equivalente al menos al Nivel 2 del Marco Español de Cualificaciones para la Educación Superior",
+                    "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                    "reason": "citation-corrected",
+                    "checked_at": "2026-09-17",
+                    "note": "The citation beside the quote was wrong, not the quote: legal_basis said \"Ley 14/2013, art. 71 bis.2\", and the sentence \"una cualificación derivada de una formación de enseñanza superior…\" lives in art. 71.2 a) — in the watch snapshot of 2026-09-07 (boe-ley-14-2013) it sits at character offset 213271, under \"Artículo 71.\" (212189) and before \"Artículo 71 bis.\" (216234), whose paragraph 1 a) only refers back to \"la cualificación establecida en el artículo 71.2 a)\". Corrected together with the five-year limb beside it, which quotes the same paragraph. (s25 build, 2026-09-17)."
+                  }
+                ]
               }
             },
             {
@@ -2835,6 +2896,10 @@
             {
               "id": "lower-salary-applied-with-no-institution-limit",
               "text": "Whether the lower salary is limited to qualifications from particular institutions is a question the ministry’s sheet does not answer: it names no institution anywhere. We apply the lower salary with no such limit, the wording the law itself uses."
+            },
+            {
+              "id": "seven-year-answer-is-a-floor",
+              "text": "Our question asks about the last seven years; article 71.2 a) names no window for its five, so five or more there meets the rule, and experience older than seven years — which the law also counts — is not something this card can see."
             }
           ]
         },
@@ -2846,9 +2911,10 @@
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/profesionales-altamente-cualificados",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; one condition the authority states — that Spain's large-companies unit handles the application and the Directorate-General for Migration grants it — is listed with the rules below and never asked.",
+            "reason": "Every rule that decides this route is a question you answer; one condition the authority states — that Spain's large-companies unit handles the application and the Directorate-General for Migration grants it — is listed with the rules below and never asked. The three years of experience it accepts instead of a degree have no window, so your answer about the last seven years stands in for them.",
             "not_asked": [
-              "handled-by-the-large-companies-unit"
+              "handled-by-the-large-companies-unit",
+              "seven-year-answer-is-a-floor"
             ]
           },
           "criteria": [
@@ -2914,18 +2980,28 @@
                   "label": "professional experience",
                   "criteria": [
                     {
-                      "field": "experience",
+                      "field": "experience_7y",
                       "op": "in",
                       "values": [
-                        "y3in7",
-                        "y5in7"
+                        "3to5",
+                        "5plus"
                       ],
                       "short_reason": "at least three years of related experience",
                       "source": {
                         "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
                         "quote": "conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos tres años que pueda considerarse equiparable a dicha cualificación",
                         "retrieved_at": "2026-09-07",
-                        "legal_basis": "Ley 14/2013, art. 71.2"
+                        "legal_basis": "Ley 14/2013, art. 71.2",
+                        "history": [
+                          {
+                            "retrieved_at": "2026-09-07",
+                            "quote": "conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos tres años que pueda considerarse equiparable a dicha cualificación",
+                            "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                            "reason": "rule-rekeyed",
+                            "checked_at": "2026-09-17",
+                            "note": "s25 (v1.1 critique F2): read experience in [y3in7, y5in7] before, experience_7y in [3to5, 5plus] after."
+                          }
+                        ]
                       }
                     }
                   ]
@@ -2965,6 +3041,12 @@
                 "legal_basis": "Ley 14/2013, art. 76.1"
               }
             }
+          ],
+          "readings": [
+            {
+              "id": "seven-year-answer-is-a-floor",
+              "text": "Our question asks about the last seven years; article 71.2 names no window for its three, so three or more there meets the rule, and experience older than seven years — which the law also counts — is not something this card can see."
+            }
           ]
         },
         {
@@ -2975,10 +3057,11 @@
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/trabajadores",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — a real business activity in the company and its group, and three months of unbroken prior work with it — are listed with the rules below and never asked.",
+            "reason": "Every rule that decides this route is a question you answer; two conditions the authority states — a real business activity in the company and its group, and three months of unbroken prior work with it — are listed with the rules below and never asked. The three years of experience it accepts instead of a degree have no window, so your answer about the last seven years stands in for them.",
             "not_asked": [
               "a-real-business-behind-the-company",
-              "three-months-with-the-group-before-the-move"
+              "three-months-with-the-group-before-the-move",
+              "seven-year-answer-is-a-floor"
             ]
           },
           "criteria": [
@@ -3050,18 +3133,28 @@
                   "label": "professional experience",
                   "criteria": [
                     {
-                      "field": "experience",
+                      "field": "experience_7y",
                       "op": "in",
                       "values": [
-                        "y3in7",
-                        "y5in7"
+                        "3to5",
+                        "5plus"
                       ],
                       "short_reason": "at least three years of related experience",
                       "source": {
                         "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
                         "quote": "conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos 3 años que pueda considerarse equiparable a dicha cualificación",
                         "retrieved_at": "2026-09-07",
-                        "legal_basis": "Ley 14/2013, art. 73.2.b)"
+                        "legal_basis": "Ley 14/2013, art. 73.2.b)",
+                        "history": [
+                          {
+                            "retrieved_at": "2026-09-07",
+                            "quote": "conocimientos, capacidades y competencias avaladas por una experiencia profesional de al menos 3 años que pueda considerarse equiparable a dicha cualificación",
+                            "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                            "reason": "rule-rekeyed",
+                            "checked_at": "2026-09-17",
+                            "note": "s25 (v1.1 critique F2): read experience in [y3in7, y5in7] before, experience_7y in [3to5, 5plus] after."
+                          }
+                        ]
                       }
                     }
                   ]
@@ -3097,6 +3190,12 @@
                 "retrieved_at": "2026-09-07",
                 "legal_basis": "Ley 14/2013, art. 73.2.c)"
               }
+            }
+          ],
+          "readings": [
+            {
+              "id": "seven-year-answer-is-a-floor",
+              "text": "Our question asks about the last seven years; article 73.2 names no window for its three, so three or more there meets the rule, and experience older than seven years — which the law also counts — is not something this card can see."
             }
           ]
         },
@@ -4063,13 +4162,23 @@
                   "label": "5 years of relevant experience",
                   "criteria": [
                     {
-                      "field": "experience",
+                      "field": "experience_7y",
                       "op": "eq",
-                      "value": "y5in7",
+                      "value": "5plus",
                       "source": {
                         "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
                         "quote": "you have a minimum of 5 years of relevant work experience",
-                        "retrieved_at": "2026-09-07"
+                        "retrieved_at": "2026-09-07",
+                        "history": [
+                          {
+                            "retrieved_at": "2026-09-07",
+                            "quote": "you have a minimum of 5 years of relevant work experience",
+                            "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+                            "reason": "rule-rekeyed",
+                            "checked_at": "2026-09-17",
+                            "note": "s25 (v1.1 critique F2): read experience eq y5in7 before, experience_7y eq 5plus after."
+                          }
+                        ]
                       }
                     }
                   ]
@@ -4084,12 +4193,25 @@
                     },
                     {
                       "field": "experience_7y",
-                      "op": "eq",
-                      "value": "yes",
+                      "op": "in",
+                      "values": [
+                        "3to5",
+                        "5plus"
+                      ],
                       "source": {
                         "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
                         "quote": "Are you an IT manager or IT professional? A minimum of 3 years of relevant work experience is required during the period of 7 years before the application.",
-                        "retrieved_at": "2026-09-07"
+                        "retrieved_at": "2026-09-07",
+                        "history": [
+                          {
+                            "retrieved_at": "2026-09-07",
+                            "quote": "Are you an IT manager or IT professional? A minimum of 3 years of relevant work experience is required during the period of 7 years before the application.",
+                            "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
+                            "reason": "rule-rekeyed",
+                            "checked_at": "2026-09-17",
+                            "note": "s25 (v1.1 critique F2): read experience_7y eq yes before, experience_7y in [3to5, 5plus] after."
+                          }
+                        ]
                       }
                     }
                   ]

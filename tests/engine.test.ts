@@ -12,7 +12,7 @@ const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.m
 // 59,373 or more
 const engineer: Profile = {
   destination: "de", citizenship: "third_country", situation: "offer", qualification: "degree",
-  recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
+  recognition_de: "recognized", occupation_shortage: "yes", experience_5y: "2plus", experience_7y: "3to5",
   salary_eur_year: "band_5",
 };
 
@@ -119,7 +119,7 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
   it("P2 vocational worker with offer: at most 10 questions, shortage list never asked", () => {
     const { asked, profile } = runFlow({
       destination: "de", citizenship: "third_country", situation: "offer", qualification: "vocational",
-      recognition_de: "recognized", experience: "y5in7", salary_eur_year: "band_4",
+      recognition_de: "recognized", experience_5y: "2plus", experience_7y: "5plus", salary_eur_year: "band_4",
       occupation_shortage: "no", occupation_it: "no",
       german: "none", english: "none", funds_eur_month: "band_1",
     });
@@ -134,12 +134,14 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
     const { asked, profile } = runFlow({
       destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
       funds_eur_month: "band_1", recognition_de: "not_yet",
-      german: "b1", english: "none", experience: "lt2", occupation_shortage: "no",
+      german: "b1", english: "none", experience_5y: "lt2", experience_7y: "lt3", occupation_shortage: "no",
       age_band: "a30to35", de_stay6m: "no", partner_ck: "no",
     });
     expect(asked).not.toContain("salary_eur_year");
     expect(asked.length).toBeGreaterThanOrEqual(8); // honest: the points ladder is long
-    expect(asked.length).toBeLessThanOrEqual(13);
+    // 14 since s25: the experience question became two (the last five years
+    // and the last seven), and the points ladder reads both.
+    expect(asked.length).toBeLessThanOrEqual(14);
     const ck = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;
     expect(ck.status).toBe("near");
     expect(ck.gap_points).toBe(2); // B1 (2) + age (2) = 4 of 6
@@ -150,7 +152,7 @@ describe("pruning at dataset scale", () => {
   it("EU citizen: the citizenship answer ends the questionnaire within a few questions", () => {
     const { asked } = runFlow({
       destination: "de", citizenship: "eu_eea_ch", situation: "offer", qualification: "degree",
-      recognition_de: "recognized", experience: "y2in5",
+      recognition_de: "recognized", experience_5y: "2plus", experience_7y: "3to5",
     });
     expect(asked.length).toBeLessThanOrEqual(5);
     expect(asked).toContain("citizenship");
@@ -172,7 +174,7 @@ describe("bounded gaps don't end the interview (user-reported: funds under €1,
     const { asked, profile } = runFlow({
       destination: "de", citizenship: "third_country", situation: "none", funds_eur_month: "band_0",
       qualification: "degree", recognition_de: "recognized", german: "a1",
-      english: "none", experience: "y2in5", occupation_shortage: "no",
+      english: "none", experience_5y: "2plus", experience_7y: "3to5", occupation_shortage: "no",
       age_band: "a30to35", de_stay6m: "no", partner_ck: "no",
     });
     expect(asked).toContain("qualification"); // interview continued past the funds gap
@@ -237,7 +239,7 @@ describe("provenance and meta", () => {
       // second source, a link and the routes it qualifies — all additive.
       // 0.8.0 since s19: a quoted route may say which situations it would ask
       // about, an optional field on routes nothing is asked about — additive.
-      schema_version: "0.8.0",
+      schema_version: "0.8.1",
       // 2026.09.17: the copy pass (s23) — two of our own sentences moved, the
       // Türkiye notice's body and the § 20a caveat's citation; no value, no
       // schema field, and nothing read at a source that day.
@@ -256,7 +258,7 @@ describe("hard_fail — which unknowns still bind (s5b, critique #4)", () => {
   // Walk A: engineer with a German offer whose recognition is still unknown.
   const walkA: Profile = {
     destination: "de", citizenship: "third_country", situation: "offer", qualification: "degree",
-    recognition_de: "unknown", occupation_shortage: "yes", experience: "y2in5",
+    recognition_de: "unknown", occupation_shortage: "yes", experience_5y: "2plus", experience_7y: "3to5",
     salary_eur_year: "band_5",
   };
   const byId = Object.fromEntries(evaluate(dataset, walkA).map((r) => [r.route.id, r]));

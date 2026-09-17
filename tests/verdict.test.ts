@@ -219,7 +219,7 @@ describe("s5d — the reason column reads as prose (blocker B3)", () => {
   /** Walk C's profile: exploring all four, weak answers throughout. */
   const explorer: Profile = {
     destination: "all", citizenship: "US", situation: "none", qualification: "degree",
-    recognition_de: "not_yet", experience: "y5in7", occupation_shortage: "unknown",
+    recognition_de: "not_yet", experience_5y: "2plus", experience_7y: "5plus", occupation_shortage: "unknown",
     nl_recent_grad: "no", top200_grad: "unknown", german: "a2", english: "c1",
     age_band: "u30",
   };

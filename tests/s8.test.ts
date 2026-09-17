@@ -41,7 +41,7 @@ const topYearBand = (): string => deriveBands(dataset, "salary_eur_year").at(-1)
 const withPassport = (citizenship: string): Profile => ({
   destination: "fr", citizenship, situation: "offer", situation_country: "fr",
   qualification: "degree", fr_degree: "yes", fr_innovative_employer: "no", fr_local_contract: "no",
-  experience: "y5in7", salary_eur_year: topYearBand(),
+  experience_5y: "2plus", experience_7y: "5plus", salary_eur_year: topYearBand(),
 });
 
 /** The same reader, moved to France by their group — the profile fr-ict is for. */

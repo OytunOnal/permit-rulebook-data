@@ -221,8 +221,9 @@ describe("s6 — every route declares what the checker asks of it", () => {
     // 13 route readings + these 28 reasons + the 2 contradiction sentences and
     // the 3 money-question doors added on 2026-09-08. Five of each arrived with
     // s9, on the routes that are quoted and not scored; one of each with s19,
-    // on France's researcher card.
-    expect(proseProvenance(ds).ours).toBe((8 + 5 + 1) + (23 + 5 + 1) + 2 + 3);
+    // on France's researcher card. Four readings with s25: the seven-year
+    // experience question is a floor where the sentence names no window.
+    expect(proseProvenance(ds).ours).toBe((8 + 5 + 1 + 4) + (23 + 5 + 1) + 2 + 3);
   });
 });
 

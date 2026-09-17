@@ -177,7 +177,7 @@ describe("an absent quote is a decision, not an essay", () => {
  * 2026-09-08).
  */
 describe("a re-read is recorded like a change", () => {
-  const REASONS = ["re-read-unchanged", "value-changed", "source-moved", "quote-corrected"];
+  const REASONS = ["re-read-unchanged", "value-changed", "source-moved", "quote-corrected", "rule-rekeyed", "citation-corrected"];
 
   /** Every history entry in the dataset, with the live value it sits under. */
   const historiesOf = (data: {

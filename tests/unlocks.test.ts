@@ -10,7 +10,7 @@ const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.m
 // Explorer with strong credentials: everything is there except a situation.
 const explorer: Profile = {
   destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
-  recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
+  recognition_de: "recognized", occupation_shortage: "yes", experience_5y: "2plus", experience_7y: "3to5",
   german: "b1", funds_eur_month: "band_1",
   // salary answered so the offer counterfactual can evaluate fully
   // (band_5 = €45,934.20 – under €50,700: clears shortage BC + §19c, below the
@@ -62,7 +62,7 @@ describe("unlocks — improvable fields (language, funds, recognition…)", () =
   const languageless: Profile = {
     destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
     recognition_de: "not_yet", german: "none", english: "none",
-    experience: "y2in5", occupation_shortage: "yes", age_band: "a30to35",
+    experience_5y: "2plus", experience_7y: "3to5", occupation_shortage: "yes", age_band: "a30to35",
     de_stay6m: "no", partner_ck: "no", funds_eur_month: "band_1",
   };
   const rows = unlocks(dataset, languageless);
@@ -96,7 +96,7 @@ describe("improvable fails keep the interview alive (user-reported: no-language 
   // The user's exact shape: degree, recognition unknown, no language at all.
   const early: Profile = {
     destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
-    recognition_de: "unknown", experience: "lt2", occupation_shortage: "yes",
+    recognition_de: "unknown", experience_5y: "lt2", experience_7y: "lt3", occupation_shortage: "yes",
     german: "none", english: "none",
   };
 
@@ -130,20 +130,32 @@ describe("improvable fails keep the interview alive (user-reported: no-language 
  */
 describe("a numeric field earns one step, never a rung-by-rung enumeration", () => {
   // Arun, answering "I don't know" to the three questions the product itself
-  // invites him to be unsure about.
+  // invites him to be unsure about. His experience is "3+ within the last 7"
+  // in the critique's walk; since s25 that is two answers — under two in the
+  // last five, three to five in the last seven — because three years inside
+  // seven say nothing about the last five, and the conservative reading is
+  // the honest one.
   const unsure: Profile = {
     destination: "de", citizenship: "IN", situation: "offer", qualification: "degree",
     occupation_shortage: "unknown", recognition_de: "unknown", salary_eur_year: "unknown",
-    experience: "y3in7", german: "b1", english: "c1", age_band: "a30to35",
+    experience_5y: "lt2", experience_7y: "3to5", german: "b1", english: "c1", age_band: "a30to35",
     de_stay6m: "no", partner_ck: "no", funds_eur_month: "band_1",
   };
+  /** Arun with two years of related work inside the last five. */
+  const twoInFive: Profile = { ...unsure, experience_5y: "2plus" };
 
   it("one salary step, and it is the nearest rung that opens something", () => {
-    const rows = unlocks(dataset, unsure);
-    const salary = rows.filter((u) => u.field === "salary_eur_year");
+    // Until s25 this expected one salary step for Arun as he is, opening the
+    // experienced-worker route — an expectation resting on the false
+    // implication that three years in the last seven clear two in the last
+    // five. They do not: his salary alone opens nothing, because § 6 BeschV
+    // also asks for the two years he has not declared.
+    expect(unlocks(dataset, unsure).filter((u) => u.field === "salary_eur_year")).toEqual([]);
+    // With those two years declared, one salary step — and it is the nearest
+    // rung: €45,630 is the lowest German threshold this reader is short of,
+    // and the route it opens is the one the card would name.
+    const salary = unlocks(dataset, twoInFive).filter((u) => u.field === "salary_eur_year");
     expect(salary.length, salary.map((u) => u.option.label).join(" | ")).toBe(1);
-    // €45,630 is the lowest German threshold this reader is short of, and the
-    // route it opens is the one the card would name.
     expect(salary[0]!.option.label).toBe("€45,630 – under €45,934.20");
     expect(salary[0]!.routes.map((r) => [r.route.id, r.status])).toEqual([["de-experienced-worker", "met"]]);
   });
@@ -160,9 +172,18 @@ describe("a numeric field earns one step, never a rung-by-rung enumeration", () 
   });
 
   it("the headline counts what survives", () => {
-    // Three real steps — a transfer, a hosting agreement, recognition — and one
-    // salary step, where the rail used to print seven rows for this reader.
-    expect(unlocks(dataset, unsure).length).toBe(4);
+    // Seven, each a different decision, where the rail used to print seven
+    // rows of the salary ladder alone: a transfer, a hosting agreement, two
+    // recognition answers, the two experience answers that each reach the
+    // Opportunity Card's six points, and German at B2. Until s25 it was four
+    // (transfer, hosting, recognition, one salary step): the experience steps
+    // did not exist because the false implication had already paid him, and
+    // the salary step rested on it — see above. With the two years declared
+    // the Opportunity Card is already met on seven points, so every step that
+    // only opened it goes, and the salary step returns: four, as the old
+    // rail counted them, for the reader the old rail was actually describing.
+    expect(unlocks(dataset, unsure).length).toBe(7);
+    expect(unlocks(dataset, twoInFive).length).toBe(4);
   });
 
   it("the step says the gap the card computes, and the amount when there is no gap to state", () => {
@@ -170,7 +191,7 @@ describe("a numeric field earns one step, never a rung-by-rung enumeration", () 
     // is within reach at €50,700, and closing that distance is the step.
     const declared: Profile = {
       destination: "de", citizenship: "IN", situation: "offer", qualification: "degree",
-      recognition_de: "recognized", occupation_shortage: "no", experience: "y3in7",
+      recognition_de: "recognized", occupation_shortage: "no", experience_5y: "lt2", experience_7y: "3to5",
       german: "b1", english: "c1", age_band: "a30to35", de_stay6m: "no", partner_ck: "no",
       // €45,630 – under €45,934.20 on the pooled ladder.
       funds_eur_month: "band_1", salary_eur_year: "band_4",
@@ -180,7 +201,7 @@ describe("a numeric field earns one step, never a rung-by-rung enumeration", () 
     expect(step.routes.map((r) => [r.route.id, r.status])).toEqual([["de-blue-card-general", "met"]]);
     // With no floor declared — "I don't know" — there is no distance to state,
     // so the step is the amount the rule asks for.
-    const step2 = unlocks(dataset, unsure).find((u) => u.field === "salary_eur_year")!;
-    expect(unlockTitleOf(dataset, step2, unsure)).toBe("at least €45,630/year — yearly salary");
+    const step2 = unlocks(dataset, twoInFive).find((u) => u.field === "salary_eur_year")!;
+    expect(unlockTitleOf(dataset, step2, twoInFive)).toBe("at least €45,630/year — yearly salary");
   });
 });

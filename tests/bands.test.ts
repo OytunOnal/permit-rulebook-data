@@ -106,7 +106,7 @@ describe("bands are half-open, and say so", () => {
     const under = yearly.find((b) => b.max === 45630)!;
     const german: Profile = {
       destination: "de", citizenship: "third_country", situation: "offer",
-      qualification: "degree", occupation_it: "no", experience: "y2in5",
+      qualification: "degree", occupation_it: "no", experience_5y: "2plus", experience_7y: "3to5",
       salary_eur_year: under.id,
     };
     const worker = evaluate(dataset, german).find((r) => r.route.id === "de-experienced-worker")!;

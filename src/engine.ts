@@ -3,7 +3,7 @@ import { CARVE_OUT_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD 
 import type {
   Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
   FieldOption, Notice,
-  PointsBreakdown, PointsItem, Profile, ProvenancedText, Route, RouteReading, RouteResult,
+  PointsBreakdown, PointsItem, PointsRow, Profile, ProvenancedText, Route, RouteReading, RouteResult,
   RouteStatement, RouteStatus, StatementException,
 } from "./types.js";
 
@@ -188,12 +188,38 @@ function satisfies(dataset: Dataset, field: string, answer: string, wanted: stri
 }
 
 /**
- * What one answer scores on one points item — the ONE place a points value is
- * read, so the scorer and the equivalence fingerprint cannot disagree.
+ * The rows of a points item, whichever form it was written in: the one-field
+ * form keys its rows on the item's `field`; the `rows` form names the field on
+ * each row (schema 0.8.1). Everything that reads an item reads it through
+ * here, so the two forms cannot drift apart.
+ */
+export function itemRows(item: PointsItem): PointsRow[] {
+  if ("rows" in item) return item.rows;
+  return Object.entries(item.points).map(([value, points]) => ({ field: item.field, value, points }));
+}
+
+/**
+ * The fields one points item reads, each once, in row order — what the
+ * interview must ask before the item is decided, and what a question's
+ * equivalence fingerprint keys on; the rows themselves are the scorer's.
+ */
+export function itemFields(item: PointsItem): string[] {
+  return [...new Set(itemRows(item).map((r) => r.field))];
+}
+
+/**
+ * The row one profile scores on one points item — the ONE place a points
+ * value is read, so the scorer and the equivalence fingerprint cannot
+ * disagree. Undefined when no row is satisfied.
  *
- * The answer scores the BEST of the rows it satisfies, never their sum: an
+ * The profile scores the BEST of the rows it satisfies, never their sum: an
  * `implies` list says the same person also clears a lower rung, and a ladder
- * pays for the highest rung reached, not for every rung below it.
+ * pays for the highest rung reached, not for every rung below it. Rows on
+ * different fields are the same rule: § 20b Abs. 1 Nr. 7 pays two points for
+ * two years in the last five "und keine Punkte nach Nummer 6", and Nr. 6
+ * pays three for five in the last seven — one item, the higher row, never
+ * 2 + 3 (s25). A row whose field is unanswered, or answered "I don't know",
+ * scores nothing here; the caller decides whether that leaves the item open.
  *
  * The old comment on `satisfies` said points tables deliberately key on the
  * raw answer, "and if a points item ever reads a class-bearing field, decide
@@ -201,12 +227,22 @@ function satisfies(dataset: Dataset, field: string, answer: string, wanted: stri
  * `experience` ladder gained `y3in7`, which implies `y2in5`, and the
  * Chancenkarte scores `experience`. Keying on the raw answer paid the honest
  * three-year answerer 0 where the two-year answerer got 2 (review 2026-09-07).
+ * s25 retired that implication — three years inside seven need not hold two
+ * inside five — and split the question in two; the best-row rule stayed.
  */
-function pointsFor(dataset: Dataset, item: PointsItem, answer: string): number {
-  let best = item.points[answer] ?? 0;
-  for (const [value, pts] of Object.entries(item.points))
-    if (pts > best && satisfies(dataset, item.field, answer, [value])) best = pts;
+function bestRow(dataset: Dataset, item: PointsItem, profile: Profile): PointsRow | undefined {
+  let best: PointsRow | undefined;
+  for (const row of itemRows(item)) {
+    const answer = profile[row.field];
+    if (isUnknownAnswer(dataset, row.field, answer)) continue;
+    if ((best === undefined || row.points > best.points) && satisfies(dataset, row.field, answer as string, [row.value])) best = row;
+  }
   return best;
+}
+
+/** What one profile scores on one points item: the best row, or 0. */
+function pointsFor(dataset: Dataset, item: PointsItem, profile: Profile): number {
+  return bestRow(dataset, item, profile)?.points ?? 0;
 }
 
 /**
@@ -227,7 +263,7 @@ export function contradictionsIn(dataset: Dataset, profile: Profile): Contradict
 
 /** All field ids a criterion reads (recursing through disjunctions). */
 export function referencedFields(c: Criterion): string[] {
-  if (c.op === "points") return c.table.items.map((i) => i.field);
+  if (c.op === "points") return [...new Set(c.table.items.flatMap(itemFields))];
   if (c.op === "any") return c.paths.flatMap((p) => p.criteria.flatMap(referencedFields));
   return [c.field];
 }
@@ -343,13 +379,15 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
     let unanswered = 0;
     const items: PointsBreakdown["items"] = [];
     for (const item of c.table.items) {
-      const answer = profile[item.field];
-      if (isUnknownAnswer(dataset, item.field, answer)) {
-        unanswered++;
-      } else {
-        const pts = pointsFor(dataset, item, answer as string);
-        scored += pts;
-        if (pts > 0) items.push({ field: item.field, points: pts });
+      // An item counts what it knows and stays open while any field it reads
+      // is unanswered: a two-field item half answered may still climb to its
+      // higher row, and the score so far is a floor, as an unanswered item's
+      // 0 always was.
+      if (itemFields(item).some((f) => isUnknownAnswer(dataset, f, profile[f]))) unanswered++;
+      const row = bestRow(dataset, item, profile);
+      if (row && row.points > 0) {
+        scored += row.points;
+        items.push({ field: row.field, points: row.points });
       }
     }
     const points: PointsBreakdown = { scored, required: c.required.value, items };
@@ -444,7 +482,7 @@ function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): st
   const result = evalCriterion(dataset, c, profile);
   if (result.outcome !== "unknown") return [];
   if (c.op === "points")
-    return c.table.items.map((i) => i.field).filter((f) => profile[f] === undefined);
+    return referencedFields(c).filter((f) => profile[f] === undefined);
   if (c.op === "any")
     // Paths that can still be satisfied — or still be MEASURED. A path failing
     // on an ungapped criterion is out of reach and its questions are noise; one
@@ -543,9 +581,13 @@ function equivalenceKey(dataset: Dataset, field: string, value: string): string 
         // an Algerian passport and a Turkish one are not interchangeable to a
         // route France closes to one of them.
         else if (c.op === "not-in" && c.field === field) parts.push(satisfies(dataset, field, value, c.values) ? "x" : ".");
+        // What this answer alone is worth on the item — the other field of a
+        // two-field item left unanswered. Two answers worth the same alone are
+        // worth the same beside any answer to the other field, since the item
+        // pays the higher row.
         else if (c.op === "points")
           for (const item of c.table.items)
-            if (item.field === field) parts.push(`p${pointsFor(dataset, item, value)}`);
+            if (itemFields(item).includes(field)) parts.push(`p${pointsFor(dataset, item, { [field]: value })}`);
       });
   // Notices are part of what an answer decides, so two answers are only
   // interchangeable when they draw the same notices too — otherwise a consumer

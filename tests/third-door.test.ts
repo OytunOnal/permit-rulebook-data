@@ -55,7 +55,7 @@ describe("a money question fits whoever is answering it", () => {
       const profile: Profile = {
         destination: "de", citizenship: "third_country", situation: "offer",
         qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-        experience: "y2in5", german: "b1", [field.id]: UNKNOWN_BAND,
+        experience_5y: "2plus", experience_7y: "3to5", german: "b1", [field.id]: UNKNOWN_BAND,
       };
       for (const r of evaluate(dataset, profile)) {
         const asks = r.criteria.filter((cr) => referencedFields(cr.criterion).includes(field.id));
@@ -82,7 +82,7 @@ describe("a money question fits whoever is answering it", () => {
     const profile: Profile = {
       destination: "de", citizenship: "third_country", situation: "offer",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-      experience: "y2in5", german: "b1", salary_eur_year: "band_4", funds_eur_month: UNKNOWN_BAND,
+      experience_5y: "2plus", experience_7y: "3to5", german: "b1", salary_eur_year: "band_4", funds_eur_month: UNKNOWN_BAND,
     };
     const card = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;
     const said = reasonFor(dataset, card, profile);
