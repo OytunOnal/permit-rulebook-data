@@ -209,11 +209,15 @@ describe("s19 — a sentence a criterion quotes is asked, not \"stated but not a
   it("the scope line no longer counts them — es-researcher is scored against your answers, and nothing else", () => {
     expect(scopeLine(routeOf(ds, "es-researcher"))).toBe("quoted and dated · scored against your answers");
     expect(scopeLine(routeOf(ds, "fr-talent-innovante"))).toBe("quoted and dated · scored against your answers");
-    expect(scopeLine(routeOf(ds, "fr-talent-qualifie"))).toBe("quoted and dated · scored, one in our own reading, not asked");
-    expect(scopeLine(routeOf(ds, "fr-talent-blue-card"))).toBe("quoted and dated · scored, one in our own reading, not asked");
-    expect(scopeLine(routeOf(ds, "fr-talent-mission"))).toBe("quoted and dated · scored, one condition stated but not asked");
-    expect(scopeLine(routeOf(ds, "nl-blue-card"))).toBe("quoted and dated · scored, three conditions stated but not asked");
-    expect(scopeLine(routeOf(ds, "nl-ict"))).toBe("quoted and dated · scored, three conditions stated but not asked");
+    // The counts are s19's; the words are s23's (v1.1 critique P4): figures,
+    // a dash, "this interview did not ask", and a reading "in our own words,
+    // not the authority's".
+    const OURS = "in our own words, not the authority's";
+    expect(scopeLine(routeOf(ds, "fr-talent-qualifie"))).toBe(`quoted and dated · scored — 1 condition this interview did not ask, ${OURS}`);
+    expect(scopeLine(routeOf(ds, "fr-talent-blue-card"))).toBe(`quoted and dated · scored — 1 condition this interview did not ask, ${OURS}`);
+    expect(scopeLine(routeOf(ds, "fr-talent-mission"))).toBe("quoted and dated · scored — 1 condition this interview did not ask");
+    expect(scopeLine(routeOf(ds, "nl-blue-card"))).toBe("quoted and dated · scored — 3 conditions this interview did not ask");
+    expect(scopeLine(routeOf(ds, "nl-ict"))).toBe("quoted and dated · scored — 3 conditions this interview did not ask");
     // And the statements are still on the route — asked is not dropped.
     expect(limbIdsOf(routeOf(ds, "es-researcher")).has("hosting-agreement-or-contract-with-the-research-body")).toBe(true);
   });

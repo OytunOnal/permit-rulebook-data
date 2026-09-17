@@ -117,9 +117,10 @@ fetch (s14; the road back is a headless-browser strategy, data #17).
    law requires; the conditions it points at carry their own quotes on the same
    page. Words a reader cannot parse do not go in it: no *modelled*, no
    *criteria*. *Scored* is allowed only inside the phrase the reader is shown —
-   "scored against your answers", or "scored, two conditions stated but not
-   asked" — and a bare *scored* fails the build, in a reason exactly as in the
-   words the code composes (human, 2026-09-08).
+   "scored against your answers", or "scored — 2 conditions this interview did
+   not ask" — and a bare *scored* fails the build, in a reason exactly as in
+   the words the code composes (human, 2026-09-08; words revised s23,
+   2026-09-17).
 
    `not_asked` is the same fact in ids: every statement and every reading this
    route names to the reader and never asks about. It is what makes the sentence

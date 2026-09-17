@@ -238,7 +238,10 @@ describe("provenance and meta", () => {
       // 0.8.0 since s19: a quoted route may say which situations it would ask
       // about, an optional field on routes nothing is asked about — additive.
       schema_version: "0.8.0",
-      dataset_version: "2026.09.16",
+      // 2026.09.17: the copy pass (s23) — two of our own sentences moved, the
+      // Türkiye notice's body and the § 20a caveat's citation; no value, no
+      // schema field, and nothing read at a source that day.
+      dataset_version: "2026.09.17",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two
       // authorities disagreeing (s8). The freshest are the nine sentences of

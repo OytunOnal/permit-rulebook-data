@@ -86,8 +86,11 @@ describe("s6 — every route declares what the checker asks of it", () => {
     // And where it IS used it is used in a sentence about the reader: never
     // bare, never as a verdict, always beside what it was scored against. The
     // rule holds for the 23 authored reasons exactly as it holds for the words
-    // the code composes (Standards review, 2026-09-08).
-    const ALLOWED = /(?:not scored|scored,|scored against your answers)/;
+    // the code composes (Standards review, 2026-09-08). The tally form changed
+    // its punctuation in s23 ("scored — 2 conditions this interview did not
+    // ask"): the dash joins the list here for the reason the comma did, and a
+    // bare "scored" still fails.
+    const ALLOWED = /(?:not scored|scored,|scored —|scored against your answers)/;
     const bare = (text: string): string[] =>
       // Each use with enough either side to read it: "not scored" needs the
       // word before, the others the words after.
@@ -326,8 +329,10 @@ describe("a reading is ours, and the words say so", () => {
     const vocational = statedNotAsked(of("de-skilled-vocational"), { split: true });
     expect(vocational.stated, "a source statement appeared from nowhere").toEqual([]);
     expect(vocational.noted.length).toBe(2);
+    // s23 (v1.1 critique P4): figures, a dash, and whose words — "in our own
+    // reading" was the model's phrase for the split, not the reader's.
     expect(scopeLine(of("de-skilled-vocational")))
-      .toBe("quoted and dated · scored, two in our own reading, not asked");
+      .toBe("quoted and dated · scored — 2 conditions this interview did not ask, in our own words, not the authority's");
 
     // The one stated condition — the contract of more than three months — is
     // the sentence the situation gate quotes, and a sentence a criterion
@@ -336,7 +341,7 @@ describe("a reading is ours, and the words say so", () => {
     expect(talent.stated.length).toBe(0);
     expect(talent.noted.length).toBe(1);
     expect(scopeLine(of("fr-talent-qualifie")))
-      .toBe("quoted and dated · scored, one in our own reading, not asked");
+      .toBe("quoted and dated · scored — 1 condition this interview did not ask, in our own words, not the authority's");
     // Both forms at once, on a route where a stated condition survives beside
     // a reading: none does today, so the words are held on their own below.
   });
@@ -349,8 +354,10 @@ describe("a reading is ours, and the words say so", () => {
       const line = scopeLine(route);
       if (route.scope.value !== "some-conditions-stated-not-asked") continue;
       expect(split.stated.length + split.noted.length, route.id).toBeGreaterThan(0);
-      expect(line.includes("stated but not asked"), route.id).toBe(split.stated.length > 0);
-      expect(line.includes("in our own reading"), route.id).toBe(split.noted.length > 0);
+      // Every counted condition is one this interview did not ask; the ones
+      // in our own words are the readings (s23 wording).
+      expect(line.includes("this interview did not ask"), route.id).toBe(split.stated.length + split.noted.length > 0);
+      expect(line.includes("in our own words, not the authority's"), route.id).toBe(split.noted.length > 0);
     }
   });
 
@@ -363,12 +370,12 @@ describe("a reading is ours, and the words say so", () => {
     expect(said).not.toContain("undefined");
     expect(said).not.toContain("NaN");
     expect(scopeWords("some-conditions-stated-not-asked", 1, 0))
-      .toBe("quoted and dated · scored, one condition stated but not asked");
+      .toBe("quoted and dated · scored — 1 condition this interview did not ask");
     // And the reading form never borrows the avoid-list words.
     for (const words of [scopeWords("some-conditions-stated-not-asked", 0, 2),
       scopeWords("some-conditions-stated-not-asked", 1, 1)]) {
       expect(words).not.toContain("we note");
-      expect(words).toContain("in our own reading");
+      expect(words).toContain("in our own words, not the authority's");
     }
   });
 });
