@@ -98,7 +98,7 @@ describe("a card names the threshold it was actually measured against", () => {
     // who had been ruled out of nothing (review 2026-09-07).
     const r = resultOf({
       destination: "nl", citizenship: "third_country", situation: "offer",
-      age_band: "u30", qualification: "degree", experience: "y2in5",
+      age_band: "u30", qualification: "degree", experience_5y: "2plus", experience_7y: "3to5",
     }, "nl-hsm-under30");
     expect(r.status).toBe("hold");
     expect(thresholdEntries(r).map((e) => e.amount).sort((a, b) => a! - b!)).toEqual([3122, 4357]);

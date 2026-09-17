@@ -102,8 +102,8 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
   it("it is asked at most once across a whole interview", () => {
     const answers: Profile = {
       destination: "nl", citizenship: "TR", situation: "offer", qualification: "degree",
-      age_band: "u30", occupation_it: "no", experience: "y2in5",
-      experience_7y: "no", nl_recent_grad: "yes", top200_grad: "no",
+      age_band: "u30", occupation_it: "no", experience_5y: "2plus", experience_7y: "lt3",
+      nl_recent_grad: "yes", top200_grad: "no",
       salary_eur_month: bandFor("salary_eur_month", 3400),
       salary_eur_year: bandFor("salary_eur_year", 40800),
     };

@@ -2,32 +2,13 @@ import { describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import {
-  deriveBands, evaluate, fieldOptions, forEachCriterion, provenancedValuesOf, routeReadings,
+  deriveBands, evaluate, fieldOptions, forEachCriterion, provenancedValuesOf, referencedFields, routeReadings,
   routeStatements,
 } from "../src/engine.js";
 import { proseProvenance, quotedWithoutProvenance, renderableTexts } from "../src/prose.js";
 import { validateDataset } from "../src/validate.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
 import type { Criterion, Dataset, FieldDef, Profile, Route, RouteReading, RouteResult } from "../src/types.js";
-
-/**
- * The dataset without one option of the `experience` ladder — the rules as
- * they stood before it was added, over the same people.
- */
-function withoutExperienceOption(ds: Dataset, value: string): Dataset {
-  const before = structuredClone(ds) as Dataset;
-  const def = before.fields.find((f) => f.id === "experience")!;
-  def.options = (def.options ?? []).filter((o) => o.value !== value);
-  for (const o of def.options) if (o.implies) o.implies = o.implies.filter((v) => v !== value);
-  for (const country of before.countries)
-    for (const route of country.routes)
-      forEachCriterion(route.criteria, (c) => {
-        if (c.op === "in" && c.field === "experience") c.values = c.values.filter((v) => v !== value);
-        if (c.op === "points")
-          for (const item of c.table.items) if (item.field === "experience") delete item.points[value];
-      });
-  return before;
-}
 
 const readJson = (p: string) =>
   JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8").replace(/^﻿/, ""));
@@ -177,8 +158,13 @@ describe("s5e — what is ours is marked as ours", () => {
       // amounts fits. All five are read by a person and none is quoted from
       // anyone, so they are counted here. The five that arrived with s9 are the
       // sentence each unscored route carries saying why we do not score it, and
-      // s19 added one more of each on France's researcher card.
-      ours: (8 + 5 + 1) + (23 + 5 + 1) + 2 + 3,
+      // s19 added one more of each on France's researcher card. Four more with
+      // s25: readings saying the seven-year experience question is a floor for
+      // a rule that names no window (both Spanish three-year rules, the
+      // Spanish and the French Blue Card). No contradiction sentence joined
+      // them: with the two experience questions' rungs, no pair of answers is
+      // impossible.
+      ours: (8 + 5 + 1 + 4) + (23 + 5 + 1) + 2 + 3,
       // Standing on a declared, dated reason no quote could be found — the one
       // exception, and an attributable decision rather than a blank. It is
       // zero: the last one was the es-blue-card shortage-occupation caveat,
@@ -201,7 +187,9 @@ describe("s5e — what is ours is marked as ours", () => {
     // is not published, that the search is not ours to see. Fourteen since
     // s19: the talent fiche names the researcher's agreement two ways, and
     // whether that is one instrument or two is ours to say we do not know.
-    expect(readings().length).toBe(8 + 5 + 1);
+    // Eighteen since s25: the seven-year experience question is a floor on
+    // the four routes whose sentence names a number and no window.
+    expect(readings().length).toBe(8 + 5 + 1 + 4);
     for (const route of routes())
       for (const s of routeStatements(route))
         expect(["precondition", "caveat"], `${route.id}:${s.id}`).toContain(s.kind);
@@ -503,59 +491,48 @@ describe("s5e — this slice moves prose, not numbers", () => {
     // threshold that moved or a route that started failing somebody would all
     // change this hex; moving prose cannot. What it CANNOT say is who moved
     // and which way, which is the next test's job.
+    //
+    // Re-pinned in s25: the experience question became two, so the seeded
+    // draw itself changed (one more field to draw from), and the rules that
+    // read it moved by design. Held against the same 400 people translated
+    // to the old question — five in the last seven as "5+ within the last 7",
+    // three to five as "3+", two in the last five as "2+ within the last 5"
+    // — the parent dataset (53db438) and this one differ on 76 rows, all on
+    // the seven routes that read experience and none elsewhere; 75 keep their
+    // status (points or gaps re-counted), and the one status that moves is
+    // the critique's own case, Experienced worker met → not yet for a person
+    // with three years in the last seven and under two in the last five.
     const lines = seededProfiles().flatMap((p) => evaluate(dataset, p).map(rowOf));
     expect(createHash("sha256").update(lines.join("\n")).digest("hex"))
-      .toBe("6ee710eaf7fede018c94b2b3714aa274c29d80d9509779bb7187315fe976e59d");
+      .toBe("0f7dd483f77b95dde4717a991e6b45f2b580ddbf73007fb258e179bc2397f0f1");
   });
 
-  it("and when it moves, the differential holds the population fixed", () => {
+  it("and the rules that read experience are the only ones that read it", () => {
     /*
-     * What the digest's own comment used to claim — "the seeded profiles draw
-     * from four options where they drew from three, twenty-six of the 400
-     * moved" — was not a differential at all. Adding an option to the ladder
-     * changes what the generator DRAWS, so that comparison put 400 people
-     * against 400 different people: different profiles, not different rules,
-     * and the count is noise. Neither 26 nor the commit message's 27 is
-     * reproducible by any method; the regenerated comparison moves 89 profiles
-     * and 100 rows, almost all of it the Chancenkarte scoring a reshuffled
-     * answer (review 2026-09-07, H3).
+     * The differential this replaced compared the dataset with and without the
+     * `y3in7` option, over the same people (s5f, review 2026-09-07, H3). s25
+     * retired that option and the implication it carried — three years inside
+     * seven need not hold two inside five — and split the question in two, so
+     * there is no longer a "without the option" dataset to hold the population
+     * against; the digest above records the movement and its direction, and
+     * tests/s25.test.ts proves each rule against the sentence it reads.
      *
-     * Same people, two rulesets, split by what they answered — because the new
-     * option is not answerable under the old rules, and comparing it against a
-     * dataset that has never heard of it proves nothing:
-     *
-     *   - 318 profiles answered an option the old ladder already had. Under
-     *     the old rules and the new ones, EVERY route gives them the same row.
-     *     That is decision 1's "every other route keeps its verdicts", with no
-     *     route exempted.
-     *   - 82 profiles answered the new `y3in7`. Their honest baseline is the
-     *     same person answering `y2in5`, the rung below. 15 rows are better
-     *     for them and none is worse: 7 on `es-highly-qualified` (decision 1)
-     *     and 8 on `es-ict` (the verdict its own quote refuted).
+     * What still has to be true for "every other route keeps its verdicts":
+     * no route outside the seven the scenario names reads either question,
+     * and none reads the retired one — so no other route CAN have moved.
      */
-    const before = withoutExperienceOption(dataset, "y3in7");
-    let unchangedProfiles = 0;
-    let newAnswerProfiles = 0;
-    const better: Record<string, number> = {};
-    for (const p of seededProfiles()) {
-      if (p.experience === "y3in7") {
-        newAnswerProfiles++;
-        const rung = new Map(evaluate(dataset, { ...p, experience: "y2in5" }).map((r) => [r.route.id, rowOf(r)]));
-        for (const r of evaluate(dataset, p))
-          if (rung.get(r.route.id) !== rowOf(r)) better[r.route.id] = (better[r.route.id] ?? 0) + 1;
-      } else {
-        unchangedProfiles++;
-        const old = new Map(evaluate(before, p).map((r) => [r.route.id, rowOf(r)]));
-        for (const r of evaluate(dataset, p))
-          expect(rowOf(r), `${r.route.id} moved for a profile that answered ${String(p.experience)}`)
-            .toBe(old.get(r.route.id));
-      }
-    }
-    expect(unchangedProfiles).toBe(318);
-    expect(newAnswerProfiles).toBe(82);
-    expect(better).toEqual({ "es-highly-qualified": 7, "es-ict": 8 });
-    // Every one of those 15 is toward the reader — the direction is proved
-    // over 600 profiles and every route in tests/s5f.test.ts.
+    const readers = new Set<string>();
+    for (const route of routes())
+      forEachCriterion(route.criteria, (c) => {
+        for (const f of referencedFields(c)) {
+          expect(f, route.id).not.toBe("experience");
+          if (f === "experience_5y" || f === "experience_7y") readers.add(route.id);
+        }
+      });
+    expect([...readers].sort()).toEqual([
+      "de-chancenkarte", "de-experienced-worker", "es-blue-card", "es-highly-qualified", "es-ict",
+      "fr-talent-blue-card", "nl-blue-card",
+    ]);
   });
 });
 

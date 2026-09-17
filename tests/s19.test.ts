@@ -144,7 +144,8 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
   });
 
   it("the dataset says so in its version", () => {
-    expect(datasetMeta(ds).schema_version).toBe("0.8.0");
+    // 0.8.1 since s25: a points item may key its rows on two fields.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.1");
     expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-16");
   });
 });
@@ -214,7 +215,12 @@ describe("s19 — a sentence a criterion quotes is asked, not \"stated but not a
     // not the authority's".
     const OURS = "in our own words, not the authority's";
     expect(scopeLine(routeOf(ds, "fr-talent-qualifie"))).toBe(`quoted and dated · scored — 1 condition this interview did not ask, ${OURS}`);
-    expect(scopeLine(routeOf(ds, "fr-talent-blue-card"))).toBe(`quoted and dated · scored — 1 condition this interview did not ask, ${OURS}`);
+    // fr-talent-blue-card names two readings in `not_asked` and no statement:
+    // the listed-professions reduction (s5f) and, since s25, the seven-year
+    // question standing in for a five-year rule that names no window. The
+    // line is derived from exactly those two.
+    expect(routeOf(ds, "fr-talent-blue-card").scope.not_asked).toEqual(["listed-professions-not-modelled", "seven-year-answer-is-a-floor"]);
+    expect(scopeLine(routeOf(ds, "fr-talent-blue-card"))).toBe(`quoted and dated · scored — 2 conditions this interview did not ask, ${OURS}`);
     expect(scopeLine(routeOf(ds, "fr-talent-mission"))).toBe("quoted and dated · scored — 1 condition this interview did not ask");
     expect(scopeLine(routeOf(ds, "nl-blue-card"))).toBe("quoted and dated · scored — 3 conditions this interview did not ask");
     expect(scopeLine(routeOf(ds, "nl-ict"))).toBe("quoted and dated · scored — 3 conditions this interview did not ask");

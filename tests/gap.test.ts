@@ -88,7 +88,7 @@ describe("a within-reach card names the rule it is short of", () => {
     const profile: Profile = {
       destination: "de", citizenship: "third_country", situation: "none",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-      experience: "y2in5", german: "b1", salary_eur_year: "band_5",
+      experience_5y: "2plus", experience_7y: "3to5", german: "b1", salary_eur_year: "band_5",
       funds_eur_month: deriveBands(dataset, "funds_eur_month")[0]!.id,
     };
     const card = evaluate(dataset, profile).find((r) => r.route.id === "de-chancenkarte")!;
@@ -105,7 +105,7 @@ describe("a within-reach card names the rule it is short of", () => {
     const profile: Profile = {
       destination: "de", citizenship: "third_country", situation: "none",
       qualification: "vocational", recognition_de: "not_yet", occupation_shortage: "no",
-      experience: "none", german: "none", funds_eur_month: "band_9", age_band: "a36to39",
+      experience_5y: "lt2", experience_7y: "lt3", german: "none", funds_eur_month: "band_9", age_band: "a36to39",
     };
     for (const r of evaluate(dataset, profile))
       if (r.status === "near" && r.gap_points !== undefined)
@@ -125,7 +125,7 @@ describe("a within-reach result with no bounded gap still says something", () =>
     const profile: Profile = {
       destination: "de", citizenship: "third_country", situation: "offer",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-      experience: "y2in5", german: "b1", funds_eur_month: "band_0", salary_eur_year: "band_1",
+      experience_5y: "2plus", experience_7y: "3to5", german: "b1", funds_eur_month: "band_0", salary_eur_year: "band_1",
     };
     const near = evaluate(dataset, profile).find((r) => r.status === "near" && r.gap_max !== undefined);
     expect(near, "no within-reach result to strip a gap from").toBeDefined();

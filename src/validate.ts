@@ -1,7 +1,7 @@
 import { Ajv2020 } from "ajv/dist/2020.js";
 import schema from "../schema/ruleset.schema.json" with { type: "json" };
 import { countryVocabulary, vocabularyErrors } from "./countries.js";
-import { deriveBands, fieldOptions, routeStatements } from "./engine.js";
+import { deriveBands, fieldOptions, itemRows, routeStatements } from "./engine.js";
 import { askedByCriterion } from "./scope.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
@@ -139,7 +139,27 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
           // Points keys bypass `satisfies` by design, so a vocabulary field
           // scored by class would silently never match (review).
           if (c.op === "points") {
-            for (const item of c.table.items) checkVocabulary(path, item.field, Object.keys(item.points));
+            for (const item of c.table.items)
+              for (const row of itemRows(item)) {
+                checkVocabulary(path, row.field, [row.value]);
+                /**
+                 * s25: a row names a field and an answer, and a row nobody can
+                 * reach pays nobody. The Opportunity Card's experience item
+                 * was re-keyed from one field onto two, and a row still
+                 * naming the retired field or a retired rung would have
+                 * scored 0 for every reader with no gate to say so — the
+                 * silent never-match this file already refuses for a
+                 * contradiction pair.
+                 */
+                const def = dataset.fields.find((f) => f.id === row.field);
+                if (!def) {
+                  errors.push({ path, message: `${route.id}: a points row reads "${row.field}", which this dataset does not ask — it can never score`, keyword: "knownPointsField" });
+                  continue;
+                }
+                if (generatedFields.has(row.field)) continue; // the vocabulary check above is the one that knows its answers
+                if (!fieldOptions(dataset, row.field).some((o) => o.value === row.value))
+                  errors.push({ path, message: `${route.id}: a points row pays ${row.field} = "${row.value}", which the question does not offer — nobody can score it`, keyword: "knownPointsAnswer" });
+              }
             continue;
           }
           if (c.op !== "gte") continue;

@@ -1,3 +1,24 @@
+/**
+ * Why a superseded reading was superseded, and when it was written down —
+ * required on every history entry written from 2026-09-08 (the schema holds
+ * the closed list); entries older than that carry none.
+ */
+export interface HistoryWhy<R = HistoryReason> {
+  reason?: R;
+  checked_at?: string; // YYYY-MM-DD
+  note?: string;
+}
+
+/** The reasons a number's reading can be superseded. */
+export type HistoryReason = "re-read-unchanged" | "value-changed" | "source-moved" | "quote-corrected";
+
+/**
+ * A text's reading can also be superseded by an edit to the RULE that stands on
+ * it, or to the citation printed beside it — neither moves the number a
+ * threshold's history is about, so only text histories carry them (0.8.1).
+ */
+export type TextHistoryReason = HistoryReason | "rule-rekeyed" | "citation-corrected";
+
 export interface ProvenancedAmount {
   amount: number;
   currency: "EUR";
@@ -5,7 +26,7 @@ export interface ProvenancedAmount {
   quote: string;
   retrieved_at: string; // YYYY-MM-DD
   legal_basis?: string;
-  history?: { amount: number; retrieved_at: string; quote?: string; source_url?: string }[];
+  history?: ({ amount: number; retrieved_at: string; quote?: string; source_url?: string } & HistoryWhy)[];
 }
 
 /** A provenanced non-monetary number (points required, durations…). */
@@ -16,7 +37,7 @@ export interface ProvenancedNumber {
   quote: string;
   retrieved_at: string; // YYYY-MM-DD
   legal_basis?: string;
-  history?: { value: number; retrieved_at: string; quote?: string; source_url?: string }[];
+  history?: ({ value: number; retrieved_at: string; quote?: string; source_url?: string } & HistoryWhy)[];
 }
 
 /** The provenance every non-numeric statement carries: the same shape as a
@@ -26,7 +47,7 @@ export interface ProvenancedText {
   quote: string;
   retrieved_at: string; // YYYY-MM-DD
   legal_basis?: string;
-  history?: { retrieved_at: string; quote?: string; source_url?: string }[];
+  history?: ({ retrieved_at: string; quote?: string; source_url?: string } & HistoryWhy<TextHistoryReason>)[];
 }
 
 /**
@@ -88,17 +109,37 @@ export interface Notice {
   routes?: string[];
 }
 
-/** One scoring item of a points system: answer value → points awarded. */
-export interface PointsItem {
+/**
+ * One row of a points item: this answer on this field is worth this much.
+ * Rows name their field so one item can span two questions — the shape the
+ * one-field form is sugar for (s25).
+ */
+export interface PointsRow {
   field: string;
-  points: Record<string, number>;
+  value: string;
+  points: number;
 }
+
+/**
+ * One scoring item of a points system. An answer scores the BEST row it
+ * satisfies, never the sum of rows. The one-field form keys its rows on
+ * `field`; the `rows` form (schema 0.8.1) names the field on each row, for an
+ * item the law spreads over two questions — § 20b Abs. 1 Nr. 6 (five years in
+ * the last seven, 3 points) and Nr. 7 (two in the last five, 2 points, "und
+ * keine Punkte nach Nummer 6"). Two items on two fields would have summed
+ * (s25).
+ */
+export type PointsItem =
+  | { field: string; points: Record<string, number> }
+  | { rows: PointsRow[] };
 
 export interface PointsTable {
   source_url: string;
   quote: string;
   retrieved_at: string;
   legal_basis?: string;
+  /** Superseded readings of the table — which rows, on which fields. */
+  history?: ProvenancedText["history"];
   items: PointsItem[];
 }
 

@@ -24,7 +24,7 @@ const thirdCountries = () =>
 
 const baseOffer: Profile = {
   destination: "de", situation: "offer", qualification: "degree",
-  occupation_shortage: "no", occupation_it: "no", experience: "y2in5", age_band: "a30to35",
+  occupation_shortage: "no", occupation_it: "no", experience_5y: "2plus", experience_7y: "3to5", age_band: "a30to35",
 };
 
 describe("s5c — a passport is a country, and the rules read it through classes", () => {
@@ -51,16 +51,19 @@ describe("s5c — a passport is a country, and the rules read it through classes
 
   it("only the fields that declare a hierarchy carry `implies` — the list is an inventory", () => {
     // `implies` is how one answer says it also satisfies another, and it
-    // widens every criterion that reads the field at once. Two fields declare
-    // a hierarchy: the passport (a country IS a member of its class) and the
-    // experience ladder (a longer record clears a shorter band's bar, s5f).
-    // Every other field answers only for itself, and a third entry here has to
-    // be a deliberate edit rather than a typo nobody notices.
+    // widens every criterion that reads the field at once. One field declares
+    // a hierarchy: the passport (a country IS a member of its class). The
+    // experience ladder declared one from s5f to s25 — "3+ within the last 7"
+    // implying the two-year band — and it was false: three years inside seven
+    // can lie entirely six-to-seven years ago (v1.1 critique F2). The ladder
+    // is two questions now and neither implies anything. Every other field
+    // answers only for itself, and a second entry here has to be a deliberate
+    // edit rather than a typo nobody notices.
     const declared = dataset.fields.flatMap((def) =>
       fieldOptions(dataset, def.id)
         .filter((o) => o.implies)
         .map((o) => `${def.id}:${o.value} -> ${o.implies!.join(",")}`));
-    expect(declared.filter((d) => !d.startsWith("citizenship:"))).toEqual(["experience:y3in7 -> y2in5"]);
+    expect(declared.filter((d) => !d.startsWith("citizenship:"))).toEqual([]);
     // `situation eq offer` must not start passing for an intra-corporate transfer.
     const offer = statusMap({ ...baseOffer, citizenship: "TR" });
     const ict = statusMap({ ...baseOffer, citizenship: "TR", situation: "ict" });
@@ -169,10 +172,10 @@ describe("s5c — the country list costs the interview nothing", () => {
   it("a German offer-holder with a German passport still answers at most 8 questions", () => {
     const asked = runFlow({
       destination: "de", citizenship: "DE", situation: "offer", qualification: "degree",
-      occupation_shortage: "no", occupation_it: "no", experience: "y2in5", age_band: "a30to35",
+      occupation_shortage: "no", occupation_it: "no", experience_5y: "2plus", experience_7y: "lt3", age_band: "a30to35",
       recognition_de: "recognized", german: "b1", english: "b2", de_stay6m: "no", partner_ck: "no",
       salary_eur_year: "band_0", salary_eur_month: "band_0", funds_eur_month: "band_0",
-      experience_7y: "no", nl_recent_grad: "no", top200_grad: "no", fr_degree: "no",
+      nl_recent_grad: "no", top200_grad: "no", fr_degree: "no",
       qualification_recent: "no", fr_innovative_employer: "no", fr_local_contract: "no",
       situation_country: "de",
     });
@@ -223,7 +226,7 @@ describe("s5c — question ordering scores equivalence classes, not two hundred 
     { destination: "all", situation: "offer" },
     { destination: "nl", citizenship: "TR", situation: "offer", qualification: "degree" },
     { destination: "fr", citizenship: "BR", situation: "ict" },
-    { destination: "es", citizenship: "TR", situation: "offer", qualification: "degree", experience: "y2in5" },
+    { destination: "es", citizenship: "TR", situation: "offer", qualification: "degree", experience_5y: "2plus", experience_7y: "3to5" },
   ];
 
   for (const [i, p] of partials.entries()) {

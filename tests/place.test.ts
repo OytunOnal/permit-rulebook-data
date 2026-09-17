@@ -26,14 +26,14 @@ const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.m
 const EXPLORER: Profile = {
   destination: "all", citizenship: "third_country", situation: "none",
   qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-  experience: "y2in5", german: "b1", funds_eur_month: "band_1",
+  experience_5y: "2plus", experience_7y: "3to5", german: "b1", funds_eur_month: "band_1",
   nl_recent_grad: "no", top200_grad: "no",
 };
 
 const GERMAN: Profile = {
   destination: "de", citizenship: "third_country", situation: "none",
   qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-  experience: "y2in5", german: "b1", funds_eur_month: "band_1", salary_eur_year: "band_4",
+  experience_5y: "2plus", experience_7y: "3to5", german: "b1", funds_eur_month: "band_1", salary_eur_year: "band_4",
 };
 
 const row = (p: Profile, option: string, qualifier?: string): Unlock =>

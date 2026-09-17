@@ -47,7 +47,7 @@ describe("scenario s5 — one interview, four countries", () => {
   it("review catch: a €40k German offer is 'near' the €45,630 route even though other countries' thresholds landed in between", () => {
     const r = byId({
       destination: "de", citizenship: "third_country", situation: "offer",
-      qualification: "degree", occupation_it: "no", experience: "y2in5",
+      qualification: "degree", occupation_it: "no", experience_5y: "2plus", experience_7y: "3to5",
       salary_eur_year: "band_2", // €39,582 – under €41,356.36 — three pooled bands below €45,630
     });
     expect(r["de-experienced-worker"].status).toBe("near");
@@ -58,7 +58,7 @@ describe("scenario s5 — one interview, four countries", () => {
     const { asked, profile } = runFlow({
       destination: "nl", citizenship: "third_country", situation: "offer",
       age_band: "u30", salary_eur_month: "band_4", // €4,357 – under €4,754
-      qualification: "degree", qualification_recent: "no", experience: "y2in5",
+      qualification: "degree", qualification_recent: "no", experience_5y: "2plus", experience_7y: "3to5",
       // Since 2026-09-07 an offer no longer closes the orientation year, so a
       // Dutch-bound persona is asked where they studied whatever they have
       // lined up. Neither persona studied in the Netherlands.
@@ -89,7 +89,7 @@ describe("scenario s5 — one interview, four countries", () => {
   it("ES offer at €45k with a degree: Blue Card and PAC nacional both met", () => {
     const r = byId({
       destination: "es", citizenship: "third_country", situation: "offer",
-      qualification: "degree", experience: "y2in5",
+      qualification: "degree", experience_5y: "2plus", experience_7y: "3to5",
       salary_eur_year: "band_3", // €41,356.36 – under €45,630
     });
     expect(r["es-blue-card"].status).toBe("met");
@@ -121,23 +121,23 @@ describe("scenario s5 — one interview, four countries", () => {
 describe("NL Blue Card — the IT experience rule (human verification 2026-09-04)", () => {
   const itPro: Profile = {
     destination: "nl", citizenship: "third_country", situation: "offer",
-    qualification: "none", occupation_it: "yes", experience: "y2in5",
+    qualification: "none", occupation_it: "yes", experience_5y: "2plus",
     age_band: "a30to35", salary_eur_month: "band_6", // €5,942 or more
   };
 
   it("an IT professional with 3 years in the last 7 meets it without a degree", () => {
-    expect(byId({ ...itPro, experience_7y: "yes" })["nl-blue-card"].status).toBe("met");
+    expect(byId({ ...itPro, experience_7y: "3to5" })["nl-blue-card"].status).toBe("met");
   });
 
   it("without that experience the route is honestly held, never assumed", () => {
-    expect(byId({ ...itPro, experience_7y: "no" })["nl-blue-card"].status).toBe("hold");
+    expect(byId({ ...itPro, experience_7y: "lt3" })["nl-blue-card"].status).toBe("hold");
   });
 
   it("non-IT applicants are never asked the 7-year question", () => {
     const { asked } = runFlow({
       destination: "nl", citizenship: "third_country", situation: "offer",
       qualification: "degree", qualification_recent: "no", age_band: "a30to35",
-      salary_eur_month: "band_6", experience: "y2in5",
+      salary_eur_month: "band_6", experience_5y: "2plus", experience_7y: "3to5",
       nl_recent_grad: "no", top200_grad: "no",
     });
     expect(asked).not.toContain("experience_7y");
@@ -147,7 +147,7 @@ describe("NL Blue Card — the IT experience rule (human verification 2026-09-04
     const { asked } = runFlow({
       destination: "de", citizenship: "third_country", situation: "offer",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-      experience: "y2in5", salary_eur_year: "band_5",
+      experience_5y: "2plus", experience_7y: "3to5", salary_eur_year: "band_5",
       // The Opportunity Card no longer excludes offer-holders (§ 20a, human
       // read 2026-09-07), so its own three questions now come to this German
       // applicant too. None of them is another country's.
@@ -180,7 +180,7 @@ describe("invariant — DE verdicts are country-independent", () => {
   // chose Germany alone or asked for all four countries.
   const profiles: Profile[] = [
     { citizenship: "third_country", situation: "offer", qualification: "degree",
-      recognition_de: "recognized", occupation_shortage: "yes", experience: "y2in5",
+      recognition_de: "recognized", occupation_shortage: "yes", experience_5y: "2plus", experience_7y: "3to5",
       salary_eur_year: "band_4", situation_country: "de" },
     { citizenship: "third_country", situation: "none", qualification: "degree",
       recognition_de: "recognized", german: "a1", funds_eur_month: "band_1" },
@@ -206,7 +206,7 @@ describe("unlocks across countries", () => {
   it("NL under-30 salary shortfall: both routes are 'near' with honest gaps — the strip carries them, unlocks never duplicate", () => {
     const stuck: Profile = {
       destination: "nl", citizenship: "third_country", situation: "offer",
-      age_band: "u30", qualification: "degree", experience: "y2in5",
+      age_band: "u30", qualification: "degree", experience_5y: "2plus", experience_7y: "3to5",
       salary_eur_month: "band_2", // €1,867.02 – under €4,357: below both NL thresholds
     };
     const baseline = byId(stuck);
@@ -231,7 +231,7 @@ describe("unlocks across countries", () => {
     const allExplorer: Profile = {
       destination: "all", citizenship: "third_country", situation: "none",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-      experience: "y2in5", german: "b1", funds_eur_month: "band_1",
+      experience_5y: "2plus", experience_7y: "3to5", german: "b1", funds_eur_month: "band_1",
       nl_recent_grad: "no", top200_grad: "no",
     };
     const rows = unlocks(dataset, allExplorer);
@@ -253,7 +253,7 @@ describe("unlocks across countries", () => {
     const deExplorer: Profile = {
       destination: "de", citizenship: "third_country", situation: "none",
       qualification: "degree", recognition_de: "recognized", occupation_shortage: "yes",
-      experience: "y2in5", german: "b1", funds_eur_month: "band_1",
+      experience_5y: "2plus", experience_7y: "3to5", german: "b1", funds_eur_month: "band_1",
       salary_eur_year: "band_4",
     };
     const rows = unlocks(dataset, deExplorer);

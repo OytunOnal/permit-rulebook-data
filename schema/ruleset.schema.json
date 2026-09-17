@@ -289,44 +289,50 @@
         "history": {
           "type": "array",
           "items": {
-            "type": "object",
-            "required": [
-              "retrieved_at"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "retrieved_at": {
-                "type": "string",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-              },
-              "quote": {
-                "type": "string"
-              },
-              "source_url": {
-                "type": "string"
-              },
-              "note": {
-                "type": "string",
-                "minLength": 1,
-                "description": "The reason in the curator's own words, where the enum does not carry enough: what moved, or which sentence replaced which. Optional prose; `reason` is what anything mechanical reads."
-              },
-              "reason": {
-                "type": "string",
-                "enum": [
-                  "re-read-unchanged",
-                  "value-changed",
-                  "source-moved",
-                  "quote-corrected"
-                ],
-                "description": "Why this reading was superseded, from the closed list: re-read-unchanged (read again at its source on a new day, same value), value-changed (the authority published a different value), source-moved (the same value, read at a new URL), quote-corrected (the value stood, the sentence quoted for it did not). Required on every entry written from 2026-09-08. Entries older than that carry none: they were written before the list existed, and rewriting history to fit a new field would be the one edit this format forbids."
-              },
-              "checked_at": {
-                "type": "string",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                "description": "The day this entry was written — the day a person looked and recorded what they found. `retrieved_at` is the day the superseded value itself was read, which is a different day and, for a re-read, the whole point of the entry."
-              }
-            }
+            "$ref": "#/$defs/textHistoryEntry"
           }
+        }
+      }
+    },
+    "textHistoryEntry": {
+      "type": "object",
+      "required": [
+        "retrieved_at"
+      ],
+      "additionalProperties": false,
+      "description": "A superseded reading of a value that is not a number — the shape a provenanced text's history has always had, named so a points table can carry the same trail (0.8.1: the Opportunity Card's experience item was re-keyed onto two fields, and the table is where that reading lives).",
+      "properties": {
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "quote": {
+          "type": "string"
+        },
+        "source_url": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The reason in the curator's own words, where the enum does not carry enough: what moved, or which sentence replaced which. Optional prose; `reason` is what anything mechanical reads."
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "re-read-unchanged",
+            "value-changed",
+            "source-moved",
+            "quote-corrected",
+            "rule-rekeyed",
+            "citation-corrected"
+          ],
+          "description": "Why this reading was superseded, from the closed list: re-read-unchanged (read again at its source on a new day, same value), value-changed (the authority published a different value), source-moved (the same value, read at a new URL), quote-corrected (the value stood, the sentence quoted for it did not), rule-rekeyed (the rule was re-pointed at a different field or answer; the sentence, the source and the day it was read stand — 0.8.1, s25), citation-corrected (the legal_basis beside the quote was wrong; quote, source and date stand — 0.8.1). Required on every entry written from 2026-09-08. Entries older than that carry none: they were written before the list existed, and rewriting history to fit a new field would be the one edit this format forbids. The two 0.8.1 reasons exist because eight re-keyed rules shipped for a day under re-read-unchanged with a note saying no re-read had happened: a reason is what anything mechanical reads, and a note may never carry the decision it lacks."
+        },
+        "checked_at": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "description": "The day this entry was written — the day a person looked and recorded what they found. `retrieved_at` is the day the superseded value itself was read, which is a different day and, for a re-read, the whole point of the entry."
         }
       }
     },
@@ -668,32 +674,83 @@
         "legal_basis": {
           "type": "string"
         },
+        "history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/textHistoryEntry"
+          },
+          "description": "Superseded readings of the table — which rows it carried and on which fields — the trail a threshold keeps for its amount. Added in 0.8.1 with the two-field item, because a re-keyed row is a changed reading of the same sentence and the append-only rule applies to it as to a number."
+        },
         "items": {
           "type": "array",
           "minItems": 1,
           "items": {
-            "type": "object",
-            "required": [
-              "field",
-              "points"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "field": {
-                "type": "string"
-              },
-              "points": {
+            "$ref": "#/$defs/pointsItem"
+          }
+        }
+      }
+    },
+    "pointsItem": {
+      "description": "One scoring item. An answer scores the BEST row it satisfies, never the sum of rows — a ladder pays for the highest rung reached. The one-field form keys its rows on the item's `field`; the `rows` form (0.8.1) names the field on each row, for an item the law spreads over two questions: § 20b Abs. 1 Nr. 6 pays 3 points for five years in the last seven and Nr. 7 pays 2 for two years in the last five \"und keine Punkte nach Nummer 6\" — one item, so the two are never added (s25).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "field",
+            "points"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "points": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "rows"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "rows": {
+              "type": "array",
+              "minItems": 2,
+              "description": "At least two, because one row is the one-field form with the field written twice: an item that needs `rows` is one the law spreads over more than one answer, and a single-row item here would be a second spelling of the same fact.",
+              "items": {
                 "type": "object",
-                "minProperties": 1,
-                "additionalProperties": {
-                  "type": "number",
-                  "minimum": 0
+                "required": [
+                  "field",
+                  "value",
+                  "points"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "points": {
+                    "type": "number",
+                    "minimum": 0
+                  }
                 }
               }
             }
           }
         }
-      }
+      ]
     },
     "criterion": {
       "oneOf": [
