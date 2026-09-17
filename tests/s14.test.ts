@@ -165,8 +165,10 @@ describe("s14 — the quote gate reports the IND sentences as unverifiable, not 
     // are a form now. 171 − 26 = 145. The scenario's 171 is the number from
     // before the move, when the stale pages still counted. 154 since s19: the
     // nine chercheur sentences on France's researcher card, verified through
-    // the talent fiche's widened slice.
-    expect(result.verified).toBe(145 + 9);
+    // the talent fiche's widened slice. 156 since s29: the free-movement
+    // notice's EEA sentence (the IND's general page, on the machine) and its
+    // Swiss sentence (inside the Your Europe slice already held).
+    expect(result.verified).toBe(145 + 9 + 2);
   });
 });
 

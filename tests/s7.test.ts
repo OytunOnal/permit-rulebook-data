@@ -218,7 +218,8 @@ describe("s7 — a carve-out is watched and quote-checked like every other value
   });
 
   it("a fresher carve-out is a fresher dataset", () => {
-    // 2026-09-16 since s19: the chercheur tab of the talent fiche, read that day.
-    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-09-16");
+    // 2026-09-17 since s29: the two free-movement sentences (the IND's EEA
+    // sentence, Your Europe's Swiss one), read that day.
+    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-09-17");
   });
 });

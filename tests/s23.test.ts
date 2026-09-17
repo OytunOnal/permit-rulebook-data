@@ -79,8 +79,10 @@ describe("s23 P3 — the curator's note leaves the card", () => {
 describe("s23 — the dataset says so in its version", () => {
   it("is stamped with the day of the copy pass", () => {
     expect(datasetMeta(ds).dataset_version).toBe("2026.09.17");
-    // Nothing was read at a source today: two of our own sentences moved.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-16");
+    // Nothing was read at a source by the copy pass: two of our own sentences
+    // moved. The day's newest read came later, with s29's two free-movement
+    // sentences.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-17");
   });
 });
 

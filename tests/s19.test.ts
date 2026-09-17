@@ -146,7 +146,9 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
   it("the dataset says so in its version", () => {
     // 0.8.1 since s25: a points item may key its rows on two fields.
     expect(datasetMeta(ds).schema_version).toBe("0.8.1");
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-16");
+    // 2026-09-17 since s29: the two free-movement sentences (the IND's EEA
+    // sentence, Your Europe's Swiss one), read that day.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-17");
   });
 });
 

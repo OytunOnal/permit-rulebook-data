@@ -246,10 +246,11 @@ describe("provenance and meta", () => {
       dataset_version: "2026.09.17",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two
-      // authorities disagreeing (s8). The freshest are the nine sentences of
-      // the talent fiche's Chercheur tab, read on 2026-09-16 for France's
-      // researcher card (s19).
-      newest_retrieved_at: "2026-09-16",
+      // authorities disagreeing (s8). The freshest are the two sentences the
+      // free-movement notice gained for its EEA and Swiss readers, read on
+      // 2026-09-17 (s29); before them, the nine sentences of the talent
+      // fiche's Chercheur tab, read on 2026-09-16 (s19).
+      newest_retrieved_at: "2026-09-17",
     });
   });
 });

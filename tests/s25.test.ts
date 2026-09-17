@@ -366,9 +366,10 @@ describe("s25 — the dataset says so in its version, and nothing else moved", (
   it("schema 0.8.1 for the two-field item; the day stays the day of the copy pass", () => {
     expect(datasetMeta(ds).schema_version).toBe("0.8.1");
     expect(datasetMeta(ds).dataset_version).toBe("2026.09.17");
-    // Nothing was read at a source today: the rules were re-keyed against
-    // snapshots already held, and every quote keeps its date.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-16");
+    // Nothing was read at a source by the re-keying: the rules moved against
+    // snapshots already held, and every quote keeps its date. The day's newest
+    // read came later, with s29's two free-movement sentences.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-17");
     expect(validateDataset(clone()).ok).toBe(true);
   });
 
