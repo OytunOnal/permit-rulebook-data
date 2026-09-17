@@ -238,7 +238,7 @@
       "subject": "whether your occupation is on Germany's shortage list",
       "type": "enum",
       "learn": {
-        "label": "§ 18g AufenthG lists the shortage groups by ISCO-08 code (132, 133, 134, 21, 221, 222, 225, 226, 23, 25)",
+        "label": "Check the shortage groups in section 18g of the Residence Act (ISCO-08 codes 132, 133, 134, 21, 221, 222, 225, 226, 23, 25)",
         "url": "https://www.buzer.de/18g_AufenthG.htm"
       },
       "options": [
@@ -324,7 +324,7 @@
       "subject": "whether France recognises your employer as an innovative company",
       "type": "enum",
       "learn": {
-        "label": "service-public.fr sets out the talent card's innovative-company route",
+        "label": "See the talent card's innovative-company route on service-public.fr",
         "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922"
       },
       "options": [
@@ -390,7 +390,7 @@
       "subject": "whether your foreign institution is one the Dutch immigration service designates",
       "type": "enum",
       "learn": {
-        "label": "The Dutch immigration service (IND) lists the designated foreign institutions on its orientation-year page",
+        "label": "See the designated foreign institutions on the orientation-year page of the Dutch immigration service (IND)",
         "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year"
       },
       "options": [
