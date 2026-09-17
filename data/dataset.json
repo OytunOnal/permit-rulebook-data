@@ -1,6 +1,6 @@
 {
   "schema_version": "0.8.0",
-  "dataset_version": "2026.09.16",
+  "dataset_version": "2026.09.17",
   "fields": [
     {
       "id": "destination",
@@ -624,7 +624,7 @@
       },
       "kind": "extra-rights",
       "title": "Türkiye: extra rights once you are legally employed",
-      "body": "Your route options are the same as for any other non-EU passport: the EU–Türkiye agreement adds rights once you are legally working, rather than a separate way in. Where an authority states that its own requirements differ for Turkish citizens, that route's card says so — the Dutch orientation year is one.",
+      "body": "Your route options are the same as for any other non-EU passport: the EU–Türkiye agreement adds rights once you are legally working, rather than a separate way in. Where an authority states that its own requirements differ for Turkish citizens, that route's card says so.",
       "source": {
         "source_url": "https://europa.eu/youreurope/citizens/work/work-abroad/work-permits/index_en.htm",
         "quote": "As a national of Türkiye, your rights to live and work in an EU country depend entirely on the national rules of that country. When employed legally in the EU, you enjoy the same working conditions as the nationals of that country and you have the following rights: after one year's legal employment you are entitled to a renewal of your work permit for the same employer if a job is available after three years' legal employment you may change employers and respond to any other employment offer within the same professional qualifications after four years' legal employment you enjoy full access to any paid employment in that EU country.",
@@ -1612,7 +1612,7 @@
                 "source_url": "https://www.buzer.de/20a_AufenthG.htm",
                 "quote": "Die Chancenkarte berechtigt nur dazu, 1. eine Beschäftigung von durchschnittlich insgesamt höchstens 20 Stunden je Woche auszuüben und 2. eine Probebeschäftigung für jeweils höchstens zwei Wochen auszuüben",
                 "retrieved_at": "2026-09-07",
-                "legal_basis": "§ 20a Absatz 2 AufenthG (consolidated mirror — gesetze-im-internet.de times out from here)",
+                "legal_basis": "§ 20a Absatz 2 AufenthG (consolidated mirror, buzer.de)",
                 "history": []
               }
             }

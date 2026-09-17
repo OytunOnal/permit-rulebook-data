@@ -30,6 +30,34 @@ const join = (xs: string[], last: string): string =>
 export const joinOr = (xs: string[]): string => join(xs, "or");
 export const joinAnd = (xs: string[]): string => join(xs, "and");
 
+/**
+ * Two limbs of one rule, said once. "2+ years of related experience or 5+
+ * years of related experience" is the option list read out; a person says
+ * "2+ or 5+ years of related experience". Where every phrase ends in the same
+ * words, the differing heads are joined and the shared tail follows once
+ * (s23, v1.1 critique P2).
+ *
+ * The tail is the longest common suffix at a word boundary, and it has to be
+ * a phrase: at least two words, or everything but a leading token ("recognised
+ * or vocational qualification"). One shared word is a coincidence — "a red box
+ * or a blue box" factored would read "a red or a blue box", which nobody says.
+ * Phrases sharing no tail come back joined as before.
+ */
+export function joinOrFactored(phrases: string[]): string {
+  if (phrases.length < 2) return joinOr(phrases);
+  const words = phrases.map((p) => p.split(" "));
+  const shortest = Math.min(...words.map((w) => w.length));
+  let tail = 0;
+  // Every phrase keeps at least one word of its own: a phrase that IS the tail
+  // has no head to name, and the rule is then one option repeated.
+  while (tail < shortest - 1 && words.every((w) => w[w.length - 1 - tail] === words[0]![words[0]!.length - 1 - tail])) tail++;
+  if (tail === 0) return joinOr(phrases);
+  const wholeButOne = words.every((w) => w.length === tail + 1);
+  if (tail < 2 && !wholeButOne) return joinOr(phrases);
+  const heads = words.map((w) => w.slice(0, w.length - tail).join(" "));
+  return `${joinOr(heads)} ${words[0]!.slice(words[0]!.length - tail).join(" ")}`;
+}
+
 /** How the fact is named in the answer ledger. */
 export function shortLabelOf(dataset: Dataset, field: string): string {
   return fieldOf(dataset, field)?.short_label ?? field;
@@ -76,7 +104,7 @@ export function criterionPhrase(dataset: Dataset, c: Criterion): string {
     case "eq":
       return valuePhrase(dataset, c.field, c.value);
     case "in":
-      return joinOr(c.values.map((v) => valuePhrase(dataset, c.field, v)));
+      return joinOrFactored(c.values.map((v) => valuePhrase(dataset, c.field, v)));
     // Who the route is closed to, named. A closure never joins a "Needs …"
     // list — `reasonFor` answers it with its own sentence before it gets there
     // — so this is the phrase a heading is built from, not a shortfall.

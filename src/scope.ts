@@ -31,14 +31,23 @@ const WORDS: Record<ScopeValue, (stated: number, noted: number) => string> = {
     // A source STATES a condition; what is ours is "in our own reading", never
     // "we note", and a reading is not called a condition (Standards review,
     // 2026-09-08).
-    const said = stated ? `${countWords(stated)} stated but not asked` : "";
-    const ours = noted ? `${numberWord(noted)} in our own reading` : "";
-    if (said && ours) return `quoted and dated · scored, ${said} and ${ours}`;
-    if (ours) return `quoted and dated · scored, ${ours}, not asked`;
+    //
+    // Revision 3 (s23, v1.1 critique P4, 2026-09-17): "stated but not asked"
+    // and "in our own reading" were the model's words for the split, and three
+    // critiques read them as such. The line now says who did not ask — this
+    // interview — and whose words a reading is in: ours, not the authority's.
+    // Counts are figures, because the line is a tally the reader compares
+    // across cards, and the dash separates the tally from the verdict word.
+    const said = stated ? `${countFigures(stated)} this interview did not ask` : "";
+    const ours = noted ? `${countFigures(noted)} in our own words, not the authority's` : "";
+    if (said && ours) return `quoted and dated · scored — ${said} and ${ours}`;
+    // A reading alone is still a condition the interview did not ask; the
+    // line says so before it says whose words it is in.
+    if (ours) return `quoted and dated · scored — ${countFigures(noted)} this interview did not ask, in our own words, not the authority's`;
     // A reader whom nothing stated binds (a carve-out took the last one, s7)
     // is scored against their answers and nothing else — the first form, not
     // a sentence that ends in a comma (Standards review, 2026-09-10).
-    return said ? `quoted and dated · scored, ${said}` : WORDS["every-deciding-rule-asked"](0, 0);
+    return said ? `quoted and dated · scored — ${said}` : WORDS["every-deciding-rule-asked"](0, 0);
   },
   "rules-quoted-nothing-asked": () => "quoted and dated · not scored",
 };
@@ -57,10 +66,12 @@ export function countedWords(n: number, one: string, many = `${one}s`): string {
   return `${n < NUMBER_WORDS.length ? NUMBER_WORDS[n] : n} ${n === 1 ? one : many}`;
 }
 
-const countWords = (n: number): string => countedWords(n, "condition");
-
-/** The count alone, in the words a sentence reads in. */
-const numberWord = (n: number): string => (n < NUMBER_WORDS.length ? NUMBER_WORDS[n]! : String(n));
+/**
+ * A tally in figures: "2 conditions", "1 condition". The scope line is the one
+ * sentence that is compared across cards, so its count is a figure where the
+ * prose elsewhere spells small numbers out (s23).
+ */
+const countFigures = (n: number): string => `${n} ${n === 1 ? "condition" : "conditions"}`;
 
 /**
  * `stated` is how many conditions the SOURCE states without our asking, and
