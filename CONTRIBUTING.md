@@ -150,6 +150,10 @@ fetch (s14; the road back is a headless-browser strategy, data #17).
 8. **Add the questions' words.** A criterion may only name an answer the
    dataset can put into words — give the option a `short`, or the criterion a
    `short_reason`. There is no fallback to a field id; the build fails instead.
+9. **A field's `learn` label is what the reader does there** — one sentence
+   opening on an action (`Check` · `See` · `Read` · `Find`), in plain words,
+   never statute shorthand such as `§ 18g AufenthG`: the site prints it
+   verbatim as the text of a link, and a link is not glossed (s28).
 
 ## What a pull request must carry
 
