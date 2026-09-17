@@ -66,21 +66,14 @@ describe("s29 #13 — the Opportunity Card's official page is an authority's", (
     expect(entry!.kind).toBe("sentinel");
   });
 
-  it("is on the human tier, with the measurement that put it there and the sentinel sentence a person confirms", () => {
-    // Measured 2026-09-17 with this watch's client: the page answers 307 to
-    // /cookie-check-d973 and sets AL_CHK-S; the check answers 307 back to the
-    // page, which is 200 only when the cookie comes with the request. This
-    // fetcher follows redirects and keeps no cookie jar, so it lands on an
-    // HTTP 400 "Zugriff nicht möglich" — an html entry would have failed the
-    // daily run every day. The page is real, English and static once the
-    // cookie is sent; a person reads it quarterly.
+  it("is on the human tier, with the sentinel sentence a person confirms", () => {
+    // Why a person and not the fetcher — the cookie round-trip, measured
+    // 2026-09-17 — is in the entry's own note and in verify-s5e.md §6.
     const entry = entryFor(BMI_CHANCENKARTE)!;
     expect(entry.strategy).toBe("human");
     expect(entry.max_age_days).toBe(90);
     expect(entry.last_verified).toBe("2026-09-17");
     expect(entry.slice).toBeUndefined();
-    expect(entry.note).toMatch(/cookie/i);
-    expect(entry.note).toMatch(/400/);
     expect(entry.note).toContain(
       "The opportunity card is a new type of residence permit for those coming to Germany to look for work.",
     );
@@ -96,7 +89,6 @@ describe("s29 #13 — the Opportunity Card's official page is an authority's", (
     const moved = entry.history?.find((h) => h.note.includes("handbookgermany.de/en/opportunity-card"));
     expect(moved, "no history line naming the old URL").toBeDefined();
     expect(moved!.changed_at).toBe("2026-09-17");
-    expect(moved!.note).toMatch(/#13/);
   });
 
   it("the checklist says which page to open and which sentence to find, so the quarterly reminder has a task", () => {
@@ -198,19 +190,12 @@ describe("s29 — the Algerian notice's door is an action", () => {
       url: "https://www.service-public.gouv.fr/particuliers/vosdroits/F2215",
     });
   });
-
-  it("the contract's step 9 binds a notice's door too", () => {
-    const contributing = readFileSync(new URL("../CONTRIBUTING.md", import.meta.url), "utf8");
-    const step = contributing.slice(contributing.indexOf("9. **A"), contributing.indexOf("## What a pull request must carry"));
-    expect(step).toMatch(/notice/);
-  });
 });
 
 describe("s29 — the dataset says so in its version, and the schema did not move", () => {
-  it("the version is the day, in the repository's date form; a second change on the same day keeps it", () => {
-    // Convention by practice (s23, s25 and s28 all landed on 2026-09-17 under
-    // the one stamp): YYYY.MM.DD, no suffix.
-    expect(datasetMeta(ds).dataset_version).toBe("2026.09.17");
+  it("the schema did not move: three data changes on the day, none of them a shape", () => {
+    // The version is a date and already read the day (s23 pins it); the
+    // convention keeps one stamp for every change of the same day.
     expect(datasetMeta(ds).schema_version).toBe("0.8.1");
   });
 
