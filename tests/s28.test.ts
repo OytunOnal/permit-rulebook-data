@@ -22,9 +22,17 @@ const ds = dataset as unknown as Dataset;
  */
 const ACTION_VERBS = ["Check", "See", "Read", "Find"];
 
-/** Every field that carries a door — the notice's own `learn` is a different
- * link with a different sentence around it, and is not held here. */
-const doors = () => ds.fields.flatMap((f) => (f.learn ? [{ field: f.id, ...f.learn }] : []));
+/**
+ * Every door: the fields' and the notices'. Until s29 the notice's own `learn`
+ * was left out as "a different link with a different sentence around it" —
+ * and the s28 light critique found the Algerian notice's foot link reading as
+ * a statement, the shape this file exists to refuse. A door is a door; the
+ * contract's step 9 binds both.
+ */
+const doors = () => [
+  ...ds.fields.flatMap((f) => (f.learn ? [{ field: f.id, ...f.learn }] : [])),
+  ...(ds.notices ?? []).flatMap((n) => (n.learn ? [{ field: `notice:${n.id}`, ...n.learn }] : [])),
+];
 
 describe("a learn label is what the reader does there", () => {
   it("there are doors to hold", () => {
@@ -49,7 +57,11 @@ describe("a learn label is what the reader does there", () => {
     for (const d of doors()) expect(d.label, d.field).not.toMatch(/\.( |$)/);
   });
 
-  it("the four are the sentences the scenario decided", () => {
+  it("there is a notice's door among them", () => {
+    expect(doors().some((d) => d.field.startsWith("notice:"))).toBe(true);
+  });
+
+  it("the five are the sentences the scenarios decided", () => {
     expect(Object.fromEntries(doors().map((d) => [d.field, d.label]))).toEqual({
       recognition_de: "Check your degree in the official Anabin database",
       occupation_shortage:
@@ -61,6 +73,10 @@ describe("a learn label is what the reader does there", () => {
       // (IND)" — the label says it the same way (corrected 2026-09-17).
       top200_grad:
         "See the designated foreign institutions on the orientation-year page of the Dutch immigration service (IND)",
+      // s29: the one notice with a door. "d'un an", not the fiche's "d'1 an" —
+      // a label is our sentence, and our voice writes the numeral out.
+      "notice:fr-dz-talent-open-question":
+        "Read the page for Algerian nationals (certificat de résidence d'un an)",
     });
   });
 

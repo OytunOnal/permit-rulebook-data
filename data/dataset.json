@@ -606,7 +606,23 @@
         "retrieved_at": "2026-09-03",
         "legal_basis": "TFEU art. 45 (free movement of workers) — Your Europe",
         "history": []
-      }
+      },
+      "sources": [
+        {
+          "source_url": "https://ind.nl/en/residence-permits/eu-eea-or-swiss-citizens/staying-in-the-netherlands-as-an-eu-eea-or-swiss-citizen",
+          "quote": "Nationals of the member states of the European Economic Area (EEA) and Switzerland have the same rights as citizens of the Union.",
+          "retrieved_at": "2026-09-17",
+          "legal_basis": "EEA Agreement art. 28 — IND",
+          "history": []
+        },
+        {
+          "source_url": "https://europa.eu/youreurope/citizens/work/work-abroad/work-permits/index_en.htm",
+          "quote": "Under the EU-Switzerland agreement on the free movement of persons, Swiss nationals are free to live and work in the EU.",
+          "retrieved_at": "2026-09-17",
+          "legal_basis": "EU–Switzerland Agreement on the Free Movement of Persons (1999) — Your Europe",
+          "history": []
+        }
+      ]
     },
     {
       "id": "tr-ankara-rights",
@@ -660,7 +676,7 @@
         }
       ],
       "learn": {
-        "label": "The page for Algerian nationals — certificat de résidence d'1 an",
+        "label": "Read the page for Algerian nationals (certificat de résidence d'un an)",
         "url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2215"
       },
       "routes": [
@@ -1414,7 +1430,7 @@
           "name": "Opportunity Card (Chancenkarte, § 20a)",
           "kind": "seek",
           "summary": "A one-year card to come and look for work, with part-time work of up to 20 hours a week. If your qualification is fully recognised in Germany you get it directly; otherwise you need six points from the official table. Having an offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
-          "info_url": "https://handbookgermany.de/en/opportunity-card",
+          "info_url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html",
           "scope": {
             "value": "every-deciding-rule-asked",
             "reason": "Every rule that decides this route is a question you answer, the points included. What the card lets you do once you hold it — the weekly hour limit — sits beside the rules below, and it is a limit on the card rather than a condition of getting it, so nothing this route turns on goes unasked.",

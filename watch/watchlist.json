@@ -491,6 +491,32 @@
       "strategy": "html",
       "kind": "value-source",
       "note": "Who needs no work permit at all. Backs the two carve-outs stated on nl-gvva — the highly skilled migrant permit this site does score, and a residence permit that already allows free work. Unsliced: 7,300 characters, all of it the article. Watched whole rather than sliced: after normalisation the page is 3–7 KB and is operative text end to end — there is no menu region to cut, so a slice would only be a second thing to keep in step (Spec review, 2026-09-10)."
+    },
+    {
+      "id": "ind-eu-eea-swiss-citizens",
+      "url": "https://ind.nl/en/residence-permits/eu-eea-or-swiss-citizens/staying-in-the-netherlands-as-an-eu-eea-or-swiss-citizen",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "You are a citizen of the Union if you are a national of one of the member states of the European Union (EU).",
+        "to": "Your employer does not need a work permit (in Dutch: tewerkstellingsvergunning or TWV)."
+      },
+      "note": "IND's general page for EU, EEA and Swiss citizens. Backs the EEA sentence on the eu-free-movement notice — the one that puts Iceland, Liechtenstein and Norway on the same footing as an EU passport (data #15: the notice named five groups and quoted a sentence covering one). Not one of the five form-walled route pages: measured 2026-09-17 with this watch's client, HTTP 200, 51,875 bytes, the sentence in the visible prose. Sliced from the 'citizen of the Union' sentence to the end of the 'Working in the Netherlands' paragraph: the page's own \"Last update\" date sits above the slice, and ind.nl has answered a bare fetch from this host with an app shell (2026-09-07) — a shell carries no marker, so it reports unreachable and the snapshot stands, instead of a change that would put this quote into `missing`."
+    },
+    {
+      "id": "de-bmi-chancenkarte",
+      "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html",
+      "strategy": "human",
+      "kind": "sentinel",
+      "max_age_days": 90,
+      "last_verified": "2026-09-17",
+      "note": "The Opportunity Card's \"Official page\" (de-chancenkarte.info_url) since 2026-09-17: the Federal Ministry of the Interior's own English notice on the card, where the route's quotes and the reader's door were on different sites before (data #13). Backs no value — the route's sentences are quoted from the Cairo leaflet and the statute — so it is a sentinel: what this entry watches is that the page a reader is sent to still exists. Human tier because the page is served only after a cookie round-trip: measured 2026-09-17 with this watch's client (and with a browser User-Agent, and with none), the URL answers HTTP 307 to /cookie-check-d973 and sets an AL_CHK-S cookie; the check answers 307 back to the page, which is HTTP 200 (64,498 bytes, English, static) only when the cookie comes with the request. This fetcher follows redirects and keeps no cookie jar, so it lands on an HTTP 400 \"Zugriff nicht möglich\" — an html entry would have failed the daily run every day, and a link entry the same. A person opens it quarterly and confirms the sentinel sentence is still there: \"The opportunity card is a new type of residence permit for those coming to Germany to look for work.\" `last_verified` is the day they did. What would move it to the machine is a fetcher that carries the cookie back (one hop, no JavaScript).",
+      "history": [
+        {
+          "changed_at": "2026-09-17",
+          "note": "Entry born with the move of de-chancenkarte.info_url from https://handbookgermany.de/en/opportunity-card to this page (data #13, s29). The old page was a federally funded guide, not the authority; handbookgermany.de was never watched, so this line is the only dated record of the move — a route's info_url is a bare string in the schema, with no history of its own. Candidates read the same day and passed over: make-it-in-germany.com (a bot-check shell on a plain GET), digital.diplo.de (a JavaScript shell), bamf.de and the Foreign Office (no Chancenkarte page found, 404), buzer.de (the statute, already the route's source)."
+        }
+      ]
     }
   ]
 }

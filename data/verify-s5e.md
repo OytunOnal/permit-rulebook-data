@@ -537,3 +537,34 @@ day from the same host. Nobody has established why. **An intermittent shell is
 worse than a permanent one** — a permanent one is noticed immediately; an
 intermittent one waits for a `--commit` run. Nothing here fixes IND's
 behaviour; it makes the watch honest about it.
+
+## 6. A page that needs a person and carries no quote — the Opportunity Card's official page, opened 2026-09-17 (s29)
+
+Not a quote: the sentence below is a sentinel. `de-chancenkarte.info_url` is
+the Federal Ministry of the Interior's English notice on the card since
+2026-09-17 (data #13 — it went to handbookgermany.de before, a guide and not
+the authority), and the entry `de-bmi-chancenkarte` exists so that the day the
+page disappears somebody is told. It backs no value: the route's sentences are
+quoted from the Cairo leaflet and the statute, above.
+
+**Why a person.** Measured 2026-09-17 with this watch's own fetcher, with a
+browser User-Agent and with none: the URL answers **HTTP 307** to
+`/cookie-check-d973` and sets an `AL_CHK-S` cookie; the check answers 307 back
+to the page, which is **HTTP 200** (64,498 bytes, English, static HTML) only
+when the cookie comes with the request. The fetcher follows redirects and
+keeps no cookie jar, so it lands on an **HTTP 400** "Zugriff nicht möglich" —
+on the html tier the daily run would have failed every day. The road back to
+the machine is a fetcher that returns the cookie on the next hop (one hop, no
+JavaScript) — a smaller step than the headless browser data #17 asks for.
+
+### Launch of opportunity card — `de-chancenkarte` (info page)
+
+https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html
+
+- [x] **NEW with s29.** Read 2026-09-17. Open the page in a browser (the
+  cookie check passes by itself). Under "Requirements for the opportunity
+  card", find this sentence and confirm it is still there: "The opportunity
+  card is a new type of residence permit for those coming to Germany to look
+  for work." If the page is gone or the sentence is, the route needs a new
+  official page — not a new quote — and `de-bmi-chancenkarte`'s history says
+  where it pointed before. Update `last_verified` on the entry when done.

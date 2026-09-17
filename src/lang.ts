@@ -19,7 +19,11 @@ import { forEachCriterion, noticeSources, routeStatements, statementSources } fr
  */
 export const QUOTE_LANGUAGES: ReadonlyArray<readonly [prefix: string, lang: string]> = [
   ["https://europa.eu/", "en"],
-  ["https://handbookgermany.de/en/", "en"],
+  // The Federal Ministry of the Interior names the edition in the path, as
+  // BAMF does. It is the Opportunity Card's official page since s29 (data
+  // #13); the guide site it replaced, handbookgermany.de, left this list with
+  // it — a route may not point there, and a prefix for it would say otherwise.
+  ["https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/", "en"],
   ["https://ind.nl/en/", "en"],
   ["https://www.bamf.de/EN/", "en"],
   ["https://kairo.diplo.de/", "de"],
