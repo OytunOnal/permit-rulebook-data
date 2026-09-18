@@ -1,5 +1,5 @@
 import type { Profile, Route, RouteStatement, ScopeValue } from "./types.js";
-import { bindsReader, forEachCriterion, provenancedValuesOf, routeReadings, routeStatements } from "./engine.js";
+import { bindsReader, routeReadings, routeStatements } from "./engine.js";
 
 export { SCOPE_VALUES } from "./types.js";
 
@@ -99,27 +99,28 @@ export function scopeLine(route: Route, profile: Profile = {}): string {
 }
 
 /**
- * Whether a criterion of this route stands on the same sentence this statement
- * quotes — in which case the interview asks it, whatever the statement's own
- * slot says.
+ * Whether the interview asks this statement — whether it names the question
+ * whose answer covers it.
  *
  * On es-researcher the hosting-agreement sentence was quoted twice: by the
  * situation gate the interview asks, and by a precondition the scope named as
  * not asked. The card said "scored, one condition stated but not asked" two
  * lines above "Asked in the interview — you declared …" (s19, from the site
- * half's build). One sentence is one fact; the criterion is what decides
- * whether it is asked. Exact match on the quote: a criterion that quotes a
- * fragment of a statement's sentence, or a longer one, is not held to be the
- * same sentence here.
+ * half's build). One sentence is one fact — and s19 made the shared sentence
+ * the key: a statement whose quote a criterion of the route quoted verbatim
+ * was asked. Three more shared a sentence by containment, and read on
+ * 2026-09-18 that key would have decided two of them wrongly: de-ict-card's
+ * six months with the company wraps the situation gate's sentence, and a
+ * tenure is not what the situation question asks. So the key is the
+ * curator's decision, typed on the statement as `field` (s32). The route is
+ * still the unit "asked" is about — a field is asked BY a route's criteria —
+ * but it is the validator that holds the field to the fields the route reads,
+ * so nothing here needs the route: the parameter it took until s32 is gone.
+ * Exported for the package's own `statedNotAsked` and the validator; the site
+ * reads the field itself.
  */
-export function askedByCriterion(route: Route, statement: RouteStatement): boolean {
-  if (!statement.source) return false;
-  let asked = false;
-  forEachCriterion(route.criteria, (c) => {
-    for (const p of provenancedValuesOf(c))
-      if (p.value.quote === statement.source!.quote) asked = true;
-  });
-  return asked;
+export function askedByCriterion(statement: RouteStatement): boolean {
+  return statement.field !== undefined;
 }
 
 /**
@@ -149,10 +150,10 @@ export function statedNotAsked(
   // passport question both need.
   const statements: RouteStatement[] = routeStatements(route)
     .filter((s) => bindsReader(s, o.profile ?? {}))
-    // A statement whose sentence a criterion quotes is asked — the interview
-    // put the question, and counting its sentence as "not asked" beside the
+    // A statement that names its question (`field`) is asked — the interview
+    // put the question, and counting the statement as "not asked" beside the
     // reader's own answer to it is the contradiction s19 removed.
-    .filter((s) => !askedByCriterion(route, s));
+    .filter((s) => !askedByCriterion(s));
   // What the authority states without our asking, and what we read into the
   // gap ourselves. The page has always shown both; the difference between them
   // is the difference between a source and an opinion.

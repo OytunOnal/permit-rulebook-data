@@ -95,11 +95,19 @@ fetch (s14; the road back is a headless-browser strategy, data #17).
    criterion whose verdict line cannot be composed from the answers it names.
    A route it closes leaves the results entirely — it is not "not yet" — and
    the reason stands in its own section with the quote under it.
-4. **Anything the interview cannot ask is stated, not invented.** A condition
-   the authority applies that no question can reach goes in `statements` as a
-   `precondition`, with its quote. A qualification the source puts on its own
-   answer goes in as a `caveat` — it fails nobody. Our own reading of the route
-   goes in `readings`, where the page shows it as ours.
+4. **Anything the interview does not score is stated, not invented.** A
+   condition the authority applies that the interview does not score goes in
+   `statements` as a `precondition`, with its quote. Where a question's answer
+   covers it — the situation question's research answer *is* the hosting
+   agreement — the statement names that question in `field` and the card says
+   "asked" beside what the reader declared; otherwise the card says "not
+   checked here". That is your decision, not the sentence's: a statement whose
+   quote a criterion of the route also quotes verbatim must either name its
+   question or be listed in `not_asked` below, and the build refuses the
+   blank; a `field` no rule of the route reads is refused too (s32). A
+   qualification the source puts on its own answer goes in as a `caveat` — it
+   fails nobody. Our own reading of the route goes in `readings`, where the
+   page shows it as ours.
 5. **Declare the scope statement.** Every route carries exactly one value, and
    the build fails without it:
 

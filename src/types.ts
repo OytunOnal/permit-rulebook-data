@@ -226,6 +226,14 @@ export interface RouteStatement {
   kind: "precondition" | "caveat";
   /** Our plain English — what the reader sees. */
   text: string;
+  /** The interview question whose answer covers this precondition, as a field
+   * id — so the card lists it as asked, beside what the reader declared.
+   * Absent means no question does. It is a curator's decision and not a
+   * derivation: "asked" was read off a shared sentence until s32, and a
+   * sentence shared by containment decided two tenures wrongly (schema
+   * 0.8.2). The build holds it to the dataset's fields and to the fields this
+   * route's own rules read. */
+  field?: string;
   /** The source's own words. Absent only where they could not be found: then
    * `unsourced` says why, and the card says so too. Borrowing a neighbouring
    * quote that does not cover the sentence would be inventing provenance. */

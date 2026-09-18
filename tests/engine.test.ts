@@ -239,11 +239,13 @@ describe("provenance and meta", () => {
       // second source, a link and the routes it qualifies — all additive.
       // 0.8.0 since s19: a quoted route may say which situations it would ask
       // about, an optional field on routes nothing is asked about — additive.
-      schema_version: "0.8.1",
-      // 2026.09.17: the copy pass (s23) — two of our own sentences moved, the
-      // Türkiye notice's body and the § 20a caveat's citation; no value, no
-      // schema field, and nothing read at a source that day.
-      dataset_version: "2026.09.17",
+      // 0.8.2 since s32: a statement may name the question that asks it
+      // (`field`) — additive again.
+      schema_version: "0.8.2",
+      // 2026.09.18: the eleven statements decided (s32) — nine name their
+      // question, two stay unasked; no value moved and nothing was read at a
+      // source that day.
+      dataset_version: "2026.09.18",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two
       // authorities disagreeing (s8). The freshest are the two sentences the

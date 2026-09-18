@@ -976,6 +976,11 @@
           "minLength": 1,
           "description": "Our plain English, what the reader sees. The quote beside it is the source's own words."
         },
+        "field": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "The interview question whose answer covers this precondition — a field id this dataset declares — so the card lists it as asked, beside what the reader declared, and never as \"not checked here\". Added in 0.8.2 (s32) because \"asked\" was derived from a shared sentence: a statement whose quote a criterion of the route quoted verbatim. Three more shared a sentence by containment and, read on 2026-09-18, the sentence would have decided two of them wrongly — a tenure quoted around a situation gate's sentence is not what the situation question asks. Which question covers a statement is a curator's decision, so it is typed here. Absent means no question does. The schema knows the shape of a field id and not which exist, nor which a route's own rules read: the build checks both, because a field nobody asks, or one this route never reads, would claim an asking the route never does."
+        },
         "source": {
           "$ref": "#/$defs/provenancedText"
         },
