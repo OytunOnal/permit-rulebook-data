@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.8.1",
-  "dataset_version": "2026.09.17",
+  "schema_version": "0.8.2",
+  "dataset_version": "2026.09.18",
   "fields": [
     {
       "id": "destination",
@@ -1265,11 +1265,9 @@
           "summary": "A research institution — from a university to a company's research department — has agreed to host you and to cover the costs. The permit runs for at least a year, and you may stay 18 months afterwards to look for work.",
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
           "scope": {
-            "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; one condition the authority states — the hosting agreement with a research facility — is listed with the rules below and never asked.",
-            "not_asked": [
-              "hosting-agreement-with-a-research-facility"
-            ]
+            "value": "every-deciding-rule-asked",
+            "reason": "Every rule that decides this route is a question you answer; the hosting agreement with a research facility is the situation you declare, and the page states it in the authority's words beside your answer.",
+            "not_asked": []
           },
           "criteria": [
             {
@@ -1327,6 +1325,7 @@
               "id": "hosting-agreement-with-a-research-facility",
               "kind": "precondition",
               "text": "A hosting agreement — the formal agreement a research institution signs to take you on — or an equivalent contract, concluded with a research facility for a research project",
+              "field": "situation",
               "source": {
                 "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
                 "quote": "you will need to have concluded a hosting agreement or corresponding contract with a research facility to carry out a research project",
@@ -1903,6 +1902,7 @@
               "id": "employment-contract-of-more-than-three-months",
               "kind": "precondition",
               "text": "An employment contract of more than three months",
+              "field": "situation",
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de plus de 3 mois",
@@ -2048,6 +2048,7 @@
               "id": "employment-contract-of-at-least-six-months",
               "kind": "precondition",
               "text": "An employment contract of at least six months",
+              "field": "situation",
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de 6 mois minimum",
@@ -2287,6 +2288,7 @@
               "id": "work-tied-to-the-research-and-development-project",
               "kind": "precondition",
               "text": "Work directly tied to that company’s research and development project",
+              "field": "situation",
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir des fonctions en lien direct avec le projet de recherche et de développement de cette entreprise",
@@ -2297,6 +2299,7 @@
               "id": "a-young-innovative-company-or-one-the-ministry-recognises",
               "kind": "precondition",
               "text": "The employer must be a young innovative company, or a company France’s ministry of the economy recognises as innovative",
+              "field": "fr_innovative_employer",
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Être recruté dans une jeune entreprise innovante ou une entreprise reconnue innovante par le ministère de l'économie",
@@ -2411,6 +2414,7 @@
               "id": "a-move-inside-one-company-or-group",
               "kind": "precondition",
               "text": "Employment by a company established abroad, and a move between branches of that company or between companies of the same group",
+              "field": "situation",
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Être salarié d'une entreprise établie à l'étranger et venir en France pour exercer une activité salariée dans le cadre d'une mobilité entre établissements d'une même entreprise ou entre entreprises d'un même groupe (mobilité intragroupe)",
@@ -3283,6 +3287,7 @@
               "id": "hosting-agreement-or-contract-with-the-research-body",
               "kind": "precondition",
               "text": "A hosting agreement — the formal agreement a research institution signs to take you on — or an employment contract with the research body",
+              "field": "situation",
               "source": {
                 "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
                 "quote": "el solicitante de una autorización de residencia para investigación UE deberá presentar un convenio de acogida o contrato de trabajo",
@@ -4340,6 +4345,7 @@
               "id": "employment-contract-valid-for-six-months",
               "kind": "precondition",
               "text": "An employment contract that runs for at least six months",
+              "field": "situation",
               "source": {
                 "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
                 "quote": "Your employment contract is valid for at least 6 months.",
@@ -4528,6 +4534,7 @@
               "id": "three-months-with-the-company-outside-the-union",
               "kind": "precondition",
               "text": "At least three months already working for the company outside the European Union, the European Economic Area or Switzerland",
+              "field": "situation",
               "source": {
                 "source_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
                 "quote": "You have already worked for the company outside the EU, EEA or Switzerland for at least 3 months.",

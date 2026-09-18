@@ -99,7 +99,14 @@ fetch (s14; the road back is a headless-browser strategy, data #17).
    the authority applies that no question can reach goes in `statements` as a
    `precondition`, with its quote. A qualification the source puts on its own
    answer goes in as a `caveat` — it fails nobody. Our own reading of the route
-   goes in `readings`, where the page shows it as ours.
+   goes in `readings`, where the page shows it as ours. Where a question's
+   answer does cover a precondition — the situation question's research answer
+   *is* the hosting agreement — the statement names that question in `field`,
+   and the card lists it as asked beside what the reader declared. That is
+   your decision, not the sentence's: a statement whose quote a criterion of
+   the route also quotes verbatim must either name its question or be listed
+   in `not_asked` below, and the build refuses the blank; a `field` no rule of
+   the route reads is refused too (s32).
 5. **Declare the scope statement.** Every route carries exactly one value, and
    the build fails without it:
 

@@ -144,8 +144,9 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
   });
 
   it("the dataset says so in its version", () => {
-    // 0.8.1 since s25: a points item may key its rows on two fields.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.1");
+    // 0.8.1 since s25: a points item may key its rows on two fields; 0.8.2
+    // since s32: a statement may name the question that asks it.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.2");
     // 2026-09-17 since s29: the two free-movement sentences (the IND's EEA
     // sentence, Your Europe's Swiss one), read that day.
     expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-17");
@@ -197,16 +198,18 @@ describe("s19 — `situations` is what a quoted route would ask, and nothing els
 describe("s19 — a sentence a criterion quotes is asked, not \"stated but not asked\"", () => {
   const exclusions = () => readFileSync(new URL("../data/exclusions.md", import.meta.url), "utf8");
 
-  it("knows which statements share their sentence with a criterion of the same route", () => {
+  it("knows which statements the interview asks", () => {
+    // Read off the shared sentence until s32; read off the statement's own
+    // `field` since — the two cases s19 decided are decided the same way, and
+    // the sentence-keyed case this test carried (the same sentence on a
+    // DIFFERENT route is not the same gate) retired with the key: a
+    // statement's field is held to its own route by the validator.
     const es = routeOf(ds, "es-researcher");
     const hosting = routeStatements(es).find((s) => s.id === "hosting-agreement-or-contract-with-the-research-body")!;
     expect(askedByCriterion(es, hosting)).toBe(true);
     const nl = routeOf(ds, "nl-blue-card");
     expect(askedByCriterion(nl, routeStatements(nl).find((s) => s.id === "employment-contract-valid-for-six-months")!)).toBe(true);
     expect(askedByCriterion(nl, routeStatements(nl).find((s) => s.id === "mvv-needed")!)).toBe(false);
-    // Same sentence on a DIFFERENT route is not the same gate.
-    const de = routeOf(ds, "de-researcher");
-    expect(askedByCriterion(de, hosting)).toBe(false);
   });
 
   it("the scope line no longer counts them — es-researcher is scored against your answers, and nothing else", () => {
@@ -239,7 +242,8 @@ describe("s19 — a sentence a criterion quotes is asked, not \"stated but not a
     routeOf(bad, "es-researcher").scope.value = "some-conditions-stated-not-asked";
     const result = validateDataset(bad);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.keyword === "notAskedButQuotedByCriterion" && e.message.includes("es-researcher"))).toBe(true);
+    // `notAskedButQuotedByCriterion` until s32, when the field became the key.
+    expect(result.errors.some((e) => e.keyword === "notAskedButAsked" && e.message.includes("es-researcher"))).toBe(true);
   });
 
   it("a route left with no unasked limb says it asks everything, and exclusions.md agrees", () => {

@@ -363,9 +363,12 @@ describe("s25 — a points item with rows on two fields pays the best row, never
 });
 
 describe("s25 — the dataset says so in its version, and nothing else moved", () => {
-  it("schema 0.8.1 for the two-field item; the day stays the day of the copy pass", () => {
-    expect(datasetMeta(ds).schema_version).toBe("0.8.1");
-    expect(datasetMeta(ds).dataset_version).toBe("2026.09.17");
+  it("the schema and the day moved on since — the item's shape stands", () => {
+    // 0.8.1 was this slice's (the two-field item); 0.8.2 is s32's (a
+    // statement names its question), and the day is s32's too — s23's test
+    // pins it. What this case holds is that nothing here undid the item.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.2");
+    expect(datasetMeta(ds).dataset_version).toBe("2026.09.18");
     // Nothing was read at a source by the re-keying: the rules moved against
     // snapshots already held, and every quote keeps its date. The day's newest
     // read came later, with s29's two free-movement sentences.

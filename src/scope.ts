@@ -1,5 +1,5 @@
 import type { Profile, Route, RouteStatement, ScopeValue } from "./types.js";
-import { bindsReader, forEachCriterion, provenancedValuesOf, routeReadings, routeStatements } from "./engine.js";
+import { bindsReader, routeReadings, routeStatements } from "./engine.js";
 
 export { SCOPE_VALUES } from "./types.js";
 
@@ -99,27 +99,26 @@ export function scopeLine(route: Route, profile: Profile = {}): string {
 }
 
 /**
- * Whether a criterion of this route stands on the same sentence this statement
- * quotes — in which case the interview asks it, whatever the statement's own
- * slot says.
+ * Whether the interview asks this statement — whether it names the question
+ * whose answer covers it.
  *
  * On es-researcher the hosting-agreement sentence was quoted twice: by the
  * situation gate the interview asks, and by a precondition the scope named as
  * not asked. The card said "scored, one condition stated but not asked" two
  * lines above "Asked in the interview — you declared …" (s19, from the site
- * half's build). One sentence is one fact; the criterion is what decides
- * whether it is asked. Exact match on the quote: a criterion that quotes a
- * fragment of a statement's sentence, or a longer one, is not held to be the
- * same sentence here.
+ * half's build). One sentence is one fact — and s19 made the shared sentence
+ * the key: a statement whose quote a criterion of the route quoted verbatim
+ * was asked. Three more shared a sentence by containment, and read on
+ * 2026-09-18 that key would have decided two of them wrongly: de-ict-card's
+ * six months with the company wraps the situation gate's sentence, and a
+ * tenure is not what the situation question asks. So the key is the
+ * curator's decision, typed on the statement as `field` (s32). The route is
+ * still the unit "asked" is about — a field is asked BY a route's criteria,
+ * and the validator holds the field to the fields this route reads — so the
+ * signature keeps it, for the site and `statedNotAsked` that read it.
  */
-export function askedByCriterion(route: Route, statement: RouteStatement): boolean {
-  if (!statement.source) return false;
-  let asked = false;
-  forEachCriterion(route.criteria, (c) => {
-    for (const p of provenancedValuesOf(c))
-      if (p.value.quote === statement.source!.quote) asked = true;
-  });
-  return asked;
+export function askedByCriterion(_route: Route, statement: RouteStatement): boolean {
+  return statement.field !== undefined;
 }
 
 /**
