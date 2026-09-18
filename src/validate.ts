@@ -236,7 +236,7 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
        * unasked. Asked was the shared sentence until s32; it is the field now.
        */
       for (const s of routeStatements(route))
-        if (route.scope.not_asked.includes(s.id) && askedByCriterion(route, s))
+        if (route.scope.not_asked.includes(s.id) && askedByCriterion(s))
           errors.push({
             path: `${path}/scope/not_asked`,
             message: `${route.id} names "${s.id}" as not asked, and the statement says the ${s.field} question asks it — decide which`,

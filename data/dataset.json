@@ -1804,7 +1804,7 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; the contract of more than three months is the sentence the situation question stands on, and which card fits a degree earned outside France is our own reading, not the authority's words.",
+            "reason": "Every rule that decides this route is a question you answer; the contract of more than three months is covered by the situation question you answer, and which card fits a degree earned outside France is our own reading, not the authority's words.",
             "not_asked": [
               "foreign-degrees-belong-on-the-blue-card"
             ]
@@ -1919,7 +1919,7 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; the six-month contract is the sentence the situation question stands on, and the shorter experience France allows for some listed professions is not checked here — this page judges you on the general rule. The five years of experience it accepts instead of a diploma have no window, so your answer about the last seven years stands in for them.",
+            "reason": "Every rule that decides this route is a question you answer; the six-month contract is covered by the situation question you answer, and the shorter experience France allows for some listed professions is not checked here — this page judges you on the general rule. The five years of experience it accepts instead of a diploma have no window, so your answer about the last seven years stands in for them.",
             "not_asked": [
               "listed-professions-not-modelled",
               "seven-year-answer-is-a-floor"
@@ -4108,7 +4108,7 @@
           "info_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; the contract of at least six months is the sentence the situation question stands on, one condition the authority states — the authorisation to practise a regulated profession — is listed with the rules below and never asked, and the extension and employer-change cases that also open the lower salary are not covered by the questions. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
+            "reason": "Every rule that decides this route is a question you answer; the contract of at least six months is covered by the situation question you answer, one condition the authority states — the authorisation to practise a regulated profession — is listed with the rules below and never asked, and the extension and employer-change cases that also open the lower salary are not covered by the questions. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
             "not_asked": [
               "reduced-also-on-extension-or-employer-change",
               "permission-to-practise-a-regulated-profession",
@@ -4405,7 +4405,7 @@
           "info_url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides this route is a question you answer; the three months already with the company outside Europe is the sentence the transfer question stands on, and two conditions the authority states — the manager, specialist or trainee role, and the authorisation to practise a protected profession — are listed with the rules below and never asked. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
+            "reason": "Every rule that decides this route is a question you answer; the three months already with the company outside Europe is covered by the situation question you answer, and two conditions the authority states — the manager, specialist or trainee role, and the authorisation to practise a protected profession — are listed with the rules below and never asked. The provisional residence permit this application needs is listed with the rules below too, and your passport decides whether the Dutch immigration service exempts you from it.",
             "not_asked": [
               "a-manager-specialist-or-trainee-post",
               "permission-to-practise-a-protected-profession",

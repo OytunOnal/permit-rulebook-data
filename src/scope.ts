@@ -113,11 +113,13 @@ export function scopeLine(route: Route, profile: Profile = {}): string {
  * six months with the company wraps the situation gate's sentence, and a
  * tenure is not what the situation question asks. So the key is the
  * curator's decision, typed on the statement as `field` (s32). The route is
- * still the unit "asked" is about — a field is asked BY a route's criteria,
- * and the validator holds the field to the fields this route reads — so the
- * signature keeps it, for the site and `statedNotAsked` that read it.
+ * still the unit "asked" is about — a field is asked BY a route's criteria —
+ * but it is the validator that holds the field to the fields the route reads,
+ * so nothing here needs the route: the parameter it took until s32 is gone.
+ * Exported for the package's own `statedNotAsked` and the validator; the site
+ * reads the field itself.
  */
-export function askedByCriterion(_route: Route, statement: RouteStatement): boolean {
+export function askedByCriterion(statement: RouteStatement): boolean {
   return statement.field !== undefined;
 }
 
@@ -148,10 +150,10 @@ export function statedNotAsked(
   // passport question both need.
   const statements: RouteStatement[] = routeStatements(route)
     .filter((s) => bindsReader(s, o.profile ?? {}))
-    // A statement whose sentence a criterion quotes is asked — the interview
-    // put the question, and counting its sentence as "not asked" beside the
+    // A statement that names its question (`field`) is asked — the interview
+    // put the question, and counting the statement as "not asked" beside the
     // reader's own answer to it is the contradiction s19 removed.
-    .filter((s) => !askedByCriterion(route, s));
+    .filter((s) => !askedByCriterion(s));
   // What the authority states without our asking, and what we read into the
   // gap ourselves. The page has always shown both; the difference between them
   // is the difference between a source and an opinion.

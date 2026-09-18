@@ -9,7 +9,6 @@ import { scopeDisagreesWithExclusions, twinDisagreesWithProse } from "../src/exc
 import type { Dataset, Route, RouteStatement } from "../src/types.js";
 
 const ds = dataset as unknown as Dataset;
-const routes = (): Route[] => ds.countries.flatMap((c) => c.routes);
 const clone = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 const routeOf = (d: Dataset, id: string): Route => d.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 const statementOf = (d: Dataset, route: string, id: string): RouteStatement =>
@@ -45,7 +44,7 @@ const DECIDED: { route: string; statement: string; field: string | undefined }[]
 ];
 
 describe("s32 — `field` on a statement is the question whose answer covers it", () => {
-  it("the schema admits it as an optional field id, and nothing else new", () => {
+  it("the schema admits it as an optional field id, in a field id's own shape", () => {
     const statement = (schema as { $defs: { routeStatement: { properties: Record<string, { type?: string; pattern?: string }>; required: string[] } } })
       .$defs.routeStatement;
     expect(statement.properties.field).toEqual(expect.objectContaining({ type: "string" }));
@@ -81,11 +80,6 @@ describe("s32 — `field` on a statement is the question whose answer covers it"
     expect(error?.message).toContain("fr_innovative_employer");
   });
 
-  it("every field a statement carries today is one the route's own rules read", () => {
-    for (const r of routes())
-      for (const s of routeStatements(r))
-        if (s.field !== undefined) expect(r.criteria.flatMap(referencedFields), `${r.id}: ${s.id}`).toContain(s.field);
-  });
 });
 
 describe("s32 — asked is the field, not the sentence", () => {
@@ -94,7 +88,7 @@ describe("s32 — asked is the field, not the sentence", () => {
       const s = statementOf(ds, d.route, d.statement);
       expect(s, `${d.route}: ${d.statement}`).toBeDefined();
       expect(s.field, `${d.route}: ${d.statement}`).toBe(d.field);
-      expect(askedByCriterion(routeOf(ds, d.route), s), `${d.route}: ${d.statement}`).toBe(d.field !== undefined);
+      expect(askedByCriterion(s), `${d.route}: ${d.statement}`).toBe(d.field !== undefined);
     }
   });
 
@@ -108,7 +102,7 @@ describe("s32 — asked is the field, not the sentence", () => {
     forEachCriterion(es.criteria, (c) => { for (const p of provenancedValuesOf(c)) if (p.value.quote === hosting.source!.quote) quoted = true; });
     expect(quoted).toBe(true);
     delete hosting.field;
-    expect(askedByCriterion(es, hosting)).toBe(false);
+    expect(askedByCriterion(hosting)).toBe(false);
   });
 
   it("the two tenures stand in `not checked here`, and the hosting agreement on de-researcher leaves it", () => {
@@ -133,15 +127,8 @@ describe("s32 — asked is the field, not the sentence", () => {
 });
 
 describe("s32 — the verbatim cross-check runs the other way: a shared sentence must be decided", () => {
-  it("a statement whose sentence a criterion quotes verbatim carries a field or is named in not_asked — nowhere is it blank today", () => {
+  it("nowhere is it blank today — the validator, which holds the rule, passes the dataset", () => {
     expect(validateDataset(clone()).ok).toBe(true);
-    for (const r of routes())
-      for (const s of routeStatements(r)) {
-        if (!s.source) continue;
-        let verbatim = false;
-        forEachCriterion(r.criteria, (c) => { for (const p of provenancedValuesOf(c)) if (p.value.quote === s.source!.quote) verbatim = true; });
-        if (verbatim) expect(s.field !== undefined || r.scope.not_asked.includes(s.id), `${r.id}: ${s.id}`).toBe(true);
-      }
   });
 
   it("the build refuses the blank, naming the route and the statement", () => {

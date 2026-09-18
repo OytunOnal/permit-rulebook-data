@@ -206,10 +206,10 @@ describe("s19 — a sentence a criterion quotes is asked, not \"stated but not a
     // statement's field is held to its own route by the validator.
     const es = routeOf(ds, "es-researcher");
     const hosting = routeStatements(es).find((s) => s.id === "hosting-agreement-or-contract-with-the-research-body")!;
-    expect(askedByCriterion(es, hosting)).toBe(true);
+    expect(askedByCriterion(hosting)).toBe(true);
     const nl = routeOf(ds, "nl-blue-card");
-    expect(askedByCriterion(nl, routeStatements(nl).find((s) => s.id === "employment-contract-valid-for-six-months")!)).toBe(true);
-    expect(askedByCriterion(nl, routeStatements(nl).find((s) => s.id === "mvv-needed")!)).toBe(false);
+    expect(askedByCriterion(routeStatements(nl).find((s) => s.id === "employment-contract-valid-for-six-months")!)).toBe(true);
+    expect(askedByCriterion(routeStatements(nl).find((s) => s.id === "mvv-needed")!)).toBe(false);
   });
 
   it("the scope line no longer counts them — es-researcher is scored against your answers, and nothing else", () => {
@@ -236,7 +236,7 @@ describe("s19 — a sentence a criterion quotes is asked, not \"stated but not a
   it("no route names such a statement as not asked, and the build refuses one that does", () => {
     for (const r of routes())
       for (const s of routeStatements(r))
-        if (askedByCriterion(r, s)) expect(r.scope.not_asked, `${r.id}: ${s.id}`).not.toContain(s.id);
+        if (askedByCriterion(s)) expect(r.scope.not_asked, `${r.id}: ${s.id}`).not.toContain(s.id);
     const bad = clone();
     routeOf(bad, "es-researcher").scope.not_asked = ["hosting-agreement-or-contract-with-the-research-body"];
     routeOf(bad, "es-researcher").scope.value = "some-conditions-stated-not-asked";
