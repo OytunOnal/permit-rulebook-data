@@ -319,6 +319,31 @@
       "history": []
     }
   },
-  "last_run": "2026-09-19",
-  "unread": []
+  "last_run": "2026-09-20",
+  "unread": [
+    {
+      "id": "buzer-anlage-aufenthg",
+      "url": "https://www.buzer.de/Anlage_AufenthG.htm"
+    },
+    {
+      "id": "learn-18g-aufenthg",
+      "url": "https://www.buzer.de/18g_AufenthG.htm"
+    },
+    {
+      "id": "buzer-20a-aufenthg",
+      "url": "https://www.buzer.de/20a_AufenthG.htm"
+    },
+    {
+      "id": "buzer-6-beschv",
+      "url": "https://www.buzer.de/6_BeschV.htm"
+    },
+    {
+      "id": "buzer-21-aufenthg",
+      "url": "https://www.buzer.de/21_AufenthG.htm"
+    },
+    {
+      "id": "wetten-wav-artikel-8",
+      "url": "https://wetten.overheid.nl/BWBR0007149"
+    }
+  ]
 }
