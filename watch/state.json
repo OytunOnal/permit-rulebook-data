@@ -319,31 +319,19 @@
       "history": []
     }
   },
-  "last_run": "2026-09-20",
+  "last_run": "2026-09-21",
   "unread": [
     {
-      "id": "buzer-anlage-aufenthg",
-      "url": "https://www.buzer.de/Anlage_AufenthG.htm"
+      "id": "boe-ley-14-2013",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074"
     },
     {
-      "id": "learn-18g-aufenthg",
-      "url": "https://www.buzer.de/18g_AufenthG.htm"
+      "id": "boe-rd-1155-2024",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099"
     },
     {
-      "id": "buzer-20a-aufenthg",
-      "url": "https://www.buzer.de/20a_AufenthG.htm"
-    },
-    {
-      "id": "buzer-6-beschv",
-      "url": "https://www.buzer.de/6_BeschV.htm"
-    },
-    {
-      "id": "buzer-21-aufenthg",
-      "url": "https://www.buzer.de/21_AufenthG.htm"
-    },
-    {
-      "id": "wetten-wav-artikel-8",
-      "url": "https://wetten.overheid.nl/BWBR0007149"
+      "id": "bamf-selbstaendige-taetigkeit",
+      "url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/SelbstaendigeTaetigkeit/selbstaendigetaetigkeit-node.html"
     }
   ]
 }
