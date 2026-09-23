@@ -468,6 +468,76 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives a type
     } finally { await reader.close(); served = fixture(); }
   });
 
+  it("finds the field's own menu on a page that has another, shut and empty", async () => {
+    // The bug this slice spent five runs and a fifth render on. ind.nl carries
+    // two jQuery UI menus: the site search box's, which sits in the document
+    // empty and shut, and the nationality field's, which has the answers in
+    // it. Asking the document for the FIRST menu got the search box's, found
+    // it shut, and reported that the field had offered nothing — while the
+    // suggestions were in the second one (2026-09-23).
+    //
+    // Faithful in the part that matters: the input points at NOTHING — no
+    // aria-controls, no aria-owns, which is what jQuery UI leaves behind — so
+    // the menu can only be found by looking for menus, and the first one the
+    // document offers is the wrong one.
+    const script = [
+      'var input = document.getElementById("nat"), box = document.getElementById("nat-menu"), chosen = null;',
+      'input.addEventListener("input", function () {',
+      '  var typed = input.value.trim().toLowerCase();',
+      '  box.innerHTML = "";',
+      '  if (!typed) { box.style.display = "none"; return; }',
+      '  ["Turkish", "Turkmen"].filter(function (n) { return n.toLowerCase().indexOf(typed) >= 0; })',
+      '    .forEach(function (n) {',
+      '      var item = document.createElement("li");',
+      '      var link = document.createElement("a");',
+      '      link.textContent = n;',
+      '      link.addEventListener("click", function () { chosen = n; input.value = n; box.style.display = "none"; });',
+      '      item.appendChild(link); box.appendChild(item);',
+      '    });',
+      '  box.style.display = box.children.length ? "block" : "none";',
+      '});',
+      'document.getElementById("view").addEventListener("click", function () {',
+      '  var valid = document.querySelector("input[name=valid]:checked");',
+      '  if (chosen !== "Turkish" || !valid || valid.value !== "no") return;',
+      '  document.getElementById("result").innerHTML =',
+      '    "<h2>Requirements</h2><p>You meet the general requirements that apply to everyone.</p>";',
+      "});",
+    ].join("\n");
+    served = `<!doctype html><html lang="en"><head><title>Two menus</title></head><body>
+<p>Lede: what this permit is for.</p>
+<input type="text" aria-label="Search for"><ul id="search-menu" class="ui-autocomplete" style="display:none"></ul>
+<label for="nat">What is your nationality?</label>
+<input id="nat" type="text" autocomplete="off">
+<ul id="nat-menu" class="ui-autocomplete" style="display:none"></ul>
+<fieldset><legend>Do you already have a valid Dutch residence permit?</legend>
+  <label><input type="radio" name="valid" value="yes"> Yes</label>
+  <label><input type="radio" name="valid" value="no"> No</label>
+</fieldset>
+<button type="button" id="view">View information</button>
+<div id="result"></div>
+<footer>Cookies Proclaimer</footer>
+<script>${script}</script>
+</body></html>`;
+    const reader = openBrowserReader();
+    try {
+      // This page offers adjectives, as ind.nl's does.
+      const adjective = entry({
+        slice: { from: "Requirements", to: "Cookies Proclaimer" },
+        steps: [
+          { step: "select", field: "What is your nationality?", option: "Turkish" },
+          { step: "answer", question: "Do you already have a valid Dutch residence permit?", answer: "no" },
+          { step: "press", button: "View information" },
+        ],
+      });
+      const { reports, nextState } = await runWatch(
+        { entries: [adjective] }, emptyState, refuse, "2026-09-23", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      expect(nextState.entries["fixture-route"]!.text)
+        .toContain("You meet the general requirements that apply to everyone.");
+    } finally { await reader.close(); served = fixture(); }
+  });
+
   it("names what did appear when the option is not among the suggestions", async () => {
     served = typeaheadFixture({ suggests: false });
     const reader = openBrowserReader();

@@ -360,16 +360,70 @@ function attach(socket: WebSocket, close: () => void): Session {
     inFlight.set(sessionId, open);
     return open;
   };
+  /**
+   * What each tab asked the network for, and what it got back.
+   *
+   * A widget that renders nothing has either not asked or been refused, and a
+   * step that reports only "offered nothing" cannot tell those apart — which
+   * on 2026-09-23 was the whole of what five runs and a fifth render had
+   * established. The request line is the missing half: a suggestion endpoint
+   * answering 403 to this client says the wall is the client, and no request
+   * at all says the widget never ran.
+   */
+  interface Asked { url: string; type: string; at: number; status?: number; bytes?: number; error?: string }
+  const traffic = new Map<string, Map<string, Asked>>();
+  const trafficOf = (sessionId: string) => {
+    const seen = traffic.get(sessionId) ?? new Map<string, Asked>();
+    traffic.set(sessionId, seen);
+    return seen;
+  };
+  /** Host and path only — never a query, which is where a page puts what was typed. */
+  const withoutQuery = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "data:" ? "data:..." : `${parsed.host}${parsed.pathname}`;
+    } catch { return url.slice(0, 60); }
+  };
+  const askedSince = (sessionId: string, since: number): string[] =>
+    [...trafficOf(sessionId).values()]
+      .filter((a) => a.at >= since && a.type !== "Document" && a.type !== "Image" && a.type !== "Font")
+      .sort((a, b) => a.at - b.at)
+      .slice(0, 8)
+      .map((a) => `${a.type || "?"} ${withoutQuery(a.url)} -> `
+        + (a.error ? `failed (${a.error})` : a.status === undefined ? "no answer yet" : `${a.status}, ${a.bytes ?? 0} bytes`));
   socket.addEventListener("message", (event: MessageEvent) => {
     const message = JSON.parse(String(event.data)) as {
       id?: number; method?: string; sessionId?: string;
-      params?: { type?: string; requestId?: string; response?: { status?: number; url?: string } };
+      params?: {
+        type?: string; requestId?: string; errorText?: string; encodedDataLength?: number;
+        request?: { url?: string }; response?: { status?: number; url?: string };
+      };
       error?: { message: string }; result?: Record<string, unknown>;
     };
     if (message.sessionId && message.params?.requestId) {
-      if (message.method === "Network.requestWillBeSent") requestsOf(message.sessionId).add(message.params.requestId);
-      else if (message.method === "Network.loadingFinished" || message.method === "Network.loadingFailed")
-        requestsOf(message.sessionId).delete(message.params.requestId);
+      const id = message.params.requestId;
+      const seen = trafficOf(message.sessionId);
+      if (message.method === "Network.requestWillBeSent") {
+        requestsOf(message.sessionId).add(id);
+        seen.set(id, {
+          url: message.params.request?.url ?? "",
+          type: message.params.type ?? "",
+          at: Date.now(),
+        });
+      } else if (message.method === "Network.loadingFinished" || message.method === "Network.loadingFailed") {
+        requestsOf(message.sessionId).delete(id);
+        const asked = seen.get(id);
+        if (asked) {
+          if (message.method === "Network.loadingFailed") asked.error = message.params.errorText ?? "blocked";
+          else asked.bytes = message.params.encodedDataLength ?? 0;
+        }
+      } else if (message.method === "Network.responseReceived") {
+        const asked = seen.get(id);
+        if (asked) {
+          asked.status = message.params.response?.status;
+          if (message.params.type) asked.type = message.params.type;
+        }
+      }
     }
     if (message.method === "Network.responseReceived" && message.params?.type === "Document" && message.sessionId) {
       const response = message.params.response;
@@ -456,7 +510,7 @@ function attach(socket: WebSocket, close: () => void): Session {
         };
 
         const perform = async (step: WatchStep) => step.step === "select"
-          ? await selectInto(step, inPage, type, renderBy)
+          ? await selectInto(step, inPage, type, renderBy, (since) => askedSince(sessionId, since))
           : await inPage(step) as string | null;
         for (const step of entry.steps ?? []) {
           let failure = await perform(step);
@@ -479,7 +533,7 @@ function attach(socket: WebSocket, close: () => void): Session {
         // The tab goes, and so does everything this run remembered about it:
         // a session id Chrome may reuse must not arrive carrying the previous
         // page's status line or its half-finished requests.
-        for (const id of attached) { inFlight.delete(id); documentStatus.delete(id); }
+        for (const id of attached) { inFlight.delete(id); documentStatus.delete(id); traffic.delete(id); }
         await send("Target.closeTarget", { targetId }).catch(() => { /* the run is ending anyway */ });
       }
     },
@@ -531,6 +585,7 @@ async function selectInto(
   inPage: InPage,
   type: (text: string) => Promise<void>,
   deadline: number,
+  askedSince: (since: number) => string[],
 ): Promise<string | null> {
   const shape = await inPage(step, "shape") as Phase;
   if (shape.error) return shape.error;
@@ -546,6 +601,7 @@ async function selectInto(
 
   // Real keys first, the page's own setter second — a control may honour
   // either, and only one of them is what a person does.
+  const typingStarted = Date.now();
   let attempt = await typeAndPick(step.option, true);
   if (attempt.picked) return null;
   const afterKeys = attempt.offers ?? [];
@@ -578,11 +634,22 @@ async function selectInto(
   }
 
   const list = (offers: string[]) => offers.length ? offers.map((o) => JSON.stringify(o)).join(", ") : "nothing";
+  /**
+   * What the page asked the network for while all of that was happening.
+   *
+   * A widget that shows nothing has either never asked or been refused, and
+   * every message before this one left those two indistinguishable — which is
+   * what five runs and a fifth render could not settle. A suggestion endpoint
+   * answering 403 to this client is a wall against the client; no request at
+   * all is a widget that never ran.
+   */
+  const asked = askedSince(typingStarted);
   return `step select: the option "${step.option}" is not in the field "${step.field}". `
     + `The field is ${shape.shape}. Real key events left it holding ${JSON.stringify(keyValue)} `
     + `(aria-expanded ${keyExpanded ?? "unset"}) and offered ${list(afterKeys)}; `
     + `the value setter left it holding ${JSON.stringify(setterValue)} and offered ${list(afterSetter)}. `
-    + `By prefix: ${probes.join("; ")}.`;
+    + `By prefix: ${probes.join("; ")}. `
+    + `The page asked for: ${asked.length ? asked.join(" | ") : "nothing at all after the typing"}.`;
 }
 
 /** Poll the field until the wanted option is there to click, or time is up. */
@@ -785,19 +852,32 @@ const PERFORM_STEP = `function (step, phase) {
    */
   function listOf(el) {
     var listId = el.getAttribute("aria-controls") || el.getAttribute("aria-owns");
-    var candidates = [
-      listId && document.getElementById(listId),
-      el.getAttribute("role") === "listbox" ? el : null,
-      el.parentNode && el.parentNode.querySelector("[role=listbox]"),
-      (el.closest("div, fieldset, form") || document).querySelector("[role=listbox]"),
-      document.querySelector("ul[class*=autocomplete], ul[class*=suggest], ul[class*=typeahead], ul[role=listbox]")
-    ];
-    for (var i = 0; i < candidates.length; i++) {
-      var found = candidates[i];
-      if (found && !found.hidden && found.offsetParent !== null) return found;
-    }
-    return null;
+    // Every candidate, in order of how sure we are — and ALL of the ones a
+    // selector can match, not the first.
+    //
+    // A page has more than one of these. ind.nl carries two jQuery UI menus:
+    // the site search box's, which is empty and shut, and the nationality
+    // field's, which is the one with the answers in it. Asking for the first
+    // match got the search box's, found it shut, and reported that the field
+    // had offered nothing — through five runs and a fifth render, while the
+    // suggestions were sitting in the second one (2026-09-23).
+    var candidates = [];
+    if (listId) candidates.push(document.getElementById(listId));
+    if (el.getAttribute("role") === "listbox") candidates.push(el);
+    if (el.parentNode) push(candidates, el.parentNode.querySelectorAll("[role=listbox]"));
+    push(candidates, (el.closest("div, fieldset, form") || document).querySelectorAll("[role=listbox]"));
+    push(candidates, document.querySelectorAll(
+      "ul[class*=autocomplete], ul[class*=suggest], ul[class*=typeahead], ul[role=listbox], ul[class*=ui-menu]"));
+    var open = candidates.filter(function (found) {
+      return found && !found.hidden && (found.offsetParent !== null || found === el);
+    });
+    // Among the open ones, the one with something in it: a widget leaves its
+    // empty menu in the document, and an empty list is not an answer.
+    for (var i = 0; i < open.length; i++)
+      if (open[i].querySelector("[role=option], li, a")) return open[i];
+    return open.length ? open[0] : null;
   }
+  function push(into, nodes) { [].slice.call(nodes).forEach(function (n) { into.push(n); }); }
   /**
    * The things in that list a person could pick.
    *
