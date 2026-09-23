@@ -50,6 +50,15 @@ blank snapshot and reported "unchanged" ever after. The fetcher now refuses an
 empty body (`src/watch/cli-watch.ts`), and both entries are declared
 `strategy: "human"`, `kind: "value-source"` on the watchlist, re-read quarterly.
 
+> **HALF CLOSED — 2026-09-23 (s34).** EUR-Lex left this tier: a browser passes
+> its 202 challenge, so `eur-lex-blue-card-directive` is a `browser` entry and
+> its sentence is machine-verified every morning. Legifrance did not: headless
+> Chrome from GitHub's runner met a Cloudflare challenge there on 2026-09-15,
+> which is a wall against the client and not against the address, so the
+> Conseil d'État sentence below stays with a person, quarterly — the **one**
+> sentence left on the human tier. Nothing here is deleted; the EUR-Lex
+> subsection below stays as the record of its last human read, on 2026-09-10.
+
 ### Conseil d'État — `notice:fr-dz-talent-open-question`
 
 https://www.legifrance.gouv.fr/ceta/id/CETATEXT000053612496
@@ -481,6 +490,21 @@ Page "Last update": 18 August 2026. 5 quotes.
       sentence and confirm it word for word: "A valid provisional residence
       permit (MVV) is needed for this application"
 
+> **CLOSED — 2026-09-23 (s34).** These five pages moved to the `browser` watch
+> strategy: the watch opens them in headless Chrome and reads the rendered
+> page, so the thirty-eight sentences below are machine-verified against a
+> snapshot every morning again and **are not re-verified by hand**. Nothing
+> here is deleted: the list stays as the record of the last human read, on
+> 2026-09-16, and the dates beside each sentence are the dates it was read.
+> The next human read, which had been due on 2026-12-15, is not due. Two
+> things measured on 2026-09-23 while the strategy was built, both recorded
+> because this section is where a person would look for them: the *Your
+> situation* form is **no longer on these pages** — the requirement list
+> renders without being asked — so the entries declare no steps, and the
+> "How to reach the requirements" recipe below is history rather than
+> instructions; and a plain fetch still receives only the shell, which is why
+> the pages need a browser and not a fetcher.
+
 ## 4. What did not need a human
 
 The scenario expected the German hosts, the Spanish UGE and the client-rendered
@@ -556,6 +580,12 @@ keeps no cookie jar, so it lands on an **HTTP 400** "Zugriff nicht möglich" —
 on the html tier the daily run would have failed every day. The road back to
 the machine is a fetcher that returns the cookie on the next hop (one hop, no
 JavaScript) — a smaller step than the headless browser data #17 asks for.
+
+> **CLOSED — 2026-09-23 (s34).** `de-bmi-chancenkarte` moved to the `browser`
+> watch strategy: a browser makes the cookie round-trip without being asked,
+> so the watch confirms the sentinel sentence every morning and **no person
+> re-reads it by hand**. Nothing here is deleted — it stays as the record of
+> the read of 2026-09-17, and of why a fetcher could not make it.
 
 ### Launch of opportunity card — `de-chancenkarte` (info page)
 

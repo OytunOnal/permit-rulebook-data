@@ -473,10 +473,16 @@ describe("the highly-skilled-migrant slice", () => {
     + " And are you going to be transferred as a manager, specialist or trainee?"
     + " Then you are an intra corporate transferee and other requirements apply to you.";
 
-  it("is gone, with the page: a human-tier entry watches no region and keeps no snapshot", () => {
-    expect(entry.strategy).toBe("human");
-    expect(entry.slice).toBeUndefined();
-    expect(shippedState.entries["nl-ind-highly-skilled-migrant"]).toBeUndefined();
+  it("is back, with the page: a browser entry watches the lede-to-footer region again", () => {
+    // INVERTED BY s34, 2026-09-23. This case read "is gone, with the page: a
+    // human-tier entry watches no region and keeps no snapshot" — the state
+    // s14 left. The page is read in a browser now, so the slice is back and so
+    // is the snapshot. Its `from` is the page's own lede, which is where a
+    // person moved it on 2026-09-08 and why (the case below still holds that
+    // record); its `to` is the footer, as before the form.
+    expect(entry.strategy).toBe("browser");
+    expect(entry.slice?.from).toBe("To work in the Netherlands as a highly skilled migrant");
+    expect(shippedState.entries["nl-ind-highly-skilled-migrant"]?.text).toBeTruthy();
   });
 
   it("records that a person moved the marker, so the flag is not read as the page changing", () => {
@@ -491,6 +497,14 @@ describe("the highly-skilled-migrant slice", () => {
     expect(formed, "a strategy change with no history entry").toBeDefined();
     expect(formed!.note).toMatch(/form/i);
     expect(formed!.note).toMatch(/human/);
+  });
+
+  it("records the way back to the machine, so the flag of 2026-09-23 is not read as one either", () => {
+    // Every strategy change on this entry leaves a dated line. Three now: the
+    // marker a person moved, the form arriving, and the browser taking it back.
+    const browser = entry.history?.find((h) => h.changed_at === "2026-09-23");
+    expect(browser, "a strategy change with no history entry").toBeDefined();
+    expect(browser!.note).toMatch(/browser/);
   });
 
   it("the quote the widened slice exists for is in the dataset, dated the day it was read", () => {

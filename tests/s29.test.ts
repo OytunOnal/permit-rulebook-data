@@ -66,19 +66,19 @@ describe("s29 #13 — the Opportunity Card's official page is an authority's", (
     expect(entry!.kind).toBe("sentinel");
   });
 
-  it("is on the human tier, with the sentinel sentence a person confirms", () => {
-    // Why a person and not the fetcher — the cookie round-trip, measured
-    // 2026-09-17 — is in the entry's own note and in verify-s5e.md §6.
+  it("still names the sentinel sentence a reader is sent to find", () => {
+    // RETIRED IN PART BY s34, 2026-09-23. This case read "is on the human
+    // tier, with the sentinel sentence a person confirms", and asserted the
+    // human strategy, the quarterly age, the 2026-09-17 read date and the
+    // absence of a snapshot. The cookie round-trip that put the page on that
+    // tier is one a browser makes without being asked, so the entry is a
+    // browser entry now and `tests/s34.test.ts` holds its shape. What does not
+    // change is the sentence this sentinel exists to watch for, so that half
+    // of the promise stays here.
     const entry = entryFor(BMI_CHANCENKARTE)!;
-    expect(entry.strategy).toBe("human");
-    expect(entry.max_age_days).toBe(90);
-    expect(entry.last_verified).toBe("2026-09-17");
-    expect(entry.slice).toBeUndefined();
     expect(entry.note).toContain(
       "The opportunity card is a new type of residence permit for those coming to Germany to look for work.",
     );
-    // A human entry keeps no machine snapshot.
-    expect(state.entries[entry.id]).toBeUndefined();
   });
 
   it("records where the route's page pointed before, and the day it moved", () => {

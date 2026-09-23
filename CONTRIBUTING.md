@@ -65,16 +65,26 @@ append-only.
    last looked — and the page tells the reader so in the open. A number has no
    such exception.
 
-Where a source is one nothing here can fetch — the operative text never reaches
-a machine — it belongs on the human tier, which carries a verification age and
-raises reminders rather than being fetched. Adding to it is a decision, not a
-fallback: say in the entry's `note` what the fetch actually did, with the day
-you measured it, and write the sentence down in `data/verify-s5e.md` so a
-person can find it. Two sources went on it on 2026-09-10 — Legifrance answers
-this watch with HTTP 403, EUR-Lex with a 202 and an empty body — and five more
-on 2026-09-16: the IND's route pages render their requirements behind a "Your
-situation" form whose result has no address of its own, so there is nothing to
-fetch (s14; the road back is a headless-browser strategy, data #17).
+Where a source refuses this watch's fetcher, the first question is whether it
+refuses a *client* or an *address*. A page that a real browser opens and a
+`fetch` does not — a bot challenge, a cookie round-trip, a page that renders
+its rules from a script — is a **browser entry**: `strategy: "browser"`, which
+is the html strategy with headless Chrome in front of it, and which may carry
+`steps` (a closed vocabulary: `select`, `answer`, `press`, `expand`) where the
+page has to be put into a state before it says anything. A form-gated page is a
+browser entry with steps, never a human one. Say in the entry's `note` what the
+fetch got, what the browser gets, and the day you measured each.
+
+The **human tier** is what is left when a browser does not reach it either. It
+carries a verification age and raises reminders rather than being fetched, and
+adding to it is a decision, not a fallback: say in the `note` what both clients
+did, with the day you measured, and write the sentence down in
+`data/verify-s5e.md` so a person can find it. It held nine entries after s14
+and holds **two** since s34 (2026-09-23): `legifrance-ce-algerian-titles`,
+where headless Chrome from the runner met a Cloudflare challenge on 2026-09-15
+— a client wall a browser does not pass — and `gesetze-official-recheck`, which
+is reachable only through a VPN, a geography rather than a client. Between them
+they leave one dataset sentence unverifiable by machine.
 
 ## How a route is added
 

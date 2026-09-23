@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { mergeTargetedRun, runWatch, STRATEGIES, type Fetcher, type WatchReport, type WatchState, type Watchlist } from "./core.js";
+import { mergeTargetedRun, runWatch, STRATEGIES, type BrowserReader, type Fetcher, type WatchReport, type WatchState, type Watchlist } from "./core.js";
+import { openBrowserReader } from "./browser.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -108,8 +109,29 @@ function flagFile(report: WatchReport, today: string) {
   writeFileSync(new URL(name, dir), body + "\n");
 }
 
+/**
+ * The browser half of the run: one Chrome, opened by the first entry that
+ * needs one and closed on the way out, with what each page cost written down.
+ *
+ * The cost is logged rather than measured afterwards because it is the number
+ * the slice is answerable for — seven rendered pages inside a job that used to
+ * take about two minutes — and a number nobody can read from the run's own log
+ * is a number nobody checks (s34 point 6).
+ */
+const browser = openBrowserReader();
+const openInBrowser: BrowserReader = async (entry) => {
+  const started = Date.now();
+  const result = await browser.read(entry);
+  log(result.ok ? "info" : "error", "watch:browser-read", {
+    id: entry.id, seconds: Number(((Date.now() - started) / 1000).toFixed(1)),
+    steps: entry.steps?.length ?? 0, ok: result.ok,
+  });
+  return result;
+};
+
 const today = new Date().toISOString().slice(0, 10);
-const { reports, nextState } = await runWatch(watchlist, state, fetcher, today);
+const { reports, nextState } = await runWatch(watchlist, state, fetcher, today, openInBrowser);
+await browser.close();
 
 let unreachable = 0;
 for (const r of reports) {

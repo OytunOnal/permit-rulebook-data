@@ -2,7 +2,39 @@ name: source-watch
 on:
   schedule:
     - cron: "17 5 * * *" # daily, 05:17 UTC
+  # Two switches, and both default to what the daily run already does. They
+  # exist because s34 needed the watch dispatched for two reasons that are not
+  # "read the sources and record it" (2026-09-23):
+  #
+  #   commit=false    a MEASUREMENT run. Point 6 asks what seven browser reads
+  #                   cost on this runner, before and after. A run that answers
+  #                   that question must leave nothing behind — no new state,
+  #                   no push, no issue — or the measurement has edited the
+  #                   thing it was measuring.
+  #   dispatch=false  a BASELINE run on a BRANCH. The last step tells the site
+  #                   to rebuild against the commit this job just pushed, and
+  #                   the site pins whatever it is told. Pointing it at an
+  #                   unmerged branch commit would pin the live site to data
+  #                   that is not on master.
+  #
+  # **The schedule's path is byte-for-byte what it was.** Every switch below is
+  # written `github.event.inputs.X != 'false'`, and on a `schedule` event
+  # `github.event.inputs` is null — so every one of them is true, exactly as if
+  # the inputs did not exist. The test is deliberately against the STRING
+  # 'false' and not against the boolean: a `type: boolean` input still arrives
+  # in `github.event.inputs` as a string, and `inputs.X == false` would be TRUE
+  # for the schedule's empty value — which is the silent way to stop the daily
+  # run ever committing again.
   workflow_dispatch:
+    inputs:
+      commit:
+        description: "Persist the new state, push it, and file issues for new flags"
+        type: boolean
+        default: true
+      dispatch:
+        description: "Tell the site to rebuild against the pushed commit"
+        type: boolean
+        default: true
 
 # The floor: reading the repository. The watch job raises it, because it is the
 # one that commits a new state and files an issue when a source moves (Spine
@@ -27,12 +59,25 @@ jobs:
       - name: Coverage gate (every dataset source is watched)
         run: node dist/src/watch/cli-coverage.js
 
+      # Seven entries are read by opening them in a browser, and a run that
+      # cannot open one has not read them — it reports them unreachable and
+      # goes red, which is right and is also indistinguishable, in the log,
+      # from seven pages that went down. So the browser is named before the
+      # run: one line that turns "unreachable" into a diagnosis (s34).
+      - name: Say which Chrome the watch will use
+        run: node -e "import('./dist/src/watch/browser.js').then(m => console.log(m.chromePath()))"
+
       # continue-on-error so detected changes/flags/state are NEVER discarded
       # because one source was unreachable; the final gate re-raises the red.
       - name: Watch sources
         id: watch
         continue-on-error: true
-        run: node dist/src/watch/cli-watch.js --commit
+        env:
+          # The expression resolves to one of two literals — `--commit`, or
+          # nothing — never to the input itself, so what reaches the command
+          # line is this file's own word and not the dispatcher's.
+          COMMIT_FLAG: ${{ github.event.inputs.commit != 'false' && '--commit' || '' }}
+        run: node dist/src/watch/cli-watch.js $COMMIT_FLAG
 
       # Files, and only files. `git status --porcelain watch/flags` printed the
       # DIRECTORY when it was untracked, `head -n1` was handed a directory, and
@@ -40,8 +85,13 @@ jobs:
       # flags those runs had just written (devils-advocate, 2026-09-08). The
       # pathspec below can only match a markdown file, and the field is taken
       # with `cut` rather than `awk '{print $2}'`, which loses a renamed path.
+      # The three steps that WRITE — to disk, to the remote, to the issue
+      # tracker — are the three a measurement run must not take. Guarded one by
+      # one rather than by a single early exit, so a reader of the log sees
+      # each of them skipped and knows the run left nothing behind.
       - name: Collect NEW flags (only files this run created)
         id: newflags
+        if: github.event.inputs.commit != 'false'
         run: |
           {
             echo "files<<EOF"
@@ -51,6 +101,7 @@ jobs:
 
       - name: Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)
         id: persist
+        if: github.event.inputs.commit != 'false'
         run: |
           # GitHub maps a `<login>@users.noreply.github.com` address to whichever
           # account owns that login, and the login "watch" belongs to a stranger:
@@ -77,7 +128,9 @@ jobs:
           git push
 
       - name: Open issues for new flags only
-        if: steps.newflags.outputs.files != ''
+        # Both halves: the flag list is empty on a day nothing moved, and the
+        # step that produces it did not run at all on a measurement dispatch.
+        if: github.event.inputs.commit != 'false' && steps.newflags.outputs.files != ''
         env:
           GH_TOKEN: "${{ github.token }}"
           # Through the environment, never interpolated into the script body: a
@@ -126,7 +179,7 @@ jobs:
         # fail on a missing secret (review 2026-09-08), and a state that WAS
         # committed still has to reach the site when some other source was
         # unreachable. Cancellation is the one case that stands it down.
-        if: ${{ !cancelled() && steps.persist.outputs.committed == 'true' }}
+        if: ${{ !cancelled() && github.event.inputs.dispatch != 'false' && steps.persist.outputs.committed == 'true' }}
         env:
           DISPATCH_TOKEN: "${{ secrets.DISPATCH_TOKEN }}"
           SITE_REPO: "${{ vars.SITE_REPO || 'OytunOnal/permit-rulebook' }}"
@@ -150,7 +203,15 @@ jobs:
         # Last, and after the dispatch: an expired DISPATCH_TOKEN fails that
         # step, and the run that noticed it must still say so (Standards
         # review, 2026-09-08).
-        if: failure()
+        #
+        # The fourth thing a measurement run must not do is file this. Nobody
+        # is waiting on a hand-dispatched measurement the way they wait on the
+        # morning's run, and "watch run failed" in the tracker reads as the
+        # daily watch having stopped — which is exactly the alarm this issue
+        # exists to raise, spent on a run that was never going to record
+        # anything (s34, 2026-09-23). The person who dispatched it is looking
+        # at the run.
+        if: failure() && github.event.inputs.commit != 'false'
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           gh label create watch --color b60205 --description "The daily source watch itself" --force

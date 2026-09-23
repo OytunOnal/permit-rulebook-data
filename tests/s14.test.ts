@@ -20,6 +20,14 @@ import type { Dataset } from "../src/types.js";
  * These cases are the slice's own promises. The site's freshness sentence is
  * s11's, and the case at the end confirms it is not disturbed: a human-tier
  * entry was never a machine read, so it is not "unread".
+ *
+ * **s34, 2026-09-23, retired the half of this file that said the five are
+ * unreadable.** They were unreadable by a `fetch`; the watch now opens them in
+ * a browser. Every case this slice inverted was removed here and replaced, by
+ * name, in `tests/s34.test.ts` — each removal below says which case it was and
+ * what replaced it. What stays is what is still true: the two IND pages s14
+ * never touched, the marker a person moved on 2026-09-08, the checklist that
+ * records the human read, and s11's sentence.
  */
 
 const readJson = (name: string) =>
@@ -41,49 +49,30 @@ const FORM_GATED_URLS = new Set(Object.values(FORM_GATED));
 /** The two IND pages the scenario leaves alone: one cited by nothing, one still plain text. */
 const UNTOUCHED = ["nl-ind-work-index", "nl-ind-required-amounts"];
 
-/** The two entries that opened the bot-gated human tier on 2026-09-10 — the template. */
-const BOT_GATED = ["legifrance-ce-algerian-titles", "eur-lex-blue-card-directive"];
-
 const entryOf = (id: string) => watchlist.entries.find((e) => e.id === id)!;
 
-describe("s14 — the five IND route-page entries are human-tier", () => {
-  it("each takes the human strategy, a quarterly age and a read date, and loses its slice", () => {
-    for (const [id, url] of Object.entries(FORM_GATED)) {
-      const entry = entryOf(id);
-      expect(entry, id).toBeDefined();
-      expect(entry.url, id).toBe(url);
-      expect(entry.strategy, id).toBe("human");
-      expect(entry.kind, id).toBe("value-source");
-      expect(entry.max_age_days, id).toBe(90);
-      // The day a person read the page through the form — never earlier than
-      // the day the form was found, which is the day this slice opened.
-      expect(entry.last_verified, id).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(entry.last_verified! >= "2026-09-16", `${id}: read before the form was found`).toBe(true);
-      // A human entry watches no region of a page: there is no page to slice.
-      expect(entry.slice, `${id}: a human-tier entry carries a slice`).toBeUndefined();
-    }
-  });
-
-  it("each note says what it backs, why a person, the measurement, the road back and the re-read", () => {
-    for (const id of Object.keys(FORM_GATED)) {
-      const note = entryOf(id).note ?? "";
-      expect(note, `${id}: the note does not name the form`).toMatch(/Your situation/);
-      expect(note, `${id}: the note does not say the result has no address`).toMatch(/no address/i);
-      expect(note, `${id}: the note does not carry the measurement`).toMatch(/2026-09-16/);
-      expect(note, `${id}: the note does not carry the ~700-character shell`).toMatch(/700/);
-      expect(note, `${id}: the note does not name the road back (data #17)`).toMatch(/#17/);
-      expect(note, `${id}: the note does not say it is re-read quarterly`).toMatch(/quarterly/i);
-      expect(note, `${id}: the note does not say what the entry backs`).toMatch(/Backs /);
-    }
-  });
-
-  it("the two bot-gated entries of 2026-09-10 are the template and are unchanged", () => {
-    for (const id of BOT_GATED) {
-      const entry = entryOf(id);
-      expect(entry.strategy, id).toBe("human");
-      expect(entry.max_age_days, id).toBe(90);
-      expect(entry.last_verified, id).toBe("2026-09-10");
-    }
+describe("s14 — what is left of the form-gated tier after s34 took the five back", () => {
+  // RETIRED BY s34: "each takes the human strategy, a quarterly age and a read
+  // date, and loses its slice". The five are browser entries now, with a slice
+  // and no verification age — replaced by s34's "each of the seven is a
+  // browser entry with a slice, a history line and no verification age".
+  //
+  // RETIRED BY s34: "each note says what it backs, why a person, the
+  // measurement, the road back and the re-read". The notes were rewritten to
+  // say what the fetch does and what the browser does — replaced by s34's
+  // "each of the seven says what the fetch got, what the browser gets, and the
+  // day each was measured". What the entry backs is still asserted there.
+  //
+  // RETIRED IN PART BY s34: "the two bot-gated entries of 2026-09-10 are the
+  // template and are unchanged". EUR-Lex left the tier — a browser passes its
+  // challenge — and is in s34's seven. Legifrance is still there, and is now
+  // the only sentence on the tier, so the case below keeps the half that is
+  // still true.
+  it("Legifrance, the one bot-gated entry a browser does not open either, is unchanged", () => {
+    const entry = entryOf("legifrance-ce-algerian-titles");
+    expect(entry.strategy).toBe("human");
+    expect(entry.max_age_days).toBe(90);
+    expect(entry.last_verified).toBe("2026-09-10");
   });
 
   it("leaves the salary-amounts page and the work index on the machine, sliced", () => {
@@ -106,22 +95,15 @@ describe("s14 — the five IND route-page entries are human-tier", () => {
   });
 });
 
-describe("s14 — the state carries no stale IND snapshot", () => {
-  it("represents the five the way it represents every human-tier entry: absent", () => {
-    // The two bot-gated entries have never had a snapshot; the state has one
-    // shape for "read by a person", and it is the absence of a machine reading.
-    for (const id of BOT_GATED) expect(state.entries[id], id).toBeUndefined();
-    for (const id of Object.keys(FORM_GATED))
-      expect(state.entries[id], `${id}: a human-tier entry with a machine snapshot`).toBeUndefined();
-  });
+// RETIRED BY s34: the whole of "s14 — the state carries no stale IND
+// snapshot", both cases. "Represents the five the way it represents every
+// human-tier entry: absent" and "names none of the five as unread — a page a
+// person reads was never a machine read" were promises that the state holds
+// nothing for these pages. It holds a text snapshot for each of them now,
+// which is the point of s34 — replaced by s34's "the state carries a text
+// snapshot for each of the seven, and the quote gate reads it".
 
-  it("names none of the five as unread — a page a person reads was never a machine read", () => {
-    for (const u of state.unread ?? [])
-      expect(FORM_GATED[u.id], `${u.id} is human-tier and listed as unread`).toBeUndefined();
-  });
-});
-
-describe("s14 — the quote gate reports the IND sentences as unverifiable, not verified and not missing", () => {
+describe("s14 — the quote gate stays green through the move", () => {
   const result = checkQuotes(dataset, watchlist, state);
   const humanReason = STRATEGIES.human.no_text_snapshot;
 
@@ -131,45 +113,21 @@ describe("s14 — the quote gate reports the IND sentences as unverifiable, not 
     expect(checkCoverage(dataset, watchlist).ok).toBe(true);
   });
 
-  it("the unverifiable set is exactly the form-gated quotes plus the two bot-gated ones, all with the human reason", () => {
-    const formGated = datasetQuotes(dataset).filter((q) => FORM_GATED_URLS.has(q.source_url));
-    // 12 + 8 + 7 + 6 + 5 — counted from the dataset, not from the scenario,
-    // which estimated 37. HSM carries six sentences on each of two routes.
-    expect(formGated.length).toBe(38);
-    const byPage = new Map<string, number>();
-    for (const q of formGated) byPage.set(q.source_url, (byPage.get(q.source_url) ?? 0) + 1);
-    expect(byPage.get(FORM_GATED["nl-ind-highly-skilled-migrant"]!)).toBe(12);
-    expect(byPage.get(FORM_GATED["nl-ind-orientation-year"]!)).toBe(8);
-    expect(byPage.get(FORM_GATED["nl-ind-blue-card"]!)).toBe(7);
-    expect(byPage.get(FORM_GATED["nl-ind-ict"]!)).toBe(6);
-    expect(byPage.get(FORM_GATED["nl-ind-researcher"]!)).toBe(5);
+  // RETIRED BY s34: "the unverifiable set is exactly the form-gated quotes
+  // plus the two bot-gated ones, all with the human reason". Thirty-nine of
+  // those forty quotes are verified against a browser snapshot now, and the
+  // tier holds one — replaced by s34's "the quote gate reads the seven:
+  // human_tier falls to one, and verified rises by exactly the thirty-nine".
+  // The count the case established — the five pages back 38 quotes, 12/8/7/6/5
+  // — moved there with it, still counted from the dataset.
 
-    const key = (q: { where: string; source_url: string; quote: string }) => `${q.where} ${q.source_url} ${q.quote}`;
-    const human = result.unverifiable.filter((u) => u.reason === humanReason);
-    expect(human.length).toBe(result.unverifiable.length);
-    const expected = new Set(formGated.map(key));
-    for (const u of human) {
-      if (u.where === "notice:fr-dz-talent-open-question") continue;
-      expect(expected.has(key(u)), `${u.where}: unverifiable for a reason other than the IND form`).toBe(true);
-      expected.delete(key(u));
-    }
-    expect([...expected], "form-gated quotes the gate did not report").toEqual([]);
-    // The two of 2026-09-10, still there.
-    expect(human.filter((u) => u.where === "notice:fr-dz-talent-open-question").length).toBe(2);
-    expect(result.unverifiable.length).toBe(40);
-  });
-
-  it("verified drops by exactly what the stale snapshots had been vouching for", () => {
-    // 171 on 2026-09-16 with the twelve HSM quotes missing; the other
-    // twenty-six IND sentences were "verified" against snapshots of pages that
-    // are a form now. 171 − 26 = 145. The scenario's 171 is the number from
-    // before the move, when the stale pages still counted. 154 since s19: the
-    // nine chercheur sentences on France's researcher card, verified through
-    // the talent fiche's widened slice. 156 since s29: the free-movement
-    // notice's EEA sentence (the IND's general page, on the machine) and its
-    // Swiss sentence (inside the Your Europe slice already held).
-    expect(result.verified).toBe(145 + 9 + 2);
-  });
+  // RETIRED BY s34: "verified drops by exactly what the stale snapshots had
+  // been vouching for". The number it pinned, 145 + 9 + 2, was the count with
+  // the thirty-eight IND sentences off the books; they are back on them, and
+  // pinning the new total here would be pinning it twice — s34 asserts the
+  // decision instead (nothing unverifiable on the seven, one sentence left on
+  // the tier). The history the comment carried stays worth reading: 171 before
+  // the move, 145 after the stale snapshots left, +9 at s19, +2 at s29.
 });
 
 describe("s14 — the checklist gains the five", () => {
@@ -192,22 +150,14 @@ describe("s14 — the checklist gains the five", () => {
   });
 });
 
-describe("s14 — the watch runs green with the five on the human arm", () => {
-  it("fetches nothing for them, reports ok, and leaves no unread IND entry", async () => {
-    const neverFetch: Fetcher = async (url) => { throw new Error(`must not fetch a human-tier page: ${url}`); };
-    const five: Watchlist = { entries: Object.keys(FORM_GATED).map(entryOf) };
-    const { reports, nextState } = await runWatch(five, state, neverFetch, "2026-09-17");
-    expect(reports.map((r) => r.outcome)).toEqual(["ok", "ok", "ok", "ok", "ok"]);
-    expect(nextState.unread).toEqual([]);
-    for (const id of Object.keys(FORM_GATED)) expect(nextState.entries[id], id).toBeUndefined();
-  });
-
-  it("a quarter later the reminder fires, which is the re-read the notes promise", async () => {
-    const five: Watchlist = { entries: Object.keys(FORM_GATED).map(entryOf) };
-    const { reports } = await runWatch(five, state, async () => { throw new Error("no"); }, "2027-01-15");
-    expect(reports.every((r) => r.outcome === "reminder-due")).toBe(true);
-  });
-});
+// RETIRED BY s34: the whole of "s14 — the watch runs green with the five on
+// the human arm", both cases. "Fetches nothing for them, reports ok, and
+// leaves no unread IND entry" and "a quarter later the reminder fires, which
+// is the re-read the notes promise" were promises that these five are never
+// read by a machine and are chased by a reminder instead. They are read every
+// morning now, and no reminder is due on them ever again — replaced by s34's
+// "a run with no browser reads the rest and goes red on the seven" and by the
+// live run the slice is merged on.
 
 describe("s14 — s11's freshness sentence is not disturbed (point 7)", () => {
   it("a human-tier entry never reaches the exception clause, even if a stale list names it", () => {

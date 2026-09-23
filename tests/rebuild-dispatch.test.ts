@@ -132,12 +132,16 @@ describe("a new dataset state wakes the site", () => {
         .toBeLessThan(at("Tell the site to rebuild"));
     }
 
-    // And the issues step asks nothing of the dispatch: it is conditioned on
-    // the flags alone.
+    // And the issues step asks nothing of the step that can fail on the token:
+    // it is conditioned on the flags, and since s34 also on the switch that
+    // says this run records nothing at all — never on the dispatch or its
+    // secret. (The two assertions below read `not.toContain("dispatch")` until
+    // 2026-09-23; the word is now a dispatch INPUT's name and appears in this
+    // step's own condition, so the check names the two things it always meant.)
     const issueStep = step(watch, "Open issues for new flags only");
-    expect(issueStep).toContain("if: steps.newflags.outputs.files != ''");
+    expect(issueStep).toContain("steps.newflags.outputs.files != ''");
     expect(issueStep).not.toContain("DISPATCH_TOKEN");
-    expect(issueStep).not.toContain("dispatch");
+    expect(issueStep).not.toContain("steps.persist");
 
     // Being last means an earlier failure would skip it, and a committed state
     // still has to reach the site: it runs unless the run was cancelled.
@@ -196,6 +200,35 @@ describe("a red run is never silent", () => {
     // The old shape, which broke on an untracked directory and on a rename.
     expect(step).not.toContain("git status --porcelain watch/flags");
     expect(step).not.toContain("awk '{print $2}'");
+  });
+
+  it("leaves the schedule's path exactly as it was when the dispatch switches were added", () => {
+    // s34 gave `workflow_dispatch` two booleans — `commit` and `dispatch` — so
+    // the watch could be run once to be timed and once to write baselines on a
+    // branch. The daily run passes no inputs at all, and the way that goes
+    // wrong is silent: on a `schedule` event `github.event.inputs` is null, and
+    // `inputs.commit == false` is TRUE for a null, so the obvious spelling
+    // would have stopped the morning run ever committing again and nothing
+    // would have said so.
+    //
+    // The decision, then: every condition that reads a dispatch input must be
+    // written so that the absent value takes the ACTING branch. That is what is
+    // checked — the shape of each guard, not the sentence any of them is in.
+    const guards = [...watch.matchAll(/github\.event\.inputs\.(\w+)\s*(==|!=)\s*'([^']*)'/g)]
+      .filter((m) => !/^\s*#/.test(watch.slice(watch.lastIndexOf("\n", m.index!) + 1, m.index!)));
+    expect(guards.length, "no step reads a dispatch input").toBeGreaterThan(0);
+    for (const [whole, input, operator, value] of guards)
+      expect(
+        `${operator} ${value}`,
+        `${whole} — a null input (the schedule) does not take the acting branch of this guard`,
+      ).toBe("!= false");
+    // And both switches are declared with the daily run's own behaviour as
+    // their default, so a hand dispatch that changes nothing behaves as today.
+    for (const input of ["commit", "dispatch"]) {
+      expect(watch, `${input} is not a declared input`).toMatch(new RegExp(`^ {6}${input}:$`, "m"));
+      expect(guards.some((g) => g[1] === input), `${input} is declared and never read`).toBe(true);
+    }
+    expect([...watch.matchAll(/^ {8}default: (.+)$/gm)].map((m) => m[1])).toEqual(["true", "true"]);
   });
 
   it("opens or updates one issue when the run itself fails, with the run's link", () => {

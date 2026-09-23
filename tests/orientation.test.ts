@@ -154,26 +154,30 @@ describe("a route statement is watched like every other value", () => {
     // Human tier until 2026-09-07, on the reading that IND route pages render
     // client-side and our fetch saw a 1.4 kB shell; machine-watched from then
     // (s5e), because a fetch returned the whole requirement list. Human tier
-    // again since 2026-09-16 (s14), for a different reason: the page IS a form
-    // now — "Your situation" — and the requirements render behind it at the
-    // same URL, so there is no address the watch could fetch. The sentences
-    // stand as read, dated, and a person confirms them quarterly.
-    expect(entry.strategy).toBe("human");
-    expect(entry.last_verified).toBeDefined();
+    // again from 2026-09-16 (s14): the page was a "Your situation" form whose
+    // result had no address of its own. Browser tier since 2026-09-23 (s34) —
+    // the page is client-rendered, which is a reason to bring a browser and
+    // not a reason to bring a person, and the sentences below are verified
+    // against the rendered page every morning again.
+    expect(entry.strategy).toBe("browser");
+    expect(entry.last_verified, "a machine-read entry carries no human read date").toBeUndefined();
   });
 
-  it("the quote gate reports both sentences as unverifiable — never silently, never missing", () => {
+  it("the quote gate verifies both sentences against the rendered page", () => {
+    // INVERTED BY s34, 2026-09-23. This case read "the quote gate reports both
+    // sentences as unverifiable — never silently, never missing", which was
+    // the honest answer while no client here could read the page. A browser
+    // can, so the gate's answer is now the one it was always meant to give:
+    // the sentence is on the page, checked this morning.
     const result = checkQuotes(dataset, watchlist, state);
     expect(result.missing).toEqual([]);
-    // Neither statement is missing and neither is counted verified: the gate's
-    // honest answer for a page a person reads and no machine here can — it
-    // names both, with the reason, on every `npm run check` (s14).
     for (const s of routeStatements(routeOf("nl-orientation-year")))
       if (s.source) {
         expect(result.missing.map((m) => m.quote), s.id).not.toContain(s.source.quote);
-        const named = result.unverifiable.find((u) => u.where === `nl-orientation-year:${s.id}`);
-        expect(named, `${s.id}: not reported as unverifiable`).toBeDefined();
-        expect(named!.reason).toMatch(/human tier/);
+        expect(
+          result.unverifiable.find((u) => u.where === `nl-orientation-year:${s.id}`),
+          `${s.id}: still reported as unverifiable`,
+        ).toBeUndefined();
       }
     expect(result.verified).toBeGreaterThan(30);
   });
