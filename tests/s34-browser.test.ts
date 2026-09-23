@@ -235,6 +235,8 @@ let served = fixture();
 let status = 200;
 /** When set, the entry address answers a redirect to here instead of a page. */
 let redirectTo: string | undefined;
+/** What the subframe's own document answers with. */
+let frameStatus = 200;
 /** When set, the entry address bounces once through a sub-path and back —
  * the Opportunity Card's cookie check, in miniature. */
 let bounceOnce = false;
@@ -254,6 +256,20 @@ const server: Server = createServer((req, res) => {
     res.writeHead(302, { location: "/" });
     bounceOnce = false;
     res.end();
+    return;
+  }
+  // A subframe, and a request the page's own content waits on. Between them
+  // they are the measurement the frame-scoping finding was made with.
+  if (path === "/frame") {
+    res.writeHead(frameStatus, { "content-type": "text/html; charset=utf-8" });
+    res.end("<p>A consent widget, or an embed. Not the authority.</p>");
+    return;
+  }
+  if (path === "/slow-content") {
+    setTimeout(() => {
+      res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+      res.end("You meet the general requirements that apply to everyone.");
+    }, 4_000);
     return;
   }
   res.writeHead(status, { "content-type": "text/html; charset=utf-8" });
@@ -885,6 +901,66 @@ document.getElementById("chrome").addEventListener("toggle", function () {
       );
       expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
     } finally { await reader.close(); }
+  });
+});
+
+/**
+ * A page whose words arrive on a request of its own, with or without a frame
+ * beside them.
+ */
+function slowFixture({ iframe = false } = {}): string {
+  return `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+${iframe ? '<iframe src="/frame" width="1" height="1" title="An embed"></iframe>' : ""}
+<div id="result"></div>
+<footer>Cookies Proclaimer</footer>
+<script>
+fetch("/slow-content").then(function (r) { return r.text(); }).then(function (t) {
+  document.getElementById("result").textContent = t;
+});
+</script>
+</body></html>`;
+}
+
+describe.skipIf(Boolean(noChrome) && !CI)("s34 — an iframe in a source page is not the page", () => {
+  const waiting = (): WatchEntry => entry({ slice: { from: "Lede:", to: "Cookies Proclaimer" }, steps: [] });
+
+  it("waits for the page's own content when the page carries a subframe", async () => {
+    // Subframes share the flat session, so their documents arrive looking
+    // exactly like the page's. Until this was scoped to the main frame on
+    // 2026-09-24, an iframe set the status the page was judged by AND
+    // cleared the in-flight count, which is the wait: measured, the same page
+    // read in 10.3 s with its content without the frame and in 3.7 s WITHOUT
+    // its content with one — `ok: true`, the shell, hashed as the authority's
+    // reading and `unchanged` every morning after. A consent widget is enough
+    // to do that, and a consent widget is not the authority.
+    served = slowFixture({ iframe: true });
+    const reader = openBrowserReader();
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [waiting()] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      expect(nextState.entries["fixture-route"]!.text, "the shell was read instead of the page")
+        .toContain("You meet the general requirements that apply to everyone.");
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("reads the page even when the subframe's own document is a 404", async () => {
+    // A subframe's status is not the page's. Judging the page by whichever
+    // Document arrived last would fail a page that is perfectly fine because
+    // something embedded in it is not.
+    served = slowFixture({ iframe: true });
+    frameStatus = 404;
+    const reader = openBrowserReader();
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [waiting()] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      expect(nextState.entries["fixture-route"]!.text)
+        .toContain("You meet the general requirements that apply to everyone.");
+    } finally { await reader.close(); frameStatus = 200; served = fixture(); }
   });
 });
 

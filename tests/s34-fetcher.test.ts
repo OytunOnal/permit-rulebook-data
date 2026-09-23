@@ -18,7 +18,10 @@ import { fetchSource } from "../src/watch/fetch-source.js";
  * is why nothing here could be asked of it before.
  */
 
+/** Counted, because the point is that it is never asked. */
+let elsewhereAsked = 0;
 const elsewhere: Server = createServer((_req, res) => {
+  elsewhereAsked += 1;
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end("<p>Somewhere else entirely</p>");
 });
@@ -33,6 +36,7 @@ const source: Server = createServer((req, res) => {
   const path = (req.url ?? "/").split("?")[0];
   if (path === "/away") { res.writeHead(302, { location: `${elsewhereOrigin}/x` }); res.end(); return; }
   if (path === "/around") { res.writeHead(302, { location: "/settled" }); res.end(); return; }
+  if (path === "/loop") { res.writeHead(302, { location: "/loop" }); res.end(); return; }
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end("<p>The authority's own words</p>");
 });
@@ -56,8 +60,30 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
     const answer = await fetchSource(`${sourceOrigin}/away`);
     expect(answer.ok, "another site's bytes were accepted as the source's").toBe(false);
     if (answer.ok) return;
-    expect(answer.error).toMatch(/redirected off the site/);
+    // The decision is that it refused and said where — not the words it chose
+    // to say it in.
     expect(answer.error, "the error does not name where it went").toContain(elsewhereOrigin);
+  });
+
+  it("never makes the off-site request at all, and reports the redirect's own status", async () => {
+    // Following first and judging afterwards sent the watch's name and its
+    // contact header to a third party, let a source point this reader at any
+    // address it liked, and then reported the FAR server's status as the
+    // source's — measured `status: 200`, from somebody else's page
+    // (Security review, 2026-09-24).
+    const before = elsewhereAsked;
+    const answer = await fetchSource(`${sourceOrigin}/away`);
+    expect(elsewhereAsked - before, "the other site was contacted").toBe(0);
+    expect(answer.ok).toBe(false);
+    if (answer.ok) return;
+    expect(answer.status, "the far server's status was reported as the source's").toBe(302);
+  });
+
+  it("stops rather than circles when a source redirects to itself for ever", async () => {
+    const answer = await fetchSource(`${sourceOrigin}/loop`);
+    expect(answer.ok).toBe(false);
+    if (answer.ok) return;
+    expect(answer.error).toContain("more than");
   });
 
   it("says nothing about where it read when it read where it was asked", async () => {

@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { mergeTargetedRun, runWatch, STRATEGIES, type BrowserReader, type WatchReport, type WatchState, type Watchlist } from "./core.js";
+import { mergeTargetedRun, runWatch, STRATEGIES, type BrowserReader, type Fetcher, type FetchResult, type WatchReport, type WatchState, type Watchlist } from "./core.js";
 import { openBrowserReader } from "./browser.js";
 import { fetchSource } from "./fetch-source.js";
 
@@ -81,6 +81,28 @@ function flagFile(report: WatchReport, today: string) {
  * take about two minutes — and a number nobody can read from the run's own log
  * is a number nobody checks (s34 point 6).
  */
+/**
+ * Where the reading was actually taken, when that is not where it was asked
+ * for — on either tier, by the same rule.
+ *
+ * Another ORIGIN is refused outright by both readers. This is the journey
+ * inside one: a redirect the fetcher followed, a form that posts back to a
+ * sub-path, a script that swaps the document. It is allowed, and a curator
+ * should be able to see it without opening a browser — which is what the
+ * comment on `from` in `core.ts` promises, and what only the browser tier
+ * was doing until 2026-09-24.
+ */
+const sayWhereItRead = (entry: { id: string; url: string }, result: FetchResult) => {
+  if (!result.ok || !result.from || result.from === entry.url) return;
+  log("info", "watch:read_at", { id: entry.id, asked: entry.url, read_at: result.from });
+};
+
+const readSourceOverHttp: Fetcher = async (url) => {
+  const result = await fetchSource(url);
+  sayWhereItRead({ id: url, url }, result);
+  return result;
+};
+
 const browser = openBrowserReader();
 const openInBrowser: BrowserReader = async (entry) => {
   const started = Date.now();
@@ -88,18 +110,13 @@ const openInBrowser: BrowserReader = async (entry) => {
   log(result.ok ? "info" : "error", "watch:browser-read", {
     id: entry.id, seconds: Number(((Date.now() - started) / 1000).toFixed(1)),
     steps: entry.steps?.length ?? 0, ok: result.ok,
-    // Where the reading was actually taken, when that is not where it was
-    // asked for. Another ORIGIN is refused outright; this is the journey
-    // inside one — a form that posts back to a sub-path, a script that swaps
-    // the document — which is allowed and which a curator should still be
-    // able to see without opening a browser (s34, 2026-09-24).
-    ...(result.ok && result.from && result.from !== entry.url ? { read_at: result.from } : {}),
   });
+  sayWhereItRead(entry, result);
   return result;
 };
 
 const today = new Date().toISOString().slice(0, 10);
-const { reports, nextState } = await runWatch(watchlist, state, fetchSource, today, openInBrowser);
+const { reports, nextState } = await runWatch(watchlist, state, readSourceOverHttp, today, openInBrowser);
 await browser.close();
 
 let unreachable = 0;

@@ -1,4 +1,5 @@
 import { chromePath, launch } from "./chrome.js";
+import { BUDGET_MS } from "./fetch-source.js";
 import type { Session } from "./cdp.js";
 import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 
@@ -42,8 +43,6 @@ import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 export { chromePath } from "./chrome.js";
 export type { WatchStep } from "./core.js";
 
-/** A per-entry budget, the fetcher's own. */
-const BUDGET_MS = 30_000;
 
 export interface BrowserReaderOptions {
   /** Where Chrome is. Injected so a test can ask what a run with no browser

@@ -90,6 +90,8 @@ export function attach(socket: WebSocket, close: () => void): Session {
    * fact, which only the protocol can tell it.
    */
   const documentStatus = new Map<string, { status: number; url: string }>();
+  /** Which frame IS the page, per tab — everything else in it is furniture. */
+  const mainFrame = new Map<string, string>();
   /** Requests each tab has started and not yet finished — one half of what
    * "the page has stopped" means. */
   const inFlight = new Map<string, Set<string>>();
@@ -133,7 +135,7 @@ export function attach(socket: WebSocket, close: () => void): Session {
     const message = JSON.parse(String(event.data)) as {
       id?: number; method?: string; sessionId?: string;
       params?: {
-        type?: string; requestId?: string; errorText?: string; encodedDataLength?: number;
+        type?: string; requestId?: string; errorText?: string; encodedDataLength?: number; frameId?: string;
         request?: { url?: string }; response?: { status?: number; url?: string };
       };
       error?: { message: string }; result?: Record<string, unknown>;
@@ -164,6 +166,21 @@ export function attach(socket: WebSocket, close: () => void): Session {
       }
     }
     if (message.method === "Network.responseReceived" && message.params?.type === "Document" && message.sessionId) {
+      /**
+       * The MAIN frame's document, and nothing else.
+       *
+       * Subframes share this flat session and their documents arrive on it
+       * looking exactly like the page's. Until this was scoped, on
+       * 2026-09-24, any iframe in a source page did two things: it set the
+       * status the page would be judged by, and it cleared the in-flight
+       * count — which is the wait. Measured, two pages identical but for one
+       * same-origin 1×1 iframe, the content arriving on a 6 s request: without
+       * the iframe, read in 10.3 s with the content in it; with the iframe,
+       * 3.7 s and the SHELL, `ok: true`, hashed as the authority's reading
+       * and `unchanged` every morning after. A consent widget or an embed is
+       * enough to do that, and neither is the authority.
+       */
+      if (message.params.frameId !== mainFrame.get(message.sessionId)) return;
       const response = message.params.response;
       documentStatus.set(message.sessionId, { status: response?.status ?? 0, url: response?.url ?? "" });
       // A new document means the old one's unfinished requests belong to a
@@ -212,6 +229,12 @@ export function attach(socket: WebSocket, close: () => void): Session {
         const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true }) as { sessionId: string };
         attached.push(sessionId);
         await send("Page.enable", {}, sessionId);
+        // Asked once, before anything navigates: the frame tree's root is the
+        // page, and every Document event that is not its is a subframe's.
+        const tree = await send("Page.getFrameTree", {}, sessionId) as { frameTree?: { frame?: { id?: string } } };
+        const rootId = tree.frameTree?.frame?.id;
+        if (!rootId) throw new Error("the browser would not say which frame is the page");
+        mainFrame.set(sessionId, rootId);
         await send("Runtime.enable", {}, sessionId);
         await send("Network.enable", {}, sessionId);
         const ua = await send("Browser.getVersion") as { userAgent?: string };
@@ -277,9 +300,14 @@ export function attach(socket: WebSocket, close: () => void): Session {
         const whereAmI = async () => await evaluate("location.origin + String.fromCharCode(32) + location.href") as string;
         const mustBeHome = async (when: string) => {
           const [origin, href] = (await whereAmI()).split(" ") as [string, string];
+          // The address is the page's to choose, and a page can make it as
+          // long as it likes: one `history.pushState` produced 120,032
+          // characters of it, which went into the error, the log line, and
+          // from there a flag and an issue (Security review, 2026-09-24).
+          const short = href.length > 200 ? `${href.slice(0, 200)}… (${href.length} characters)` : href;
           if (origin !== allowedOrigin)
-            throw new Error(`${when}: the page was asked for at ${allowedOrigin} and the browser is at ${href}`);
-          return href;
+            throw new Error(`${when}: the page was asked for at ${allowedOrigin} and the browser is at ${short}`);
+          return short;
         };
         await mustBeHome("the page redirected to another site before it could be read");
         const inPage = (step: unknown, phase?: string) =>
@@ -339,7 +367,9 @@ export function attach(socket: WebSocket, close: () => void): Session {
         // The tab goes, and so does everything this run remembered about it:
         // a session id Chrome may reuse must not arrive carrying the previous
         // page's status line or its half-finished requests.
-        for (const id of attached) { inFlight.delete(id); documentStatus.delete(id); traffic.delete(id); }
+        for (const id of attached) {
+          inFlight.delete(id); documentStatus.delete(id); traffic.delete(id); mainFrame.delete(id);
+        }
         await send("Target.closeTarget", { targetId }).catch(() => { /* the run is ending anyway */ });
       }
     },
@@ -363,11 +393,13 @@ export function attach(socket: WebSocket, close: () => void): Session {
  * script-rendered list exists, an idle network says nothing about a timer, and
  * a lull in the DOM is exactly what a page looks like just before it fills.
  *
- * It stops at the read's own deadline — the same instant the read is racing,
- * handed down rather than started afresh here, so there is one clock in this
- * call chain and not two. A page that never stops moving therefore runs out
- * of time as a page rather than as a wait, and is reported unreachable: it
- * has not been read, and saying so beats hashing whatever it happened to hold.
+ * It is handed the read's own deadline rather than starting a budget afresh,
+ * so it cannot wait past the moment the read is already racing. It does not
+ * report anything when it gets there: it returns, and whether the page is
+ * then read or abandoned is decided above it — in practice by `withDeadline`,
+ * whose timer is running on the same budget from slightly earlier and which
+ * is what turns a page that never stops moving into `unreachable`. Two
+ * timers, one budget, and this one is the inner of them.
  */
 async function settle(
   evaluate: (expression: string) => Promise<unknown>,
