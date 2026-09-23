@@ -135,6 +135,75 @@ function comboFixture(): string {
 }
 
 /**
+ * The nationality field as ind.nl actually builds it: a typeahead.
+ *
+ * Measured from the runner, 2026-09-23 (dispatch 35907509394). The failing
+ * step reported "near that label the page has: INPUT[type=text],
+ * INPUT[type=text]" — no select, and no listbox anywhere in the document. So
+ * there is nothing to open and nothing to pick until something is typed, and
+ * the suggestions are built out of the typing. Two inputs, because that is
+ * what the runner found: the one a person types in, and the ghost a typeahead
+ * keeps beside it.
+ *
+ * `suggests: false` is the same control offering something else, which is the
+ * shape of the day the IND renames a country or drops one.
+ */
+function typeaheadFixture({ suggests = true } = {}): string {
+  const offers = suggests ? [TURKIYE, "Tunisia", "Turkmenistan"] : ["Germany", "Greece"];
+  const script = [
+    `var OFFERS = ${JSON.stringify(offers)};`,
+    'var input = document.getElementById("nat");',
+    'var box = document.getElementById("nat-sugg");',
+    'var chosen = null;',
+    'input.addEventListener("input", function () {',
+    '  var typed = input.value.trim().toLowerCase();',
+    '  window.clearTimeout(window.__t);',
+    // Suggestions arrive on a timer, as a real typeahead's do: a step that
+    // reads the DOM the instant it has typed finds nothing at all.
+    '  window.__t = window.setTimeout(function () {',
+    '    box.innerHTML = "";',
+    '    var hits = typed ? OFFERS.filter(function (n) { return n.toLowerCase().indexOf(typed) === 0; }) : [];',
+    '    hits.forEach(function (n) {',
+    '      var li = document.createElement("li");',
+    '      li.setAttribute("role", "option");',
+    '      li.textContent = n;',
+    '      li.addEventListener("click", function () {',
+    '        chosen = n; input.value = n; box.hidden = true;',
+    '        input.setAttribute("aria-expanded", "false");',
+    '      });',
+    '      box.appendChild(li);',
+    '    });',
+    '    box.hidden = hits.length === 0;',
+    '    input.setAttribute("aria-expanded", String(hits.length > 0));',
+    '  }, 150);',
+    '});',
+    'document.getElementById("view").addEventListener("click", function () {',
+    '  var valid = document.querySelector("input[name=valid]:checked");',
+    `  if (chosen !== ${JSON.stringify(TURKIYE)} || !valid || valid.value !== "no") return;`,
+    '  document.getElementById("result").innerHTML =',
+    '    "<h2>Requirements</h2><p>You meet the general requirements that apply to everyone.</p>";',
+    "});",
+  ].join("\n");
+  return `<!doctype html><html lang="en"><head><title>Typeahead route</title></head><body>
+<p>Lede: what this permit is for.</p>
+<div class="field">
+  <label for="nat">What is your nationality?</label>
+  <input id="nat" type="text" role="combobox" aria-expanded="false" aria-controls="nat-sugg" autocomplete="off">
+  <input type="text" class="ghost" tabindex="-1" readonly aria-hidden="true">
+  <ul id="nat-sugg" role="listbox" hidden></ul>
+</div>
+<fieldset><legend>Do you already have a valid Dutch residence permit?</legend>
+  <label><input type="radio" name="valid" value="yes"> Yes</label>
+  <label><input type="radio" name="valid" value="no"> No</label>
+</fieldset>
+<button type="button" id="view">View information</button>
+<div id="result"></div>
+<footer>Cookies Proclaimer</footer>
+<script>${script}</script>
+</body></html>`;
+}
+
+/**
  * A page whose shell carries both slice markers and whose rules land later —
  * ind.nl's shape, in miniature and on a timer.
  */
@@ -349,6 +418,49 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives whatev
       // The diagnosis: what IS there, close enough to the label to be the thing.
       expect(error, "the error names no tag it found").toMatch(/BUTTON/i);
       expect(error, "the error names no role it found").toMatch(/spinbutton/);
+    } finally { await reader.close(); served = fixture(); }
+  });
+});
+
+describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives a typeahead", () => {
+  const typed = (): WatchEntry => entry({
+    slice: { from: "Requirements", to: "Cookies Proclaimer" },
+    steps: [
+      { step: "select", field: "What is your nationality?", option: TURKIYE },
+      { step: "answer", question: "Do you already have a valid Dutch residence permit?", answer: "no" },
+      { step: "press", button: "View information" },
+    ],
+  });
+
+  it("types the option, waits for the suggestions, and picks the one that matches", async () => {
+    served = typeaheadFixture();
+    const reader = openBrowserReader();
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [typed()] }, emptyState, refuse, "2026-09-23", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      expect(nextState.entries["fixture-route"]!.text)
+        .toContain("You meet the general requirements that apply to everyone.");
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("names what did appear when the option is not among the suggestions", async () => {
+    served = typeaheadFixture({ suggests: false });
+    const reader = openBrowserReader();
+    try {
+      const { reports } = await runWatch(
+        { entries: [typed()] }, emptyState, refuse, "2026-09-23", reader.read,
+      );
+      expect(reports[0]!.outcome).toBe("unreachable");
+      const error = reports[0]!.error!;
+      expect(error).toMatch(/select/);
+      expect(error, "the option typed is not named").toContain(TURKIYE);
+      // Either the box stayed shut or it offered something else. Both are
+      // answers, and the message has to say which — it is the only thing a
+      // reader of the runner's log will have.
+      expect(error, "the error says nothing about what the page offered")
+        .toMatch(/offered nothing|it offers/);
     } finally { await reader.close(); served = fixture(); }
   });
 });

@@ -531,16 +531,85 @@ const PERFORM_STEP = `function (step) {
     }
     return el.textContent || el.value || "";
   }
+  /** Can a person act on this at all? A typeahead keeps a ghost input beside
+   * the real one, and the runner met exactly that on ind.nl: two text inputs
+   * under one label, only one of them a control. */
+  function actionable(el) {
+    if (el.disabled || el.readOnly) return false;
+    if (el.getAttribute("aria-hidden") === "true" || el.closest("[aria-hidden=true]")) return false;
+    if (el.hidden || el.closest("[hidden]")) return false;
+    var box = el.getBoundingClientRect();
+    return box.width > 0 && box.height > 0;
+  }
   function named(selector, label, what) {
     var wanted = norm(label);
     var hits = [].slice.call(document.querySelectorAll(selector)).filter(function (el) {
       return norm(accName(el)).indexOf(wanted) >= 0;
     });
     if (hits.length === 0) return { error: what + ' "' + label + '" is not on the page' };
-    if (hits.length > 1) return { error: what + ' "' + label + '" matches ' + hits.length + " things on the page" };
+    // Several is usually one control and its scaffolding, so the ones nobody
+    // could act on are dropped before calling it ambiguous.
+    if (hits.length > 1) {
+      var live = hits.filter(actionable);
+      if (live.length === 1) return { el: live[0] };
+      if (live.length > 1) {
+        // Still several. A typeahead's real input is the one that says it
+        // opens something — a role, an autocomplete hint, a list it controls —
+        // and its twin says none of that. Preferring it beats failing when the
+        // page has told us which is which.
+        var declared = live.filter(function (el) {
+          return el.getAttribute("role") === "combobox" || el.getAttribute("aria-autocomplete")
+            || el.getAttribute("aria-controls") || el.getAttribute("aria-owns")
+            || el.getAttribute("aria-expanded") || el.getAttribute("list");
+        });
+        if (declared.length === 1) return { el: declared[0] };
+        return { error: what + ' "' + label + '" matches ' + live.length + " controls on the page: " + shapes(live) };
+      }
+      return { error: what + ' "' + label + '" matches ' + hits.length + " things, none of them a control: " + shapes(hits) };
+    }
     return { el: hits[0] };
   }
+  /** What a set of elements IS, for a message that has to diagnose from afar. */
+  function shapes(list) {
+    return list.map(function (e) {
+      var role = e.getAttribute("role");
+      return e.tagName + (e.type ? "[type=" + e.type + "]" : "") + (role ? "[role=" + role + "]" : "");
+    }).join(", ");
+  }
   function fire(el, type) { el.dispatchEvent(new Event(type, { bubbles: true })); }
+  /**
+   * Set an input's value the way a keystroke does.
+   *
+   * Assigning to '.value' is invisible to React and to anything else that
+   * wraps the property with its own setter: the framework's state never
+   * changes, so its listener never runs and no suggestion is ever requested.
+   * Calling the prototype's own setter underneath it is what makes the
+   * following 'input' event carry the text.
+   */
+  function nativeValue(el, text) {
+    var proto = Object.getPrototypeOf(el);
+    var setter = Object.getOwnPropertyDescriptor(proto, "value");
+    if (setter && setter.set) setter.set.call(el, text);
+    else el.value = text;
+  }
+  /**
+   * Poll a page-side check until it succeeds or the step runs out of patience.
+   *
+   * A typeahead answers on a timer — ind.nl's does — so "is the option there?"
+   * asked once, immediately after typing, always answers no. The last reading
+   * is handed back either way, so a failure can say what WAS on offer rather
+   * than only that the option was not.
+   */
+  function waitFor(check) {
+    var deadline = Date.now() + 5000;
+    return new Promise(function (resolve) {
+      (function attempt() {
+        var reading = check();
+        if (reading.pick || Date.now() >= deadline) { resolve(reading); return; }
+        window.setTimeout(attempt, 100);
+      })();
+    });
+  }
   /** The first few things on offer, so a wrong option says what the right ones are. */
   function offered(list) {
     var words = list.map(function (o) { return JSON.stringify(String(o.textContent || o.value || "").trim().slice(0, 40)); });
@@ -588,21 +657,56 @@ const PERFORM_STEP = `function (step) {
       fire(native.el, "change");
       return null;
     }
-    // Otherwise the thing a design system builds: a control that says it is a
-    // combobox, or one that owns a listbox. It is opened the way a person
-    // opens it — by pressing it — and the option is picked by the words on it.
-    var combo = named("[role=combobox], [role=listbox], [aria-haspopup=listbox]", step.field, "the field");
+    // Otherwise whatever the page did build: a control that says it is a
+    // combobox, one that owns a listbox, or a plain text box — which is what
+    // ind.nl builds, measured from the runner on 2026-09-23. A person reaches
+    // the options the same way in all three: make the control show them, then
+    // pick the one whose words match.
+    var combo = named(
+      "[role=combobox], [role=listbox], [aria-haspopup=listbox], input[type=text], input:not([type])",
+      step.field, "the field");
     if (combo.error) return "step select: " + combo.error + near(step.field);
-    if (combo.el.getAttribute("aria-expanded") === "false") combo.el.click();
-    var listId = combo.el.getAttribute("aria-controls") || combo.el.getAttribute("aria-owns");
-    var list = (listId && document.getElementById(listId))
-      || (combo.el.getAttribute("role") === "listbox" ? combo.el : null)
-      || combo.el.parentNode.querySelector("[role=listbox]");
-    if (!list) return 'step select: the field "' + step.field + '" opened nothing to choose from' + near(step.field);
-    var picks = [].slice.call(list.querySelectorAll("[role=option]")).filter(function (o) { return norm(o.textContent) === wantedOption; });
-    if (picks.length !== 1) return 'step select: the option "' + step.option + '" is not in the field "' + step.field + '" (it offers: ' + offered([].slice.call(list.querySelectorAll("[role=option]"))) + ")";
-    picks[0].click();
-    return null;
+
+    /** Wherever this control keeps its options, once it has any. */
+    function optionsOf(el) {
+      var listId = el.getAttribute("aria-controls") || el.getAttribute("aria-owns");
+      var list = (listId && document.getElementById(listId))
+        || (el.getAttribute("role") === "listbox" ? el : null)
+        || (el.parentNode && el.parentNode.querySelector("[role=listbox]"))
+        || (el.closest("div, fieldset, form") || document).querySelector("[role=listbox], ul[class*=autocomplete], ul[class*=suggest]");
+      if (!list || list.hidden) return [];
+      var found = [].slice.call(list.querySelectorAll("[role=option], li"));
+      return found.filter(function (o) { return o.offsetParent !== null || list === el; });
+    }
+
+    var isTextBox = combo.el.tagName === "INPUT" && combo.el.type !== "hidden";
+    if (isTextBox) {
+      // Nothing exists to pick until something is typed, so type it — the way
+      // a person does, letting the page's own listener build the list — then
+      // wait for the list, because it is built on a timer and reading the DOM
+      // the instant after typing finds nothing at all.
+      combo.el.focus();
+      nativeValue(combo.el, step.option);
+      fire(combo.el, "input");
+      combo.el.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true, key: step.option.slice(-1) }));
+    } else if (combo.el.getAttribute("aria-expanded") === "false") {
+      combo.el.click();
+    }
+
+    return waitFor(function () {
+      var options = optionsOf(combo.el);
+      var picks = options.filter(function (o) { return norm(o.textContent) === wantedOption; });
+      if (picks.length === 1) return { pick: picks[0] };
+      // Not yet, or never: only the deadline tells the two apart.
+      return { offers: options };
+    }).then(function (last) {
+      if (last.pick) { last.pick.click(); return null; }
+      var what = last.offers.length
+        ? "it offers: " + offered(last.offers)
+        : (isTextBox ? "typing it offered nothing" : "it offered nothing");
+      return 'step select: the option "' + step.option + '" is not in the field "'
+        + step.field + '" (' + what + ")" + (last.offers.length ? "" : near(step.field));
+    });
   }
   if (step.step === "answer") {
     var group = named("fieldset, [role=radiogroup]", step.question, "the question");
