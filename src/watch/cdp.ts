@@ -92,6 +92,17 @@ export function attach(socket: WebSocket, close: () => void): Session {
   const documentStatus = new Map<string, { status: number; url: string }>();
   /** Which frame IS the page, per tab — everything else in it is furniture. */
   const mainFrame = new Map<string, string>();
+  /**
+   * The one origin this tab may be told who is asking, per tab.
+   *
+   * `Network.setExtraHTTPHeaders` and `setUserAgentOverride` are per-SESSION,
+   * so they identify the watch to every host a page embeds — measured
+   * 2026-09-24, a cross-origin iframe was handed both `x-source-contact` and
+   * the watch's name in the User-Agent. The fetcher only ever names itself to
+   * the source it was pointed at; this is what makes the browser tier keep
+   * the same promise.
+   */
+  const identifyTo = new Map<string, string>();
   /** Requests each tab has started and not yet finished — one half of what
    * "the page has stopped" means. */
   const inFlight = new Map<string, Set<string>>();
@@ -136,7 +147,8 @@ export function attach(socket: WebSocket, close: () => void): Session {
       id?: number; method?: string; sessionId?: string;
       params?: {
         type?: string; requestId?: string; errorText?: string; encodedDataLength?: number; frameId?: string;
-        request?: { url?: string }; response?: { status?: number; url?: string };
+        request?: { url?: string; headers?: Record<string, string> };
+        response?: { status?: number; url?: string };
       };
       error?: { message: string }; result?: Record<string, unknown>;
     };
@@ -193,6 +205,47 @@ export function attach(socket: WebSocket, close: () => void): Session {
       requestsOf(message.sessionId).clear();
       return;
     }
+    /**
+     * Every request the tab makes, paused just long enough to decide whether
+     * this host is the one we are talking to.
+     *
+     * The source's own origin is continued untouched, so it sees exactly what
+     * it saw before. Everything else — an embed, a consent widget, a font — is
+     * continued with the watch's name taken out of the User-Agent and the
+     * contact header dropped: those two say WHO is reading and WHY, and a
+     * third party the source happens to embed is owed neither.
+     *
+     * Every paused request is continued, including on the failure path: a
+     * request left paused stops the page, and while the read's own deadline
+     * bounds that to one entry rather than the run, a bound is not a reason
+     * to leave one hanging.
+     */
+    if (message.method === "Fetch.requestPaused" && message.sessionId && message.params?.requestId) {
+      const sessionId = message.sessionId;
+      const requestId = message.params.requestId;
+      const mine = identifyTo.get(sessionId);
+      const url = message.params.request?.url ?? "";
+      let sameOrigin = false;
+      try { sameOrigin = Boolean(mine) && new URL(url).origin === mine; } catch { sameOrigin = false; }
+      const resume = sameOrigin
+        ? { requestId }
+        : {
+          requestId,
+          headers: Object.entries(message.params.request?.headers ?? {})
+            .filter(([name]) => name.toLowerCase() !== "x-source-contact")
+            .map(([name, value]) => ({
+              name,
+              value: name.toLowerCase() === "user-agent"
+                ? String(value).replace(` ${WATCH_NAME}`, "")
+                : String(value),
+            })),
+        };
+      send("Fetch.continueRequest", resume, sessionId).catch(() => {
+        // The request is already gone — a navigation cancelled it, or the tab
+        // closed under it. Nothing is waiting on it either way.
+      });
+      return;
+    }
     if (message.id === undefined) return;
     const waiter = pending.get(message.id);
     if (!waiter) return;
@@ -243,9 +296,15 @@ export function attach(socket: WebSocket, close: () => void): Session {
         // to block this watch should be able to reach its operator rather than
         // only refuse it — and a browser read is the heavier of the two, so it
         // is the one that owes the address most.
+        //
+        // Both are set for the whole tab, because that is the only way CDP
+        // offers, and then taken off every request that is not the source's
+        // by the interception above.
         await send("Network.setExtraHTTPHeaders", {
           headers: { "x-source-contact": WATCH_CONTACT },
         }, sessionId);
+        identifyTo.set(sessionId, new URL(entry.url).origin);
+        await send("Fetch.enable", { patterns: [{ urlPattern: "*" }] }, sessionId);
         await send("Network.setUserAgentOverride", {
           userAgent: `${(ua.userAgent ?? "Mozilla/5.0").replace("HeadlessChrome", "Chrome")} ${WATCH_NAME}`,
         }, sessionId);
@@ -368,7 +427,8 @@ export function attach(socket: WebSocket, close: () => void): Session {
         // a session id Chrome may reuse must not arrive carrying the previous
         // page's status line or its half-finished requests.
         for (const id of attached) {
-          inFlight.delete(id); documentStatus.delete(id); traffic.delete(id); mainFrame.delete(id);
+          inFlight.delete(id); documentStatus.delete(id); traffic.delete(id);
+          mainFrame.delete(id); identifyTo.delete(id);
         }
         await send("Target.closeTarget", { targetId }).catch(() => { /* the run is ending anyway */ });
       }
@@ -397,9 +457,10 @@ export function attach(socket: WebSocket, close: () => void): Session {
  * so it cannot wait past the moment the read is already racing. It does not
  * report anything when it gets there: it returns, and whether the page is
  * then read or abandoned is decided above it — in practice by `withDeadline`,
- * whose timer is running on the same budget from slightly earlier and which
- * is what turns a page that never stops moving into `unreachable`. Two
- * timers, one budget, and this one is the inner of them.
+ * whose timer is armed a moment AFTER `renderBy` is set and on the same
+ * budget, so it fires a moment later — and it is what turns a page that never
+ * stops moving into `unreachable`. Two timers, one budget; this one is the
+ * inner and the quieter of them.
  */
 async function settle(
   evaluate: (expression: string) => Promise<unknown>,

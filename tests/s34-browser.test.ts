@@ -241,7 +241,11 @@ let frameStatus = 200;
  * the Opportunity Card's cookie check, in miniature. */
 let bounceOnce = false;
 const server: Server = createServer((req, res) => {
+  metAtSource.push(introduction(req.headers));
   const path = (req.url ?? "/").split("?")[0]!;
+  // A subresource that never answers, for the case that asks whether a
+  // paused request can outlast the read's budget.
+  if (path === "/never") return;
   if (redirectTo && path === "/") {
     res.writeHead(302, { location: redirectTo });
     res.end();
@@ -723,7 +727,16 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the recipe drives the IND's f
 // is caught by the status gate on the way out; a page that greets it happily
 // is caught by nothing but the origin, which is the guard under test.
 const elsewhereBody = "<h1>Somewhere else</h1><p>Requirements Cookies Proclaimer</p>";
-const elsewhere: Server = createServer((_req, res) => {
+/** How each server was introduced to, so the promise can be measured. */
+interface Introduction { named: boolean; contact: string | undefined }
+const metElsewhere: Introduction[] = [];
+const metAtSource: Introduction[] = [];
+const introduction = (headers: Record<string, string | string[] | undefined>): Introduction => ({
+  named: String(headers["user-agent"] ?? "").includes("permit-rulebook-watch"),
+  contact: headers["x-source-contact"] as string | undefined,
+});
+const elsewhere: Server = createServer((req, res) => {
+  metElsewhere.push(introduction(req.headers));
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(elsewhereBody);
 });
@@ -961,6 +974,62 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — an iframe in a source page is
       expect(nextState.entries["fixture-route"]!.text)
         .toContain("You meet the general requirements that apply to everyone.");
     } finally { await reader.close(); frameStatus = 200; served = fixture(); }
+  });
+});
+
+describe.skipIf(Boolean(noChrome) && !CI)("s34 — the watch names itself to the source and to nobody else", () => {
+  it("tells the source who is asking, and tells a host it merely embeds nothing", async () => {
+    // `Network.setExtraHTTPHeaders` and `setUserAgentOverride` are per-SESSION,
+    // so until 2026-09-24 every host a source page embedded was handed
+    // `x-source-contact` and the watch's name in the User-Agent — measured on
+    // a cross-origin iframe. The fetcher only ever names itself to the source
+    // it was pointed at, and this is what makes the browser tier keep the
+    // same promise.
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<iframe src="${elsewhereOrigin}/embed" width="1" height="1" title="An embed"></iframe>
+<footer>Cookies Proclaimer</footer>
+</body></html>`;
+    metElsewhere.length = 0;
+    metAtSource.length = 0;
+    const reader = openBrowserReader();
+    try {
+      const { reports } = await runWatch(
+        { entries: [entry({ slice: { from: "Lede:", to: "Cookies Proclaimer" }, steps: [] })] },
+        emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+
+      expect(metAtSource.length, "the source was never asked for anything").toBeGreaterThan(0);
+      expect(metAtSource.every((met) => met.named), "the source was not told who is asking").toBe(true);
+      expect(metAtSource.every((met) => met.contact === "https://github.com/OytunOnal/permit-rulebook-data"),
+        "the source was not given an address for the operator").toBe(true);
+
+      expect(metElsewhere.length, "the embedded host was never asked for anything").toBeGreaterThan(0);
+      expect(metElsewhere.some((met) => met.named), "a host the page embeds was told the watch's name").toBe(false);
+      expect(metElsewhere.some((met) => met.contact !== undefined),
+        "a host the page embeds was given the operator's address").toBe(false);
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("does not let a subresource that never answers outlast the read's budget", async () => {
+    // Every paused request is continued, including on the failure path. This
+    // is the backstop under that: a request nothing ever answers costs the
+    // entry its budget and not the run.
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<img src="/never" alt="">
+<footer>Cookies Proclaimer</footer>
+</body></html>`;
+    const reader = openBrowserReader({ budgetMs: 8_000 });
+    const started = Date.now();
+    try {
+      await runWatch(
+        { entries: [entry({ slice: { from: "Lede:", to: "Cookies Proclaimer" }, steps: [] })] },
+        emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(Date.now() - started, "the read outlasted its own budget").toBeLessThan(14_000);
+    } finally { await reader.close(); served = fixture(); }
   });
 });
 

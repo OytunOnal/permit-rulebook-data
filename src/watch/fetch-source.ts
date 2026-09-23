@@ -16,13 +16,19 @@ const WATCH_NAME = "permit-rulebook-watch/0.1";
 const WATCH_CONTACT = "https://github.com/OytunOnal/permit-rulebook-data";
 
 /**
- * How long one source gets, on either tier.
+ * How long one source gets, on either tier — the whole of it, redirects
+ * included.
  *
- * The fetcher is where this number lives because the scenario put it there —
+ * The fetcher is where this number lives because the scenario put it there:
  * point 5 asks the browser for "a per-entry budget of 30 s, like the
- * fetcher's" — so the browser imports it rather than spelling it again. It
- * was spelled twice, each comment citing the other (Standards review,
- * 2026-09-24).
+ * fetcher's", which makes the fetcher the origin of the figure and the
+ * browser a borrower of it. `core.ts` would be the wrong home — it is the
+ * engine both readers are injected into and knows nothing about sockets or
+ * browsers — so the browser imports it from here.
+ *
+ * It is a budget per SOURCE and not per request. Armed once outside the hop
+ * loop, because arming it inside let one source hold six of them
+ * (Spec review, 2026-09-24).
  */
 export const BUDGET_MS = 30_000;
 
@@ -35,10 +41,33 @@ export const BUDGET_MS = 30_000;
  */
 const MOST_HOPS = 5;
 
+/**
+ * As much of an address as belongs in a message a person reads.
+ *
+ * Everything past this is a page's choice, not a fact about the source: a
+ * `location` header of 9,000 characters made a 9,111-character error, and a
+ * redirect chain made a 12,023-character `read_at` (Security review,
+ * 2026-09-24). The same bound the browser tier puts on the same kind of
+ * string.
+ */
+const MOST_OF_AN_ADDRESS = 200;
+
+export function shortAddress(address: string): string {
+  return address.length > MOST_OF_AN_ADDRESS
+    ? `${address.slice(0, MOST_OF_AN_ADDRESS)}… (${address.length} characters)`
+    : address;
+}
+
 export const fetchSource: Fetcher = async (url) => {
-  const asked = new URL(url).origin;
-  let target = url;
+  // Inside the try, because `new URL` throws on a malformed one. Outside it,
+  // one bad entry took the whole pass down with it — no reports, no state and
+  // no flags for the other forty-four sources, where it had been one
+  // `unreachable` (Standards review, 2026-09-24).
   try {
+    const asked = new URL(url).origin;
+    let target = url;
+    // One deadline for the source, shared by every hop it makes.
+    const until = AbortSignal.timeout(BUDGET_MS);
     for (let hop = 0; ; hop++) {
       /**
        * Redirects are followed by hand, and judged BEFORE they are taken.
@@ -73,21 +102,38 @@ export const fetchSource: Fetcher = async (url) => {
           "user-agent": WATCH_NAME,
           "x-source-contact": WATCH_CONTACT,
         },
-        signal: AbortSignal.timeout(BUDGET_MS),
+        signal: until,
       });
 
       if (res.status >= 300 && res.status < 400) {
         const location = res.headers.get("location");
         if (!location)
           return { ok: false, status: res.status, error: `HTTP ${res.status} with nowhere to go` };
-        const next = new URL(location, target);
+        let next: URL;
+        try { next = new URL(location, target); }
+        catch { return { ok: false, status: res.status, error: `HTTP ${res.status} to somewhere that is not an address` }; }
+        /**
+         * A target carrying a name and password is refused before it is
+         * asked for, and the credentials are never printed.
+         *
+         * `user:pass@host` keeps the origin, so the check below would pass
+         * it; undici then refuses it at request time and the thrown string —
+         * credentials and all — became the error, with no status to say what
+         * the source had actually answered (Security review, 2026-09-24).
+         */
+        if (next.username || next.password)
+          return {
+            ok: false,
+            status: res.status,
+            error: `HTTP ${res.status} to an address carrying a name and password, which this watch will not send`,
+          };
         // The status reported is the REDIRECT's own, because that is the
         // answer this source gave; the far server was never asked.
         if (next.origin !== asked)
           return {
             ok: false,
             status: res.status,
-            error: `redirected off the site: asked ${asked}, sent to ${next.origin}${next.pathname} (HTTP ${res.status}, not followed)`,
+            error: `redirected off the site: asked ${asked}, sent to ${shortAddress(`${next.origin}${next.pathname}`)} (HTTP ${res.status}, not followed)`,
           };
         if (hop >= MOST_HOPS)
           return { ok: false, status: res.status, error: `redirected more than ${MOST_HOPS} times within ${asked}` };
@@ -103,7 +149,7 @@ export const fetchSource: Fetcher = async (url) => {
       // a blank snapshot as a successful read and reported "unchanged" ever
       // after (measured 2026-09-10, s8).
       if (body.byteLength === 0) return { ok: false, status: res.status, error: `HTTP ${res.status} with an empty body` };
-      return { ok: true, body, ...(target !== url ? { from: target } : {}) };
+      return { ok: true, body, ...(target !== url ? { from: shortAddress(target) } : {}) };
     }
   } catch (e) {
     return { ok: false, error: String(e) };

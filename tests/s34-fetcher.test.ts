@@ -20,6 +20,8 @@ import { fetchSource } from "../src/watch/fetch-source.js";
 
 /** Counted, because the point is that it is never asked. */
 let elsewhereAsked = 0;
+/** Counted too: a loop is asked for a bounded number of times. */
+let sourceAsked = 0;
 const elsewhere: Server = createServer((_req, res) => {
   elsewhereAsked += 1;
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
@@ -33,10 +35,18 @@ const elsewhereOrigin = `http://127.0.0.1:${(elsewhere.address() as AddressInfo)
  * on the way to the same page, and `/` is the page.
  */
 const source: Server = createServer((req, res) => {
+  sourceAsked += 1;
   const path = (req.url ?? "/").split("?")[0];
   if (path === "/away") { res.writeHead(302, { location: `${elsewhereOrigin}/x` }); res.end(); return; }
   if (path === "/around") { res.writeHead(302, { location: "/settled" }); res.end(); return; }
   if (path === "/loop") { res.writeHead(302, { location: "/loop" }); res.end(); return; }
+  if (path === "/long") {
+    res.writeHead(302, { location: `${elsewhereOrigin}/${"a".repeat(9_000)}` });
+    res.end();
+    return;
+  }
+  if (path === "/longway") { res.writeHead(302, { location: `/settled?${"b".repeat(12_000)}` }); res.end(); return; }
+  if (path === "/credentials") { res.writeHead(302, { location: sourceOrigin.replace("//", "//watcher:hunter2@") + "/settled" }); res.end(); return; }
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end("<p>The authority's own words</p>");
 });
@@ -80,10 +90,49 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
   });
 
   it("stops rather than circles when a source redirects to itself for ever", async () => {
+    // Countable, so the decision is the count and not the wording: a loop is
+    // asked for at most one more time than the hops allowed.
+    const before = sourceAsked;
     const answer = await fetchSource(`${sourceOrigin}/loop`);
     expect(answer.ok).toBe(false);
+    expect(sourceAsked - before, "a loop was followed further than the cap").toBeLessThanOrEqual(6);
+  });
+
+  it("bounds an address a source chooses, however long it makes it", async () => {
+    // A `location` of 9,000 characters made a 9,111-character error, which
+    // went on into a flag and an issue (Security review, 2026-09-24).
+    const refused = await fetchSource(`${sourceOrigin}/long`);
+    expect(refused.ok).toBe(false);
+    if (refused.ok) return;
+    expect(refused.error.length, "the refusal quotes the whole of a page's address").toBeLessThan(400);
+    expect(refused.error).toContain(elsewhereOrigin);
+
+    // And the same bound on where it says it read.
+    const read = await fetchSource(`${sourceOrigin}/longway`);
+    expect(read.ok).toBe(true);
+    if (!read.ok) return;
+    expect(read.from!.length, "read_at carries the whole of a page's address").toBeLessThan(400);
+  });
+
+  it("refuses an address carrying a name and password, and never prints them", async () => {
+    // `user:pass@host` keeps the origin, so the origin check passes it;
+    // undici then refuses it at request time and the thrown string — with the
+    // credentials in it — became the error, with no status to say what the
+    // source had answered.
+    const answer = await fetchSource(`${sourceOrigin}/credentials`);
+    expect(answer.ok).toBe(false);
     if (answer.ok) return;
-    expect(answer.error).toContain("more than");
+    expect(answer.error, "the password was printed").not.toContain("hunter2");
+    expect(answer.error, "the name was printed").not.toContain("watcher");
+    expect(answer.status, "the source's own answer is not reported").toBe(302);
+  });
+
+  it("reports a malformed entry url as unreachable instead of taking the pass down", async () => {
+    // It used to throw past `runWatch`, which took the reports, the state and
+    // the flags for the other forty-four sources with it (Standards review,
+    // 2026-09-24).
+    const answer = await fetchSource("not-an-address");
+    expect(answer.ok, "a malformed url was treated as a reading").toBe(false);
   });
 
   it("says nothing about where it read when it read where it was asked", async () => {

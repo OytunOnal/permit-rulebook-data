@@ -6,6 +6,7 @@ import {
 } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 import type { Dataset } from "../src/types.js";
+import { fetchSource } from "../src/watch/fetch-source.js";
 import { readFileSync } from "node:fs";
 
 /**
@@ -132,6 +133,28 @@ describe("s34 — a run with no browser reads the rest and goes red on the seven
     // not read these pages, and must not say it has.
     expect(nextState.unread).toEqual([{ id: "fixture-browser", url: "https://example.invalid/rendered" }]);
     expect(nextState.entries["fixture-html"]).toBeDefined();
+  });
+});
+
+describe("s34 — one bad source does not take the pass down with it", () => {
+  it("reports a malformed entry url as unreachable and reads the rest", async () => {
+    // `runWatch` promises that a mangled source is one `unreachable` and not
+    // the end of the pass, and the fetcher broke that promise for a while by
+    // parsing the url outside its own try: the throw escaped `runWatch`, so
+    // there were no reports, no state and no flags for any of the other
+    // forty-four sources either (Standards review, 2026-09-24).
+    const mangled: WatchEntry = { ...htmlEntry, id: "mangled", url: "not-an-address" };
+    const good: Fetcher = async () => ({ ok: true, body: encode("<p>the authority's words</p>") });
+    const { reports, nextState } = await runWatch(
+      { entries: [mangled, htmlEntry] }, emptyState,
+      async (url) => (url === "not-an-address" ? fetchSource(url) : good(url)),
+      "2026-09-24",
+    );
+    expect(reports.map((r) => [r.id, r.outcome])).toEqual([
+      ["mangled", "unreachable"],
+      ["fixture-html", "baseline"],
+    ]);
+    expect(nextState.entries["fixture-html"], "the good source went unread too").toBeDefined();
   });
 });
 

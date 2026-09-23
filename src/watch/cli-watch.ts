@@ -73,15 +73,6 @@ function flagFile(report: WatchReport, today: string) {
 }
 
 /**
- * The browser half of the run: one Chrome, opened by the first entry that
- * needs one and closed on the way out, with what each page cost written down.
- *
- * The cost is logged rather than measured afterwards because it is the number
- * the slice is answerable for — seven rendered pages inside a job that used to
- * take about two minutes — and a number nobody can read from the run's own log
- * is a number nobody checks (s34 point 6).
- */
-/**
  * Where the reading was actually taken, when that is not where it was asked
  * for — on either tier, by the same rule.
  *
@@ -97,12 +88,25 @@ const sayWhereItRead = (entry: { id: string; url: string }, result: FetchResult)
   log("info", "watch:read_at", { id: entry.id, asked: entry.url, read_at: result.from });
 };
 
+/** Which entry an address belongs to, so a `read_at` names the entry a
+ * curator knows it by rather than repeating the url twice. */
+const entryAt = new Map(watchlist.entries.map((e) => [e.url, e.id]));
+
 const readSourceOverHttp: Fetcher = async (url) => {
   const result = await fetchSource(url);
-  sayWhereItRead({ id: url, url }, result);
+  sayWhereItRead({ id: entryAt.get(url) ?? url, url }, result);
   return result;
 };
 
+/**
+ * The browser half of the run: one Chrome, opened by the first entry that
+ * needs one and closed on the way out, with what each page cost written down.
+ *
+ * The cost is logged rather than measured afterwards because it is the number
+ * the slice is answerable for — seven rendered pages inside a job that used to
+ * take about two minutes — and a number nobody can read from the run's own log
+ * is a number nobody checks (s34 point 6).
+ */
 const browser = openBrowserReader();
 const openInBrowser: BrowserReader = async (entry) => {
   const started = Date.now();
