@@ -136,6 +136,33 @@ describe("s34 — a run with no browser reads the rest and goes red on the seven
   });
 });
 
+describe("s34 — a watched address may not carry a name and password", () => {
+  it("the gate refuses one, and never prints the credentials", () => {
+    // Both readers refuse such an address at run time; this refuses it where
+    // it is curator data, so it fails at `npm run check` and not on a
+    // morning. Nothing this project watches needs credentials, and a watch
+    // that sends them is a watch that can leak them.
+    const withCredentials: Watchlist = {
+      entries: [{
+        ...htmlEntry,
+        url: "https://watcher:hunter2@example.invalid/rules",
+        kind: "sentinel",
+      }],
+    };
+    const gate = checkCoverage(dataset, withCredentials);
+    expect(gate.urls_with_credentials.length, "the gate let credentials through").toBe(1);
+    expect(gate.ok).toBe(false);
+    const said = gate.urls_with_credentials.join(" ");
+    expect(said, "the password was printed").not.toContain("hunter2");
+    expect(said, "the name was printed").not.toContain("watcher");
+    expect(said, "the entry is not named").toContain("fixture-html");
+  });
+
+  it("says nothing about the watchlist this repository ships", () => {
+    expect(checkCoverage(dataset, watchlist).urls_with_credentials).toEqual([]);
+  });
+});
+
 describe("s34 — one bad source does not take the pass down with it", () => {
   it("reports a malformed entry url as unreachable and reads the rest", async () => {
     // `runWatch` promises that a mangled source is one `unreachable` and not

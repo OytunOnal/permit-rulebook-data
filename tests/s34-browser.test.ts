@@ -26,6 +26,33 @@ let noChrome: string | undefined;
 try { chromePath(); } catch (e) { noChrome = String(e instanceof Error ? e.message : e); }
 if (noChrome && !CI) console.log(`s34: the real-browser cases are SKIPPED — ${noChrome}`);
 
+/**
+ * What each server was told about who is asking, so the promise can be
+ * measured rather than described.
+ *
+ * `acrh` is the one that matters most: an `Access-Control-Request-Headers`
+ * line means Chrome sent a preflight, which means the request was not simple,
+ * which means this watch changed what the page does rather than watching it.
+ */
+interface Introduction {
+  method: string;
+  path: string;
+  named: boolean;
+  contact: string | undefined;
+  acrh: string | undefined;
+}
+const metElsewhere: Introduction[] = [];
+const metAtSource: Introduction[] = [];
+const introduction = (req: {
+  method?: string; url?: string; headers: Record<string, string | string[] | undefined>;
+}): Introduction => ({
+  method: req.method ?? "",
+  path: (req.url ?? "").split("?")[0] ?? "",
+  named: String(req.headers["user-agent"] ?? "").includes("permit-rulebook-watch"),
+  contact: req.headers["x-source-contact"] as string | undefined,
+  acrh: req.headers["access-control-request-headers"] as string | undefined,
+});
+
 const TURKIYE = "Türkiye";
 
 /**
@@ -241,7 +268,7 @@ let frameStatus = 200;
  * the Opportunity Card's cookie check, in miniature. */
 let bounceOnce = false;
 const server: Server = createServer((req, res) => {
-  metAtSource.push(introduction(req.headers));
+  metAtSource.push(introduction(req));
   const path = (req.url ?? "/").split("?")[0]!;
   // A subresource that never answers, for the case that asks whether a
   // paused request can outlast the read's budget.
@@ -727,16 +754,20 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the recipe drives the IND's f
 // is caught by the status gate on the way out; a page that greets it happily
 // is caught by nothing but the origin, which is the guard under test.
 const elsewhereBody = "<h1>Somewhere else</h1><p>Requirements Cookies Proclaimer</p>";
-/** How each server was introduced to, so the promise can be measured. */
-interface Introduction { named: boolean; contact: string | undefined }
-const metElsewhere: Introduction[] = [];
-const metAtSource: Introduction[] = [];
-const introduction = (headers: Record<string, string | string[] | undefined>): Introduction => ({
-  named: String(headers["user-agent"] ?? "").includes("permit-rulebook-watch"),
-  contact: headers["x-source-contact"] as string | undefined,
-});
 const elsewhere: Server = createServer((req, res) => {
-  metElsewhere.push(introduction(req.headers));
+  metElsewhere.push(introduction(req));
+  // An ordinary CORS endpoint: it allows the origin, and nothing else. That
+  // is the shape a preflight announcing an unexpected header fails against.
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, { "access-control-allow-origin": "*" });
+    res.end();
+    return;
+  }
+  if ((req.url ?? "").startsWith("/api")) {
+    res.writeHead(200, { "access-control-allow-origin": "*", "content-type": "text/plain; charset=utf-8" });
+    res.end("the cross-origin answer");
+    return;
+  }
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end(elsewhereBody);
 });
@@ -1000,15 +1031,126 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the watch names itself to the
       );
       expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
 
+      // Every request the PAGE makes to its own origin — document, image,
+      // favicon, the lot. Not every request Chrome can make on a page's
+      // behalf: a service worker fetches from a context this reader does not
+      // intercept, and a source that registers one routes its later requests
+      // through it unnamed. That gap is declared in CONTEXT.md's Browser tier
+      // entry and in the scenario's correction paragraph rather than being
+      // asserted away here (Security review, 2026-09-24).
       expect(metAtSource.length, "the source was never asked for anything").toBeGreaterThan(0);
       expect(metAtSource.every((met) => met.named), "the source was not told who is asking").toBe(true);
       expect(metAtSource.every((met) => met.contact === "https://github.com/OytunOnal/permit-rulebook-data"),
         "the source was not given an address for the operator").toBe(true);
+      expect(metAtSource.some((met) => met.acrh !== undefined),
+        "the source was preflighted, so its own requests are not what a visitor sends").toBe(false);
 
       expect(metElsewhere.length, "the embedded host was never asked for anything").toBeGreaterThan(0);
       expect(metElsewhere.some((met) => met.named), "a host the page embeds was told the watch's name").toBe(false);
       expect(metElsewhere.some((met) => met.contact !== undefined),
         "a host the page embeds was given the operator's address").toBe(false);
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("leaves a page's cross-origin call exactly as a visitor's browser would send it", async () => {
+    // The header was set on the whole tab until 2026-09-24, which made every
+    // cross-origin request NON-SIMPLE: Chrome preflighted it, announcing
+    // `x-source-contact` by name, and against an ordinary CORS endpoint that
+    // allows the origin and nothing else the preflight is refused and the
+    // page's own call FAILS. A page whose content arrives that way renders
+    // short for this watch and for nobody else — the wrong-reading class.
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<div id="out"></div>
+<footer>Cookies Proclaimer</footer>
+<script>
+fetch("${elsewhereOrigin}/api").then(function (r) { return r.text(); })
+  .then(function (t) { document.getElementById("out").textContent = t; })
+  .catch(function (e) { document.getElementById("out").textContent = "FAILED: " + e.message; });
+</script>
+</body></html>`;
+    metElsewhere.length = 0;
+    const reader = openBrowserReader();
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [entry({ slice: { from: "Lede:", to: "Cookies Proclaimer" }, steps: [] })] },
+        emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      const text = nextState.entries["fixture-route"]!.text!;
+      // The page's own call succeeded, so its answer is in the reading.
+      expect(text, "the page's cross-origin call failed under the watch").toContain("the cross-origin answer");
+      expect(text).not.toContain("FAILED:");
+      // And nothing was preflighted, because nothing unusual was sent.
+      expect(metElsewhere.some((met) => met.method === "OPTIONS"),
+        "the watch made the page preflight a request a visitor would not").toBe(false);
+      expect(metElsewhere.some((met) => met.acrh !== undefined),
+        "a third party was told this header exists by name").toBe(false);
+      expect(metElsewhere.some((met) => met.contact !== undefined),
+        "a third party was given the operator's address").toBe(false);
+      expect(metElsewhere.some((met) => met.named), "a third party was told the watch's name").toBe(false);
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("reads a page that embeds a genuinely cross-site frame", async () => {
+    // An out-of-process iframe's document request is STARTED in the page's
+    // session and finished in the frame's own target, so the count of what is
+    // in flight never came back to zero and the page was never finished —
+    // measured, `did not finish this page within 45s` on a page whose only
+    // sin was embedding somebody. `localhost` against `127.0.0.1` is a
+    // different site, which is what puts the frame in its own process; two
+    // ports on one host would not.
+    const crossSite = elsewhereOrigin.replace("127.0.0.1", "localhost");
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<iframe src="${crossSite}/embed" width="1" height="1" title="An embed"></iframe>
+<div id="out"></div>
+<footer>Cookies Proclaimer</footer>
+<script>setTimeout(function () {
+  document.getElementById("out").textContent = "the page's own late content";
+}, 2500);</script>
+</body></html>`;
+    const reader = openBrowserReader({ budgetMs: 20_000 });
+    const started = Date.now();
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [entry({ slice: { from: "Lede:", to: "Cookies Proclaimer" }, steps: [] })] },
+        emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      expect(Date.now() - started, "the frame held the read past its budget").toBeLessThan(20_000);
+      // And it still waited for the page's own content, which is the thing
+      // the count is there to wait for.
+      expect(nextState.entries["fixture-route"]!.text)
+        .toContain("the page's own late content");
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("reads a page whose requests are cancelled under it", async () => {
+    // A request that is already gone when the driver continues it answers
+    // with an error, which is swallowed — nothing is waiting on a request
+    // nobody will receive. This is the case that says the swallow is a
+    // decision and not a hope: a page that cancels its own requests reads.
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<div id="out">the page's own content</div>
+<footer>Cookies Proclaimer</footer>
+<script>
+for (var i = 0; i < 12; i++) {
+  var stop = new AbortController();
+  fetch("/never", { signal: stop.signal }).catch(function () {});
+  stop.abort();
+}
+</script>
+</body></html>`;
+    const reader = openBrowserReader({ budgetMs: 15_000 });
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [entry({ slice: { from: "Lede:", to: "Cookies Proclaimer" }, steps: [] })] },
+        emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      expect(nextState.entries["fixture-route"]!.text).toContain("the page's own content");
     } finally { await reader.close(); served = fixture(); }
   });
 

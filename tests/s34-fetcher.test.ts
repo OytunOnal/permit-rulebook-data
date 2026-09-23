@@ -127,6 +127,17 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
     expect(answer.status, "the source's own answer is not reported").toBe(302);
   });
 
+  it("refuses an entry address carrying a name and password, and never prints them", async () => {
+    // The redirect path was guarded in round 5 and this one was not: undici
+    // refuses `user:pass@host` at request time and `String(e)` put the
+    // credentials into the error (Security review, 2026-09-24).
+    const answer = await fetchSource(`${sourceOrigin.replace("//", "//watcher:hunter2@")}/`);
+    expect(answer.ok).toBe(false);
+    if (answer.ok) return;
+    expect(answer.error, "the password was printed").not.toContain("hunter2");
+    expect(answer.error, "the name was printed").not.toContain("watcher");
+  });
+
   it("reports a malformed entry url as unreachable instead of taking the pass down", async () => {
     // It used to throw past `runWatch`, which took the reports, the state and
     // the flags for the other forty-four sources with it (Standards review,

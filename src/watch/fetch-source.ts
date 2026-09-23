@@ -64,7 +64,21 @@ export const fetchSource: Fetcher = async (url) => {
   // no flags for the other forty-four sources, where it had been one
   // `unreachable` (Standards review, 2026-09-24).
   try {
-    const asked = new URL(url).origin;
+    const entry = new URL(url);
+    /**
+     * An entry address carrying a name and password is refused before it is
+     * requested, and they are never printed.
+     *
+     * The redirect path was guarded in round 5 and this one was not: undici
+     * refuses `user:pass@host` at request time, and `String(e)` put the
+     * credentials into the error, the log, a flag and an issue (Security
+     * review, 2026-09-24). The watchlist is curator data, so the coverage
+     * gate refuses such an entry at `npm run check` too — this is the floor
+     * under that, for a url that reaches here by any other road.
+     */
+    if (entry.username || entry.password)
+      return { ok: false, error: "the entry address carries a name and password, which this watch will not send" };
+    const asked = entry.origin;
     let target = url;
     // One deadline for the source, shared by every hop it makes.
     const until = AbortSignal.timeout(BUDGET_MS);

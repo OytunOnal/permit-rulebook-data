@@ -483,6 +483,16 @@ export interface CoverageResult {
    * quietly did nothing, and the page would then be read in a state nobody
    * chose — so it fails the gate here, before a run can. */
   invalid_steps: string[];
+  /**
+   * Watched addresses carrying a name and password.
+   *
+   * No source this project reads needs one, and a watch that sends
+   * credentials is a watch that can leak them — into an error, a log, a flag
+   * and an issue. Both readers refuse such an address at run time; this
+   * refuses it in the watchlist, where it is curator data and where a person
+   * can fix it before a morning does (s34, 2026-09-24).
+   */
+  urls_with_credentials: string[];
 }
 
 /**
@@ -642,11 +652,21 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
       return why === null ? [] : [`${e.id}: step ${i + 1} — ${why}`];
     });
   });
+  const credentialled = watchlist.entries.flatMap((e) => {
+    let parsed: URL;
+    try { parsed = new URL(e.url); } catch { return [`${e.id}: ${e.url} is not an address`]; }
+    // The address is named, the credentials never are.
+    return parsed.username || parsed.password
+      ? [`${e.id}: ${parsed.origin}${parsed.pathname} carries a name and password`]
+      : [];
+  });
   return {
-    ok: missing.length === 0 && orphans.length === 0 && unbounded.length === 0 && steps.length === 0,
+    ok: missing.length === 0 && orphans.length === 0 && unbounded.length === 0
+      && steps.length === 0 && credentialled.length === 0,
     missing_from_watchlist: missing,
     orphan_watch_entries: orphans,
     unbounded_substitutions: unbounded,
     invalid_steps: steps,
+    urls_with_credentials: credentialled,
   };
 }

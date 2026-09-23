@@ -1,5 +1,6 @@
 import type { WatchEntry, WatchStep } from "./core.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
+import { shortAddress } from "./fetch-source.js";
 
 /**
  * The DevTools client: attaching to a tab, asking Chrome things, keeping the
@@ -156,7 +157,19 @@ export function attach(socket: WebSocket, close: () => void): Session {
       const id = message.params.requestId;
       const seen = trafficOf(message.sessionId);
       if (message.method === "Network.requestWillBeSent") {
-        requestsOf(message.sessionId).add(id);
+        /**
+         * Only the main frame's requests count as the page still loading.
+         *
+         * A genuinely cross-site iframe runs in a process of its own, and its
+         * document request is STARTED in this session and finished in the
+         * iframe's own target — so the count never came back to zero and the
+         * page was never finished: measured 2026-09-24, `did not finish this
+         * page within 45s` on a page whose only sin was embedding somebody.
+         * The Document handling was scoped to the main frame in round 4; the
+         * wait is the other half of the same rule.
+         */
+        if (message.params.frameId === mainFrame.get(message.sessionId))
+          requestsOf(message.sessionId).add(id);
         seen.set(id, {
           url: message.params.request?.url ?? "",
           type: message.params.type ?? "",
@@ -227,18 +240,22 @@ export function attach(socket: WebSocket, close: () => void): Session {
       const url = message.params.request?.url ?? "";
       let sameOrigin = false;
       try { sameOrigin = Boolean(mine) && new URL(url).origin === mine; } catch { sameOrigin = false; }
+      const headers = Object.entries(message.params.request?.headers ?? {})
+        .map(([name, value]) => ({ name, value: String(value) }));
       const resume = sameOrigin
-        ? { requestId }
+        // The source is told where to find the operator, here rather than on
+        // the session, so the header exists on its requests and on nothing
+        // else's.
+        ? { requestId, headers: [...headers, { name: "x-source-contact", value: WATCH_CONTACT }] }
+        // Everybody else gets what a visitor's browser would send: the watch's
+        // name comes out of the User-Agent, and no header is added that was
+        // not going to be there.
         : {
           requestId,
-          headers: Object.entries(message.params.request?.headers ?? {})
-            .filter(([name]) => name.toLowerCase() !== "x-source-contact")
-            .map(([name, value]) => ({
-              name,
-              value: name.toLowerCase() === "user-agent"
-                ? String(value).replace(` ${WATCH_NAME}`, "")
-                : String(value),
-            })),
+          headers: headers.map(({ name, value }) => ({
+            name,
+            value: name.toLowerCase() === "user-agent" ? value.replace(` ${WATCH_NAME}`, "") : value,
+          })),
         };
       send("Fetch.continueRequest", resume, sessionId).catch(() => {
         // The request is already gone — a navigation cancelled it, or the tab
@@ -291,18 +308,28 @@ export function attach(socket: WebSocket, close: () => void): Session {
         await send("Runtime.enable", {}, sessionId);
         await send("Network.enable", {}, sessionId);
         const ua = await send("Browser.getVersion") as { userAgent?: string };
-        // The name says who is asking; this says where to find whoever sent
-        // it. The fetcher has carried both since data #18 — a host that wants
-        // to block this watch should be able to reach its operator rather than
-        // only refuse it — and a browser read is the heavier of the two, so it
-        // is the one that owes the address most.
-        //
-        // Both are set for the whole tab, because that is the only way CDP
-        // offers, and then taken off every request that is not the source's
-        // by the interception above.
-        await send("Network.setExtraHTTPHeaders", {
-          headers: { "x-source-contact": WATCH_CONTACT },
-        }, sessionId);
+        /**
+         * Who is asking, and where to find them — added to the source's own
+         * requests as they go out, and never set on the tab.
+         *
+         * `Network.setExtraHTTPHeaders` was the obvious way and it was wrong
+         * twice over. It puts the header on every request the page makes, so
+         * a host the source merely embeds learned it; and — the part that
+         * cost a reading rather than a secret — an extra header makes a
+         * cross-origin request NON-SIMPLE, so Chrome sends an `OPTIONS`
+         * preflight announcing `x-source-contact` by name before the request
+         * the interception would have edited. Against an ordinary CORS
+         * endpoint that allows the origin and nothing else, the preflight is
+         * refused and the page's own call FAILS — where a visitor's browser
+         * makes a simple GET and succeeds. A page whose content arrives that
+         * way renders short for this watch and for nobody else, which is the
+         * wrong-reading class of fault this slice exists to avoid
+         * (Security review, 2026-09-24).
+         *
+         * So the header is added at continue time, to same-origin requests
+         * only. What leaves this browser for anybody else is byte-for-byte
+         * what a visitor's browser would send.
+         */
         identifyTo.set(sessionId, new URL(entry.url).origin);
         await send("Fetch.enable", { patterns: [{ urlPattern: "*" }] }, sessionId);
         await send("Network.setUserAgentOverride", {
@@ -362,8 +389,9 @@ export function attach(socket: WebSocket, close: () => void): Session {
           // The address is the page's to choose, and a page can make it as
           // long as it likes: one `history.pushState` produced 120,032
           // characters of it, which went into the error, the log line, and
-          // from there a flag and an issue (Security review, 2026-09-24).
-          const short = href.length > 200 ? `${href.slice(0, 200)}… (${href.length} characters)` : href;
+          // from there a flag and an issue (Security review, 2026-09-24). The
+          // bound is the fetcher's, because it met the same thing first.
+          const short = shortAddress(href);
           if (origin !== allowedOrigin)
             throw new Error(`${when}: the page was asked for at ${allowedOrigin} and the browser is at ${short}`);
           return short;
