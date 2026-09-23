@@ -370,6 +370,12 @@ function attach(socket: WebSocket, close: () => void): Session {
   return {
     close,
     async render(entry, budgetMs) {
+      // When this page's budget runs out, measured from the top of the read —
+      // the same clock `withDeadline` is holding over this call. A step that
+      // bounded its own work by a fresh 30 s would be cut off mid-diagnosis by
+      // that outer timeout, which is the one way a diagnosis is worse than
+      // useless: it costs the run and says nothing.
+      const renderBy = Date.now() + budgetMs;
       // A tab per entry, closed after it. One tab reused across seven pages
       // carries the previous page's scroll, focus and any state a script left
       // on `window`; a fresh target is what "the page, opened" means.
@@ -410,8 +416,22 @@ function attach(socket: WebSocket, close: () => void): Session {
         if (!served) throw new Error("the browser received no document response for this page");
         if (served.status < 200 || served.status >= 300)
           throw new Error(`HTTP ${served.status} in the browser${served.url && served.url !== entry.url ? ` (after redirect to ${served.url})` : ""}`);
+        const inPage = (step: unknown, phase?: string) =>
+          evaluate(`(${PERFORM_STEP})(${JSON.stringify(step)}${phase ? `, ${JSON.stringify(phase)}` : ""})`);
+        /** A word, typed — one real key event per character, into whatever has focus. */
+        const type = async (text: string) => {
+          for (const character of [...text]) {
+            await send("Input.dispatchKeyEvent", {
+              type: "keyDown", text: character, unmodifiedText: character, key: character,
+            }, sessionId);
+            await send("Input.dispatchKeyEvent", { type: "keyUp", key: character }, sessionId);
+          }
+        };
+
         for (const step of entry.steps ?? []) {
-          const failure = await evaluate(`(${PERFORM_STEP})(${JSON.stringify(step)})`) as string | null;
+          const failure = step.step === "select"
+            ? await selectInto(step, inPage, type, renderBy)
+            : await inPage(step) as string | null;
           if (failure) throw new Error(failure);
           await settle(evaluate, stillLoading, budgetMs);
         }
@@ -425,6 +445,118 @@ function attach(socket: WebSocket, close: () => void): Session {
       }
     },
   };
+}
+
+type InPage = (step: unknown, phase?: string) => Promise<unknown>;
+
+/** What a page-side phase hands back. */
+interface Phase {
+  error?: string;
+  kind?: "select" | "combo" | "text";
+  shape?: string;
+  picked?: boolean;
+  offers?: string[];
+  /** What the field held when it was asked — empty means the typing never landed. */
+  value?: string;
+  /** What the control said about being open, if it says anything. */
+  expanded?: string | null;
+}
+
+/** How long to let a typeahead answer before calling its silence an answer. */
+const SUGGEST_MS = 3_000;
+
+/** The same, for the probes that only diagnose — the attempts before them have
+ * already shown how long this control takes to answer, and the whole diagnosis
+ * has to fit inside what is left of the entry's budget. */
+const PROBE_MS = 1_200;
+
+/**
+ * Choose an option in a field, whatever the page built the field out of.
+ *
+ * A native select and an ARIA combobox the page can drive on its own. A text
+ * box it cannot: the options do not exist until something is typed, and
+ * "typed" has to mean real key events. ind.nl was handed a value through the
+ * input's own setter plus an `input` event on 2026-09-23 (dispatch
+ * 35908751925) and offered nothing at all, five pages out of five — so the
+ * keystrokes now come from Chrome itself, one `keyDown`/`keyUp` per character
+ * into the focused control, which is what a person sends and what a page that
+ * listens for keys is waiting for.
+ *
+ * The page-side setter stays as the fallback. It is not dead code: the
+ * typeahead fixture is driven by it in the case that proves a page CAN be
+ * driven that way, and a control that ignores synthetic keys but honours the
+ * setter is a shape this has already met once.
+ */
+async function selectInto(
+  step: WatchStep & { step: "select" },
+  inPage: InPage,
+  type: (text: string) => Promise<void>,
+  deadline: number,
+): Promise<string | null> {
+  const shape = await inPage(step, "shape") as Phase;
+  if (shape.error) return shape.error;
+  // Anything but a text box, the page drives itself.
+  if (shape.kind !== "text") return await inPage(step) as string | null;
+
+  const typeAndPick = async (text: string, keys: boolean): Promise<Phase> => {
+    await inPage(step, "clear");
+    if (keys) await type(text);
+    else await inPage({ ...step, text }, "type-fallback");
+    return await waitForOption(step, inPage);
+  };
+
+  // Real keys first, the page's own setter second — a control may honour
+  // either, and only one of them is what a person does.
+  let attempt = await typeAndPick(step.option, true);
+  if (attempt.picked) return null;
+  const afterKeys = attempt.offers ?? [];
+  const keyValue = attempt.value ?? "";
+  const keyExpanded = attempt.expanded;
+  attempt = await typeAndPick(step.option, false);
+  if (attempt.picked) return null;
+  const afterSetter = attempt.offers ?? [];
+  const setterValue = attempt.value ?? "";
+
+  /**
+   * Why it failed, in one line, without spending another run to find out.
+   *
+   * Two things hide behind "offered nothing": a control that wants more
+   * characters before it will answer, and a list that answers but spells the
+   * option differently — Turkey for Türkiye. One probe cannot tell them apart
+   * and three can, so the field is asked what it offers after one character,
+   * after three, and after the whole word. Bounded by the entry's own budget:
+   * a diagnosis that never arrives because the read timed out is no diagnosis.
+   */
+  const probes: string[] = [];
+  for (const length of [1, 3, step.option.length]) {
+    if (Date.now() > deadline - (PROBE_MS + 2_000)) { probes.push("(no budget left to probe further)"); break; }
+    const prefix = step.option.slice(0, length);
+    await inPage(step, "clear");
+    await type(prefix);
+    const reading = await waitForOption(step, inPage, PROBE_MS);
+    probes.push(`"${prefix}" (the field then held ${JSON.stringify(reading.value ?? "")}) -> `
+      + `${reading.offers?.length ? reading.offers.slice(0, 8).map((o) => JSON.stringify(o)).join(", ") : "nothing"}`);
+  }
+
+  const list = (offers: string[]) => offers.length ? offers.map((o) => JSON.stringify(o)).join(", ") : "nothing";
+  return `step select: the option "${step.option}" is not in the field "${step.field}". `
+    + `The field is ${shape.shape}. Real key events left it holding ${JSON.stringify(keyValue)} `
+    + `(aria-expanded ${keyExpanded ?? "unset"}) and offered ${list(afterKeys)}; `
+    + `the value setter left it holding ${JSON.stringify(setterValue)} and offered ${list(afterSetter)}. `
+    + `By prefix: ${probes.join("; ")}.`;
+}
+
+/** Poll the field until the wanted option is there to click, or time is up. */
+async function waitForOption(step: unknown, inPage: InPage, patience = SUGGEST_MS): Promise<Phase> {
+  const until = Date.now() + patience;
+  let last: Phase = { offers: [] };
+  for (;;) {
+    const picked = await inPage(step, "pick") as Phase;
+    if (picked.picked) return picked;
+    last = await inPage(step, "offers") as Phase;
+    if (Date.now() >= until) return last;
+    await new Promise((r) => setTimeout(r, 150));
+  }
 }
 
 /**
@@ -500,7 +632,7 @@ new MutationObserver(function () { window.__watchLastMutation = Date.now(); })
  * control fails rather than picking one — a step that chose between two
  * candidates would read the page in a state nobody declared.
  */
-const PERFORM_STEP = `function (step) {
+const PERFORM_STEP = `function (step, phase) {
   function norm(s) { return String(s == null ? "" : s).replace(/\\u00a0/g, " ").replace(/\\s+/g, " ").trim().toLowerCase(); }
   // An id is the page's to choose and may hold a quote; unescaped into a
   // selector it throws a DOMException, which surfaces as the page being
@@ -541,6 +673,13 @@ const PERFORM_STEP = `function (step) {
     var box = el.getBoundingClientRect();
     return box.width > 0 && box.height > 0;
   }
+  /** What a set of elements IS, for a message that has to diagnose from afar. */
+  function shapes(list) {
+    return list.map(function (e) {
+      var role = e.getAttribute("role");
+      return e.tagName + (e.type ? "[type=" + e.type + "]" : "") + (role ? "[role=" + role + "]" : "");
+    }).join(", ");
+  }
   function named(selector, label, what) {
     var wanted = norm(label);
     var hits = [].slice.call(document.querySelectorAll(selector)).filter(function (el) {
@@ -569,47 +708,7 @@ const PERFORM_STEP = `function (step) {
     }
     return { el: hits[0] };
   }
-  /** What a set of elements IS, for a message that has to diagnose from afar. */
-  function shapes(list) {
-    return list.map(function (e) {
-      var role = e.getAttribute("role");
-      return e.tagName + (e.type ? "[type=" + e.type + "]" : "") + (role ? "[role=" + role + "]" : "");
-    }).join(", ");
-  }
   function fire(el, type) { el.dispatchEvent(new Event(type, { bubbles: true })); }
-  /**
-   * Set an input's value the way a keystroke does.
-   *
-   * Assigning to '.value' is invisible to React and to anything else that
-   * wraps the property with its own setter: the framework's state never
-   * changes, so its listener never runs and no suggestion is ever requested.
-   * Calling the prototype's own setter underneath it is what makes the
-   * following 'input' event carry the text.
-   */
-  function nativeValue(el, text) {
-    var proto = Object.getPrototypeOf(el);
-    var setter = Object.getOwnPropertyDescriptor(proto, "value");
-    if (setter && setter.set) setter.set.call(el, text);
-    else el.value = text;
-  }
-  /**
-   * Poll a page-side check until it succeeds or the step runs out of patience.
-   *
-   * A typeahead answers on a timer — ind.nl's does — so "is the option there?"
-   * asked once, immediately after typing, always answers no. The last reading
-   * is handed back either way, so a failure can say what WAS on offer rather
-   * than only that the option was not.
-   */
-  function waitFor(check) {
-    var deadline = Date.now() + 5000;
-    return new Promise(function (resolve) {
-      (function attempt() {
-        var reading = check();
-        if (reading.pick || Date.now() >= deadline) { resolve(reading); return; }
-        window.setTimeout(attempt, 100);
-      })();
-    });
-  }
   /** The first few things on offer, so a wrong option says what the right ones are. */
   function offered(list) {
     var words = list.map(function (o) { return JSON.stringify(String(o.textContent || o.value || "").trim().slice(0, 40)); });
@@ -631,23 +730,108 @@ const PERFORM_STEP = `function (step) {
       .pop();
     if (!holder) return " (and no element on the page carries that text at all)";
     var scope = holder.parentNode || holder;
-    var shapes = [].slice.call(scope.querySelectorAll("select,input,button,textarea,[role]"))
-      .slice(0, 8)
-      .map(function (e) {
-        var role = e.getAttribute("role");
-        return e.tagName
-          + (e.type ? "[type=" + e.type + "]" : "")
-          + (role ? "[role=" + role + "]" : "")
-          + (e.getAttribute("aria-expanded") ? "[aria-expanded=" + e.getAttribute("aria-expanded") + "]" : "");
-      });
-    return " — near that label the page has: " + (shapes.length ? shapes.join(", ") : "no control at all")
+    var found = [].slice.call(scope.querySelectorAll("select,input,button,textarea,[role]")).slice(0, 8);
+    return " — near that label the page has: " + (found.length ? shapes(found) : "no control at all")
       + '; the text there reads "' + norm(scope.textContent).slice(0, 160) + '"';
   }
+  /** Wherever a control keeps its options, once it has any. */
+  function optionsOf(el) {
+    var listId = el.getAttribute("aria-controls") || el.getAttribute("aria-owns");
+    var list = (listId && document.getElementById(listId))
+      || (el.getAttribute("role") === "listbox" ? el : null)
+      || (el.parentNode && el.parentNode.querySelector("[role=listbox]"))
+      || (el.closest("div, fieldset, form") || document).querySelector("[role=listbox], ul[class*=autocomplete], ul[class*=suggest]");
+    if (!list || list.hidden) return [];
+    return [].slice.call(list.querySelectorAll("[role=option], li"))
+      .filter(function (o) { return o.offsetParent !== null || list === el; });
+  }
+  /** The one selector that finds a field however the page chose to build it. */
+  var FIELD = "select, [role=combobox], [role=listbox], [aria-haspopup=listbox], input[type=text], input:not([type])";
+
+  // ---- phases -------------------------------------------------------------
+  // The typing phases are driven from Node, because only Node can send a real
+  // key event. Everything else the page can do for itself.
+
+  if (phase === "shape") {
+    var control = named(FIELD, step.field, "the field");
+    if (control.error) return { error: "step select: " + control.error + near(step.field) };
+    var kind = control.el.tagName === "SELECT" ? "select"
+      : (control.el.tagName === "INPUT" ? "text" : "combo");
+    if (kind === "text") {
+      control.el.focus();
+      control.el.click();
+    }
+    return { kind: kind, shape: shapes([control.el]) };
+  }
+
+  if (phase === "clear") {
+    var box = named(FIELD, step.field, "the field");
+    if (box.error) return { error: box.error };
+    setNative(box.el, "");
+    fire(box.el, "input");
+    box.el.focus();
+    return { ok: true };
+  }
+
+  if (phase === "offers") {
+    var reading = named(FIELD, step.field, "the field");
+    if (reading.error) return { error: reading.error };
+    var list = optionsOf(reading.el);
+    return {
+      offers: list.map(function (o) { return String(o.textContent || "").trim().slice(0, 40); }),
+      // What the field actually holds, and whether it says it opened. Between
+      // them these separate the three ways typing fails: the keys never
+      // landed (the box is still empty), the box filled and the control never
+      // reacted (it wants something else), or it reacted and had no match
+      // (the option is spelled differently, or needs more characters).
+      value: String(reading.el.value == null ? "" : reading.el.value),
+      expanded: reading.el.getAttribute("aria-expanded")
+    };
+  }
+
+  if (phase === "pick") {
+    var target = named(FIELD, step.field, "the field");
+    if (target.error) return { error: target.error };
+    var want = norm(step.option);
+    var picks = optionsOf(target.el).filter(function (o) { return norm(o.textContent) === want; });
+    if (picks.length !== 1) return { picked: false };
+    picks[0].click();
+    return { picked: true };
+  }
+
+  /**
+   * Set an input's value the way a keystroke does, for the pages that need it.
+   *
+   * Assigning to .value is invisible to React and to anything else that wraps
+   * the property with its own setter: the framework's state never changes, so
+   * its listener never runs and no suggestion is ever requested. Calling the
+   * prototype's own setter underneath it is what makes the following input
+   * event carry the text. It is the fallback now — real key events are what a
+   * person sends, and ind.nl wanted those — but the fixture proves a page can
+   * be driven this way, so it stays.
+   */
+  function setNative(el, text) {
+    var proto = Object.getPrototypeOf(el);
+    var setter = Object.getOwnPropertyDescriptor(proto, "value");
+    if (setter && setter.set) setter.set.call(el, text);
+    else el.value = text;
+  }
+
+  if (phase === "type-fallback") {
+    var typed = named(FIELD, step.field, "the field");
+    if (typed.error) return { error: typed.error };
+    setNative(typed.el, step.text);
+    fire(typed.el, "input");
+    typed.el.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true, key: String(step.text).slice(-1) }));
+    return { ok: true };
+  }
+
+  // ---- the steps a page can do without Node's help ------------------------
 
   if (step.step === "select") {
+    // Reached only for a native select or an ARIA combobox; a text box is
+    // driven from Node, which can type.
     var wantedOption = norm(step.option);
-    // A native select first, because when a page has one there is nothing to
-    // open and nothing to guess.
     var native = named("select", step.field, "the field");
     if (!native.error) {
       var options = [].slice.call(native.el.options).filter(function (o) { return norm(o.textContent) === wantedOption || norm(o.value) === wantedOption; });
@@ -657,56 +841,16 @@ const PERFORM_STEP = `function (step) {
       fire(native.el, "change");
       return null;
     }
-    // Otherwise whatever the page did build: a control that says it is a
-    // combobox, one that owns a listbox, or a plain text box — which is what
-    // ind.nl builds, measured from the runner on 2026-09-23. A person reaches
-    // the options the same way in all three: make the control show them, then
-    // pick the one whose words match.
-    var combo = named(
-      "[role=combobox], [role=listbox], [aria-haspopup=listbox], input[type=text], input:not([type])",
-      step.field, "the field");
+    var combo = named("[role=combobox], [role=listbox], [aria-haspopup=listbox]", step.field, "the field");
     if (combo.error) return "step select: " + combo.error + near(step.field);
-
-    /** Wherever this control keeps its options, once it has any. */
-    function optionsOf(el) {
-      var listId = el.getAttribute("aria-controls") || el.getAttribute("aria-owns");
-      var list = (listId && document.getElementById(listId))
-        || (el.getAttribute("role") === "listbox" ? el : null)
-        || (el.parentNode && el.parentNode.querySelector("[role=listbox]"))
-        || (el.closest("div, fieldset, form") || document).querySelector("[role=listbox], ul[class*=autocomplete], ul[class*=suggest]");
-      if (!list || list.hidden) return [];
-      var found = [].slice.call(list.querySelectorAll("[role=option], li"));
-      return found.filter(function (o) { return o.offsetParent !== null || list === el; });
-    }
-
-    var isTextBox = combo.el.tagName === "INPUT" && combo.el.type !== "hidden";
-    if (isTextBox) {
-      // Nothing exists to pick until something is typed, so type it — the way
-      // a person does, letting the page's own listener build the list — then
-      // wait for the list, because it is built on a timer and reading the DOM
-      // the instant after typing finds nothing at all.
-      combo.el.focus();
-      nativeValue(combo.el, step.option);
-      fire(combo.el, "input");
-      combo.el.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true, key: step.option.slice(-1) }));
-    } else if (combo.el.getAttribute("aria-expanded") === "false") {
-      combo.el.click();
-    }
-
-    return waitFor(function () {
-      var options = optionsOf(combo.el);
-      var picks = options.filter(function (o) { return norm(o.textContent) === wantedOption; });
-      if (picks.length === 1) return { pick: picks[0] };
-      // Not yet, or never: only the deadline tells the two apart.
-      return { offers: options };
-    }).then(function (last) {
-      if (last.pick) { last.pick.click(); return null; }
-      var what = last.offers.length
-        ? "it offers: " + offered(last.offers)
-        : (isTextBox ? "typing it offered nothing" : "it offered nothing");
-      return 'step select: the option "' + step.option + '" is not in the field "'
-        + step.field + '" (' + what + ")" + (last.offers.length ? "" : near(step.field));
-    });
+    if (combo.el.getAttribute("aria-expanded") === "false") combo.el.click();
+    var open = optionsOf(combo.el);
+    var chosen = open.filter(function (o) { return norm(o.textContent) === wantedOption; });
+    if (chosen.length !== 1)
+      return 'step select: the option "' + step.option + '" is not in the field "' + step.field + '" ('
+        + (open.length ? "it offers: " + offered(open) : "it offered nothing") + ")" + (open.length ? "" : near(step.field));
+    chosen[0].click();
+    return null;
   }
   if (step.step === "answer") {
     var group = named("fieldset, [role=radiogroup]", step.question, "the question");

@@ -148,14 +148,20 @@ function comboFixture(): string {
  * `suggests: false` is the same control offering something else, which is the
  * shape of the day the IND renames a country or drops one.
  */
-function typeaheadFixture({ suggests = true } = {}): string {
+function typeaheadFixture({ suggests = true, keysOnly = false } = {}): string {
   const offers = suggests ? [TURKIYE, "Tunisia", "Turkmenistan"] : ["Germany", "Greece"];
   const script = [
     `var OFFERS = ${JSON.stringify(offers)};`,
     'var input = document.getElementById("nat");',
     'var box = document.getElementById("nat-sugg");',
     'var chosen = null;',
+    // `keysOnly` is the shape ind.nl turned out to be: a control that answers
+    // a keystroke and ignores a value written into it. A page-side setter
+    // plus a synthetic `input` event cannot drive this fixture at all, which
+    // is what makes the case below a proof about real key events.
+    ...(keysOnly ? ['var sawKey = false;', 'input.addEventListener("keydown", function () { sawKey = true; });'] : []),
     'input.addEventListener("input", function () {',
+    ...(keysOnly ? ['  if (!sawKey) return;'] : []),
     '  var typed = input.value.trim().toLowerCase();',
     '  window.clearTimeout(window.__t);',
     // Suggestions arrive on a timer, as a real typeahead's do: a step that
@@ -434,6 +440,23 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives a type
 
   it("types the option, waits for the suggestions, and picks the one that matches", async () => {
     served = typeaheadFixture();
+    const reader = openBrowserReader();
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [typed()] }, emptyState, refuse, "2026-09-23", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      expect(nextState.entries["fixture-route"]!.text)
+        .toContain("You meet the general requirements that apply to everyone.");
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("drives a control that answers keystrokes and ignores a value written into it", async () => {
+    // ind.nl's shape, measured from the runner on 2026-09-23 (dispatch
+    // 35908751925): the value setter plus an `input` event offered nothing at
+    // all, five pages out of five. This fixture cannot be driven that way
+    // either, so passing it is a claim about real key events and nothing else.
+    served = typeaheadFixture({ keysOnly: true });
     const reader = openBrowserReader();
     try {
       const { reports, nextState } = await runWatch(
