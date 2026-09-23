@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { mergeTargetedRun, runWatch, STRATEGIES, type BrowserReader, type Fetcher, type WatchReport, type WatchState, type Watchlist } from "./core.js";
+import { mergeTargetedRun, runWatch, STRATEGIES, type BrowserReader, type WatchReport, type WatchState, type Watchlist } from "./core.js";
 import { openBrowserReader } from "./browser.js";
+import { fetchSource } from "./fetch-source.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -35,44 +36,6 @@ if (only) {
   watchlist.entries = wanted;
 }
 
-const fetcher: Fetcher = async (url) => {
-  try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      // Who is asking, and where to find whoever sent it — but the address
-      // travels beside the name rather than inside it.
-      //
-      // The name used to carry the repository in parentheses, the way a
-      // crawler conventionally does, and `inclusion.gob.es` answered 403 to
-      // exactly that: the watch failed every day from 2026-09-11 to 15 and
-      // Spain's salary threshold went unread for eight days while the site
-      // still said "re-read daily". Measured on 2026-09-15, same host, same
-      // minute: the full string 403, the string without its trailing purpose
-      // word 403, `Mozilla/5.0 (compatible; …; +https://…)` 403 — and
-      // `permit-rulebook-watch/0.1` **200**, 299,066 bytes. The filter objects
-      // to a URL inside the User-Agent, not to a reader that names itself. So
-      // the name stays, unique enough to find this repository by, and the link
-      // moves to a header of its own, which the same host serves happily
-      // (data #18).
-      headers: {
-        "user-agent": "permit-rulebook-watch/0.1",
-        "x-source-contact": "https://github.com/OytunOnal/permit-rulebook-data",
-      },
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) return { ok: false, status: res.status, error: `HTTP ${res.status}` };
-    const body = new Uint8Array(await res.arrayBuffer());
-    // An empty body is not a page, whatever the status line says. EUR-Lex
-    // answers this fetcher with `202 Accepted` and nothing at all — a bot
-    // challenge — and `res.ok` is true for it, so the pass would have recorded
-    // a blank snapshot as a successful read and reported "unchanged" ever
-    // after (measured 2026-09-10, s8).
-    if (body.byteLength === 0) return { ok: false, status: res.status, error: `HTTP ${res.status} with an empty body` };
-    return { ok: true, body };
-  } catch (e) {
-    return { ok: false, error: String(e) };
-  }
-};
 
 /**
  * What a curator does about this flag. The advice per strategy lives in one
@@ -125,12 +88,18 @@ const openInBrowser: BrowserReader = async (entry) => {
   log(result.ok ? "info" : "error", "watch:browser-read", {
     id: entry.id, seconds: Number(((Date.now() - started) / 1000).toFixed(1)),
     steps: entry.steps?.length ?? 0, ok: result.ok,
+    // Where the reading was actually taken, when that is not where it was
+    // asked for. Another ORIGIN is refused outright; this is the journey
+    // inside one — a form that posts back to a sub-path, a script that swaps
+    // the document — which is allowed and which a curator should still be
+    // able to see without opening a browser (s34, 2026-09-24).
+    ...(result.ok && result.from && result.from !== entry.url ? { read_at: result.from } : {}),
   });
   return result;
 };
 
 const today = new Date().toISOString().slice(0, 10);
-const { reports, nextState } = await runWatch(watchlist, state, fetcher, today, openInBrowser);
+const { reports, nextState } = await runWatch(watchlist, state, fetchSource, today, openInBrowser);
 await browser.close();
 
 let unreachable = 0;

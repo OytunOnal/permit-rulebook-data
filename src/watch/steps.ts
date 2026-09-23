@@ -494,7 +494,12 @@ export const PERFORM_STEP = `function (step, phase) {
     // away is simply already open, and this step is the difference between
     // reading a sentence a reader has to click for and not reading it.
     var FURNITURE = "nav, header, footer, aside, dialog, [role=navigation], [role=banner], [role=contentinfo], [role=dialog], [role=search]";
-    [].slice.call(document.querySelectorAll("details")).forEach(function (d) { d.open = true; });
+    // Both arms honour it. The details sweep did not until 2026-09-24, so a
+    // <details> in a footer opened, its text landed inside the slice, and the
+    // next morning was a change nobody made.
+    [].slice.call(document.querySelectorAll("details"))
+      .filter(function (d) { return !d.closest(FURNITURE); })
+      .forEach(function (d) { d.open = true; });
     [].slice.call(document.querySelectorAll('[aria-expanded="false"][aria-controls]'))
       .filter(function (el) { return !el.closest(FURNITURE); })
       // And never a link. A disclosure that is a link is a link: pressing it

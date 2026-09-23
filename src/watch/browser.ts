@@ -96,9 +96,9 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
       }
     }
     try {
-      const html = await withDeadline(session.render(entry, budgetMs), budgetMs,
+      const read = await withDeadline(session.render(entry, budgetMs), budgetMs,
         `the browser did not finish this page within ${Math.round(budgetMs / 1000)}s`);
-      return { ok: true, body: new TextEncoder().encode(html) };
+      return { ok: true, body: new TextEncoder().encode(read.html), from: read.from };
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }

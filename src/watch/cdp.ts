@@ -69,7 +69,8 @@ const MIN_SETTLE_MS = 1_000;
 const STEP_QUIET_MS = 800;
 
 export interface Session {
-  render(entry: WatchEntry, budgetMs: number): Promise<string>;
+  /** The page's HTML, and the address it was actually read at. */
+  render(entry: WatchEntry, budgetMs: number): Promise<{ html: string; from: string }>;
   close(): void;
 }
 
@@ -165,6 +166,14 @@ export function attach(socket: WebSocket, close: () => void): Session {
     if (message.method === "Network.responseReceived" && message.params?.type === "Document" && message.sessionId) {
       const response = message.params.response;
       documentStatus.set(message.sessionId, { status: response?.status ?? 0, url: response?.url ?? "" });
+      // A new document means the old one's unfinished requests belong to a
+      // page that no longer exists. Chrome does not always close their books
+      // when a navigation cancels them, and a request counted as in flight
+      // for ever keeps the settle rule waiting for ever — which turned a page
+      // that meta-refreshed to another site from "refused, and here is where
+      // it went" into "the browser did not finish this page within 30s"
+      // (measured 2026-09-24).
+      requestsOf(message.sessionId).clear();
       return;
     }
     if (message.id === undefined) return;
@@ -237,7 +246,7 @@ export function attach(socket: WebSocket, close: () => void): Session {
         // Chrome says here whether it got anywhere. Asking the DOM instead is
         // asking the error page whether it is the page.
         if (navigation.errorText) throw new Error(`the browser could not reach the page: ${navigation.errorText}`);
-        await settle(evaluate, stillLoading, budgetMs);
+        await settle(evaluate, stillLoading, renderBy);
         const servedOk = () => {
           const served = documentStatus.get(sessionId);
           if (!served) throw new Error("the browser received no document response for this page");
@@ -245,17 +254,34 @@ export function attach(socket: WebSocket, close: () => void): Session {
             throw new Error(`HTTP ${served.status} in the browser${served.url && served.url !== entry.url ? ` (after redirect to ${served.url})` : ""}`);
         };
         servedOk();
+
         /**
-         * Where the tab actually is, asked of the page rather than assumed.
+         * Where the tab is allowed to be: the origin the watchlist named, and
+         * nothing else.
          *
-         * Taken after the navigation and before any step, so a source that
-         * redirects on load — the BMI notice does, through its cookie check —
-         * is measured at where it legitimately landed rather than at the
-         * address the watchlist wrote down.
+         * The baseline is the ENTRY's origin, not wherever the navigation
+         * happened to end. Reading it off the loaded page instead — which is
+         * what this did until 2026-09-24 — hands the decision to whoever the
+         * page redirects to: a source that 302s or meta-refreshes to a third
+         * party on load is read there, the far 200 satisfies the status gate,
+         * the far origin becomes the baseline, and the check after the steps
+         * compares it with itself and passes. Measured in both shapes, both
+         * `ok: true` with the other site's body as the reading.
+         *
+         * A redirect chain WITHIN the origin is fine and is not a special
+         * case: the Opportunity Card's notice goes to a cookie check and back
+         * to bmi.bund.de, and ends where it started, which is the whole of
+         * what is asked.
          */
+        const allowedOrigin = new URL(entry.url).origin;
         const whereAmI = async () => await evaluate("location.origin + String.fromCharCode(32) + location.href") as string;
-        const landed = (await whereAmI()).split(" ");
-        const landedOrigin = landed[0]!;
+        const mustBeHome = async (when: string) => {
+          const [origin, href] = (await whereAmI()).split(" ") as [string, string];
+          if (origin !== allowedOrigin)
+            throw new Error(`${when}: the page was asked for at ${allowedOrigin} and the browser is at ${href}`);
+          return href;
+        };
+        await mustBeHome("the page redirected to another site before it could be read");
         const inPage = (step: unknown, phase?: string) =>
           evaluate(`(${PERFORM_STEP})(${JSON.stringify(step)}${phase ? `, ${JSON.stringify(phase)}` : ""})`);
         /** A word, typed — one real key event per character, into whatever has focus. */
@@ -278,15 +304,15 @@ export function attach(socket: WebSocket, close: () => void): Session {
             // gone. The page gets the long settle and the step gets one more
             // go before the day is called red — and if it is genuinely gone,
             // the second failure carries the same diagnosis as the first.
-            await settle(evaluate, stillLoading, budgetMs);
+            await settle(evaluate, stillLoading, renderBy);
             failure = await perform(step);
             if (failure) throw new Error(failure);
           }
-          await settle(evaluate, stillLoading, budgetMs, STEP_QUIET_MS);
+          await settle(evaluate, stillLoading, renderBy, STEP_QUIET_MS);
         }
         // The reading is of a finished page, whatever the steps did: the last
         // wait before the HTML is taken is the long one.
-        await settle(evaluate, stillLoading, budgetMs);
+        await settle(evaluate, stillLoading, renderBy);
 
         /**
          * Is the tab still on the page we came to read?
@@ -306,12 +332,9 @@ export function attach(socket: WebSocket, close: () => void): Session {
          * again, because a navigation that happened after the steps has a
          * status of its own that nothing has looked at.
          */
-        const [finalOrigin, finalHref] = (await whereAmI()).split(" ") as [string, string];
-        if (finalOrigin !== landedOrigin)
-          throw new Error(
-            `a step navigated the browser away: the page was read at ${landedOrigin} and the tab ended at ${finalHref}`);
+        const finalHref = await mustBeHome("a step navigated the browser away from the site");
         servedOk();
-        return await evaluate("document.documentElement.outerHTML") as string;
+        return { html: await evaluate("document.documentElement.outerHTML") as string, from: finalHref };
       } finally {
         // The tab goes, and so does everything this run remembered about it:
         // a session id Chrome may reuse must not arrive carrying the previous
@@ -340,22 +363,18 @@ export function attach(socket: WebSocket, close: () => void): Session {
  * script-rendered list exists, an idle network says nothing about a timer, and
  * a lull in the DOM is exactly what a page looks like just before it fills.
  *
- * Its failure mode is bounded, and it is bounded twice. This loop stops at the
- * budget — but the read it sits inside is racing the SAME budget from a little
- * earlier, so in practice the outer deadline fires first and the entry is
- * reported unreachable rather than read half-settled. That is the safe way
- * round and it is the intended one: a page that never stops moving has not
- * been read, and saying so beats hashing whatever it happened to hold. The
- * stop here is the backstop for the case where this loop is entered with the
- * outer clock nearly spent.
+ * It stops at the read's own deadline — the same instant the read is racing,
+ * handed down rather than started afresh here, so there is one clock in this
+ * call chain and not two. A page that never stops moving therefore runs out
+ * of time as a page rather than as a wait, and is reported unreachable: it
+ * has not been read, and saying so beats hashing whatever it happened to hold.
  */
 async function settle(
   evaluate: (expression: string) => Promise<unknown>,
   inFlight: () => number,
-  budgetMs: number,
+  deadline: number,
   quietMs = QUIET_MS,
 ): Promise<void> {
-  const deadline = Date.now() + budgetMs;
   await new Promise((r) => setTimeout(r, MIN_SETTLE_MS));
   for (;;) {
     if (Date.now() >= deadline) return;

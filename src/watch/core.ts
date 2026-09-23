@@ -170,7 +170,18 @@ export interface WatchEntry {
 export interface Watchlist { entries: WatchEntry[] }
 
 export type FetchResult =
-  | { ok: true; body: Uint8Array }
+  | {
+    ok: true;
+    body: Uint8Array;
+    /**
+     * Where the bytes actually came from, when that is not the address asked
+     * for — a redirect the fetcher followed, or the path a browser ended on
+     * after its steps. Both readers refuse another ORIGIN outright; this is
+     * for the journey within one, which is allowed and is still worth a
+     * curator being able to see (s34, 2026-09-24).
+     */
+    from?: string;
+  }
   | { ok: false; status?: number; error: string };
 export type Fetcher = (url: string) => Promise<FetchResult>;
 

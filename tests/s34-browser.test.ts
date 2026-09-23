@@ -233,7 +233,29 @@ function lateFixture(afterMs: number): string {
 
 let served = fixture();
 let status = 200;
-const server: Server = createServer((_req, res) => {
+/** When set, the entry address answers a redirect to here instead of a page. */
+let redirectTo: string | undefined;
+/** When set, the entry address bounces once through a sub-path and back —
+ * the Opportunity Card's cookie check, in miniature. */
+let bounceOnce = false;
+const server: Server = createServer((req, res) => {
+  const path = (req.url ?? "/").split("?")[0]!;
+  if (redirectTo && path === "/") {
+    res.writeHead(302, { location: redirectTo });
+    res.end();
+    return;
+  }
+  if (bounceOnce && path === "/") {
+    res.writeHead(302, { location: "/cookie-check" });
+    res.end();
+    return;
+  }
+  if (bounceOnce && path === "/cookie-check") {
+    res.writeHead(302, { location: "/" });
+    bounceOnce = false;
+    res.end();
+    return;
+  }
   res.writeHead(status, { "content-type": "text/html; charset=utf-8" });
   res.end(served);
 });
@@ -721,16 +743,111 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — a step may not take the reade
     } finally { await reader.close(); served = fixture(); }
   });
 
+  it("refuses a page that redirects to another site before a step ever runs", async () => {
+    // The baseline is the origin the WATCHLIST named, not wherever the load
+    // ended. Reading it off the loaded page hands the decision to whoever the
+    // page redirects to: the far 200 satisfies the status gate, the far
+    // origin becomes the baseline, and the check after the steps compares it
+    // with itself (Security review, round 2).
+    redirectTo = `${elsewhereOrigin}/x`;
+    const reader = openBrowserReader();
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [entry({ slice: undefined, steps: [] })] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome).toBe("unreachable");
+      expect(reports[0]!.error, "the error does not name where it went").toContain(elsewhereOrigin);
+      expect(nextState.entries["fixture-route"], "somebody else's page was recorded").toBeUndefined();
+    } finally { await reader.close(); redirectTo = undefined; served = fixture(); }
+  });
+
+  it("refuses a page that meta-refreshes to another site", async () => {
+    // The same escape by the other door: no status code moves, the document
+    // replaces itself.
+    served = `<!doctype html><html><head>
+<meta http-equiv="refresh" content="0; url=${elsewhereOrigin}/x">
+</head><body><p>Lede: what this permit is for.</p><footer>Cookies Proclaimer</footer></body></html>`;
+    const reader = openBrowserReader();
+    try {
+      const { reports } = await runWatch(
+        { entries: [entry({ slice: undefined, steps: [] })] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome).toBe("unreachable");
+      expect(reports[0]!.error).toContain(elsewhereOrigin);
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("still reads a source that redirects around its own site and comes back", async () => {
+    // The Opportunity Card's notice, in miniature: the entry address answers
+    // a redirect to a cookie check, which answers a redirect back to the
+    // page. It ends where it started, which is the whole of what is asked —
+    // and this is the case that proves the line is drawn at the origin and
+    // not at the address.
+    bounceOnce = true;
+    const reader = openBrowserReader();
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [entry({ slice: { from: "Lede:", to: "Cookies Proclaimer" }, steps: [] })] },
+        emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      expect(nextState.entries["fixture-route"]!.text).toContain("Lede:");
+    } finally { await reader.close(); bounceOnce = false; served = fixture(); }
+  });
+
+  it("reads a page whose own step moves it within the site, and says where it read", async () => {
+    // The decision, declared: the ORIGIN is the trust line. A form that posts
+    // back to a sub-path must not redden the morning, so a same-origin move
+    // is read — but the address it was read at travels back with the reading
+    // so a curator can see it without opening a browser.
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<button type="button" id="go">View information</button>
+<footer>Cookies Proclaimer</footer>
+<script>document.getElementById("go").addEventListener("click", function () { location.href = "/elsewhere-here"; });</script>
+</body></html>`;
+    const reader = openBrowserReader();
+    try {
+      const walked = entry({ slice: undefined, steps: [{ step: "press", button: "View information" }] });
+      const { reports } = await runWatch(
+        { entries: [walked] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      const read = await openBrowserReader();
+      try {
+        const answer = await read.read(walked);
+        expect(answer.ok).toBe(true);
+        expect(answer.ok && answer.from, "the reading does not say where it was taken")
+          .toContain("/elsewhere-here");
+      } finally { await read.close(); }
+    } finally { await reader.close(); served = fixture(); }
+  });
+
   it("does not press a link, however much it looks like a disclosure", async () => {
     // `expand` is the one step that presses things without being told a name,
     // so it is the one that must not be able to travel.
+    // Both disclosures render their text only when opened, so "was it opened"
+    // is a question the reading can actually answer: a `<details>` whose
+    // words are already in the markup would look the same either way.
     served = `<!doctype html><html><body>
 <p>Lede: what this permit is for.</p>
 <main>
   <a href="${elsewhereOrigin}/x" aria-expanded="false" aria-controls="blk">Show details</a>
   <div id="blk">A provisional residence permit (MVV) is needed.</div>
+  <details id="rules"><summary>Show details</summary><span></span></details>
 </main>
-<footer>Cookies Proclaimer</footer>
+<footer>
+  <details id="chrome"><summary>About this website</summary><span></span></details>
+  Cookies Proclaimer
+</footer>
+<script>
+document.getElementById("rules").addEventListener("toggle", function () {
+  this.querySelector("span").textContent = "An extra requirement for researchers.";
+});
+document.getElementById("chrome").addEventListener("toggle", function () {
+  this.querySelector("span").textContent = "A cookie notice nobody quoted.";
+});
+</script>
 </body></html>`;
     const reader = openBrowserReader();
     try {
@@ -746,6 +863,13 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — a step may not take the reade
       const text = nextState.entries["fixture-route"]!.text!;
       expect(text).toContain("A provisional residence permit (MVV) is needed.");
       expect(text, "the other origin's body was read").not.toContain("Somewhere else");
+      // A disclosure in the page's own content opens; one in the footer does
+      // not. The details sweep ignored the furniture rule until round 3, so a
+      // cookie notice opened into the slice and the next morning was a change
+      // nobody made.
+      expect(text, "a disclosure in the content stayed shut").toContain("An extra requirement for researchers.");
+      expect(text, "a disclosure in the footer was opened into the reading")
+        .not.toContain("A cookie notice nobody quoted.");
     } finally { await reader.close(); served = fixture(); }
   });
 

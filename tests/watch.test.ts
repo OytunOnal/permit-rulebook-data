@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
+import { fetchSource } from "../src/watch/fetch-source.js";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { htmlToText, normalize } from "../src/watch/normalize.js";
@@ -856,19 +859,41 @@ describe("a tooltip's placeholder is not part of the page's words", () => {
  * and put where to find you beside it (data #18, 2026-09-15).
  */
 describe("the watch says who is asking", () => {
-  const source = readFileSync(new URL("../src/watch/cli-watch.ts", import.meta.url), "utf8");
-  const headers = source.slice(source.indexOf("const fetcher"), source.indexOf("signal:"));
+  /**
+   * Asked of the request the fetcher actually sends, not of the file it is
+   * written in.
+   *
+   * These three read `cli-watch.ts` as text until 2026-09-24 and broke the
+   * day the fetcher moved into a module of its own — which is the failure
+   * mode the no-source-grep rule exists for. A server that writes down what
+   * arrived answers the same three questions and cannot be fooled by where
+   * the code lives.
+   */
+  const sent = async (): Promise<Record<string, string | string[] | undefined>> => {
+    let seen: Record<string, string | string[] | undefined> = {};
+    const server = createServer((req, res) => {
+      seen = req.headers;
+      res.writeHead(200, { "content-type": "text/html" });
+      res.end("<p>ok</p>");
+    });
+    await new Promise<void>((resolve) => { server.listen(0, "127.0.0.1", () => resolve()); });
+    try {
+      const answer = await fetchSource(`http://127.0.0.1:${(server.address() as AddressInfo).port}/`);
+      expect(answer.ok, "the fetcher could not read its own test server").toBe(true);
+      return seen;
+    } finally { server.close(); }
+  };
 
-  it("names itself", () => {
-    expect(headers).toContain("permit-rulebook-watch");
+  it("names itself", async () => {
+    expect(String((await sent())["user-agent"])).toContain("permit-rulebook-watch");
   });
 
-  it("carries no address inside the name", () => {
-    const ua = /"user-agent":\s*"([^"]*)"/.exec(headers)?.[1] ?? "";
-    expect(ua, "the User-Agent").not.toMatch(/https?:\/\//);
+  it("carries no address inside the name", async () => {
+    expect(String((await sent())["user-agent"]), "the User-Agent").not.toMatch(/https?:\/\//);
   });
 
-  it("still says where to find whoever sent it", () => {
-    expect(headers).toContain("https://github.com/OytunOnal/permit-rulebook-data");
+  it("still says where to find whoever sent it", async () => {
+    expect(String((await sent())["x-source-contact"]))
+      .toBe("https://github.com/OytunOnal/permit-rulebook-data");
   });
 });
