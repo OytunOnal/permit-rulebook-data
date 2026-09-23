@@ -186,6 +186,15 @@ const MOVED = [
   "eur-lex-blue-card-directive",
 ];
 
+/** The five whose requirements render behind the IND's "Your situation" form. */
+const FORM_WALLED = [
+  "nl-ind-highly-skilled-migrant",
+  "nl-ind-orientation-year",
+  "nl-ind-blue-card",
+  "nl-ind-ict",
+  "nl-ind-researcher",
+];
+
 /** The two the browser does not reach: a challenge it fails, and a geography. */
 const STAY_HUMAN = ["legifrance-ce-algerian-titles", "gesetze-official-recheck"];
 
@@ -211,6 +220,22 @@ describe("s34 — seven entries move to the browser and two stay with a person",
       expect(entry.slice, `${id}: no slice`).toBeDefined();
       expect(entry.history?.some((h) => h.changed_at === "2026-09-23"), `${id}: no history line for this slice`).toBe(true);
     }
+  });
+
+  it("the five form-walled pages carry the recipe a person follows, as steps", () => {
+    // s5e §3's "How to reach the requirements", in the vocabulary: the
+    // nationality, the two permit questions, the button, and the blocks a
+    // person opens. The other two browser entries need none — nothing on them
+    // has to be answered, only rendered.
+    for (const id of FORM_WALLED) {
+      const steps = entryOf(id).steps ?? [];
+      expect(steps.map((s) => s.step), id).toEqual(["select", "answer", "answer", "press", "expand"]);
+      expect(steps[0], id).toMatchObject({ field: "What is your nationality?", option: "Türkiye" });
+      expect(steps.filter((s) => s.step === "answer").every((s) => s.answer === "no"), id).toBe(true);
+      expect(steps[3], id).toMatchObject({ button: "View information" });
+    }
+    for (const id of ["de-bmi-chancenkarte", "eur-lex-blue-card-directive"])
+      expect(entryOf(id).steps, `${id}: a page that renders itself carries steps`).toBeUndefined();
   });
 
   it("every declared step is in the vocabulary, on every entry in the watchlist", () => {
@@ -277,5 +302,50 @@ describe("s34 — the quote gate reads the seven", () => {
     // And they are counted: `verified` covers all of them plus everything the
     // html and pdf-text arms already vouched for.
     expect(result.verified).toBeGreaterThanOrEqual(onTheSeven.length);
+  });
+});
+
+describe("s34 — no slice of the five can match the form the runner is served", () => {
+  /**
+   * The shell as GitHub's runner rendered it on 2026-09-23 — the *Your
+   * situation* form and none of the quoted sentences.
+   *
+   * It is here because of what happened when it was not. The five entries'
+   * markers were the page's own lede and its footer, and the shell carries
+   * BOTH: the runner sliced 892 characters of form out of it, hashed them, and
+   * recorded a clean baseline for a page whose every quoted sentence was
+   * absent. A read that reaches the wrong page must go red, and the only thing
+   * standing between those two outcomes is whether a marker can match a shell.
+   */
+  const shells = readJson("./fixtures/ind-form-shell.json") as {
+    entries: Record<string, string>;
+  };
+
+  it("keeps the shell that caused this, so the check has something to fail against", () => {
+    expect(Object.keys(shells.entries).sort()).toEqual([...FORM_WALLED].sort());
+    for (const [id, text] of Object.entries(shells.entries)) {
+      expect(text, `${id}: the fixture is not the form`).toMatch(/Your situation/);
+      expect(text, `${id}: the fixture already carries requirements`).not.toMatch(/Requirements/);
+    }
+  });
+
+  it("no marker of the five is anywhere in its own page's shell", () => {
+    for (const id of FORM_WALLED) {
+      const slice = entryOf(id).slice!;
+      const shell = shells.entries[id]!;
+      expect(shell.includes(slice.from), `${id}: the slice's FROM marker matches the form shell`).toBe(false);
+    }
+  });
+
+  it("so a run served the shell reports unreachable, and writes nothing", async () => {
+    // The whole point, end to end: the same entries, handed the shell, produce
+    // five unreachable and five absent snapshots — not five baselines.
+    const asShell: BrowserReader = async (entry) =>
+      ({ ok: true, body: encode(`<html><body>${shells.entries[entry.id]}</body></html>`) });
+    const five: Watchlist = { entries: FORM_WALLED.map(entryOf) };
+    const { reports, nextState } = await runWatch(five, emptyState, refuse, "2026-09-23", asShell);
+    expect(reports.map((r) => r.outcome)).toEqual(FORM_WALLED.map(() => "unreachable"));
+    for (const r of reports) expect(r.error, r.id).toMatch(/slice marker missing: from/);
+    for (const id of FORM_WALLED) expect(nextState.entries[id], id).toBeUndefined();
   });
 });

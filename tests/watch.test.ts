@@ -473,16 +473,23 @@ describe("the highly-skilled-migrant slice", () => {
     + " And are you going to be transferred as a manager, specialist or trainee?"
     + " Then you are an intra corporate transferee and other requirements apply to you.";
 
-  it("is back, with the page: a browser entry watches the lede-to-footer region again", () => {
+  it("is back, with the page — and starts at the sentence, not at the lede", () => {
     // INVERTED BY s34, 2026-09-23. This case read "is gone, with the page: a
     // human-tier entry watches no region and keeps no snapshot" — the state
-    // s14 left. The page is read in a browser now, so the slice is back and so
-    // is the snapshot. Its `from` is the page's own lede, which is where a
-    // person moved it on 2026-09-08 and why (the case below still holds that
-    // record); its `to` is the footer, as before the form.
+    // s14 left. The page is read in a browser now, so the slice is back.
+    //
+    // It does NOT go back to the lede, which is where a person moved it on
+    // 2026-09-08 (the case below still holds that record and the reason). The
+    // form-only page ind.nl serves this watch carries the lede and the footer
+    // both, so a slice bounded by them matches a page with no requirement on
+    // it — which is how the first runner read of this slice recorded 892
+    // characters of form as a clean baseline. The marker is the quoted
+    // transferee sentence instead: it is the first thing the rendered list
+    // carries, it is above the Requirements heading the other four start at,
+    // and no shell has it.
     expect(entry.strategy).toBe("browser");
-    expect(entry.slice?.from).toBe("To work in the Netherlands as a highly skilled migrant");
-    expect(shippedState.entries["nl-ind-highly-skilled-migrant"]?.text).toBeTruthy();
+    expect(entry.slice?.from).toBe(SENTENCE.slice(0, entry.slice!.from.length));
+    expect(entry.steps?.length, "the form is not answered").toBeGreaterThan(0);
   });
 
   it("records that a person moved the marker, so the flag is not read as the page changing", () => {

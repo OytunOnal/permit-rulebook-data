@@ -81,6 +81,60 @@ function fixture({ nationalityField = true } = {}): string {
 }
 
 /**
+ * The same form, with the nationality control built the way a design system
+ * builds one: a button that opens a listbox, not a `<select>`.
+ *
+ * ind.nl's own control is not a native select — no option text appears in the
+ * shell the runner rendered — and a step that can only drive `<select>` would
+ * report the field missing on a page that plainly has it. What a person does
+ * here is what the step must do: open the thing, pick the option by the words
+ * on it.
+ */
+function comboFixture(): string {
+  const script = [
+    'var toggle = document.getElementById("nat-toggle");',
+    'var list = document.getElementById("nat-list");',
+    'var chosen = null;',
+    'toggle.addEventListener("click", function () {',
+    '  var open = this.getAttribute("aria-expanded") === "true";',
+    '  this.setAttribute("aria-expanded", String(!open));',
+    '  list.hidden = open;',
+    '});',
+    'list.addEventListener("click", function (e) {',
+    '  if (e.target.getAttribute("role") !== "option") return;',
+    '  chosen = e.target.textContent.trim();',
+    '  toggle.textContent = chosen;',
+    '  toggle.setAttribute("aria-expanded", "false");',
+    '  list.hidden = true;',
+    '});',
+    'document.getElementById("view").addEventListener("click", function () {',
+    '  var valid = document.querySelector("input[name=valid]:checked");',
+    `  if (chosen !== ${JSON.stringify(TURKIYE)} || !valid || valid.value !== "no") return;`,
+    '  document.getElementById("result").innerHTML =',
+    '    "<h2>Requirements</h2><p>You meet the general requirements that apply to everyone.</p>";',
+    "});",
+  ].join("\n");
+  return `<!doctype html><html lang="en"><head><title>Combo route</title></head><body>
+<p>Lede: what this permit is for.</p>
+<h2 id="nat-label">What is your nationality?</h2>
+<button type="button" id="nat-toggle" role="combobox" aria-expanded="false"
+        aria-controls="nat-list" aria-labelledby="nat-label">Choose</button>
+<ul id="nat-list" role="listbox" hidden>
+  <li role="option">Germany</li>
+  <li role="option">${TURKIYE}</li>
+</ul>
+<fieldset><legend>Do you already have a valid Dutch residence permit?</legend>
+  <label><input type="radio" name="valid" value="yes"> Yes</label>
+  <label><input type="radio" name="valid" value="no"> No</label>
+</fieldset>
+<button type="button" id="view">View information</button>
+<div id="result"></div>
+<footer>Cookies Proclaimer</footer>
+<script>${script}</script>
+</body></html>`;
+}
+
+/**
  * A page whose shell carries both slice markers and whose rules land later —
  * ind.nl's shape, in miniature and on a timer.
  */
@@ -251,6 +305,51 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — two readers in one process do
       expect(a.ok, a.ok ? "" : a.error).toBe(true);
       expect(b.ok, b.ok ? "" : b.error).toBe(true);
     } finally { await first.close(); await second.close(); }
+  });
+});
+
+describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives whatever the page actually built", () => {
+  const combo = (): WatchEntry => entry({
+    slice: { from: "Requirements", to: "Cookies Proclaimer" },
+    steps: [
+      { step: "select", field: "What is your nationality?", option: TURKIYE },
+      { step: "answer", question: "Do you already have a valid Dutch residence permit?", answer: "no" },
+      { step: "press", button: "View information" },
+    ],
+  });
+
+  it("opens an ARIA combobox and picks the option by the words on it", async () => {
+    served = comboFixture();
+    const reader = openBrowserReader();
+    try {
+      const { reports, nextState } = await runWatch(
+        { entries: [combo()] }, emptyState, refuse, "2026-09-23", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      expect(nextState.entries["fixture-route"]!.text)
+        .toContain("You meet the general requirements that apply to everyone.");
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("names what it found near the label when it cannot drive the field, so the error is the diagnosis", async () => {
+    // The runner is the only machine that sees ind.nl's real form, and we do
+    // not get to open a devtools window on it. So a step that fails has to
+    // come back with the shape it met — the tag, the role, a bounded excerpt —
+    // or the next move is another dispatch to find out what is there.
+    served = comboFixture().replace('role="combobox"', 'role="spinbutton"');
+    const reader = openBrowserReader();
+    try {
+      const { reports } = await runWatch(
+        { entries: [combo()] }, emptyState, refuse, "2026-09-23", reader.read,
+      );
+      expect(reports[0]!.outcome).toBe("unreachable");
+      const error = reports[0]!.error!;
+      expect(error, "the step is not named").toMatch(/select/);
+      expect(error, "the label is not named").toMatch(/What is your nationality\?/);
+      // The diagnosis: what IS there, close enough to the label to be the thing.
+      expect(error, "the error names no tag it found").toMatch(/BUTTON/i);
+      expect(error, "the error names no role it found").toMatch(/spinbutton/);
+    } finally { await reader.close(); served = fixture(); }
   });
 });
 

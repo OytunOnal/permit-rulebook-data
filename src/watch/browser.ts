@@ -541,21 +541,72 @@ const PERFORM_STEP = `function (step) {
     return { el: hits[0] };
   }
   function fire(el, type) { el.dispatchEvent(new Event(type, { bubbles: true })); }
+  /** The first few things on offer, so a wrong option says what the right ones are. */
+  function offered(list) {
+    var words = list.map(function (o) { return JSON.stringify(String(o.textContent || o.value || "").trim().slice(0, 40)); });
+    return words.length ? words.slice(0, 6).join(", ") + (words.length > 6 ? ", ..." : "") : "nothing";
+  }
+  /**
+   * What is actually near this label, for a step that could not act on it.
+   *
+   * The runner is the only machine that meets some of these pages, and there
+   * is no devtools window on it: a step that fails saying only "not on the
+   * page" costs another dispatch to find out what IS there. So the failure
+   * carries the shape it met — the tag, the role, a bounded excerpt — and the
+   * error becomes the diagnosis (s34, 2026-09-23).
+   */
+  function near(label) {
+    var wanted = norm(label);
+    var holder = [].slice.call(document.querySelectorAll("h1,h2,h3,h4,label,legend,p,span,div,button"))
+      .filter(function (e) { return norm(e.textContent).indexOf(wanted) >= 0; })
+      .pop();
+    if (!holder) return " (and no element on the page carries that text at all)";
+    var scope = holder.parentNode || holder;
+    var shapes = [].slice.call(scope.querySelectorAll("select,input,button,textarea,[role]"))
+      .slice(0, 8)
+      .map(function (e) {
+        var role = e.getAttribute("role");
+        return e.tagName
+          + (e.type ? "[type=" + e.type + "]" : "")
+          + (role ? "[role=" + role + "]" : "")
+          + (e.getAttribute("aria-expanded") ? "[aria-expanded=" + e.getAttribute("aria-expanded") + "]" : "");
+      });
+    return " — near that label the page has: " + (shapes.length ? shapes.join(", ") : "no control at all")
+      + '; the text there reads "' + norm(scope.textContent).slice(0, 160) + '"';
+  }
 
   if (step.step === "select") {
-    var field = named("select", step.field, "the field");
-    if (field.error) return "step select: " + field.error;
-    var wanted = norm(step.option);
-    var options = [].slice.call(field.el.options).filter(function (o) { return norm(o.textContent) === wanted || norm(o.value) === wanted; });
-    if (options.length !== 1) return 'step select: the option "' + step.option + '" is not in the field "' + step.field + '"';
-    field.el.value = options[0].value;
-    fire(field.el, "input");
-    fire(field.el, "change");
+    var wantedOption = norm(step.option);
+    // A native select first, because when a page has one there is nothing to
+    // open and nothing to guess.
+    var native = named("select", step.field, "the field");
+    if (!native.error) {
+      var options = [].slice.call(native.el.options).filter(function (o) { return norm(o.textContent) === wantedOption || norm(o.value) === wantedOption; });
+      if (options.length !== 1) return 'step select: the option "' + step.option + '" is not in the field "' + step.field + '" (it offers: ' + offered([].slice.call(native.el.options)) + ")";
+      native.el.value = options[0].value;
+      fire(native.el, "input");
+      fire(native.el, "change");
+      return null;
+    }
+    // Otherwise the thing a design system builds: a control that says it is a
+    // combobox, or one that owns a listbox. It is opened the way a person
+    // opens it — by pressing it — and the option is picked by the words on it.
+    var combo = named("[role=combobox], [role=listbox], [aria-haspopup=listbox]", step.field, "the field");
+    if (combo.error) return "step select: " + combo.error + near(step.field);
+    if (combo.el.getAttribute("aria-expanded") === "false") combo.el.click();
+    var listId = combo.el.getAttribute("aria-controls") || combo.el.getAttribute("aria-owns");
+    var list = (listId && document.getElementById(listId))
+      || (combo.el.getAttribute("role") === "listbox" ? combo.el : null)
+      || combo.el.parentNode.querySelector("[role=listbox]");
+    if (!list) return 'step select: the field "' + step.field + '" opened nothing to choose from' + near(step.field);
+    var picks = [].slice.call(list.querySelectorAll("[role=option]")).filter(function (o) { return norm(o.textContent) === wantedOption; });
+    if (picks.length !== 1) return 'step select: the option "' + step.option + '" is not in the field "' + step.field + '" (it offers: ' + offered([].slice.call(list.querySelectorAll("[role=option]"))) + ")";
+    picks[0].click();
     return null;
   }
   if (step.step === "answer") {
     var group = named("fieldset, [role=radiogroup]", step.question, "the question");
-    if (group.error) return "step answer: " + group.error;
+    if (group.error) return "step answer: " + group.error + near(step.question);
     var wantedAnswer = step.answer === "yes" ? "yes" : "no";
     var radios = [].slice.call(group.el.querySelectorAll('input[type=radio]')).filter(function (r) {
       var own = r.closest("label");
@@ -574,7 +625,7 @@ const PERFORM_STEP = `function (step) {
   }
   if (step.step === "press") {
     var button = named("button, input[type=submit], input[type=button], a[role=button], [role=button]", step.button, "the button");
-    if (button.error) return "step press: " + button.error;
+    if (button.error) return "step press: " + button.error + near(step.button);
     button.el.click();
     return null;
   }

@@ -164,15 +164,39 @@
       "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
       "strategy": "browser",
       "kind": "value-source",
-      "note": "Backs eight quotes on nl-orientation-year: the three study-programme limbs of its criteria and the five statements (no second orientation year, the research finished within three years, English where the institution was abroad, the Turkish-citizens caveat and the MVV precondition). Browser tier because the page renders its requirements from a script: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences — while headless Chrome on the same minute rendered the same URL into a page whose every quoted sentence is present. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). The \"Your situation\" form that sent this page to the human tier on 2026-09-16 is no longer on it (measured 2026-09-23: no nationality field, no \"View information\" button, the requirement list rendered without being asked), so the entry declares no steps and the page is simply rendered; the step vocabulary is there for the day it comes back. Sliced from the page's own lede to its footer: the \"Last update\" line and the IND's maintenance banner sit above the slice, or the entry would flag on a day nothing moved. Page \"Last update\": 16 September 2026.",
+      "note": "Backs eight quotes on nl-orientation-year: the three study-programme limbs of its criteria and the five statements (no second orientation year, the research finished within three years, English where the institution was abroad, the Turkish-citizens caveat and the MVV precondition). Browser tier because the page renders its requirements from a script and puts them behind a form: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences. Headless Chrome is served the IND's \"Your situation\" form — nationality, whether a valid Dutch permit is held, whether one expired under two years ago — and renders the requirement list only once it is answered, so this entry carries that recipe as `steps` and the slice starts BELOW the form, at a string the form-only page does not contain. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). One thing measured on 2026-09-23 and worth writing down: ind.nl serves the requirement list unasked to some clients and the form to others — a browser whose User-Agent this watch overrides gets the form, one it does not gets the list — so a reading that finds no form is a variant and not the page changing. Page \"Last update\": 16 September 2026.",
       "slice": {
-        "from": "If you want to look for work in the Netherlands after your graduation",
+        "from": "Requirements",
         "to": "Cookies Proclaimer Privacy Sitemap"
       },
       "history": [
         {
           "changed_at": "2026-09-23",
-          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch, and the watch now opens it in the browser the wall was built for. The sentences below stand as a person read them on 2026-09-16, with their dates; what changes is that a machine confirms them every morning again. The baseline snapshot for this entry was rendered on a developer machine, so a `changed` flag on the first runner read is to be read, not waved through."
+          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch — and the watch now opens it in a browser and answers the form, so the sentences a person confirmed on 2026-09-16 are machine-checked every morning again. The slice's `from` marker moved with it, down from the page's lede to a string that exists only once the requirement list is rendered: the build's first attempt kept the lede, the runner was served the form shell — which carries the lede AND the footer — and recorded 892 characters of form as a clean baseline for a page whose every quoted sentence was missing. A marker that a shell can match turns a failed read into a green one, so no marker of these five may appear in the shell, and `tests/s34.test.ts` holds the shell the runner rendered and checks exactly that."
+        }
+      ],
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Türkiye"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
         }
       ]
     },
@@ -181,15 +205,39 @@
       "url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
       "strategy": "browser",
       "kind": "value-source",
-      "note": "Backs seven quotes on nl-blue-card: the six-month contract condition, the diploma leg, the five-year and the IT 3-in-7 experience rules, and the six-month-contract, regulated-profession and MVV preconditions. Browser tier because the page renders its requirements from a script: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences — while headless Chrome on the same minute rendered the same URL into a page whose every quoted sentence is present. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). The \"Your situation\" form that sent this page to the human tier on 2026-09-16 is no longer on it (measured 2026-09-23: no nationality field, no \"View information\" button, the requirement list rendered without being asked), so the entry declares no steps and the page is simply rendered; the step vocabulary is there for the day it comes back. Sliced from the page's own lede to its footer: the \"Last update\" line and the IND's maintenance banner sit above the slice, or the entry would flag on a day nothing moved. Page \"Last update\": 15 June 2026.",
+      "note": "Backs seven quotes on nl-blue-card: the six-month contract condition, the diploma leg, the five-year and the IT 3-in-7 experience rules, and the six-month-contract, regulated-profession and MVV preconditions. Browser tier because the page renders its requirements from a script and puts them behind a form: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences. Headless Chrome is served the IND's \"Your situation\" form — nationality, whether a valid Dutch permit is held, whether one expired under two years ago — and renders the requirement list only once it is answered, so this entry carries that recipe as `steps` and the slice starts BELOW the form, at a string the form-only page does not contain. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). One thing measured on 2026-09-23 and worth writing down: ind.nl serves the requirement list unasked to some clients and the form to others — a browser whose User-Agent this watch overrides gets the form, one it does not gets the list — so a reading that finds no form is a variant and not the page changing. Page \"Last update\": 15 June 2026.",
       "slice": {
-        "from": "With a European Blue Card, you can work in the Netherlands",
+        "from": "Requirements",
         "to": "Cookies Proclaimer Privacy Sitemap"
       },
       "history": [
         {
           "changed_at": "2026-09-23",
-          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch, and the watch now opens it in the browser the wall was built for. The sentences below stand as a person read them on 2026-09-16, with their dates; what changes is that a machine confirms them every morning again. The baseline snapshot for this entry was rendered on a developer machine, so a `changed` flag on the first runner read is to be read, not waved through."
+          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch — and the watch now opens it in a browser and answers the form, so the sentences a person confirmed on 2026-09-16 are machine-checked every morning again. The slice's `from` marker moved with it, down from the page's lede to a string that exists only once the requirement list is rendered: the build's first attempt kept the lede, the runner was served the form shell — which carries the lede AND the footer — and recorded 892 characters of form as a clean baseline for a page whose every quoted sentence was missing. A marker that a shell can match turns a failed read into a green one, so no marker of these five may appear in the shell, and `tests/s34.test.ts` holds the shell the runner rendered and checks exactly that."
+        }
+      ],
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Türkiye"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
         }
       ]
     },
@@ -332,7 +380,7 @@
       "url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
       "strategy": "browser",
       "kind": "value-source",
-      "note": "Backs twelve quotes on the two highly-skilled-migrant routes (six each on nl-hsm-30plus and nl-hsm-under30): the recognised-sponsor contract condition, the market-rate precondition, the recognised-sponsor and BIG-register preconditions, the intra-corporate-transferee caveat and the MVV precondition. Browser tier because the page renders its requirements from a script: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences — while headless Chrome on the same minute rendered the same URL into a page whose every quoted sentence is present. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). The \"Your situation\" form that sent this page to the human tier on 2026-09-16 is no longer on it (measured 2026-09-23: no nationality field, no \"View information\" button, the requirement list rendered without being asked), so the entry declares no steps and the page is simply rendered; the step vocabulary is there for the day it comes back. Sliced from the page's own lede to its footer: the \"Last update\" line and the IND's maintenance banner sit above the slice, or the entry would flag on a day nothing moved. Page \"Last update\": 11 September 2026.",
+      "note": "Backs twelve quotes on the two highly-skilled-migrant routes (six each on nl-hsm-30plus and nl-hsm-under30): the recognised-sponsor contract condition, the market-rate precondition, the recognised-sponsor and BIG-register preconditions, the intra-corporate-transferee caveat and the MVV precondition. Browser tier because the page renders its requirements from a script and puts them behind a form: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences. Headless Chrome is served the IND's \"Your situation\" form — nationality, whether a valid Dutch permit is held, whether one expired under two years ago — and renders the requirement list only once it is answered, so this entry carries that recipe as `steps` and the slice starts BELOW the form, at a string the form-only page does not contain. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). One thing measured on 2026-09-23 and worth writing down: ind.nl serves the requirement list unasked to some clients and the form to others — a browser whose User-Agent this watch overrides gets the form, one it does not gets the list — so a reading that finds no form is a variant and not the page changing. Page \"Last update\": 11 September 2026.",
       "history": [
         {
           "changed_at": "2026-09-08",
@@ -344,28 +392,76 @@
         },
         {
           "changed_at": "2026-09-23",
-          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch, and the watch now opens it in the browser the wall was built for. The sentences below stand as a person read them on 2026-09-16, with their dates; what changes is that a machine confirms them every morning again. The baseline snapshot for this entry was rendered on a developer machine, so a `changed` flag on the first runner read is to be read, not waved through."
+          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch — and the watch now opens it in a browser and answers the form, so the sentences a person confirmed on 2026-09-16 are machine-checked every morning again. The slice's `from` marker moved with it, down from the page's lede to a string that exists only once the requirement list is rendered: the build's first attempt kept the lede, the runner was served the form shell — which carries the lede AND the footer — and recorded 892 characters of form as a clean baseline for a page whose every quoted sentence was missing. A marker that a shell can match turns a failed read into a green one, so no marker of these five may appear in the shell, and `tests/s34.test.ts` holds the shell the runner rendered and checks exactly that."
         }
       ],
       "slice": {
-        "from": "To work in the Netherlands as a highly skilled migrant",
+        "from": "Do you have an employment contract with a company located outside the EU?",
         "to": "Cookies Proclaimer Privacy Sitemap"
-      }
+      },
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Türkiye"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
+        }
+      ]
     },
     {
       "id": "nl-ind-ict",
       "url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
       "strategy": "browser",
       "kind": "value-source",
-      "note": "Backs six quotes on nl-ict: the three-months-outside-the-EU condition, the market-rate salary rule, and the three-months, manager-specialist-or-trainee, protected-profession and MVV preconditions. Browser tier because the page renders its requirements from a script: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences — while headless Chrome on the same minute rendered the same URL into a page whose every quoted sentence is present. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). The \"Your situation\" form that sent this page to the human tier on 2026-09-16 is no longer on it (measured 2026-09-23: no nationality field, no \"View information\" button, the requirement list rendered without being asked), so the entry declares no steps and the page is simply rendered; the step vocabulary is there for the day it comes back. Sliced from the page's own lede to its footer: the \"Last update\" line and the IND's maintenance banner sit above the slice, or the entry would flag on a day nothing moved. Page \"Last update\": 15 June 2026.",
+      "note": "Backs six quotes on nl-ict: the three-months-outside-the-EU condition, the market-rate salary rule, and the three-months, manager-specialist-or-trainee, protected-profession and MVV preconditions. Browser tier because the page renders its requirements from a script and puts them behind a form: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences. Headless Chrome is served the IND's \"Your situation\" form — nationality, whether a valid Dutch permit is held, whether one expired under two years ago — and renders the requirement list only once it is answered, so this entry carries that recipe as `steps` and the slice starts BELOW the form, at a string the form-only page does not contain. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). One thing measured on 2026-09-23 and worth writing down: ind.nl serves the requirement list unasked to some clients and the form to others — a browser whose User-Agent this watch overrides gets the form, one it does not gets the list — so a reading that finds no form is a variant and not the page changing. Page \"Last update\": 15 June 2026.",
       "slice": {
-        "from": "You want to apply for a residence permit as an intra-corporate transferee (ICT).",
+        "from": "Requirements",
         "to": "Cookies Proclaimer Privacy Sitemap"
       },
       "history": [
         {
           "changed_at": "2026-09-23",
-          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch, and the watch now opens it in the browser the wall was built for. The sentences below stand as a person read them on 2026-09-16, with their dates; what changes is that a machine confirms them every morning again. The baseline snapshot for this entry was rendered on a developer machine, so a `changed` flag on the first runner read is to be read, not waved through."
+          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch — and the watch now opens it in a browser and answers the form, so the sentences a person confirmed on 2026-09-16 are machine-checked every morning again. The slice's `from` marker moved with it, down from the page's lede to a string that exists only once the requirement list is rendered: the build's first attempt kept the lede, the runner was served the form shell — which carries the lede AND the footer — and recorded 892 characters of form as a clean baseline for a page whose every quoted sentence was missing. A marker that a shell can match turns a failed read into a green one, so no marker of these five may appear in the shell, and `tests/s34.test.ts` holds the shell the runner rendered and checks exactly that."
+        }
+      ],
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Türkiye"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
         }
       ]
     },
@@ -374,15 +470,39 @@
       "url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
       "strategy": "browser",
       "kind": "value-source",
-      "note": "Backs five quotes on nl-researcher: the contract-or-host-agreement condition, the other-income caveat, and the recognised-sponsor, doctorate-degree and MVV preconditions. Browser tier because the page renders its requirements from a script: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences — while headless Chrome on the same minute rendered the same URL into a page whose every quoted sentence is present. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). The \"Your situation\" form that sent this page to the human tier on 2026-09-16 is no longer on it (measured 2026-09-23: no nationality field, no \"View information\" button, the requirement list rendered without being asked), so the entry declares no steps and the page is simply rendered; the step vocabulary is there for the day it comes back. Sliced from the page's own lede to its footer: the \"Last update\" line and the IND's maintenance banner sit above the slice, or the entry would flag on a day nothing moved. Page \"Last update\": 18 August 2026.",
+      "note": "Backs five quotes on nl-researcher: the contract-or-host-agreement condition, the other-income caveat, and the recognised-sponsor, doctorate-degree and MVV preconditions. Browser tier because the page renders its requirements from a script and puts them behind a form: measured 2026-09-23 with this watch's own fetcher, HTTP 200 and ~35 kB of HTML carrying about 1.4 kB of text — the lede, the page furniture and the footer, none of the quoted sentences. Headless Chrome is served the IND's \"Your situation\" form — nationality, whether a valid Dutch permit is held, whether one expired under two years ago — and renders the requirement list only once it is answered, so this entry carries that recipe as `steps` and the slice starts BELOW the form, at a string the form-only page does not contain. Read from the runner 2026-09-15: headless Chrome reads ind.nl (DECISIONS). One thing measured on 2026-09-23 and worth writing down: ind.nl serves the requirement list unasked to some clients and the form to others — a browser whose User-Agent this watch overrides gets the form, one it does not gets the list — so a reading that finds no form is a variant and not the page changing. Page \"Last update\": 18 August 2026.",
       "slice": {
-        "from": "Under Directive (EU) 2016/801 you are allowed to work as a researcher in the Netherlands.",
+        "from": "Requirements",
         "to": "Cookies Proclaimer Privacy Sitemap"
       },
       "history": [
         {
           "changed_at": "2026-09-23",
-          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch, and the watch now opens it in the browser the wall was built for. The sentences below stand as a person read them on 2026-09-16, with their dates; what changes is that a machine confirms them every morning again. The baseline snapshot for this entry was rendered on a developer machine, so a `changed` flag on the first runner read is to be read, not waved through."
+          "note": "Strategy moved from `human` to `browser` and the verification age removed (s34). The page was never unreadable — it was unreadable by a fetch — and the watch now opens it in a browser and answers the form, so the sentences a person confirmed on 2026-09-16 are machine-checked every morning again. The slice's `from` marker moved with it, down from the page's lede to a string that exists only once the requirement list is rendered: the build's first attempt kept the lede, the runner was served the form shell — which carries the lede AND the footer — and recorded 892 characters of form as a clean baseline for a page whose every quoted sentence was missing. A marker that a shell can match turns a failed read into a green one, so no marker of these five may appear in the shell, and `tests/s34.test.ts` holds the shell the runner rendered and checks exactly that."
+        }
+      ],
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Türkiye"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
         }
       ]
     },

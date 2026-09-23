@@ -312,10 +312,13 @@ list is the one a first-time applicant from outside the EU sees; the sentences
 below were read from that list on the dates given, when the page still carried
 it without a form.
 
-**The road back** is a headless-browser strategy that answers the form for the
-watch (data #17). The one measurement it is gated on has been taken: headless
-Chrome reads ind.nl. Until it exists, `last_verified` on each entry is the day
-a person last read the list, and `max_age_days: 90` is the reminder.
+**The road back** was a headless-browser strategy that answers the form for
+the watch (data #17), and it landed on 2026-09-23 (s34). The recipe in the
+paragraph above is no longer instructions for a person: it is the five
+entries' `steps`, performed every morning. It stays written here because it is
+the record of how the list was reached on the dates beside each sentence
+below, and because it is what a person would do if they ever had to check the
+watch's reading by hand.
 
 **A pass:** the sentence appears in the rendered requirement list, word for
 word. **A fail:** the sentence has moved or been reworded — that is a value
@@ -491,19 +494,29 @@ Page "Last update": 18 August 2026. 5 quotes.
       permit (MVV) is needed for this application"
 
 > **CLOSED — 2026-09-23 (s34).** These five pages moved to the `browser` watch
-> strategy: the watch opens them in headless Chrome and reads the rendered
-> page, so the thirty-eight sentences below are machine-verified against a
-> snapshot every morning again and **are not re-verified by hand**. Nothing
-> here is deleted: the list stays as the record of the last human read, on
-> 2026-09-16, and the dates beside each sentence are the dates it was read.
-> The next human read, which had been due on 2026-12-15, is not due. Two
-> things measured on 2026-09-23 while the strategy was built, both recorded
-> because this section is where a person would look for them: the *Your
-> situation* form is **no longer on these pages** — the requirement list
-> renders without being asked — so the entries declare no steps, and the
-> "How to reach the requirements" recipe below is history rather than
-> instructions; and a plain fetch still receives only the shell, which is why
-> the pages need a browser and not a fetcher.
+> strategy: the watch opens them in headless Chrome, answers the form with the
+> recipe written below — it is now the entry's own `steps`, in the watchlist,
+> in a vocabulary the coverage gate checks — and reads the requirement list
+> that renders. The thirty-eight sentences below are machine-verified against a
+> snapshot again and **are not re-verified by hand**. Nothing here is deleted:
+> the list stays as the record of the last human read, on 2026-09-16, and the
+> dates beside each sentence are the dates it was read. The next human read,
+> which had been due on 2026-12-15, is not due.
+>
+> **One thing the build got wrong, recorded as an error rather than smoothed
+> over.** Reading these pages from a developer machine on 2026-09-23 found no
+> form at all — the requirement list rendered unasked — and the build concluded
+> the form was gone and declared no steps. It is not gone. ind.nl serves the
+> list unasked to a client it recognises and the form to one it does not, and
+> the watch's browser is served the form: the first runner dispatch of this
+> slice rendered the *Your situation* form on all five pages and recorded 892
+> characters of it as a clean baseline, because the slice markers of that
+> attempt — the page's lede and its footer — are both carried by the form-only
+> page. A marker a shell can match turns a failed read into a green one. So the
+> `from` marker now starts below the form (`Requirements` on four; on the
+> highly-skilled-migrant page the intra-corporate-transferee sentence, which is
+> quoted and sits above that heading), and `tests/s34.test.ts` keeps the shell
+> the runner rendered and checks that no marker of the five can match it.
 
 ## 4. What did not need a human
 
