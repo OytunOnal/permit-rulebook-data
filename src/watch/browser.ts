@@ -111,6 +111,33 @@ const QUIET_MS = 2_500;
  * its turn, and one that never stops mutating is read at the budget. */
 const MIN_SETTLE_MS = 1_000;
 
+/**
+ * The same wait, between one step and the next, where it can be much shorter.
+ *
+ * The long window exists to protect the READING — the snapshot a quote is
+ * checked against, which must be of a finished page. Between steps there is a
+ * better guarantee available than any amount of waiting: the next step looks
+ * for its own label, and says so when it is not there. So the wait between
+ * steps is short and a step that cannot find its target is given one more
+ * chance after a full settle, which turns "the page had not caught up" from a
+ * red day into a second attempt.
+ *
+ * Measured on a fixture that mirrors the IND's form and blocks its main thread
+ * after every click (2026-09-23): the five-step recipe cost 16.7 s with a full
+ * window between every step and 10.1 s with this one, and the entry's 30 s
+ * budget went from surviving 2 s of freeze per click to surviving 4 s (29.6 s
+ * at four, over at five). The reading itself is unchanged — the settle before
+ * the HTML is read is still the long one.
+ *
+ * What this does NOT buy is patience with a page that freezes for the 30-50 s
+ * a real browser showed on 2026-09-23: five clicks of that is three minutes,
+ * and no wait-shortening reaches it. If the runner sees that too, the answer
+ * is a bigger budget for browser entries and a slower job, which is a decision
+ * with a cost and belongs to whoever is holding the five-minute line — not to
+ * this constant.
+ */
+const STEP_QUIET_MS = 800;
+
 export interface BrowserReaderOptions {
   /** Where Chrome is. Injected so a test can ask what a run with no browser
    * does without uninstalling one. */
@@ -428,13 +455,25 @@ function attach(socket: WebSocket, close: () => void): Session {
           }
         };
 
+        const perform = async (step: WatchStep) => step.step === "select"
+          ? await selectInto(step, inPage, type, renderBy)
+          : await inPage(step) as string | null;
         for (const step of entry.steps ?? []) {
-          const failure = step.step === "select"
-            ? await selectInto(step, inPage, type, renderBy)
-            : await inPage(step) as string | null;
-          if (failure) throw new Error(failure);
-          await settle(evaluate, stillLoading, budgetMs);
+          let failure = await perform(step);
+          if (failure) {
+            // A label that is not there yet reads exactly like a label that is
+            // gone. The page gets the long settle and the step gets one more
+            // go before the day is called red — and if it is genuinely gone,
+            // the second failure carries the same diagnosis as the first.
+            await settle(evaluate, stillLoading, budgetMs);
+            failure = await perform(step);
+            if (failure) throw new Error(failure);
+          }
+          await settle(evaluate, stillLoading, budgetMs, STEP_QUIET_MS);
         }
+        // The reading is of a finished page, whatever the steps did: the last
+        // wait before the HTML is taken is the long one.
+        await settle(evaluate, stillLoading, budgetMs);
         return await evaluate("document.documentElement.outerHTML") as string;
       } finally {
         // The tab goes, and so does everything this run remembered about it:
@@ -584,6 +623,7 @@ async function settle(
   evaluate: (expression: string) => Promise<unknown>,
   inFlight: () => number,
   budgetMs: number,
+  quietMs = QUIET_MS,
 ): Promise<void> {
   const deadline = Date.now() + budgetMs;
   await new Promise((r) => setTimeout(r, MIN_SETTLE_MS));
@@ -593,7 +633,7 @@ async function settle(
       "JSON.stringify([document.readyState, Date.now() - (window.__watchLastMutation || 0)])",
     ) as string;
     const [readyState, quietFor] = JSON.parse(state) as [string, number];
-    if (readyState === "complete" && inFlight() === 0 && quietFor >= QUIET_MS) return;
+    if (readyState === "complete" && inFlight() === 0 && quietFor >= quietMs) return;
     await new Promise((r) => setTimeout(r, 200));
   }
 }
@@ -734,16 +774,49 @@ const PERFORM_STEP = `function (step, phase) {
     return " — near that label the page has: " + (found.length ? shapes(found) : "no control at all")
       + '; the text there reads "' + norm(scope.textContent).slice(0, 160) + '"';
   }
-  /** Wherever a control keeps its options, once it has any. */
-  function optionsOf(el) {
+  /**
+   * Wherever a control keeps its options, once it has any.
+   *
+   * The list is found by what the control SAYS owns it before anything is
+   * guessed from structure: a typeahead built on jQuery UI — which is what
+   * ind.nl builds, and the widget class on its own search box says so —
+   * appends its menu to the end of the body, nowhere near the input, and
+   * points at it with aria-owns.
+   */
+  function listOf(el) {
     var listId = el.getAttribute("aria-controls") || el.getAttribute("aria-owns");
-    var list = (listId && document.getElementById(listId))
-      || (el.getAttribute("role") === "listbox" ? el : null)
-      || (el.parentNode && el.parentNode.querySelector("[role=listbox]"))
-      || (el.closest("div, fieldset, form") || document).querySelector("[role=listbox], ul[class*=autocomplete], ul[class*=suggest]");
-    if (!list || list.hidden) return [];
-    return [].slice.call(list.querySelectorAll("[role=option], li"))
-      .filter(function (o) { return o.offsetParent !== null || list === el; });
+    var candidates = [
+      listId && document.getElementById(listId),
+      el.getAttribute("role") === "listbox" ? el : null,
+      el.parentNode && el.parentNode.querySelector("[role=listbox]"),
+      (el.closest("div, fieldset, form") || document).querySelector("[role=listbox]"),
+      document.querySelector("ul[class*=autocomplete], ul[class*=suggest], ul[class*=typeahead], ul[role=listbox]")
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      var found = candidates[i];
+      if (found && !found.hidden && found.offsetParent !== null) return found;
+    }
+    return null;
+  }
+  /**
+   * The things in that list a person could pick.
+   *
+   * An option is whatever the page made one out of: a role=option, a list
+   * item, or a link — ind.nl renders its nationalities as links, measured in a
+   * real browser on 2026-09-23. Only the innermost is kept, so a list item
+   * wrapping a link offers the link once rather than the pair twice, and the
+   * thing clicked is the thing that carries the handler.
+   */
+  function optionsOf(el) {
+    var list = listOf(el);
+    if (!list) return [];
+    var all = [].slice.call(list.querySelectorAll("[role=option], li, a"))
+      .filter(function (o) {
+        return String(o.textContent || "").trim() && (o.offsetParent !== null || list === el);
+      });
+    return all.filter(function (o) {
+      return !all.some(function (other) { return other !== o && o.contains(other); });
+    });
   }
   /** The one selector that finds a field however the page chose to build it. */
   var FIELD = "select, [role=combobox], [role=listbox], [aria-haspopup=listbox], input[type=text], input:not([type])";
@@ -861,14 +934,25 @@ const PERFORM_STEP = `function (step, phase) {
       var text = own ? own.textContent : (labelFor(r) || {}).textContent;
       return norm(text) === wantedAnswer || norm(r.value) === wantedAnswer;
     });
-    if (radios.length !== 1) return 'step answer: "' + step.question + '" has no single "' + step.answer + '" to choose';
-    // Pressing it is what a person does, and it does the lot natively: sets
+    if (radios.length !== 1) return 'step answer: "' + step.question + '" has no single "' + step.answer + '" to choose' + near(step.question);
+    // Click the LABEL, not the input.
+    //
+    // These two questions are native radios styled as a segmented pair, and
+    // the input itself is not what a person hits: it is covered, or sized to
+    // nothing, and a click on it did nothing visible in a real browser on
+    // 2026-09-23 while a click on the label's box registered. Clicking the
+    // label is also what a person does on any ordinary form, so it is the
+    // right default and not a workaround. The input is the fallback for a
+    // radio that has no label at all.
+    //
+    // Pressing rather than setting: a click does the lot natively — sets
     // checked, then fires click, input and change in the order a listener
     // expects. Setting the property and dispatching the events by hand got
     // that order wrong and left a framework's own handler unrun. No backtick
     // in this comment, or any other inside PERFORM_STEP: the page script is a
     // template literal, and one would end it here.
-    radios[0].click();
+    var hit = radios[0].closest("label") || labelFor(radios[0]) || radios[0];
+    hit.click();
     return null;
   }
   if (step.step === "press") {
@@ -878,12 +962,25 @@ const PERFORM_STEP = `function (step, phase) {
     return null;
   }
   if (step.step === "expand") {
-    // Only a declared disclosure: a <details>, or a control that says both
-    // that it is closed and what it opens. Clicking everything that merely
-    // carries aria-expanded would open the site's own navigation menu, which
-    // is not a collapsed block of the text being read.
+    // Only a disclosure inside the page's own content: a <details>, or a
+    // control that says both that it is closed and what it opens.
+    //
+    // Two narrowings, both learned rather than guessed. Clicking everything
+    // that merely carries aria-expanded opened the site's navigation menu —
+    // which is chrome, not a collapsed block of the text being read — so a
+    // control must also name what it controls, and must not sit in the page's
+    // furniture. The regions are named structurally, by what HTML calls them,
+    // rather than by any word on this site: a rule keyed to a heading would
+    // be a rule that stops working when the heading is rewritten.
+    //
+    // It still names nothing and so cannot fail: a page with nothing folded
+    // away is simply already open, and this step is the difference between
+    // reading a sentence a reader has to click for and not reading it.
+    var FURNITURE = "nav, header, footer, aside, dialog, [role=navigation], [role=banner], [role=contentinfo], [role=dialog], [role=search]";
     [].slice.call(document.querySelectorAll("details")).forEach(function (d) { d.open = true; });
-    [].slice.call(document.querySelectorAll('[aria-expanded="false"][aria-controls]')).forEach(function (el) { el.click(); });
+    [].slice.call(document.querySelectorAll('[aria-expanded="false"][aria-controls]'))
+      .filter(function (el) { return !el.closest(FURNITURE); })
+      .forEach(function (el) { el.click(); });
     return null;
   }
   return 'step "' + step.step + '" is not one this reader knows';

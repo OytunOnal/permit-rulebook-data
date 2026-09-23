@@ -230,7 +230,10 @@ describe("s34 — seven entries move to the browser and two stay with a person",
     for (const id of FORM_WALLED) {
       const steps = entryOf(id).steps ?? [];
       expect(steps.map((s) => s.step), id).toEqual(["select", "answer", "answer", "press", "expand"]);
-      expect(steps[0], id).toMatchObject({ field: "What is your nationality?", option: "Türkiye" });
+      // "Turkish", not "Türkiye": the IND's nationality list holds adjectives,
+      // read in a real browser on 2026-09-23 after the runner's typing found
+      // no match for the country's name.
+      expect(steps[0], id).toMatchObject({ field: "What is your nationality?", option: "Turkish" });
       expect(steps.filter((s) => s.step === "answer").every((s) => s.answer === "no"), id).toBe(true);
       expect(steps[3], id).toMatchObject({ button: "View information" });
     }

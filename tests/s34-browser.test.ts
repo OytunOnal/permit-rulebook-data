@@ -488,6 +488,112 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives a type
   });
 });
 
+/**
+ * The IND's form as a real browser showed it on 2026-09-23, in miniature.
+ *
+ * Every shape in here was read off the live page rather than imagined, and
+ * each one had already broken a run: the nationality list holds ADJECTIVES
+ * and renders them as links, not options; the two permit questions are native
+ * radios whose visible label is what a person hits, not the input; the third
+ * question appears only once the second is answered and the submit button only
+ * once the third is; and a "Show details" disclosure below the requirement
+ * list holds a sentence nobody sees who does not open it.
+ */
+function indFormFixture(): string {
+  const script = [
+    'var input = document.getElementById("nat"), box = document.getElementById("sugg"), chosen = null;',
+    'input.addEventListener("input", function () {',
+    '  var typed = input.value.trim().toLowerCase();',
+    '  box.innerHTML = "";',
+    '  if (!typed) { box.hidden = true; return; }',
+    '  ["Turkish", "Turkmen", "Tunisian"].filter(function (n) { return n.toLowerCase().indexOf(typed) >= 0; })',
+    '    .forEach(function (n) {',
+    '      var item = document.createElement("li");',
+    '      var link = document.createElement("a");',
+    '      link.textContent = n;',
+    '      link.addEventListener("click", function () { chosen = n; input.value = n; box.hidden = true; });',
+    '      item.appendChild(link); box.appendChild(item);',
+    '    });',
+    '  box.hidden = !box.children.length;',
+    '});',
+    // Question three exists only once question two is answered, and the
+    // button only once question three is.
+    'document.querySelectorAll("#q2 input").forEach(function (radio) {',
+    '  radio.addEventListener("click", function () {',
+    '    document.getElementById("q3holder").innerHTML =',
+    '      \'<fieldset id="q3"><legend>Did you have a Dutch residence permit and did it expire less than 2 years ago?</legend>\'',
+    '      + \'<label><input type="radio" name="e" value="yes"> Yes</label>\'',
+    '      + \'<label><input type="radio" name="e" value="no"> No</label></fieldset>\';',
+    '    document.querySelectorAll("#q3 input").forEach(function (third) {',
+    '      third.addEventListener("click", function () {',
+    '        document.getElementById("submitholder").innerHTML =',
+    '          \'<button type="submit" id="view">View information</button>\';',
+    '        document.getElementById("view").addEventListener("click", function () {',
+    `          if (chosen !== "Turkish") return;`,
+    '          document.getElementById("result").innerHTML =',
+    '            "<h2>Requirements</h2><p>You meet the general requirements that apply to everyone.</p>"',
+    '            + \'<button type="button" id="more" aria-expanded="false" aria-controls="det">Show details</button>\'',
+    '            + \'<div id="det"></div>\';',
+    '          document.getElementById("more").addEventListener("click", function () {',
+    '            this.setAttribute("aria-expanded", "true");',
+    '            document.getElementById("det").textContent = "A provisional residence permit (MVV) is needed.";',
+    '          });',
+    '        });',
+    '      });',
+    '    });',
+    '  });',
+    '});',
+  ].join("\n");
+  return `<!doctype html><html lang="en"><head><title>IND form</title></head><body>
+<nav aria-label="Main"><button type="button" aria-expanded="false" aria-controls="menu">Open menu</button>
+  <div id="menu" hidden>Residency Citizenship News</div></nav>
+<p>Lede: what this permit is for.</p>
+<label for="nat">What is your nationality?</label>
+<input id="nat" type="text" role="combobox" aria-owns="sugg" autocomplete="off">
+<ul id="sugg" class="ui-autocomplete" hidden></ul>
+<fieldset id="q2"><legend>Do you already have a valid Dutch residence permit?</legend>
+  <label><input type="radio" name="v" value="yes"> Yes</label>
+  <label><input type="radio" name="v" value="no"> No</label>
+</fieldset>
+<div id="q3holder"></div>
+<div id="submitholder"></div>
+<div id="result"></div>
+<footer>Cookies Proclaimer</footer>
+</body></html>
+<script>${script}</script>`;
+}
+
+describe.skipIf(Boolean(noChrome) && !CI)("s34 — the recipe drives the IND's form as a browser showed it", () => {
+  it("walks all five steps and reads a list that exists only at the end of them", async () => {
+    served = indFormFixture();
+    const reader = openBrowserReader();
+    try {
+      const walk = entry({
+        slice: { from: "Requirements", to: "Cookies Proclaimer" },
+        steps: [
+          { step: "select", field: "What is your nationality?", option: "Turkish" },
+          { step: "answer", question: "Do you already have a valid Dutch residence permit?", answer: "no" },
+          { step: "answer", question: "Did you have a Dutch residence permit and did it expire less than 2 years ago?", answer: "no" },
+          { step: "press", button: "View information" },
+          { step: "expand" },
+        ],
+      });
+      const { reports, nextState } = await runWatch(
+        { entries: [walk] }, emptyState, refuse, "2026-09-23", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      const text = nextState.entries["fixture-route"]!.text!;
+      expect(text).toContain("You meet the general requirements that apply to everyone.");
+      // Behind the disclosure, which is the whole reason `expand` is in the recipe.
+      expect(text).toContain("A provisional residence permit (MVV) is needed.");
+      // And NOT the navigation, which the narrowed `expand` leaves shut: it is
+      // page furniture, and opening it would put the site's menu inside a
+      // snapshot that a quote is checked against.
+      expect(text, "the navigation menu was opened").not.toContain("Residency Citizenship News");
+    } finally { await reader.close(); served = fixture(); }
+  });
+});
+
 describe("s34 — a reader that can find no Chrome says so and reads nothing", () => {
   it("answers every browser entry with an error that names the browser", async () => {
     const reader = openBrowserReader({
