@@ -149,7 +149,12 @@ function comboFixture(): string {
  * shape of the day the IND renames a country or drops one.
  */
 function typeaheadFixture({ suggests = true, keysOnly = false } = {}): string {
-  const offers = suggests ? [TURKIYE, "Tunisia", "Turkmenistan"] : ["Germany", "Greece"];
+  // `suggests: false` offers the near miss rather than something unrelated:
+  // a list that answers the typing and does not hold the word asked for is
+  // the shape of the day an authority renames an option — and it is the shape
+  // ind.nl actually had, where the list held "Turkish" and the entry asked
+  // for "Türkiye".
+  const offers = suggests ? [TURKIYE, "Tunisia", "Turkmenistan"] : ["Turkey", "Turkmenistan"];
   const script = [
     `var OFFERS = ${JSON.stringify(offers)};`,
     'var input = document.getElementById("nat");',
@@ -452,10 +457,12 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives a type
   });
 
   it("drives a control that answers keystrokes and ignores a value written into it", async () => {
-    // ind.nl's shape, measured from the runner on 2026-09-23 (dispatch
-    // 35908751925): the value setter plus an `input` event offered nothing at
-    // all, five pages out of five. This fixture cannot be driven that way
-    // either, so passing it is a claim about real key events and nothing else.
+    // Not ind.nl's shape — that run's "offered nothing" turned out to be the
+    // reader looking in the wrong menu, and the suggestions had been arriving
+    // all along. This is the case that earns the key events on their own
+    // terms: a control that listens for keys and ignores a value written into
+    // it cannot be driven any other way, and this fixture is exactly that, so
+    // passing it is a claim about real key events and nothing else.
     served = typeaheadFixture({ keysOnly: true });
     const reader = openBrowserReader();
     try {
@@ -539,6 +546,8 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives a type
   });
 
   it("names what did appear when the option is not among the suggestions", async () => {
+    // This control answers — with other countries — so the message must carry
+    // what it answered with, which is the half a reader of a red run needs.
     served = typeaheadFixture({ suggests: false });
     const reader = openBrowserReader();
     try {
@@ -547,13 +556,15 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives a type
       );
       expect(reports[0]!.outcome).toBe("unreachable");
       const error = reports[0]!.error!;
-      expect(error).toMatch(/select/);
+      // The decision, not the sentence: a failure names the step it was, the
+      // label it acted on, and the option it wanted. What it offered instead
+      // is asserted where there IS something to offer — below — rather than
+      // by matching the words this message happens to use for emptiness.
+      expect(error, "the step is not named").toMatch(/select/);
       expect(error, "the option typed is not named").toContain(TURKIYE);
-      // Either the box stayed shut or it offered something else. Both are
-      // answers, and the message has to say which — it is the only thing a
-      // reader of the runner's log will have.
-      expect(error, "the error says nothing about what the page offered")
-        .toMatch(/offered nothing|it offers/);
+      expect(error, "the field is not named").toContain("What is your nationality?");
+      for (const offered of ["Turkey", "Turkmenistan"])
+        expect(error, `the error does not say the page offered ${offered}`).toContain(offered);
     } finally { await reader.close(); served = fixture(); }
   });
 });
@@ -661,6 +672,95 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the recipe drives the IND's f
       // snapshot that a quote is checked against.
       expect(text, "the navigation menu was opened").not.toContain("Residency Citizenship News");
     } finally { await reader.close(); served = fixture(); }
+  });
+});
+
+/**
+ * Somewhere else entirely, on an origin of its own.
+ *
+ * A second server, because the thing being tested is the line between one site
+ * and another and a path cannot stand in for it.
+ */
+// It answers 200, deliberately. A page that greets the reader with an error
+// is caught by the status gate on the way out; a page that greets it happily
+// is caught by nothing but the origin, which is the guard under test.
+const elsewhereBody = "<h1>Somewhere else</h1><p>Requirements Cookies Proclaimer</p>";
+const elsewhere: Server = createServer((_req, res) => {
+  res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+  res.end(elsewhereBody);
+});
+await new Promise<void>((resolve) => { elsewhere.listen(0, "127.0.0.1", () => resolve()); });
+const elsewhereOrigin = `http://127.0.0.1:${(elsewhere.address() as AddressInfo).port}`;
+afterAll(() => { elsewhere.close(); });
+
+describe.skipIf(Boolean(noChrome) && !CI)("s34 — a step may not take the reader to another site", () => {
+  it("refuses the reading when a pressed control navigates away, and says where it went", async () => {
+    // The worst failure this reader has, and it was open until 2026-09-24: a
+    // source page that has been repointed makes the watch hash a third
+    // party's bytes as the authority's, check the quotes against them, and
+    // write them into a flag and an issue under the authority's name. The
+    // page below is the measurement the reviewer made, served as a fixture.
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<button type="button" id="go">View information</button>
+<footer>Cookies Proclaimer</footer>
+<script>document.getElementById("go").addEventListener("click", function () {
+  location.href = ${JSON.stringify(`${elsewhereOrigin}/x`)};
+});</script>
+</body></html>`;
+    const reader = openBrowserReader();
+    try {
+      const walked = entry({ slice: undefined, steps: [{ step: "press", button: "View information" }] });
+      const { reports, nextState } = await runWatch(
+        { entries: [walked] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome).toBe("unreachable");
+      expect(reports[0]!.error, "the error does not say the browser was moved").toMatch(/navigated|away/i);
+      expect(reports[0]!.error, "the error does not say where it ended up").toContain(elsewhereOrigin);
+      expect(nextState.entries["fixture-route"], "somebody else's page was recorded").toBeUndefined();
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("does not press a link, however much it looks like a disclosure", async () => {
+    // `expand` is the one step that presses things without being told a name,
+    // so it is the one that must not be able to travel.
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<main>
+  <a href="${elsewhereOrigin}/x" aria-expanded="false" aria-controls="blk">Show details</a>
+  <div id="blk">A provisional residence permit (MVV) is needed.</div>
+</main>
+<footer>Cookies Proclaimer</footer>
+</body></html>`;
+    const reader = openBrowserReader();
+    try {
+      const walked = entry({
+        slice: { from: "Lede:", to: "Cookies Proclaimer" },
+        steps: [{ step: "expand" }],
+      });
+      const { reports, nextState } = await runWatch(
+        { entries: [walked] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      // The step does nothing to the link, so the page is read where it is.
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+      const text = nextState.entries["fixture-route"]!.text!;
+      expect(text).toContain("A provisional residence permit (MVV) is needed.");
+      expect(text, "the other origin's body was read").not.toContain("Somewhere else");
+    } finally { await reader.close(); served = fixture(); }
+  });
+
+  it("still reads a page whose own form posts back to the same address", async () => {
+    // The check is about leaving the site, not about moving within it: the
+    // IND's form submits to the URL it is already on, and a check that
+    // refused that would refuse all five entries.
+    served = fixture();
+    const reader = openBrowserReader();
+    try {
+      const { reports } = await runWatch(
+        { entries: [entry()] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
+    } finally { await reader.close(); }
   });
 });
 

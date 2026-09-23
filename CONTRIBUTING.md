@@ -75,6 +75,17 @@ page has to be put into a state before it says anything. A form-gated page is a
 browser entry with steps, never a human one. Say in the entry's `note` what the
 fetch got, what the browser gets, and the day you measured each.
 
+**A browser entry can fail where a human one could not, and that is the deal.**
+A `human` entry is fetched by nobody, so it never has a bad morning; a browser
+entry opens a real page, performs steps against controls an authority may
+rename, and waits for a render that may not come. Some of those mornings will
+be red, and a red morning is the price of the sentence being machine-checked
+the other mornings — not a fault to be silenced. When one of the seven goes
+`unreachable`, read the error before anything else: it names the step, the
+label, what the page offered instead and what it asked the network for, which
+is usually the whole diagnosis. Retrying a hiccup is a separate slice (intake
+#21); until it lands, one failure is one red day.
+
 The **human tier** is what is left when a browser does not reach it either. It
 carries a verification age and raises reminders rather than being fetched, and
 adding to it is a decision, not a fallback: say in the `note` what both clients

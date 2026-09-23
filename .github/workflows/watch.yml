@@ -179,7 +179,16 @@ jobs:
         # fail on a missing secret (review 2026-09-08), and a state that WAS
         # committed still has to reach the site when some other source was
         # unreachable. Cancellation is the one case that stands it down.
-        if: ${{ !cancelled() && github.event.inputs.dispatch != 'false' && steps.persist.outputs.committed == 'true' }}
+        #
+        # And only from master. The input is a switch a person can forget; the
+        # ref is not. A `workflow_dispatch` on a BRANCH with commit=true pushes
+        # state to that branch and would then tell the site to pin it — and the
+        # site's handler checks only that the sha is forty hex characters
+        # before it deploys and writes it into `data.lock`. This slice's own
+        # baseline runs were one untouched input away from pinning the live
+        # site to data that was not on master (Security review, 2026-09-24).
+        # The schedule runs on master, so the daily path is unchanged.
+        if: ${{ !cancelled() && github.ref == 'refs/heads/master' && github.event.inputs.dispatch != 'false' && steps.persist.outputs.committed == 'true' }}
         env:
           DISPATCH_TOKEN: "${{ secrets.DISPATCH_TOKEN }}"
           SITE_REPO: "${{ vars.SITE_REPO || 'OytunOnal/permit-rulebook' }}"

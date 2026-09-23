@@ -17,5 +17,7 @@
 # one file that decides how every source is read could not be reviewed in a
 # diff or in a pull request, and s34 changed 122 lines of it invisibly
 # (2026-09-23). This says only how to DISPLAY the file; it stores no different
-# bytes and `eol=lf` above still governs the line endings.
-*.ts diff
+# bytes, and `text` keeps `eol=lf` above governing the line endings — which
+# `text=auto` had stopped doing for this one file, so an editor that wrote
+# it back with CRLF rewrote all 641 of its lines in the index (2026-09-24).
+*.ts text diff

@@ -103,8 +103,19 @@ export type WatchStep =
   | { step: "answer"; question: string; answer: "yes" | "no" }
   /** Press the button whose label is `button`. */
   | { step: "press"; button: string }
-  /** Open every collapsed block on the page. Names nothing, so it cannot fail
-   * on a label: a page with nothing folded away is simply already open. */
+  /**
+   * Open every collapsed block **in the page's own content, never in its
+   * furniture**, and never by pressing a link.
+   *
+   * Names nothing, so it cannot fail on a label: a page with nothing folded
+   * away is simply already open. Both narrowings are deliberate and both were
+   * learned: opening everything that merely says it is collapsed opened the
+   * site's navigation menu, which is chrome and not a sentence anyone is
+   * reading; and a disclosure that is a link is a link, which would take the
+   * read to another page — or another site. Nav, header, footer, aside,
+   * dialog and their ARIA roles are out, named structurally so the rule
+   * survives a reworded heading (s34).
+   */
   | { step: "expand" };
 
 /** The step names, and what each one requires beside the name. The validator
