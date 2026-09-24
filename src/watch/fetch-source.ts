@@ -15,10 +15,24 @@ import { ask, ENCODINGS_ASKED_FOR } from "./request.js";
  * test at all.
  */
 
-/** Who is asking. */
+/**
+ * Who is asking — and the address travels beside the name, not inside it.
+ *
+ * The name used to carry the repository in parentheses, the way a crawler
+ * conventionally does, and `inclusion.gob.es` answered 403 to exactly that:
+ * the watch failed every day from 2026-09-11 to 15 and Spain's salary
+ * threshold went unread for eight days while the site still said "re-read
+ * daily". Measured on 2026-09-15, same host, same minute: the full string 403,
+ * the string without its trailing purpose word 403,
+ * `Mozilla/5.0 (compatible; …; +https://…)` 403 — and
+ * `permit-rulebook-watch/0.1` **200**, 299,066 bytes. The filter objects to a
+ * URL inside the User-Agent, not to a reader that names itself. So the name
+ * stays, unique enough to find this repository by, and the link moved to a
+ * header of its own, which the same host serves happily (data #18).
+ */
 const WATCH_NAME = "permit-rulebook-watch/0.1";
 
-/** Where to find whoever sent it. */
+/** Where to find whoever sent it, in the header the 403 above bought. */
 const WATCH_CONTACT = "https://github.com/OytunOnal/permit-rulebook-data";
 
 /**
@@ -380,7 +394,7 @@ export function printableAddress(url: string): string {
  * Every header this watch puts on the wire, and the order they go in.
  *
  * The first two are the watch's own and the reason they are shaped this way
- * is written at the request below. The other four are `fetch`'s, kept
+ * is written where they are declared, at the top of this file. The other four are `fetch`'s, kept
  * verbatim: measured 2026-09-24 against this repository's Node (v24.20.0),
  * undici sent an `accept` of any type at all, an `accept-language` of any
  * language, `sec-fetch-mode: cors` and `accept-encoding: gzip, deflate` on
@@ -493,22 +507,6 @@ export const fetchSource = (async (
          * Nothing here follows anything by itself: `node:http` has no opinion
          * about a `location` header, which is the one thing the move off
          * `fetch` made simpler rather than harder.
-         *
-         * Who is asking, and where to find whoever sent it — but the address
-         * travels beside the name rather than inside it.
-         *
-         * The name used to carry the repository in parentheses, the way a
-         * crawler conventionally does, and `inclusion.gob.es` answered 403 to
-         * exactly that: the watch failed every day from 2026-09-11 to 15 and
-         * Spain's salary threshold went unread for eight days while the site
-         * still said "re-read daily". Measured on 2026-09-15, same host, same
-         * minute: the full string 403, the string without its trailing purpose
-         * word 403, `Mozilla/5.0 (compatible; …; +https://…)` 403 — and
-         * `permit-rulebook-watch/0.1` **200**, 299,066 bytes. The filter objects
-         * to a URL inside the User-Agent, not to a reader that names itself. So
-         * the name stays, unique enough to find this repository by, and the link
-         * moves to a header of its own, which the same host serves happily
-         * (data #18).
          */
         const res = await ask(here, {
           headers: ASKING,
