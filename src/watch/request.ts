@@ -1,7 +1,7 @@
 import { request as httpRequest, type Agent, type IncomingMessage } from "node:http";
 import { request as httpsRequest } from "node:https";
 import type { LookupFunction } from "node:net";
-import { brotliDecompressSync, gunzipSync, inflateRawSync, inflateSync } from "node:zlib";
+import { brotliDecompress, gunzip, inflate, inflateRaw } from "node:zlib";
 import { ReadFailure } from "./failure.js";
 
 /**
@@ -86,6 +86,85 @@ function oneHeader(value: string | string[] | undefined): string | null {
 }
 
 /**
+ * The most a body may become once it is unpacked.
+ *
+ * A compressed body is small on the wire and whatever it likes in memory:
+ * five kilobytes of gzip is seventeen megabytes of page, and zlib's own
+ * default is `buffer.kMaxLength` — about 4 GiB — which a run on a hosted
+ * runner does not survive. So every unpacking below is given this bound, and
+ * a body that passes it is a failed read rather than a dead pass.
+ *
+ * Sixteen mebibytes is measured, not chosen. The whole watchlist was read on
+ * 2026-09-24 with this watch's own headers — 42 of the 44 addressable entries
+ * answered — and the largest body, decompressed, was 1,040,895 bytes
+ * (`boe-rd-1155-2024`, Spain's consolidated BOE text); the `inclusion.gob.es`
+ * PDF was second at 701,825. This is sixteen times the largest of them and
+ * 256 times smaller than zlib's default: a source may grow its page by an
+ * order of magnitude and still be read, and no source can spend the runner's
+ * memory.
+ */
+export const MOST_OF_A_BODY = 16 * 1024 * 1024;
+
+/**
+ * The encodings a request asks for, spelled as the header that asks for them.
+ *
+ * `ASKING` in `fetch-source.ts` sends this verbatim and `unpacked` below reads
+ * exactly it, so the set asked for and the set unpacked are one constant and
+ * cannot drift apart — which is the failure mode of writing them twice: a
+ * source is sent an encoding this file cannot read, and the watch fingerprints
+ * a compressed stream.
+ */
+export const ENCODINGS_ASKED_FOR = "gzip, deflate";
+
+/** Every unpacking zlib offers this file, narrowed to the one way it is called. */
+type Unpacking = (
+  input: Buffer,
+  options: { maxOutputLength: number },
+  done: (error: Error | null, output: Buffer) => void,
+) => void;
+
+/**
+ * The failure a body past the bound is, and the class it deserves.
+ *
+ * **refused-by-source**, not transient: the source answered, and the answer
+ * was not a page — which is the same answer in three minutes, so it is not
+ * asked again (`failure.ts`). Nor `refused-by-us`: nothing about this runner
+ * declined to make the request, and a curator reading it needs to look at the
+ * source rather than at us.
+ *
+ * The sentence names the bound, which is ours, and nothing of the body, which
+ * is the source's — an error travels into a log line, a flag file and the
+ * issue that flag becomes (`failure.ts`).
+ */
+function pastTheBound(): ReadFailure {
+  return new ReadFailure(
+    `the body unpacks to more than ${MOST_OF_A_BODY} bytes, which is no page this watch reads`,
+    "refused-by-source",
+  );
+}
+
+/**
+ * One unpacking, bounded, off the event loop.
+ *
+ * Asynchronous and not `…Sync`: unpacking runs on libuv's thread pool, so a
+ * large body does not stop the run while it inflates — and, because it is
+ * work that happens after the last byte arrives, the request's own deadline
+ * has to still be running when it does (`ask` below).
+ */
+function unpacking(how: Unpacking, bytes: Buffer): Promise<Uint8Array> {
+  return new Promise((whole, no) => {
+    how(bytes, { maxOutputLength: MOST_OF_A_BODY }, (error, output) => {
+      if (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        no(code === "ERR_BUFFER_TOO_LARGE" ? pastTheBound() : error);
+        return;
+      }
+      whole(new Uint8Array(output));
+    });
+  });
+}
+
+/**
  * The body as the page wrote it, not as the wire carried it.
  *
  * `fetch` did this invisibly, and it matters more than it looks: the watch
@@ -93,22 +172,27 @@ function oneHeader(value: string | string[] | undefined): string | null {
  * morning to the next would read as changed every day if the compressed
  * stream were what got hashed.
  *
- * Only what the request asked for is unpacked (`accept-encoding: gzip,
- * deflate`, measured from what `fetch` sent), plus `br` for a server that
- * sends it unasked. `deflate` has two spellings in the wild — zlib-wrapped, as
- * the RFC says, and raw — and the second is tried when the first fails, which
- * is what every browser does. Anything else is left exactly as it arrived,
- * which is what `fetch` did with an encoding it had not asked for.
+ * Only what the request asked for is unpacked (`ENCODINGS_ASKED_FOR`, measured
+ * from what `fetch` sent), plus `br` for a server that sends it unasked.
+ * `deflate` has two spellings in the wild — zlib-wrapped, as the RFC says, and
+ * raw — and the second is tried when the first fails, which is what every
+ * browser does. Anything else is left exactly as it arrived, which is what
+ * `fetch` did with an encoding it had not asked for.
  */
-export function unpacked(bytes: Buffer, encoding: string | null): Uint8Array {
-  if (bytes.byteLength === 0) return new Uint8Array(0);
+export function unpacked(bytes: Buffer, encoding: string | null): Promise<Uint8Array> {
+  if (bytes.byteLength === 0) return Promise.resolve(new Uint8Array(0));
   switch ((encoding ?? "").trim().toLowerCase()) {
-    case "gzip": case "x-gzip": return new Uint8Array(gunzipSync(bytes));
-    case "br": return new Uint8Array(brotliDecompressSync(bytes));
+    case "gzip": case "x-gzip": return unpacking(gunzip, bytes);
+    case "br": return unpacking(brotliDecompress, bytes);
     case "deflate":
-      try { return new Uint8Array(inflateSync(bytes)); }
-      catch { return new Uint8Array(inflateRawSync(bytes)); }
-    default: return new Uint8Array(bytes);
+      // The other spelling is tried only when THIS one is what failed. A body
+      // that passed the bound passed it in either spelling, and inflating it a
+      // second time to learn that is the bound paid for twice.
+      return unpacking(inflate, bytes).catch((e: unknown) => {
+        if (e instanceof ReadFailure) throw e;
+        return unpacking(inflateRaw, bytes);
+      });
+    default: return Promise.resolve(new Uint8Array(bytes));
   }
 }
 
@@ -129,29 +213,42 @@ export function ask(target: URL, asking: Asking): Promise<Answer> {
       lookup: asking.lookup,
     });
 
+    let answered = false;
+    /** Where a failure goes once the answer is somebody else's to read. */
+    let failBody: ((e: unknown) => void) | null = null;
+    /** Whether a body is still becoming a page — work the budget covers. */
+    let reading = false;
+
     /**
      * The budget, enforced on the socket rather than on a signal.
      *
      * One deadline per SOURCE is computed by the caller; what arrives here is
-     * what is left of it, and it covers the body as well as the headers —
-     * a source that answers in a millisecond and then dribbles the page for a
-     * minute is the case a header-only timeout misses. It is cleared on the
-     * request's `close`, which is late enough to mean that: measured
+     * what is left of it, and it covers everything that turns an answer into a
+     * page: the headers, the body's arrival, and the unpacking. A source that
+     * answers in a millisecond and then dribbles the page for a minute is the
+     * case a header-only deadline misses; a body waiting its turn on the
+     * thread pool to be unpacked is the case a deadline released on `end`
+     * misses, and a destroyed socket cannot report that one — so the timer
+     * fails the body directly as well (Security review, 2026-09-24).
+     *
+     * It is released in exactly the three places where nothing is left to
+     * bound: on the request's `close` when no body is being read, on a failure
+     * that ends the request before it is answered, and where the unpacked page
+     * is handed over. `close` is late enough to be one of them — measured
      * 2026-09-24 against a fixture that held its last chunk back 700 ms, the
-     * order is `data` … `end` (716 ms) then `close` (716 ms), so the bound is
-     * released only once the whole body is in — and released for certain,
-     * which is what keeps a 30 s timer from holding a finished run open.
+     * order is `data` … `end` (716 ms) then `close` (716 ms) — and it fires
+     * for certain, which is what keeps a 30 s timer from holding a finished
+     * run open.
      */
-    const timer = setTimeout(() => { req.destroy(budgetSpent()); }, Math.max(0, asking.msLeft));
-    let answered = false;
-    /** Where a failure goes once the answer is somebody else's to read. */
-    let failBody: ((e: unknown) => void) | null = null;
+    const timer = setTimeout(() => {
+      req.destroy(budgetSpent());
+      failBody?.(budgetSpent());
+    }, Math.max(0, asking.msLeft));
 
-    req.on("close", () => { clearTimeout(timer); });
+    req.on("close", () => { if (!reading) clearTimeout(timer); });
     req.on("error", (e) => {
-      clearTimeout(timer);
       const why = thrownAs(e);
-      if (!answered) { answered = true; reject(why); return; }
+      if (!answered) { answered = true; clearTimeout(timer); reject(why); return; }
       failBody?.(why);
     });
     req.on("response", (res: IncomingMessage) => {
@@ -162,14 +259,18 @@ export function ask(target: URL, asking: Asking): Promise<Answer> {
         location: oneHeader(res.headers.location),
         discard: () => { res.resume(); },
         bytes: () => new Promise<Uint8Array>((whole, no) => {
-          failBody = no;
+          reading = true;
+          /** The budget's last stop: the page exists, or it never will. */
+          const over = () => { reading = false; clearTimeout(timer); };
+          const gave = (body: Uint8Array) => { over(); whole(body); };
+          const failed = (e: unknown) => { over(); no(e); };
+          failBody = failed;
           const parts: Buffer[] = [];
           res.on("data", (chunk: Buffer) => { parts.push(chunk); });
-          res.on("error", (e) => { no(thrownAs(e)); });
+          res.on("error", (e) => { failed(thrownAs(e)); });
           res.on("end", () => {
-            clearTimeout(timer);
-            try { whole(unpacked(Buffer.concat(parts), oneHeader(res.headers["content-encoding"]))); }
-            catch (e) { no(thrownAs(e)); }
+            unpacked(Buffer.concat(parts), oneHeader(res.headers["content-encoding"]))
+              .then(gave, (e: unknown) => { failed(thrownAs(e)); });
           });
         }),
       });

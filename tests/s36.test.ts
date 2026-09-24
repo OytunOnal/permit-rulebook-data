@@ -1,8 +1,10 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { createServer, type IncomingHttpHeaders, type Server } from "node:http";
-import type { AddressInfo } from "node:net";
+import { Agent, createServer, type IncomingHttpHeaders, type Server } from "node:http";
+import { pbkdf2 } from "node:crypto";
+import type { AddressInfo, LookupFunction } from "node:net";
 import { gzipSync } from "node:zlib";
 import { addressKind, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
+import { ask, MOST_OF_A_BODY } from "../src/watch/request.js";
 
 /**
  * s36 — the address the watch connects to.
@@ -21,6 +23,17 @@ import { addressKind, fetchSource, type Resolver } from "../src/watch/fetch-sour
 /** Counted, because most of what this file proves is the absence of a request. */
 const asked: { path: string; headers: IncomingHttpHeaders }[] = [];
 
+/** One sentence of a page, repeated to whatever size a body needs. */
+const SENTENCE = "<p>The authority's own words</p>";
+function pageOf(bytes: number): Buffer {
+  return Buffer.from(SENTENCE.repeat(Math.ceil(bytes / SENTENCE.length)));
+}
+/** A body that unpacks past the bound, and is a few kilobytes on the wire. */
+const OVER_THE_BOUND = gzipSync(pageOf(MOST_OF_A_BODY + 1024 * 1024));
+/** A page far larger than any the watch reads, and still inside the bound. */
+const A_BIG_PAGE = pageOf(2 * 1024 * 1024);
+const BIG_ZIPPED = gzipSync(A_BIG_PAGE);
+
 const fixture: Server = createServer((req, res) => {
   const path = (req.url ?? "/").split("?")[0]!;
   asked.push({ path, headers: req.headers });
@@ -35,6 +48,20 @@ const fixture: Server = createServer((req, res) => {
   if (path === "/to-name") {
     res.writeHead(302, { location: `http://fixture.test:${(fixture.address() as AddressInfo).port}/settled` });
     res.end();
+    return;
+  }
+  // A body that unpacks to more than any page the watch reads. Five kilobytes
+  // of gzip stand for seventeen megabytes of page, which is the whole of why a
+  // bound is read off the unpacked size and not off the wire.
+  if (path === "/too-big") {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-encoding": "gzip" });
+    res.end(OVER_THE_BOUND);
+    return;
+  }
+  // A big page that is still a page.
+  if (path === "/big") {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-encoding": "gzip" });
+    res.end(BIG_ZIPPED);
     return;
   }
   // A source that answers gzipped, which is most of them: the watch asks for
@@ -246,5 +273,71 @@ describe("s36 — what the watch reads does not change", () => {
     // stream's — otherwise every source that varies its compression would
     // read as changed every morning.
     expect(new TextDecoder().decode(answer.body)).toBe("<p>The authority's own words</p>");
+  });
+});
+
+/**
+ * A lookup hook that answers nothing, for a request to a literal address.
+ *
+ * Node resolves nothing for an address it can already parse (probed
+ * 2026-09-24, v24.20.0), so a request to the fixture never reaches this — and
+ * if one ever did, the test would say so rather than quietly dial something.
+ */
+const noLookup: LookupFunction = (hostname, _options, done) => {
+  done(Object.assign(new Error(`${hostname} was resolved`), { code: "ENOTFOUND" }), "", 4);
+};
+
+describe("s36 — a body is unpacked under a bound and inside the budget", () => {
+  it("refuses a body that unpacks past the bound, and reads the next source anyway", async () => {
+    const answer = await fetchSource(`${fixtureOrigin}/too-big`, "same-origin");
+    expect(answer.ok, "a body larger than the bound was read").toBe(false);
+    if (answer.ok) return;
+    // The source answered, and the answer was not a page. That is the same
+    // answer in three minutes, so it is not asked again (`failure.ts`).
+    expect(answer.failure).toBe("refused-by-source");
+    // Nothing of what the body said reaches the log line, the flag file or the
+    // issue the flag becomes.
+    expect(answer.error, "the failure carries the body's own words").not.toContain("authority");
+    // A refusal, not a crash: the pass goes on to the source after it.
+    const next = await fetchSource(`${fixtureOrigin}/`, "same-origin");
+    expect(next.ok, next.ok ? "" : next.error).toBe(true);
+  });
+
+  it("reads a body that unpacks inside the bound, whole", async () => {
+    const answer = await fetchSource(`${fixtureOrigin}/big`, "same-origin");
+    expect(answer.ok, answer.ok ? "" : answer.error).toBe(true);
+    if (!answer.ok) return;
+    expect(answer.body.byteLength, "the page came back short").toBe(A_BIG_PAGE.byteLength);
+    expect(new TextDecoder().decode(answer.body.slice(0, SENTENCE.length))).toBe(SENTENCE);
+  });
+
+  it("does not let a body that unpacks slowly outlive the budget", async () => {
+    /**
+     * Unpacking runs on libuv's thread pool — four threads unless the
+     * environment says otherwise — and waits its turn there like anything
+     * else. Filling the pool with work that takes about a second puts the
+     * budget's deadline between the last byte arriving and the page existing,
+     * which is the one window a deadline released on `end` leaves open.
+     */
+    const pool = Number(process.env.UV_THREADPOOL_SIZE ?? 4);
+    const busy = Array.from({ length: pool }, () => new Promise<void>((done) => {
+      pbkdf2("hold the pool", "s36", 2_000_000, 64, "sha512", () => { done(); });
+    }));
+    const agent = new Agent();
+    try {
+      const answer = await ask(new URL(`${fixtureOrigin}/big`), {
+        headers: { "accept-encoding": "gzip" },
+        lookup: noLookup,
+        agent,
+        msLeft: 150,
+      });
+      // The headers arrived inside the budget; the bytes are what is at stake.
+      expect(answer.status).toBe(200);
+      await expect(answer.bytes(), "the page outlived the budget that was asked for it")
+        .rejects.toThrow("The operation was aborted due to timeout");
+    } finally {
+      agent.destroy();
+      await Promise.all(busy);
+    }
   });
 });
