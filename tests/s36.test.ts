@@ -151,6 +151,36 @@ describe("s36 — the floor spells the prefixes that carry another address", () 
       expect(asked.length - before, "more than the entry was requested").toBe(1);
     });
   }
+
+  /**
+   * The same rule where a chain STARTS. An entry is a url a curator typed and
+   * still an address (scenario point 4), and the one kind the relative rule
+   * can refuse about a starting point is a link-local one — an entry is by
+   * definition already on its own kind, which is what keeps the loopback
+   * fixture above readable.
+   */
+  for (const [what, host] of [
+    ["the metadata address", "169.254.169.254"],
+    ["a NAT64 address carrying it", "[64:ff9b::a9fe:a9fe]"],
+  ] as const) {
+    it(`refuses an ENTRY spelled as ${what}, and asks it for nothing`, async () => {
+      const before = asked.length;
+      const answer = await fetchSource(`http://${host}:${port}/`, "same-origin");
+      expect(answer.ok, "a link-local entry was read").toBe(false);
+      if (answer.ok) return;
+      expect(answer.failure).toBe("refused-by-us");
+      expect(answer.error, "the refusal does not say what kind of address it is").toContain("link-local");
+      expect(answer.error, "the address was printed").not.toContain("a9fe");
+      expect(asked.length - before, "something was requested").toBe(0);
+    });
+  }
+
+  it("still reads an entry that IS on loopback, which is the relative rule", async () => {
+    // The refusal above is not a wider rule than the floor's: an entry on its
+    // own kind stays readable, and the fixture is the case that says so.
+    const answer = await fetchSource(`${fixtureOrigin}/`, "same-origin");
+    expect(answer.ok, answer.ok ? "" : answer.error).toBe(true);
+  });
 });
 
 describe("s36 — a name is refused by what it resolves to", () => {
