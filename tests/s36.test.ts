@@ -5,7 +5,10 @@ import type { AddressInfo, LookupFunction } from "node:net";
 import { brotliCompressSync, deflateSync, gzipSync } from "node:zlib";
 import { addressKind, afterAnswer, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
 import { processingFailure, runWatch, type Watchlist } from "../src/watch/core.js";
-import { MOST_OF_A_CODE, MOST_OF_A_FAILURE, saidByThrown } from "../src/watch/failure.js";
+import {
+  hasControl, hasSteering, MOST_OF_A_CODE, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD,
+  PRINTABLE_WITHIN_SOURCE, printableWithin, saidByThrown,
+} from "../src/watch/failure.js";
 import { ask, MEASURED, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js";
 
 /**
@@ -611,10 +614,10 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     // One line. Nothing that ends a line, moves a cursor, or reorders what is
     // printed after it reaches any of the three places this sentence travels.
     expect(answer.error, "the sentence is still more than one line").not.toMatch(/[\r\n]/);
-    expect(answer.error, "a byte a terminal acts on travelled with the words")
-      .not.toMatch(/[ --]/);
-    expect(answer.error, "a character that reorders what is printed travelled with the words")
-      .not.toMatch(/[​-‏⁠-⁤⁦-⁩‪-‮]/);
+    expect(hasControl(answer.error), "a byte a terminal acts on travelled with the words")
+      .toBe(false);
+    expect(hasSteering(answer.error), "a character that reorders what is printed travelled with the words")
+      .toBe(false);
     // The words themselves are still the source's own, not a rewriting of
     // them: what was said survives, only the bytes nobody reads are gone.
     expect(answer.error, "the thrown thing's own words were thrown away with the bytes")
@@ -643,6 +646,23 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     // A thrower may throw anything, and a string is already what it said.
     expect(saidByThrown("the page refused"), "a thrown string was not printed as itself")
       .toBe("the page refused");
+    // And the whole expression the browser reader's other branch prints, as
+    // it is written there: cut, made printable, and still the message alone
+    // (`browser.ts`). It is pinned HERE and not through the reader because
+    // that branch cannot be driven from a test. Two things produce a plain
+    // `Error` on it — a CDP protocol error and a socket that closes with a
+    // command in flight (`cdp.ts`) — and neither is reachable through a real
+    // Chrome from here: measured 2026-09-24, closing the reader four seconds
+    // into a twenty-second read did not reject the command in flight (Chrome
+    // is killed with the socket, so the close never completes and the
+    // listener that rejects them never runs); the read ended 16.3 s later on
+    // its own budget, which is a `ReadFailure` and the other branch. So the
+    // honest pin is the expression, and the gap is named rather than
+    // pretended away (Spec review, 2026-09-24).
+    const chromeWentAway = new Error("Chrome closed the connection");
+    expect(printableWithin(saidByThrown(chromeWentAway), MOST_OF_A_FAILURE),
+      "the reader's own branch prints the name of a class, or more than the bound")
+      .toBe("Chrome closed the connection");
   });
 
   it("bounds and prints the words of a page it could not process", () => {
@@ -653,10 +673,10 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     const thrown = new Error(`the marker is gone\u202e\n  at ${"x".repeat(10_000)}`);
     const said = processingFailure(thrown);
     expect(said, "the sentence is more than one line").not.toMatch(/[\r\n]/);
-    expect(said, "a byte a terminal acts on travelled with the words")
-      .not.toMatch(/[\u0000-\u001f\u007f-\u009f]/);
-    expect(said, "a character that reorders what is printed travelled with the words")
-      .not.toMatch(/[\u200b-\u200f\u2060-\u2064\u2066-\u2069\u202a-\u202e]/);
+    expect(hasControl(said), "a byte a terminal acts on travelled with the words")
+      .toBe(false);
+    expect(hasSteering(said), "a character that reorders what is printed travelled with the words")
+      .toBe(false);
     expect(said.length, "the thrown thing decided how long a log line is")
       .toBeLessThanOrEqual(MOST_OF_A_FAILURE + "processing: ".length);
     // The curator still learns which stage failed, and what it said.
@@ -711,4 +731,91 @@ describe("s36 — one oversize body does not take the pass with it", () => {
       expect(nextState.entries["s36-behind-it"], "the pass wrote no snapshot for it").toBeDefined();
     });
   }
+});
+
+describe("s36 — the sanitiser is the whole set, and it cuts on characters", () => {
+  /**
+   * Both halves of `printableWithin` are a security invariant, and both had a
+   * hole the delta rounds had reported closed and had not closed (Security
+   * review, 2026-09-24).
+   *
+   * The set: U+061C ARABIC LETTER MARK is one of Unicode's twelve
+   * `Bidi_Control` code points, and the only one outside the ranges this rule
+   * was spelled with — `\s` does not match it and the control ranges do not
+   * reach it — so a character that reorders what is printed after it
+   * travelled into the log line, the flag file and the issue that flag
+   * becomes.
+   *
+   * The cut: it was made on UTF-16 units. A page whose words are astral — an
+   * emoji, a CJK extension character — could be cut through the middle of one
+   * and printed as a lone surrogate: a string a JSON line escapes as a bare
+   * `\udXXX` and a Markdown body renders as a replacement character.
+   */
+
+  /** ES2024's own answer, which this repository's `lib` (ES2022) does not type. */
+  const wellFormed = (text: string) => (text as unknown as { isWellFormed(): boolean }).isWellFormed();
+
+  /** Unicode's `Bidi_Control` property, all twelve of it. */
+  const BIDI_CONTROLS = [
+    "؜", "‎", "‏", "‪", "‫", "‬",
+    "‭", "‮", "⁦", "⁧", "⁨", "⁩",
+  ];
+
+  it("drops every character that steers a reader, the Arabic letter mark among them", () => {
+    for (const steering of BIDI_CONTROLS) {
+      expect(hasSteering(steering), "the rule does not know this character steers").toBe(true);
+      expect(
+        hasSteering(printableWithin(`the page said no${steering} and then this`, MOST_OF_A_FAILURE)),
+        "a character that reorders what is printed travelled with the page's words",
+      ).toBe(false);
+    }
+    // Dropped and not collapsed: a steering character has no width, and a
+    // space where one stood would break a word the source did not break.
+    expect(
+      printableWithin("the page said no؜ and then this", MOST_OF_A_FAILURE),
+      "a character with no width was printed as a space",
+    ).toBe("the page said no and then this");
+  });
+
+  it("cuts a page's astral words on characters, and counts them in the same unit", () => {
+    // Five hundred emoji are a thousand UTF-16 units: a cut on units lands
+    // inside one of them and emits half a character.
+    const astral = "\u{1f600}".repeat(500);
+    const said = printableWithin(astral, MOST_OF_A_FAILURE);
+    expect(wellFormed(said), "the cut ended inside a character and printed half of one").toBe(true);
+    expect([...said].length, "the sentence is past the bound in the unit the bound is measured in")
+      .toBeLessThanOrEqual(MOST_OF_A_FAILURE);
+    // The note counts what a person counts: characters, and not the units a
+    // runtime happens to store them in. Five hundred of them arrived.
+    expect(said, "the note counts in a unit nobody reading it counts in")
+      .toContain("… (500 characters)");
+    // And a CJK extension character is the same fact in another script.
+    const cjk = "\u{2070e}".repeat(500);
+    const read = printableWithin(cjk, MOST_OF_A_FAILURE);
+    expect(wellFormed(read), "the cut ended inside a character and printed half of one").toBe(true);
+    expect(read, "the note counts in a unit nobody reading it counts in")
+      .toContain("… (500 characters)");
+  });
+
+  it("cuts the same way inside Chrome, because it is one rule and two runtimes", () => {
+    // The half of the step vocabulary that runs inside the page cannot import
+    // the rule, so it is handed it as source. Two spellings are how two
+    // copies start disagreeing about where a sentence ends; this is the case
+    // that goes red when they do (Standards review, 2026-09-24).
+    const inChrome = new Function(`${PRINTABLE_WITHIN_SOURCE}\n  return printableWithin;`)() as
+      (text: string, most: number) => string;
+    const table: Array<[string, string, number]> = [
+      ["a sentence short enough to read", "the page said no", MOST_OF_A_FAILURE],
+      ["a sentence past the bound", "x".repeat(10_000), MOST_OF_A_FAILURE],
+      ["a page's own word past its bound", "x".repeat(400), MOST_OF_A_PAGE_WORD],
+      ["a word exactly at the bound", "x".repeat(MOST_OF_A_PAGE_WORD), MOST_OF_A_PAGE_WORD],
+      ["a word one character past it", "x".repeat(MOST_OF_A_PAGE_WORD + 1), MOST_OF_A_PAGE_WORD],
+      ["astral characters past the bound", "\u{1f600}".repeat(500), MOST_OF_A_FAILURE],
+      ["every character that steers a reader", BIDI_CONTROLS.join("x"), MOST_OF_A_FAILURE],
+      ["the bytes a terminal acts on", "a\r\n[31mb c", MOST_OF_A_FAILURE],
+    ];
+    for (const [what, text, most] of table)
+      expect(inChrome(text, most), `the two runtimes disagree about ${what}`)
+        .toBe(printableWithin(text, most));
+  });
 });

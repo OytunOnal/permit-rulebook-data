@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { chromePath, openBrowserReader } from "../src/watch/browser.js";
 import { MOST_OF_AN_ADDRESS } from "../src/watch/fetch-source.js";
-import { MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD } from "../src/watch/failure.js";
+import { hasControl, hasSteering, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD } from "../src/watch/failure.js";
 import { runWatch, type BrowserReader, type Fetcher, type WatchEntry } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 
@@ -427,7 +427,18 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — a real browser performs the s
         emptyState, refuse, "2026-09-23", reader.read,
       );
       expect(reports[0]!.outcome).toBe("unreachable");
-      expect(reports[0]!.error, "the error does not say what the navigation did").toMatch(/ERR_|navigat/i);
+      const said = reports[0]!.error!;
+      expect(said, "the error does not say what the navigation did").toMatch(/ERR_|navigat/i);
+      // The sentence is ours and the name inside it is Chrome's, so the name
+      // passes the owner every quoted fragment passes — and the bound it
+      // passes is the sentence's, not a page's word: Chrome's net error names
+      // run past forty characters, and the name is the whole of what this
+      // line tells a curator (Security review, 2026-09-24).
+      expect(hasControl(said), "a byte a terminal acts on travelled with Chrome's words").toBe(false);
+      expect(hasSteering(said), "a character that reorders what is printed travelled with Chrome's words")
+        .toBe(false);
+      expect(said, "Chrome's own error name arrived cut").not.toContain("characters)");
+      expect(said, "Chrome's own error name did not arrive whole").toMatch(/net::ERR_[A-Z0-9_]+$/);
     } finally { await reader.close(); }
   });
 
@@ -686,10 +697,10 @@ describe.skipIf(Boolean(noChrome) && !CI)("s36 — the page's words inside our s
       // One line, and nothing in it a terminal or a Markdown body acts on —
       // the same three the fetch tier's thrown words already answer to.
       expect(error, "the diagnosis is more than one line").not.toMatch(/[\r\n]/);
-      expect(error, "a byte a terminal acts on travelled with the page's words")
-        .not.toMatch(/[\u0000-\u001f\u007f-\u009f]/);
-      expect(error, "a character that reorders what is printed travelled with the page's words")
-        .not.toMatch(/[\u200b-\u200f\u2060-\u2064\u2066-\u2069\u202a-\u202e]/);
+      expect(hasControl(error), "a byte a terminal acts on travelled with the page's words")
+        .toBe(false);
+      expect(hasSteering(error), "a character that reorders what is printed travelled with the page's words")
+        .toBe(false);
       // Bounded where it is the page's, whatever the page chose to write.
       expect(error, "a whole word of the page's reached the sentence")
         .not.toContain("x".repeat(MOST_OF_A_PAGE_WORD));
@@ -1381,10 +1392,10 @@ Object.defineProperty(Element.prototype, "outerHTML", {
       expect(answer.error, "the page's own address travelled with its words").not.toContain(origin);
       // One line, and nothing in it a terminal or a Markdown body acts on.
       expect(answer.error, "the page decided where the sentence ends").not.toMatch(/[\r\n]/);
-      expect(answer.error, "a byte a terminal acts on travelled with the page's words")
-        .not.toMatch(/[ --]/);
-      expect(answer.error, "a character that reorders what is printed travelled with the page's words")
-        .not.toMatch(/[​-‏⁠-⁤⁦-⁩‪-‮]/);
+      expect(hasControl(answer.error), "a byte a terminal acts on travelled with the page's words")
+        .toBe(false);
+      expect(hasSteering(answer.error), "a character that reorders what is printed travelled with the page's words")
+        .toBe(false);
       // And the page's own words are still the page's: cut and cleaned, not
       // rewritten.
       expect(answer.error, "what the page said was thrown away with the bytes").toContain("the page said no");
