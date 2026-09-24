@@ -750,6 +750,48 @@ describe("s35 — the days on the state are read as days or not at all", () => {
     expect(verdict.red, "one silence written twice was read as two").toBe(false);
   });
 
+  it("reads its sources on a state whose unread list is not a list", async () => {
+    // `unread` comes off the same file as `lapses`, and the migration walks
+    // it on every state now. A field that is not a list threw `is not
+    // iterable` before the first source was read — the whole harm the days'
+    // own shape check exists to prevent, one field over (Security review,
+    // 2026-09-24).
+    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const state = { entries: {}, last_run: YESTERDAY, unread: 5 } as unknown as WatchState;
+    const { reports, nextState, verdict } = await runWatch(watching("down"), state, fetcher, TODAY);
+    expect(reports.map((r) => r.id), "the run read no source at all").toEqual(["down"]);
+    // A list that is not a list names no source, so it claims no morning: the
+    // source's silence is today's, its first.
+    expect(nextState.lapses).toEqual({ down: [TODAY] });
+    expect(verdict.lapsed.map((u) => u.id)).toEqual(["down"]);
+    expect(verdict.red).toBe(false);
+
+    // And the same field through a targeted pass, which filters the same list.
+    const only = watching("down");
+    const pass = await runWatch(only, state, fetcher, TODAY);
+    expect(mergeTargetedRun(state, pass.nextState, only, TODAY).unread)
+      .toEqual([{ id: "down", url: addressOf("down") }]);
+  });
+
+  it("migrates the entries of an unread list that are entries, and nothing else on it", async () => {
+    // An entry of that list is an id and the page it names — the site is
+    // shipped this file and prints both. Anything else on the list is not an
+    // unread source and makes no claim that one was silent; `3` used to file
+    // a morning under the id `undefined`.
+    const { fetcher } = scripted({
+      [addressOf("down")]: [fail("transient")],
+      [addressOf("x")]: [fail("transient")],
+    });
+    const state = {
+      entries: {}, last_run: YESTERDAY,
+      unread: [3, { id: "x" }, { id: "down", url: addressOf("down") }],
+    } as unknown as WatchState;
+    const { nextState, verdict } = await runWatch(watching("down", "x"), state, fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ down: [YESTERDAY, TODAY], x: [TODAY] });
+    expect(verdict.outages.map((u) => u.id)).toEqual(["down"]);
+    expect(verdict.lapsed.map((u) => u.id), "an entry with no page was read as an unread source").toEqual(["x"]);
+  });
+
   it("counts the migrated morning of a source whose id is a word every object answers to", async () => {
     // The ids are the watchlist's, and the watchlist has no grammar for them:
     // `checkCoverage` asks what an entry's url is, what kind it is and what

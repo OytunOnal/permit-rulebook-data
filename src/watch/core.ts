@@ -672,6 +672,26 @@ function daysOf(value: unknown, today: string): string[] {
 }
 
 /**
+ * The unread list as the state gave it, read as sources.
+ *
+ * It is a field of the same file as `lapses` and is read by the same rule: an
+ * unread source is an id and the page it names, and anything else on that
+ * list is not one. A list that is not a list says nothing about any source —
+ * it used to throw `is not iterable` before the first source was read, which
+ * is a watch that reads nothing because one field was the wrong shape, the
+ * very harm `daysOf` exists to prevent (Security review, 2026-09-24).
+ *
+ * Both fields are read here rather than trusted because the site is shipped
+ * this file: an entry with no page is an entry `/data/` cannot print.
+ */
+function unreadOf(value: unknown): UnreadEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((e): e is UnreadEntry =>
+    !!e && typeof e === "object" && typeof (e as UnreadEntry).id === "string"
+    && typeof (e as UnreadEntry).url === "string");
+}
+
+/**
  * Days that have been read as days, as one source's week: one of each, in
  * order, inside the week, seven at most.
  *
@@ -737,6 +757,10 @@ const migratedMorning = (previous: WatchState, today: string): string =>
  * ways depending on which branch read it, one of them green (Security
  * review, 2026-09-24).
  *
+ * The unread list the migration walks is that same file's, so it is read the
+ * same way: `unreadOf` takes the sources off it and nothing else. Neither
+ * field may be believed for being next to a valid one.
+ *
  * This is the one place a file's days are read — the state a full run starts
  * from and the state a targeted pass starts from alike — and therefore the
  * one place they are checked. The other days this module handles are its
@@ -754,7 +778,7 @@ function knownLapses(previous: WatchState, today: string): Record<string, string
     }
   }
   const morning = theWeekOf([migratedMorning(previous, today)], today);
-  if (morning.length) for (const source of previous.unread ?? []) known[source.id] ??= [...morning];
+  if (morning.length) for (const source of unreadOf(previous.unread)) known[source.id] ??= [...morning];
   return known;
 }
 
@@ -895,7 +919,7 @@ export function runSummary(reports: WatchReport[], verdict: RunVerdict): RunSumm
 export function mergeTargetedRun(previous: WatchState, pass: WatchState, fetched: Watchlist, today: string): WatchState {
   const touched = new Set(fetched.entries.map((e) => e.id));
   const unread = [
-    ...(previous.unread ?? []).filter((e) => !touched.has(e.id)),
+    ...unreadOf(previous.unread).filter((e) => !touched.has(e.id)),
     ...(pass.unread ?? []),
   ];
   // The silent mornings travel by the same rule, for the same reason: the
