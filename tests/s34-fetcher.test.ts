@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import {
   addressKind, fetchSource, MOST_OF_AN_ADDRESS, refusedTarget, shortAddress,
 } from "../src/watch/fetch-source.js";
-import { classOfThrown } from "../src/watch/failure.js";
+import { classOfThrown, noteOfLength } from "../src/watch/failure.js";
 
 /**
  * s34 — the fetch tier follows a redirect around a site, and not off it.
@@ -197,7 +197,10 @@ describe("s34 — there is a floor under following a link anywhere", () => {
     // browser's `anywhere` branch applies it is pinned in
     // `tests/s34-browser.test.ts`, at the call site.
     const long = `https://rules.example.org/${"a".repeat(9_000)}`;
-    const suffix = `… (${long.length} characters)`;
+    // The note's wording is asked of its owner, not retyped: a test that
+    // spells a rule out passes while the rule is wrong (Standards review,
+    // 2026-09-25).
+    const suffix = noteOfLength([...long].length);
     // The bound is `MOST_OF_AN_ADDRESS` and the suffix that says what was cut
     // — asked of the constant, so moving it moves the test with it.
     expect(shortAddress(long)).toBe(long.slice(0, MOST_OF_AN_ADDRESS) + suffix);

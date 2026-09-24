@@ -3,7 +3,9 @@ import { Agent as HttpAgent } from "node:http";
 import { Agent as HttpsAgent } from "node:https";
 import type { LookupFunction } from "node:net";
 import type { Fetcher, FetchResult, RedirectPolicy } from "./core.js";
-import { causeCode, classOfThrown, failureOfStatus, MOST_OF_A_FAILURE, printableWithin, ReadFailure } from "./failure.js";
+import {
+  causeCode, classOfThrown, failureOfStatus, MOST_OF_A_FAILURE, noteOfLength, printableWithin, ReadFailure,
+} from "./failure.js";
 import { ask, ENCODINGS_ASKED_FOR } from "./request.js";
 
 /**
@@ -72,9 +74,31 @@ const MOST_HOPS = 5;
  */
 export const MOST_OF_AN_ADDRESS = 200;
 
+/**
+ * That bound applied, and what was cut said in the one spelling for it.
+ *
+ * **Characters, not the UTF-16 units a runtime stores them in.** The same two
+ * faults `printableWithin` had in the same line, and for the same reason —
+ * the count was retyped here and the cut was made on units: an address whose
+ * path is astral could end in half a character, and a lone surrogate is a
+ * string that is not valid UTF-8 at all, which the log line escapes as a bare
+ * `\udXXX` and the issue renders as a replacement character. The browser
+ * tier's request list reaches this function with a page's own address
+ * (`cdp.ts`), so a page chose those characters (Security review, 2026-09-25).
+ *
+ * The note is asked of `failure.ts`, which owns the wording: a curator reads
+ * one spelling wherever this package shortens something, and this was the
+ * second copy of it (Standards review, 2026-09-25).
+ *
+ * The bound is on the ADDRESS and the note is added after it, where
+ * `printableWithin`'s bound is on the whole sentence it returns. Two
+ * arithmetics on purpose: what that one bounds is all a line says about a
+ * failure, and what this one bounds is one field inside a line that says more.
+ */
 export function shortAddress(address: string): string {
-  return address.length > MOST_OF_AN_ADDRESS
-    ? `${address.slice(0, MOST_OF_AN_ADDRESS)}… (${address.length} characters)`
+  const characters = [...address];
+  return characters.length > MOST_OF_AN_ADDRESS
+    ? `${characters.slice(0, MOST_OF_AN_ADDRESS).join("")}${noteOfLength(characters.length)}`
     : address;
 }
 

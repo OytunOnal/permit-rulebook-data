@@ -3,11 +3,13 @@ import { Agent, createServer, type IncomingHttpHeaders, type Server } from "node
 import { pbkdf2 } from "node:crypto";
 import type { AddressInfo, LookupFunction } from "node:net";
 import { brotliCompressSync, deflateSync, gzipSync } from "node:zlib";
-import { addressKind, afterAnswer, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
+import {
+  addressKind, afterAnswer, fetchSource, MOST_OF_AN_ADDRESS, type Resolver, shortAddress,
+} from "../src/watch/fetch-source.js";
 import { processingFailure, runWatch, type Watchlist } from "../src/watch/core.js";
 import {
   hasControl, hasSteering, MOST_OF_A_CODE, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD,
-  PRINTABLE_WITHIN_SOURCE, printableWithin, saidByThrown,
+  noteOfLength, PRINTABLE_WITHIN_SOURCE, printableWithin, saidByThrown,
 } from "../src/watch/failure.js";
 import { ask, MEASURED, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js";
 
@@ -777,6 +779,71 @@ describe("s36 — the sanitiser is the whole set, and it cuts on characters", ()
     ).toBe("the page said no and then this");
   });
 
+  /**
+   * What the two-family spelling never reached. None of these is a bidi
+   * control or a joiner, and every one of them prints nothing, in the order
+   * they are listed: a soft hyphen, the combining grapheme joiner, the two
+   * Hangul jamo fillers, a Khmer inherent vowel, the Mongolian vowel
+   * separator, an unassigned ignorable, the Hangul filler, a variation
+   * selector, the byte-order mark, the halfwidth Hangul filler, a tag
+   * character. `\s` does not match a soft hyphen and the control class does
+   * not reach one, so two labels that are not the same string rendered alike
+   * in a sentence a curator reads (Security review, 2026-09-25).
+   */
+  const PRINTS_NOTHING = [
+    "\u00ad", "\u034f", "\u115f", "\u1160", "\u17b4", "\u180e",
+    "\u2065", "\u3164", "\ufe0f", "\ufeff", "\uffa0", "\u{e0061}",
+  ];
+
+  it("drops everything that prints nothing, and not only what steers", () => {
+    for (const invisible of PRINTS_NOTHING) {
+      const named = `U+${invisible.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")}`;
+      expect(hasSteering(invisible), `the rule does not know ${named} prints nothing`).toBe(true);
+      expect(
+        printableWithin(`the page said no${invisible} and then this`, MOST_OF_A_FAILURE),
+        `${named} travelled with the page's words`,
+      ).toBe("the page said no and then this");
+    }
+  });
+
+  it("keeps every character a reader can actually see", () => {
+    // The widening is checkable in both directions: the class takes what
+    // prints nothing, and nothing else. A combining accent, an astral
+    // character and a letter outside Latin-1 all print.
+    for (const printed of ["e\u0301", "\u{1f600}", "\u{2070e}", "\u03a9", "\u0130"]) {
+      expect(hasSteering(printed), "the rule took a character a reader can see").toBe(false);
+      expect(printableWithin(`said ${printed} here`, MOST_OF_A_FAILURE)).toBe(`said ${printed} here`);
+    }
+  });
+
+  it("holds a bound smaller than the note it would print", () => {
+    // Nothing says a bound must leave room for the note. Cutting at
+    // `most - note.length` with a small `most` hands `slice` a negative
+    // second argument, which counts from the END and keeps nearly the whole
+    // string — the bound voided exactly where it is tightest (Security
+    // review, 2026-09-25).
+    for (const most of [0, 1, 5, noteOfLength(100).length - 1, noteOfLength(100).length]) {
+      const said = printableWithin("x".repeat(100), most);
+      expect([...said].length, `a bound of ${most} printed more than it allows`)
+        .toBeLessThanOrEqual(most);
+    }
+  });
+
+  it("cuts an address on characters too, and counts it in the same unit", () => {
+    // `shortAddress` is the other place this package shortens something a
+    // person reads, and the browser tier's request list reaches it
+    // (`cdp.ts`). It cut UTF-16 units, so an address of astral characters
+    // could end in half of one — a lone surrogate in the log line, the flag
+    // file and the issue (Security review, 2026-09-25).
+    const address = `https://rules.example.org/a${"\u{1f600}".repeat(300)}`;
+    const note = noteOfLength([...address].length);
+    const short = shortAddress(address);
+    expect(wellFormed(short), "the cut ended inside a character and printed half of one").toBe(true);
+    expect([...short].length, "the cut fell somewhere other than the bound")
+      .toBe(MOST_OF_AN_ADDRESS + [...note].length);
+    expect(short, "the note counts in a unit nobody reading it counts in").toContain(note);
+  });
+
   it("cuts a page's astral words on characters, and counts them in the same unit", () => {
     // Five hundred emoji are a thousand UTF-16 units: a cut on units lands
     // inside one of them and emits half a character.
@@ -788,13 +855,13 @@ describe("s36 — the sanitiser is the whole set, and it cuts on characters", ()
     // The note counts what a person counts: characters, and not the units a
     // runtime happens to store them in. Five hundred of them arrived.
     expect(said, "the note counts in a unit nobody reading it counts in")
-      .toContain("… (500 characters)");
+      .toContain(noteOfLength(500));
     // And a CJK extension character is the same fact in another script.
     const cjk = "\u{2070e}".repeat(500);
     const read = printableWithin(cjk, MOST_OF_A_FAILURE);
     expect(wellFormed(read), "the cut ended inside a character and printed half of one").toBe(true);
     expect(read, "the note counts in a unit nobody reading it counts in")
-      .toContain("… (500 characters)");
+      .toContain(noteOfLength(500));
   });
 
   it("cuts the same way inside Chrome, because it is one rule and two runtimes", () => {
@@ -813,6 +880,8 @@ describe("s36 — the sanitiser is the whole set, and it cuts on characters", ()
       ["astral characters past the bound", "\u{1f600}".repeat(500), MOST_OF_A_FAILURE],
       ["every character that steers a reader", BIDI_CONTROLS.join("x"), MOST_OF_A_FAILURE],
       ["the bytes a terminal acts on", "a\r\n[31mb c", MOST_OF_A_FAILURE],
+      ["a character that prints nothing but does not steer", `a${PRINTS_NOTHING.join("b")}c`, MOST_OF_A_FAILURE],
+      ["a bound smaller than the note it would print", "x".repeat(100), 5],
     ];
     for (const [what, text, most] of table)
       expect(inChrome(text, most), `the two runtimes disagree about ${what}`)
