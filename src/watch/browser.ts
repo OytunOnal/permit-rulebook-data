@@ -23,6 +23,18 @@ import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
  * the profile handling were learned, and this is a port of them: the data
  * package cannot import the site.
  *
+ * **The address behind a browser entry's name is Chrome's to resolve.** The
+ * fetch tier resolves a name itself, judges every address the resolver
+ * returns and hands the socket the one it approved (s36, `fetch-source.ts`).
+ * This tier cannot: Chrome does its own DNS, inside its own process, and
+ * takes no lookup hook — so what this reader gates is what it can gate, and
+ * it is the same two gates it has always had: the entry address is refused
+ * before Chrome is asked (`refusedAddress`), and a navigation that leaves the
+ * entry's origin is refused when it happens (`cdp.ts`). The seven browser
+ * entries are fixed pages on public hosts a curator chose, and that — not a
+ * check in this file — is what stands between this tier and an address
+ * nobody meant to visit.
+ *
  * **Where things are.** This was one file until 2026-09-24, by then five jobs
  * deep, so it is four — split along what each part answers to:
  *
