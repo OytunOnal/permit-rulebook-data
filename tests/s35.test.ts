@@ -537,7 +537,10 @@ describe("s35 — two silent mornings inside the week are an outage", () => {
     expect(merged.lapses).toEqual({ one: [YESTERDAY], two: [YESTERDAY], three: [TODAY] });
 
     // And the morning after, a full run counts their second silent morning
-    // rather than calling it their first.
+    // rather than calling it their first. The day is TOMORROW because the
+    // morning being carried is YESTERDAY's: a full run on TODAY would be a
+    // second run on the day the pass already spoke for, which is not the case
+    // this asks about (s35 delta 3, 2026-09-24).
     const { fetcher: again } = scripted({
       [addressOf("one")]: [fail("transient")],
       [addressOf("two")]: [fail("transient")],

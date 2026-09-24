@@ -586,7 +586,7 @@ const THE_WEEK = 7;
  * and that is why `theWeekOf` sorts before it asks (Spec review,
  * 2026-09-24).
  */
-const aWeekOf = (days: string[]): string[] => days.slice(-THE_WEEK);
+const atMostAWeek = (days: string[]): string[] => days.slice(-THE_WEEK);
 
 /** Is this day inside the week of runs ending today? */
 function inTheWeek(day: string, today: string): boolean {
@@ -640,7 +640,7 @@ function lapsesAfter(reports: WatchReport[], previous: WatchState, today: string
     if (report.outcome !== "unreachable") continue;
     const days = next[report.id] ?? [];
     if (!days.includes(today)) days.push(today);
-    next[report.id] = aWeekOf(days);
+    next[report.id] = atMostAWeek(days);
   }
   return next;
 }
@@ -699,7 +699,7 @@ function unreadOf(value: unknown): UnreadEntry[] {
  * Days that have been read as days, as one source's week: one of each, in
  * order, inside the week, seven at most.
  *
- * The order is a decision and not a tidying. `aWeekOf` keeps a list's tail,
+ * The order is a decision and not a tidying. `atMostAWeek` keeps a list's tail,
  * so a state whose days are not ascending — a hand-edited file, a list
  * appended to out of order — would have its cap fall on the newest mornings
  * and keep the oldest, and a source silent yesterday and again this morning
@@ -717,7 +717,7 @@ function unreadOf(value: unknown): UnreadEntry[] {
  */
 function theWeekOf(days: string[], today: string): string[] {
   const inOrder = [...new Set(days)].sort();
-  return aWeekOf(inOrder.filter((day) => inTheWeek(day, today)));
+  return atMostAWeek(inOrder.filter((day) => inTheWeek(day, today)));
 }
 
 /**
