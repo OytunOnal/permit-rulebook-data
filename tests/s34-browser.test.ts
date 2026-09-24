@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { chromePath, openBrowserReader } from "../src/watch/browser.js";
 import { MOST_OF_AN_ADDRESS } from "../src/watch/fetch-source.js";
-import { runWatch, type Fetcher, type WatchEntry } from "../src/watch/core.js";
+import { runWatch, type BrowserReader, type Fetcher, type WatchEntry } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 
 /**
@@ -1238,8 +1238,64 @@ for (var i = 0; i < 12; i++) {
         { entries: [entry({ slice: { from: "Lede:", to: "Cookies Proclaimer" }, steps: [] })] },
         emptyState, refuse, "2026-09-24", reader.read,
       );
-      expect(Date.now() - started, "the read outlasted its own budget").toBeLessThan(14_000);
+      // TWO budgets since s35 (2026-09-24), not one: a page that never
+      // settles is a transient failure, and the pass comes back for it once
+      // after its last entry. The claim is unchanged — a request nothing
+      // answers costs this entry its budget and not the run — and what moved
+      // is how many budgets one entry may now spend.
+      expect(Date.now() - started, "the read outlasted its own budget").toBeLessThan(24_000);
     } finally { await reader.close(); served = fixture(); }
+  });
+});
+
+describe.skipIf(Boolean(noChrome) && !CI)("s35 — the browser tier classes its own failures, and is read again for one of them", () => {
+  /**
+   * The two halves of the rule, against a real browser.
+   *
+   * A control the authority renamed is the page having changed: the same page
+   * answers the same way in three minutes, so it is the SOURCE's refusal and
+   * is opened once. A status the server answered with is read by the same
+   * rule the fetcher reads one by — 503 is the server calling it its own
+   * fault — so it is transient, and the pass comes back for it after its last
+   * entry. Counted in opens, because an open is what a retry costs.
+   */
+  it("opens a form that lost its field once, and a page the server said 503 to twice", async () => {
+    served = fixture({ nationalityField: false });
+    const reader = openBrowserReader();
+    let opens = 0;
+    const counted: BrowserReader = async (e, redirects) => { opens += 1; return reader.read(e, redirects); };
+    try {
+      const gone = await runWatch({ entries: [entry()] }, emptyState, refuse, "2026-09-23", counted);
+      expect(gone.reports[0]!.outcome).toBe("unreachable");
+      expect(gone.reports[0]!.failure, gone.reports[0]!.error).toBe("refused-by-source");
+      expect(opens, "a step that found no field was opened again").toBe(1);
+
+      served = fixture();
+      status = 503;
+      opens = 0;
+      const busy = await runWatch({ entries: [entry()] }, emptyState, refuse, "2026-09-23", counted);
+      expect(busy.reports[0]!.outcome).toBe("unreachable");
+      expect(busy.reports[0]!.failure, busy.reports[0]!.error).toBe("transient");
+      expect(opens, "a browser retry is not one more open").toBe(2);
+    } finally { await reader.close(); served = fixture(); status = 200; }
+  });
+
+  it("calls a page that goes to another site our own refusal, not the source's", async () => {
+    // Our line, not the source's minute: a third party's bytes must never be
+    // hashed as the authority's, and that is a decision this code made. It is
+    // red the same morning and is never opened twice.
+    redirectTo = `${elsewhereOrigin}/x`;
+    const reader = openBrowserReader();
+    let opens = 0;
+    const counted: BrowserReader = async (e, redirects) => { opens += 1; return reader.read(e, redirects); };
+    try {
+      const { reports } = await runWatch(
+        { entries: [entry({ steps: [], slice: undefined })] }, emptyState, refuse, "2026-09-23", counted,
+      );
+      expect(reports[0]!.outcome).toBe("unreachable");
+      expect(reports[0]!.failure, reports[0]!.error).toBe("refused-by-us");
+      expect(opens, "an off-origin navigation was opened again").toBe(1);
+    } finally { await reader.close(); redirectTo = undefined; served = fixture(); }
   });
 });
 
@@ -1252,6 +1308,10 @@ describe("s34 — a reader that can find no Chrome says so and reads nothing", (
       const { reports } = await runWatch({ entries: [entry()] }, emptyState, refuse, "2026-09-23", reader.read);
       expect(reports[0]!.outcome).toBe("unreachable");
       expect(reports[0]!.error).toMatch(/Chrome/);
+      // Ours, not the source's: a machine with no browser will not have one
+      // three minutes later, so the day is red now and nothing is retried
+      // (s35).
+      expect(reports[0]!.failure).toBe("refused-by-us");
     } finally { await reader.close(); }
   });
 });

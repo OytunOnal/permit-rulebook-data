@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 import {
   addressKind, fetchSource, MOST_OF_AN_ADDRESS, refusedTarget, shortAddress,
 } from "../src/watch/fetch-source.js";
+import { classOfThrown } from "../src/watch/failure.js";
 
 /**
  * s34 — the fetch tier follows a redirect around a site, and not off it.
@@ -60,6 +61,14 @@ const source: Server = createServer((req, res) => {
   }
   if (path === "/longway") { res.writeHead(302, { location: `/settled?${"b".repeat(12_000)}` }); res.end(); return; }
   if (path === "/credentials") { res.writeHead(302, { location: sourceOrigin.replace("//", "//watcher:hunter2@") + "/settled" }); res.end(); return; }
+  // The bot wall, and the hang-up. buzer.de answered the first six times on
+  // 2026-09-20 and read clean the next morning; the three `fetch failed` runs
+  // of 09-21 and after were the second, with nothing in the log to say so.
+  if (path === "/refused") { res.writeHead(403, { "content-type": "text/plain" }); res.end("no"); return; }
+  if (path === "/busy") { res.writeHead(503, { "content-type": "text/plain" }); res.end("later"); return; }
+  if (path === "/hangup") { req.socket.destroy(); return; }
+  // EUR-Lex's own shape: a status that says yes and no page behind it.
+  if (path === "/empty") { res.writeHead(202, { "content-type": "text/html" }); res.end(); return; }
   res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
   res.end("<p>The authority's own words</p>");
 });
@@ -333,5 +342,85 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
     expect(answer.ok).toBe(true);
     if (!answer.ok) return;
     expect(answer.from, "an unmoved read claims to have moved").toBeUndefined();
+  });
+});
+
+describe("s35 — the fetcher says what kind of failure it met", () => {
+  /**
+   * The three runs the slice was written for said `TypeError: fetch failed`
+   * and nothing else — the same five words for a reset connection, a name
+   * that does not resolve and a connect timeout, which is why the queue line
+   * called them timeouts without knowing. The CODE is what tells them apart,
+   * and it is the only part of the cause that may be printed: undici writes
+   * the address into the message, and an error travels into a log line, a
+   * flag file and the issue that flag becomes.
+   */
+  it("calls a source that hangs up transient, and carries the cause code in the text", async () => {
+    const answer = await fetchSource(`${sourceOrigin}/hangup`, "same-origin");
+    expect(answer.ok).toBe(false);
+    if (answer.ok) return;
+    expect(answer.failure).toBe("transient");
+    // Not the wording of the failure — the code Node put underneath it, which
+    // is what the log did not have.
+    expect(answer.error, "the cause code is not in the text").toMatch(/\((ECONNRESET|UND_ERR_SOCKET|ECONNABORTED|EPIPE)\)/);
+    // And never the cause's own message, which can carry the address.
+    expect(answer.error.length, "the cause's message was printed too").toBeLessThan(200);
+  });
+
+  it("calls a bot wall the source's own refusal, and a busy source transient", async () => {
+    const walled = await fetchSource(`${sourceOrigin}/refused`, "same-origin");
+    expect(walled.ok).toBe(false);
+    if (walled.ok) return;
+    // A 403 answers the same in three minutes: no second try, and one day of
+    // grace before the run goes red.
+    expect(walled.failure).toBe("refused-by-source");
+    expect(walled.status).toBe(403);
+
+    const busy = await fetchSource(`${sourceOrigin}/busy`, "same-origin");
+    expect(busy.ok).toBe(false);
+    if (busy.ok) return;
+    // The source calling it its own fault is worth asking again.
+    expect(busy.failure).toBe("transient");
+  });
+
+  it("calls everything the floor declines our own refusal", async () => {
+    // None of these is the source having a bad minute: the request was never
+    // made, and would not be made three minutes later either. Each is red the
+    // same day.
+    const offsite = await fetchSource(`${sourceOrigin}/away`, "same-origin");
+    expect(offsite.ok).toBe(false);
+    if (!offsite.ok) expect(offsite.failure).toBe("refused-by-us");
+
+    const metadata = await fetchSource(`${sourceOrigin}/to-metadata`, "anywhere");
+    expect(metadata.ok).toBe(false);
+    if (!metadata.ok) expect(metadata.failure).toBe("refused-by-us");
+
+    const looping = await fetchSource(`${sourceOrigin}/loop`, "same-origin");
+    expect(looping.ok).toBe(false);
+    if (!looping.ok) expect(looping.failure).toBe("refused-by-us");
+
+    const credentialled = await fetchSource(`${sourceOrigin.replace("//", "//watcher:hunter2@")}/`, "same-origin");
+    expect(credentialled.ok).toBe(false);
+    if (!credentialled.ok) expect(credentialled.failure).toBe("refused-by-us");
+  });
+
+  it("calls the budget running out transient, without holding this file open for 30 s", () => {
+    // The budget is 30 s per source and is not injectable — it is one number
+    // both readers borrow (s34, DECISIONS 2026-09-24), and making it a
+    // parameter to make this case fast would be changing the code to suit the
+    // test. So the question is put to the error path instead: this is exactly
+    // what `AbortSignal.timeout` rejects a `fetch` with, and the class it
+    // gets is the decision.
+    expect(classOfThrown(new DOMException("The operation was aborted due to timeout", "TimeoutError")))
+      .toBe("transient");
+  });
+
+  it("calls an empty body transient, because the challenge behind it is over in a minute", async () => {
+    // EUR-Lex answers this fetcher HTTP 202 with nothing at all, and the page
+    // is there on the next read.
+    const answer = await fetchSource(`${sourceOrigin}/empty`, "same-origin");
+    expect(answer.ok).toBe(false);
+    if (answer.ok) return;
+    expect(answer.failure).toBe("transient");
   });
 });
