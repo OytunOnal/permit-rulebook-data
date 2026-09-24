@@ -591,11 +591,14 @@ const aWeekOf = (days: string[]): string[] => days.slice(-THE_WEEK);
 /** Is this day inside the week of runs ending today? */
 function inTheWeek(day: string, today: string): boolean {
   const back = (Date.parse(today) - Date.parse(day)) / 86_400_000;
-  // Only the old side is pruned, and it is the only side: a day that is not
-  // a day never arrives here — every caller is `theWeekOf`, which is handed
-  // what the shape check passed — while a day ahead of today is a clock
-  // nobody here can correct, so it is kept and ages out on its own.
-  return back < THE_WEEK;
+  // Both sides are pruned. The old side is the week's own rule. The new side
+  // is that a morning after today did not happen: nothing was silent on it,
+  // no run went through it, and — unlike an old day — it would never age out,
+  // so a state naming one would have it rewritten on every run and redden
+  // each then-unread source at its next single silence, permanently (Security
+  // review, 2026-09-24). A day that is not a day never arrives here at all:
+  // every caller is `theWeekOf`, which is handed what the shape check passed.
+  return back >= 0 && back < THE_WEEK;
 }
 
 /**
@@ -626,9 +629,10 @@ const daysBySource = (): Record<string, string[]> => Object.create(null) as Reco
  * answers on its good morning is precisely the one the first rule forgot —
  * and today is added to every source this run could not read. What the state
  * knew is a week already: pruning is part of reading a day, and `knownLapses`
- * is where a day is read. The cap is asked again once today is on the list,
- * because a state whose days are all ahead of today hands over seven the week
- * keeps and this run has an eighth morning to add.
+ * is where a day is read. The cap is asked again where the list grows,
+ * because the bound belongs wherever a day is added — it cuts nothing now
+ * that a morning after today is refused, since seven days inside the week
+ * that do not include today is not a list the calendar can make.
  */
 function lapsesAfter(reports: WatchReport[], previous: WatchState, today: string): Record<string, string[]> {
   const next: Record<string, string[]> = Object.assign(daysBySource(), knownLapses(previous, today));

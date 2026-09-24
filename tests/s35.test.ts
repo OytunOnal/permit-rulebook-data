@@ -608,10 +608,11 @@ describe("s35 — the days on the state are read as days or not at all", () => {
     // the brake counts (DECISIONS 2026-09-24), so seven is the whole of what
     // a source's week can hold.
     //
-    // The days are ahead of today on purpose: a day the week has already
-    // passed is dropped by the pruning rule, and one ahead of it is kept to
-    // age out — so a flood of tomorrows is the list nothing else cuts.
-    const flood = Array.from({ length: 10_000 }, (_, i) => daysAfter(i));
+    // The days run backwards from today: a day ahead of today is refused
+    // outright as a morning that has not happened (s35 delta 4), so a flood
+    // of yesterdays is what a state author has to work with — and seven of
+    // them are inside the week whatever the other 9,993 say.
+    const flood = Array.from({ length: 10_000 }, (_, i) => daysAfter(-i));
     const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
     const { nextState, verdict } = await runWatch(watching("down"), stateWith({ down: flood }, "down"), fetcher, TODAY);
     expect(nextState.lapses!["down"]!.length, "a page of days reached the state the run writes")
@@ -748,6 +749,28 @@ describe("s35 — the days on the state are read as days or not at all", () => {
     expect(nextState.lapses).toEqual({ down: [TODAY] });
     expect(verdict.lapsed.map((u) => u.id)).toEqual(["down"]);
     expect(verdict.red, "one silence written twice was read as two").toBe(false);
+  });
+
+  it("refuses a silent morning dated after today, on the record and in `last_run`", async () => {
+    // A morning after today did not happen: nothing was silent on it and no
+    // run went through it. Keeping it was worse than useless — a day ahead of
+    // today never ages out of the week and is rewritten into the state on
+    // every run, so one skewed clock or one edited file reddens each
+    // then-unread source at its next single silence, for good (Security
+    // review, 2026-09-24).
+    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const ahead = stateWith({ x: ["2099-01-01"], y: [daysAfter(1)], down: [TODAY] });
+    const { nextState } = await runWatch(watching("down"), ahead, fetcher, TODAY);
+    expect(nextState.lapses, "a day the calendar has not reached was recorded").toEqual({ down: [TODAY] });
+
+    // The migration's own day is the same day, read by the same rule: a
+    // `last_run` after today is no morning to migrate.
+    const skewed = {
+      entries: {}, last_run: "2099-01-01", unread: [{ id: "down", url: addressOf("down") }],
+    } as unknown as WatchState;
+    const { nextState: after, verdict } = await runWatch(watching("down"), skewed, fetcher, TODAY);
+    expect(after.lapses).toEqual({ down: [TODAY] });
+    expect(verdict.red, "a morning that has not happened yet was counted as the first of two").toBe(false);
   });
 
   it("reads its sources on a state whose unread list is not a list", async () => {
