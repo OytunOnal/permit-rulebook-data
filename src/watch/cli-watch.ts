@@ -145,13 +145,13 @@ for (const r of reports) {
  *
  * The words and the loudness are the run's, decided in `core.ts` beside the
  * rule that colours the day — so the one place that knows a source has been
- * silent two mornings running is the one place that says so, and this file
- * prints what it is handed. An outage's line carries both days: the morning
- * it started and this one.
+ * silent twice inside the week is the one place that says so, and this file
+ * prints what it is handed. An outage's line carries the mornings it was
+ * counted from, so a curator reads the days rather than the word alone.
  */
 for (const notice of unreadNotices(verdict, today)) {
   log(notice.level, `watch:${notice.event}`, {
-    id: notice.id, url: printableAddress(notice.url), since: notice.since, today: notice.today,
+    id: notice.id, url: printableAddress(notice.url), days: notice.days, today: notice.today,
   });
 }
 

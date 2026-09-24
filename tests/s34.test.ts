@@ -168,10 +168,8 @@ describe("s34 — a run with no browser reads the rest and goes red on the seven
     expect(reports[0]!.error, "the error does not say a browser was what was missing").toMatch(/browser/);
     // Red, and the html entry still read: a run that cannot open a browser has
     // not read these pages, and must not say it has.
-    // `since` joined the item at s35 (2026-09-24); this run is its first
-    // silent morning, so the day it started is this one.
     expect(nextState.unread)
-      .toEqual([{ id: "fixture-browser", url: "https://example.invalid/rendered", since: "2026-09-23" }]);
+      .toEqual([{ id: "fixture-browser", url: "https://example.invalid/rendered" }]);
     expect(nextState.entries["fixture-html"]).toBeDefined();
   });
 });

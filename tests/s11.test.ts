@@ -156,9 +156,10 @@ describe("what the run has to write down", () => {
   it("records what it could not read, by id and by page", async () => {
     const before = await runWatch(watchlist, { entries: {} }, async () => ({ ok: true, body }), "2026-09-07");
     const { nextState } = await runWatch(watchlist, before.nextState, refusesSpain, LAST_RUN);
-    // `since` joined the item at s35 (2026-09-24): the day the source first
-    // went unread, which is what tells one silent morning from two.
-    expect(nextState.unread).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL, since: LAST_RUN }]);
+    // The list is still what THIS run could not read, by id and by page: the
+    // mornings that tell one silent day from two are counted apart from it,
+    // on the state's own `lapses` (s35, 2026-09-24).
+    expect(nextState.unread).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL }]);
     expect(nextState.last_run).toBe(LAST_RUN);
   });
 

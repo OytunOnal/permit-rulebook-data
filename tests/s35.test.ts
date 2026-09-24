@@ -63,9 +63,11 @@ const reportFor = (reports: WatchReport[], id: string): WatchReport =>
   reports.find((r) => r.id === id) ?? (() => { throw new Error(`no report for ${id}`); })();
 
 const emptyState: WatchState = { entries: {} };
-/** The fixture state the scenario names: one source already unread, since yesterday. */
+/** The fixture state the scenario names: one source unread yesterday, and that
+ * morning still inside the week this run looks back over. */
 const alreadyUnread = (id: string): WatchState => ({
-  entries: {}, last_run: YESTERDAY, unread: [{ id, url: addressOf(id), since: YESTERDAY }],
+  entries: {}, last_run: YESTERDAY,
+  unread: [{ id, url: addressOf(id) }], lapses: { [id]: [YESTERDAY] },
 });
 
 describe("s35 — a failure has a class, and the reader names it", () => {
@@ -225,11 +227,14 @@ describe("s35 — a transient failure is read again, after the pass", () => {
   });
 });
 
-describe("s35 — one unread day is a lapse, two in a row an outage", () => {
-  it("lists a source unread for the first time with today as the day it started", async () => {
+describe("s35 — two silent mornings inside the week are an outage", () => {
+  it("lists a source unread for the first time with today as its only silent morning", async () => {
     const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
     const { nextState, verdict } = await runWatch(watching("down"), emptyState, fetcher, TODAY);
-    expect(nextState.unread).toEqual([{ id: "down", url: addressOf("down"), since: TODAY }]);
+    // `unread` is what THIS run could not read, and nothing else: the site
+    // counts it. The mornings are the other question, and they live apart.
+    expect(nextState.unread).toEqual([{ id: "down", url: addressOf("down") }]);
+    expect(nextState.lapses).toEqual({ down: [TODAY] });
     expect(verdict.lapsed.map((u) => u.id)).toEqual(["down"]);
     expect(verdict.outages).toEqual([]);
     // The day of grace: the site still says the run did not reach it, and the
@@ -237,19 +242,63 @@ describe("s35 — one unread day is a lapse, two in a row an outage", () => {
     expect(verdict.red, "a first unread day reddened the run").toBe(false);
   });
 
-  it("keeps the day it started when the same source is unread again", async () => {
+  it("keeps the earlier morning and reddens the run on the second one", async () => {
     const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
     const { nextState, verdict } = await runWatch(watching("down"), alreadyUnread("down"), fetcher, TODAY);
-    expect(nextState.unread).toEqual([{ id: "down", url: addressOf("down"), since: YESTERDAY }]);
+    expect(nextState.lapses).toEqual({ down: [YESTERDAY, TODAY] });
     expect(verdict.outages.map((u) => u.id)).toEqual(["down"]);
     expect(verdict.lapsed).toEqual([]);
-    expect(verdict.red, "two unread days in a row left the run green").toBe(true);
+    expect(verdict.red, "two silent mornings inside the week left the run green").toBe(true);
   });
 
-  it("drops a source that answered off the list, and its day with it", async () => {
+  it("reddens the third run of a source that goes silent every other morning", async () => {
+    // The hole the previous rule had, and the reason this one counts a week:
+    // a source unread on alternating days was never on the run before, so it
+    // was a lapse every morning, dropped off the list on its good day and
+    // nothing accumulated anywhere. Four runs on four consecutive days —
+    // silent, read, silent, read (DECISIONS 2026-09-24).
+    const days = ["2026-09-21", "2026-09-22", "2026-09-23", "2026-09-24"];
+    const answers = [
+      fail("refused-by-source", "HTTP 403"), page("it answered"),
+      fail("refused-by-source", "HTTP 403"), page("it answered"),
+    ];
+    let state: WatchState = emptyState;
+    const reds: boolean[] = [];
+    for (const [i, day] of days.entries()) {
+      const { fetcher } = scripted({ [addressOf("flaky")]: [answers[i]!] });
+      const run = await runWatch(watching("flaky"), state, fetcher, day);
+      state = run.nextState;
+      reds.push(run.verdict.red);
+    }
+    expect(reds, "the second silent morning of an every-other-day source was green")
+      .toEqual([false, false, true, false]);
+    // And on the morning it answers it is not unread — the site must not say
+    // the run failed to reach a source it reached — while the mornings it did
+    // go silent are still on the state.
+    expect(state.unread).toEqual([]);
+    expect(state.lapses).toEqual({ flaky: ["2026-09-21", "2026-09-23"] });
+  });
+
+  it("forgets a silent morning older than the week, and calls the next one a lapse again", async () => {
+    // Seven calendar days ending today. A source silent eight days ago and
+    // again this morning has not been silent twice in the week the slice's
+    // own claim is about, so the brake does not hold it.
+    const stale: WatchState = {
+      entries: {}, last_run: "2026-09-23", unread: [], lapses: { down: ["2026-09-16"] },
+    };
+    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const { nextState, verdict } = await runWatch(watching("down"), stale, fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ down: [TODAY] });
+    expect(verdict.lapsed.map((u) => u.id)).toEqual(["down"]);
+    expect(verdict.red).toBe(false);
+  });
+
+  it("drops a source that answered off the unread list and keeps the mornings it was silent", async () => {
     const { fetcher } = scripted({ [addressOf("down")]: [page("it answered today")] });
     const { nextState, verdict } = await runWatch(watching("down"), alreadyUnread("down"), fetcher, TODAY);
     expect(nextState.unread).toEqual([]);
+    expect(nextState.lapses, "the morning it was silent was forgotten the moment it answered")
+      .toEqual({ down: [YESTERDAY] });
     expect(verdict.red).toBe(false);
   });
 
@@ -264,8 +313,9 @@ describe("s35 — one unread day is a lapse, two in a row an outage", () => {
     expect(verdict.refused.map((u) => u.id)).toEqual(["offsite"]);
     expect(verdict.lapsed, "a refusal of ours was given a day of grace").toEqual([]);
     expect(verdict.red).toBe(true);
-    // It is still an unread source like any other, and still says since when.
-    expect(nextState.unread).toEqual([{ id: "offsite", url: addressOf("offsite"), since: TODAY }]);
+    // It is still an unread source like any other, and still counts a morning.
+    expect(nextState.unread).toEqual([{ id: "offsite", url: addressOf("offsite") }]);
+    expect(nextState.lapses).toEqual({ offsite: [TODAY] });
   });
 
   it("gives a refusal by the source the same day of grace as a hiccup", async () => {
@@ -277,73 +327,90 @@ describe("s35 — one unread day is a lapse, two in a row an outage", () => {
     expect(verdict.red).toBe(false);
   });
 
-  it("counts a source unread on the run before as an outage whatever failed this time", async () => {
+  it("counts a source silent on an earlier morning as an outage whatever failed this time", async () => {
     const { fetcher } = scripted({ [addressOf("walled")]: [fail("refused-by-source", "HTTP 403")] });
     const { verdict } = await runWatch(watching("walled"), alreadyUnread("walled"), fetcher, TODAY);
     expect(verdict.outages.map((u) => u.id)).toEqual(["walled"]);
     expect(verdict.red).toBe(true);
   });
 
+  it("calls a refusal of ours with an earlier silent morning an outage, not a refusal", async () => {
+    // One word per source, and membership in the week wins: two silent
+    // mornings is the fact, whatever refused on which of them. The colour is
+    // red either way, so nothing about the run moves — only what it is called.
+    const { fetcher } = scripted({ [addressOf("offsite")]: [fail("refused-by-us", "redirected off the site")] });
+    const { verdict } = await runWatch(watching("offsite"), alreadyUnread("offsite"), fetcher, TODAY);
+    expect(verdict.outages.map((u) => u.id)).toEqual(["offsite"]);
+    expect(verdict.refused).toEqual([]);
+    expect(verdict.red).toBe(true);
+  });
+
   it("reads a state written before this slice as the outage it is", async () => {
-    // Every state on disk before today lists its unread sources without a
-    // day. The source WAS unread on the run before — that is what being on
-    // that list means — so it is an outage, and the earliest day this run can
-    // honestly claim for it is the day that run happened.
+    // Every state on disk before today lists its unread sources with no days
+    // at all. The source WAS unread on that run — that is what being on the
+    // list means — so it counts as one silent morning, on the day that run
+    // happened, and a second one inside the week is an outage. The two `bamf`
+    // entries of 2026-09-24 come out exactly where the previous rule put them.
     const legacy: WatchState = {
       entries: {}, last_run: YESTERDAY, unread: [{ id: "down", url: addressOf("down") }],
     };
     const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
     const { nextState, verdict } = await runWatch(watching("down"), legacy, fetcher, TODAY);
-    expect(nextState.unread).toEqual([{ id: "down", url: addressOf("down"), since: YESTERDAY }]);
+    expect(nextState.lapses).toEqual({ down: [YESTERDAY, TODAY] });
     expect(verdict.outages.map((u) => u.id)).toEqual(["down"]);
     expect(verdict.red).toBe(true);
   });
 
-  it("keeps the day on the entries a targeted run never touched", async () => {
+  it("starts empty on a state that has never recorded a silent morning", async () => {
+    const { fetcher } = scripted({ [addressOf("down")]: [page("it answered")] });
+    const { nextState } = await runWatch(watching("down"), { entries: {} }, fetcher, TODAY);
+    expect(nextState.lapses).toEqual({});
+  });
+
+  it("keeps the mornings of the entries a targeted run never touched", async () => {
     const previous: WatchState = {
       entries: {}, last_run: YESTERDAY,
       unread: [
-        { id: "untouched", url: addressOf("untouched"), since: "2026-09-20" },
-        { id: "targeted", url: addressOf("targeted"), since: YESTERDAY },
+        { id: "untouched", url: addressOf("untouched") },
+        { id: "targeted", url: addressOf("targeted") },
       ],
+      lapses: { untouched: ["2026-09-20"], targeted: [YESTERDAY] },
     };
     const { fetcher } = scripted({ [addressOf("targeted")]: [page("it answered")] });
     const only = watching("targeted");
     const { nextState } = await runWatch(only, previous, fetcher, TODAY);
     const merged = mergeTargetedRun(previous, nextState, only);
-    expect(merged.unread).toEqual([{ id: "untouched", url: addressOf("untouched"), since: "2026-09-20" }]);
+    expect(merged.unread).toEqual([{ id: "untouched", url: addressOf("untouched") }]);
+    // A targeted pass learned nothing about the sources it did not fetch, so
+    // their mornings stand as the last full run left them; the one entry it
+    // did fetch is the pass's to speak for.
+    expect(merged.lapses).toEqual({ untouched: ["2026-09-20"], targeted: [YESTERDAY] });
   });
 });
 
 describe("s35 — the verdict is the run's, in one place", () => {
-  it("is red for an outage or a refusal of ours, and green for anything else", () => {
-    const unread = (id: string, since: string) => ({ id, url: addressOf(id), since });
-    const unreachable = (id: string, failure: WatchReport["failure"]): WatchReport => ({
-      id, url: addressOf(id), strategy: "html", kind: "value-source", outcome: "unreachable", failure,
-    });
-    const previous: WatchState = { entries: {}, unread: [unread("old", YESTERDAY)] };
+  const unreachable = (id: string, failure: FailureClass): WatchReport => ({
+    id, url: addressOf(id), strategy: "html", kind: "value-source", outcome: "unreachable", failure,
+  });
+  const silent = (id: string, days: string[]): WatchState =>
+    ({ entries: {}, unread: [{ id, url: addressOf(id) }], lapses: { [id]: days } });
 
-    const lapse = verdictOf(
-      [unreachable("fresh", "transient")],
-      { entries: {}, unread: [unread("fresh", TODAY)] }, previous,
-    );
+  it("is red for an outage or a refusal of ours, and green for anything else", () => {
+    const lapse = verdictOf([unreachable("fresh", "transient")], silent("fresh", [TODAY]));
     expect(lapse.red).toBe(false);
     expect(lapse.lapsed.map((u) => u.id)).toEqual(["fresh"]);
 
-    const outage = verdictOf(
-      [unreachable("old", "transient")],
-      { entries: {}, unread: [unread("old", YESTERDAY)] }, previous,
-    );
+    const outage = verdictOf([unreachable("old", "transient")], silent("old", [YESTERDAY, TODAY]));
     expect(outage.red).toBe(true);
+    // What the outage carries is the mornings themselves, so the line a
+    // curator reads names them rather than counting them.
+    expect(outage.outages[0]!.days).toEqual([YESTERDAY, TODAY]);
 
-    const ours = verdictOf(
-      [unreachable("fresh", "refused-by-us")],
-      { entries: {}, unread: [unread("fresh", TODAY)] }, previous,
-    );
+    const ours = verdictOf([unreachable("fresh", "refused-by-us")], silent("fresh", [TODAY]));
     expect(ours.red).toBe(true);
 
     // And a clean day is green and says nothing.
-    const clean = verdictOf([], { entries: {}, unread: [] }, previous);
+    const clean = verdictOf([], { entries: {}, unread: [], lapses: {} });
     expect(clean).toEqual({ lapsed: [], outages: [], refused: [], red: false });
   });
 
@@ -354,7 +421,8 @@ describe("s35 — the verdict is the run's, in one place", () => {
       [addressOf("ours")]: [fail("refused-by-us")],
     });
     const previous: WatchState = {
-      entries: {}, last_run: YESTERDAY, unread: [{ id: "old", url: addressOf("old"), since: "2026-09-20" }],
+      entries: {}, last_run: YESTERDAY,
+      unread: [{ id: "old", url: addressOf("old") }], lapses: { old: ["2026-09-20"] },
     };
     const { verdict } = await runWatch(watching("fresh", "old", "ours"), previous, fetcher, TODAY);
     const notices = unreadNotices(verdict, TODAY);
@@ -363,10 +431,10 @@ describe("s35 — the verdict is the run's, in one place", () => {
       ["outage", "error", "old"],
       ["refused", "error", "ours"],
     ]);
-    // An outage is the one line that carries both days: the morning it
-    // started and the morning it is still going.
+    // An outage's line is the mornings it is made of, so a curator reads what
+    // the brake counted rather than taking the word for it.
     const outage = notices.find((n) => n.event === "outage")!;
-    expect(outage.since).toBe("2026-09-20");
+    expect(outage.days).toEqual(["2026-09-20", TODAY]);
     expect(outage.today).toBe(TODAY);
   });
 
@@ -394,18 +462,19 @@ describe("s35 — the site reads what it read", () => {
   /** Spain's salary-threshold PDF — five dataset values rest on it. */
   const UMBRAL = "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf";
 
-  it("counts an unread source with a day on it exactly as it counted one without", () => {
-    const without: WatchState = {
-      entries: { "es-uge-umbral-pdf": { hash: "h", retrieved_at: "2026-09-07", history: [] } },
+  it("counts what the last run did not reach, and not what it merely remembers", () => {
+    // The two lists answer two questions and the site only asks one. A source
+    // the run read this morning is not one the run failed to reach, however
+    // many mornings inside the week it was silent — so a source with days
+    // behind it and no place on `unread` does not move the reader's count.
+    const read: WatchState = {
+      entries: { "es-uge-umbral-pdf": { hash: "h", retrieved_at: TODAY, history: [] } },
       last_run: TODAY,
-      unread: [{ id: "es-uge-umbral-pdf", url: UMBRAL }],
+      unread: [],
+      lapses: { "es-uge-umbral-pdf": [YESTERDAY] },
     };
-    const with_since: WatchState = {
-      ...without, unread: [{ id: "es-uge-umbral-pdf", url: UMBRAL, since: YESTERDAY }],
-    };
-    // `since` is an added field the site ignores: the reader on a lapse day
-    // still sees "the last run did not reach 1", because that is true.
-    expect(unreadSources(dataset, with_since)).toEqual(unreadSources(dataset, without));
-    expect(unreadSources(dataset, with_since)).toHaveLength(1);
+    const silent: WatchState = { ...read, unread: [{ id: "es-uge-umbral-pdf", url: UMBRAL }] };
+    expect(unreadSources(dataset, read)).toEqual([]);
+    expect(unreadSources(dataset, silent)).toHaveLength(1);
   });
 });

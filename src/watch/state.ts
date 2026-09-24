@@ -56,21 +56,6 @@ export interface UnreadEntry {
   /** The page itself, because the state travels without the watchlist: the
    * site is shipped `watch/state.json` and nothing else from the watch. */
   url: string;
-  /**
-   * The first day this source went unread — an ISO day.
-   *
-   * One unread day is a lapse and two in a row are an outage, and this is the
-   * only thing on disk that can tell them apart: the entries cannot, because
-   * an unread source keeps the snapshot and the date of the last reading that
-   * DID happen. The run that first misses a source writes today here; every
-   * run that misses it again carries the same day forward; a source that
-   * answers drops off the list and its day with it (s35).
-   *
-   * Absent on a list written before 2026-09-24, and on no list written after:
-   * the site ignores the field either way, because what it counts is how many
-   * sources the last run did not reach.
-   */
-  since?: string;
 }
 
 export interface WatchState {
@@ -103,6 +88,28 @@ export interface WatchState {
    * nothing, and nothing is said about it.
    */
   unread?: UnreadEntry[];
+  /**
+   * Each source's recent silent mornings — the ISO days, ascending, inside
+   * the week of runs ending with the one that wrote this.
+   *
+   * It is a second list and not a field on `unread` because the two answer
+   * different questions and only one of them is the site's. `unread` is what
+   * THIS run could not read, which is what `/data/` counts; this is what the
+   * BRAKE counts, and a source that read clean this morning still belongs to
+   * it if it was silent on Tuesday. Holding both on one item would mean
+   * either listing a source the run did read as unread, or forgetting its
+   * earlier mornings the moment it answered — which is exactly the hole the
+   * first rule had (DECISIONS 2026-09-24).
+   *
+   * A day older than the week is forgotten rather than kept: the claim this
+   * watch makes is about a week, and a source silent twice in a fortnight has
+   * not broken it.
+   *
+   * Absent on a state written before 2026-09-24. Such a state lists the
+   * sources its run could not read and says nothing about any other day, so
+   * each of them counts as one silent morning on that run's own date.
+   */
+  lapses?: Record<string, string[]>;
 }
 
 /** Does this dataset read the country vocabulary at all? */
