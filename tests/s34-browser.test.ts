@@ -3,6 +3,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { chromePath, openBrowserReader } from "../src/watch/browser.js";
 import { MOST_OF_AN_ADDRESS } from "../src/watch/fetch-source.js";
+import { MOST_OF_A_FAILURE } from "../src/watch/failure.js";
 import { runWatch, type BrowserReader, type Fetcher, type WatchEntry } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 
@@ -1278,6 +1279,35 @@ describe.skipIf(Boolean(noChrome) && !CI)("s35 — the browser tier classes its 
       expect(busy.reports[0]!.failure, busy.reports[0]!.error).toBe("transient");
       expect(opens, "a browser retry is not one more open").toBe(2);
     } finally { await reader.close(); served = fixture(); status = 200; }
+  });
+
+  it("bounds the words a page's own exception carries out of the read", async () => {
+    // `exceptionDetails.description` is the PAGE's string — its stack
+    // included, and the stack names the page — and it becomes the failure a
+    // run logs. A page can make it as long as it likes, and this one makes it
+    // ten thousand characters so that what survives is the bound and not the
+    // page (Security review, 2026-09-24).
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<footer>Cookies Proclaimer</footer>
+<script>
+Object.defineProperty(Element.prototype, "outerHTML", {
+  get: function () { throw new Error("A".repeat(10000)); },
+});
+</script>
+</body></html>`;
+    const reader = openBrowserReader();
+    try {
+      const answer = await reader.read(entry({ steps: [], slice: undefined }), "same-origin");
+      expect(answer.ok, "the page's throw was read as a page").toBe(false);
+      if (answer.ok) return;
+      // The page threw under us, which is the page having changed rather than
+      // a minute that will pass.
+      expect(answer.failure).toBe("refused-by-source");
+      expect(answer.error.length, "the page's own words travelled whole")
+        .toBeLessThanOrEqual(MOST_OF_A_FAILURE);
+      expect(answer.error, "the page's own address travelled with its words").not.toContain(origin);
+    } finally { await reader.close(); served = fixture(); }
   });
 
   it("calls a page that goes to another site our own refusal, not the source's", async () => {

@@ -4,7 +4,9 @@ import {
   mergeTargetedRun, runWatch, runSummary, unreadNotices, verdictOf,
   type BrowserReader, type Fetcher, type FetchResult, type WatchEntry, type Watchlist, type WatchReport,
 } from "../src/watch/core.js";
-import { classOfThrown, failureOfStatus, ReadFailure, type FailureClass } from "../src/watch/failure.js";
+import {
+  causeCode, classOfThrown, failureOfStatus, MOST_OF_A_FAILURE, ReadFailure, type FailureClass,
+} from "../src/watch/failure.js";
 import { unreadSources, type WatchState } from "../src/watch/state.js";
 import type { Dataset } from "../src/types.js";
 
@@ -94,6 +96,44 @@ describe("s35 — a failure has a class, and the reader names it", () => {
     // morning: the floor refusing an address is a decision we made, and this
     // is not one.
     expect(classOfThrown(new Error("something nobody wrote down"))).toBe("transient");
+  });
+
+  it("takes a cause code only in the shape a cause code has", () => {
+    // `cause.code` is Node's and undici's word — `ECONNRESET`, `ENOTFOUND`,
+    // `UND_ERR_CONNECT_TIMEOUT` — and it is the one part of a cause that may
+    // be printed, because it travels into a log line, a flag file and the
+    // issue that flag becomes. Anything that is not that shape is something
+    // else wearing the field's name, and then no code is printed at all
+    // (Security review, 2026-09-24).
+    expect(causeCode({ cause: { code: "ECONNRESET" } })).toBe("ECONNRESET");
+    expect(causeCode({ cause: { code: "UND_ERR_CONNECT_TIMEOUT" } })).toBe("UND_ERR_CONNECT_TIMEOUT");
+    expect(
+      causeCode({ cause: { code: "https://source.test/a?token=hunter2" } }),
+      "an address wearing the code field's name was printed",
+    ).toBeUndefined();
+    expect(
+      causeCode({ cause: { code: "E".repeat(4_000) } }),
+      "a code as long as a page was printed",
+    ).toBeUndefined();
+    expect(causeCode({ cause: { code: "" } })).toBeUndefined();
+    expect(causeCode(new Error("no cause at all"))).toBeUndefined();
+  });
+
+  it("bounds the words a failure carries, however long the page made them", () => {
+    // A `ReadFailure` is the one failure whose message can be the SOURCE's
+    // string: the browser tier throws a page's own exception `description`,
+    // stack and all, and the stack names the page. The bound is here, at the
+    // failure, so no thrower has to remember it (Security review,
+    // 2026-09-24).
+    const thrown = new ReadFailure(
+      `Error: ${"A".repeat(10_000)}
+    at https://source.test/x:1:1`, "refused-by-source",
+    );
+    expect(thrown.message.length).toBeLessThanOrEqual(MOST_OF_A_FAILURE);
+    expect(thrown.message, "the page's own address travelled with its words").not.toContain("source.test");
+    // A failure of ours is short and arrives whole.
+    expect(new ReadFailure("the form has no such field", "refused-by-source").message)
+      .toBe("the form has no such field");
   });
 
   it("lets a reader carry its own class out of a throw", () => {

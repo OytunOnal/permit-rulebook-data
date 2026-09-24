@@ -44,10 +44,35 @@ export type FailureClass = "transient" | "refused-by-source" | "refused-by-us";
 export class ReadFailure extends Error {
   readonly failure: FailureClass;
   constructor(message: string, failure: FailureClass) {
-    super(message);
+    super(shortFailure(message));
     this.name = "ReadFailure";
     this.failure = failure;
   }
+}
+
+/**
+ * As much of a failure's words as belongs in a message a person reads.
+ *
+ * The browser tier throws a page's OWN exception `description` — the page's
+ * string, its stack included, and the stack names the page — and that message
+ * reaches `report.error` and the run's log. A page can make it as long as it
+ * likes: the fetcher already binds every address it prints at 200 characters
+ * for the same reason (`MOST_OF_AN_ADDRESS`, measured 2026-09-24: a 9,000
+ * character `location` header made a 9,111 character error), and a failure's
+ * text is the one printed thing that had no bound (Security review,
+ * 2026-09-24).
+ *
+ * The bound is TOTAL, unlike the address's, because this is the whole of what
+ * a log line carries about a failure rather than one field inside it; and it
+ * is applied in the constructor above, so that no thrower several layers down
+ * has to remember it.
+ */
+export const MOST_OF_A_FAILURE = 200;
+
+export function shortFailure(text: string): string {
+  if (text.length <= MOST_OF_A_FAILURE) return text;
+  const note = `… (${text.length} characters)`;
+  return `${text.slice(0, MOST_OF_A_FAILURE - note.length)}${note}`;
 }
 
 /**
@@ -78,11 +103,21 @@ export function failureOfStatus(status: number): FailureClass {
  *
  * The MESSAGE is not taken: undici writes the address into it, and an error
  * travels into a log line, a flag file and the issue that flag becomes.
+ *
+ * Neither is anything that is not shaped like a code. `cause.code` is a field
+ * name, and a field name is not a promise: a thrower that is not Node can put
+ * whatever it likes there, and this is the one printed string in the watch
+ * that had no bound at all (Security review, 2026-09-24). A code is Node's
+ * and undici's own spelling — capitals, digits and underscores — and short;
+ * anything else is something else wearing the name, and is simply not
+ * printed, which costs a log line one parenthesis.
  */
+const A_CODE = /^[A-Z0-9_]{1,40}$/;
+
 export function causeCode(e: unknown): string | undefined {
   const cause = (e as { cause?: unknown })?.cause;
   const code = (cause as { code?: unknown })?.code;
-  return typeof code === "string" ? code : undefined;
+  return typeof code === "string" && A_CODE.test(code) ? code : undefined;
 }
 
 /**
