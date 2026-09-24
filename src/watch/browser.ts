@@ -1,5 +1,5 @@
 import { chromePath, launch } from "./chrome.js";
-import { BUDGET_MS } from "./fetch-source.js";
+import { BUDGET_MS, refusedForCredentials } from "./fetch-source.js";
 import type { Session } from "./cdp.js";
 import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 
@@ -80,6 +80,14 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
   let launchFailure: string | undefined;
 
   const read: BrowserReader = async (entry) => {
+    // Before anything is opened, because a browser sends credentials the
+    // moment it navigates and keeps sending them: measured 2026-09-24, a
+    // credentialled entry read `ok: true` and the host saw `Authorization:
+    // Basic …` on the page AND on the favicon, with the page behind the
+    // password hashed and ready to commit. The rule is the fetcher's, asked
+    // here rather than spelled again.
+    const credentials = refusedForCredentials(entry.url);
+    if (credentials) return { ok: false, error: credentials };
     if (launchFailure) return { ok: false, error: launchFailure };
     if (!session) {
       try {

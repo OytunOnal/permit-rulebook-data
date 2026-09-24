@@ -1154,6 +1154,30 @@ for (var i = 0; i < 12; i++) {
     } finally { await reader.close(); served = fixture(); }
   });
 
+  it("will not open an address carrying a name and password, and asks for nothing", async () => {
+    // The fetcher refused these from round 5; the browser did not, and a
+    // browser sends credentials the moment it navigates and keeps sending
+    // them. Measured 2026-09-24: `ok: true`, the host saw `Authorization:
+    // Basic …` on the page AND on the favicon, and the page behind the
+    // password was hashed and ready to be committed as the authority's.
+    metAtSource.length = 0;
+    const before = metAtSource.length;
+    const reader = openBrowserReader();
+    try {
+      const credentialled = entry({ url: origin.replace("//", "//watcher:hunter2@") });
+      const { reports, nextState } = await runWatch(
+        { entries: [credentialled] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome).toBe("unreachable");
+      expect(reports[0]!.error, "the password was printed").not.toContain("hunter2");
+      expect(reports[0]!.error, "the name was printed").not.toContain("watcher");
+      expect(nextState.entries["fixture-route"], "a page behind a password was recorded").toBeUndefined();
+      // Nothing was asked for at all: the refusal comes before the browser
+      // opens anything, so there is no request to carry the credentials.
+      expect(metAtSource.length - before, "the source was contacted anyway").toBe(0);
+    } finally { await reader.close(); }
+  });
+
   it("does not let a subresource that never answers outlast the read's budget", async () => {
     // Every paused request is continued, including on the failure path. This
     // is the backstop under that: a request nothing ever answers costs the

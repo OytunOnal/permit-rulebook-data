@@ -878,7 +878,7 @@ describe("the watch says who is asking", () => {
     });
     await new Promise<void>((resolve) => { server.listen(0, "127.0.0.1", () => resolve()); });
     try {
-      const answer = await fetchSource(`http://127.0.0.1:${(server.address() as AddressInfo).port}/`);
+      const answer = await fetchSource(`http://127.0.0.1:${(server.address() as AddressInfo).port}/`, "same-origin");
       expect(answer.ok, "the fetcher could not read its own test server").toBe(true);
       return seen;
     } finally { server.close(); }

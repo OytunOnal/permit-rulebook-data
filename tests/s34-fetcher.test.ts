@@ -38,6 +38,13 @@ const source: Server = createServer((req, res) => {
   sourceAsked += 1;
   const path = (req.url ?? "/").split("?")[0];
   if (path === "/away") { res.writeHead(302, { location: `${elsewhereOrigin}/x` }); res.end(); return; }
+  // The shape anabin.kmk.org actually has: https answered with a 301 to plain
+  // http on the same host. Same host, different scheme, so a different origin.
+  if (path === "/downgrade") {
+    res.writeHead(301, { location: `${sourceOrigin.replace("http://", "https://")}/settled` });
+    res.end();
+    return;
+  }
   if (path === "/around") { res.writeHead(302, { location: "/settled" }); res.end(); return; }
   if (path === "/loop") { res.writeHead(302, { location: "/loop" }); res.end(); return; }
   if (path === "/long") {
@@ -57,9 +64,60 @@ afterAll(() => { elsewhere.close(); source.close(); });
 
 const textOf = (body: Uint8Array) => new TextDecoder().decode(body);
 
+describe("s34 — a link is followed the way a person's browser follows it", () => {
+  /**
+   * The runner found this one, on 2026-09-24 (run 35934301563).
+   *
+   * `anabin.kmk.org` answers https with a 301 to plain http on the same host
+   * — a real government source's TLS downgrade — and the origin guard written
+   * for readings reported a live link as unreachable, every morning. The rule
+   * was right and its scope was wrong: an entry that produces no reading has
+   * no bytes anyone could have replaced, and what it watches is whether a
+   * person who clicks arrives somewhere.
+   */
+  it("follows a downgrade to plain http on the same host", async () => {
+    const answer = await fetchSource(`${sourceOrigin}/downgrade`, "anywhere");
+    // Nothing is listening on the fixture's https address, so this ends as an
+    // ordinary connection failure — which is the assertion: the guard did not
+    // fire, the redirect was taken, and what is left is the network. (The
+    // case below reads a different-origin redirect all the way through; this
+    // one is here for the scheme change specifically.)
+    expect(answer.ok).toBe(false);
+    if (answer.ok) return;
+    expect(answer.error, "the redirect was refused rather than followed").not.toMatch(/off the site/);
+    expect(answer.error, "this did not get as far as the network").toMatch(/fetch failed|ECONN|socket/i);
+  });
+
+  it("follows a redirect to another site entirely", async () => {
+    const answer = await fetchSource(`${sourceOrigin}/away`, "anywhere");
+    expect(answer.ok, answer.ok ? "" : answer.error).toBe(true);
+    if (!answer.ok) return;
+    expect(new TextDecoder().decode(answer.body)).toContain("Somewhere else entirely");
+    // And it says where it ended up, which is the one thing worth knowing
+    // about a link that has moved: a log line, not a flag and not a red day.
+    expect(answer.from, "a link that landed elsewhere does not say where").toContain(elsewhereOrigin);
+  });
+
+  it("still refuses both for anything whose bytes become a reading", async () => {
+    for (const path of ["/away", "/downgrade"]) {
+      const answer = await fetchSource(`${sourceOrigin}${path}`, "same-origin");
+      expect(answer.ok, `${path} was read as the authority's own bytes`).toBe(false);
+      if (answer.ok) return;
+      expect(answer.error).toMatch(/off the site/);
+    }
+  });
+
+  it("caps the hops however far it is allowed to follow", async () => {
+    const before = sourceAsked;
+    const answer = await fetchSource(`${sourceOrigin}/loop`, "anywhere");
+    expect(answer.ok).toBe(false);
+    expect(sourceAsked - before, "a loop was followed further than the cap").toBeLessThanOrEqual(6);
+  });
+});
+
 describe("s34 — the fetcher will not be redirected off the site", () => {
   it("reads a source that redirects within its own host, and says where it read", async () => {
-    const answer = await fetchSource(`${sourceOrigin}/around`);
+    const answer = await fetchSource(`${sourceOrigin}/around`, "same-origin");
     expect(answer.ok).toBe(true);
     if (!answer.ok) return;
     expect(textOf(answer.body)).toContain("The authority's own words");
@@ -67,7 +125,7 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
   });
 
   it("refuses a source that redirects to another host, and names where it went", async () => {
-    const answer = await fetchSource(`${sourceOrigin}/away`);
+    const answer = await fetchSource(`${sourceOrigin}/away`, "same-origin");
     expect(answer.ok, "another site's bytes were accepted as the source's").toBe(false);
     if (answer.ok) return;
     // The decision is that it refused and said where — not the words it chose
@@ -82,7 +140,7 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
     // source's — measured `status: 200`, from somebody else's page
     // (Security review, 2026-09-24).
     const before = elsewhereAsked;
-    const answer = await fetchSource(`${sourceOrigin}/away`);
+    const answer = await fetchSource(`${sourceOrigin}/away`, "same-origin");
     expect(elsewhereAsked - before, "the other site was contacted").toBe(0);
     expect(answer.ok).toBe(false);
     if (answer.ok) return;
@@ -93,7 +151,7 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
     // Countable, so the decision is the count and not the wording: a loop is
     // asked for at most one more time than the hops allowed.
     const before = sourceAsked;
-    const answer = await fetchSource(`${sourceOrigin}/loop`);
+    const answer = await fetchSource(`${sourceOrigin}/loop`, "same-origin");
     expect(answer.ok).toBe(false);
     expect(sourceAsked - before, "a loop was followed further than the cap").toBeLessThanOrEqual(6);
   });
@@ -101,14 +159,14 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
   it("bounds an address a source chooses, however long it makes it", async () => {
     // A `location` of 9,000 characters made a 9,111-character error, which
     // went on into a flag and an issue (Security review, 2026-09-24).
-    const refused = await fetchSource(`${sourceOrigin}/long`);
+    const refused = await fetchSource(`${sourceOrigin}/long`, "same-origin");
     expect(refused.ok).toBe(false);
     if (refused.ok) return;
     expect(refused.error.length, "the refusal quotes the whole of a page's address").toBeLessThan(400);
     expect(refused.error).toContain(elsewhereOrigin);
 
     // And the same bound on where it says it read.
-    const read = await fetchSource(`${sourceOrigin}/longway`);
+    const read = await fetchSource(`${sourceOrigin}/longway`, "same-origin");
     expect(read.ok).toBe(true);
     if (!read.ok) return;
     expect(read.from!.length, "read_at carries the whole of a page's address").toBeLessThan(400);
@@ -119,7 +177,7 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
     // undici then refuses it at request time and the thrown string — with the
     // credentials in it — became the error, with no status to say what the
     // source had answered.
-    const answer = await fetchSource(`${sourceOrigin}/credentials`);
+    const answer = await fetchSource(`${sourceOrigin}/credentials`, "same-origin");
     expect(answer.ok).toBe(false);
     if (answer.ok) return;
     expect(answer.error, "the password was printed").not.toContain("hunter2");
@@ -131,7 +189,7 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
     // The redirect path was guarded in round 5 and this one was not: undici
     // refuses `user:pass@host` at request time and `String(e)` put the
     // credentials into the error (Security review, 2026-09-24).
-    const answer = await fetchSource(`${sourceOrigin.replace("//", "//watcher:hunter2@")}/`);
+    const answer = await fetchSource(`${sourceOrigin.replace("//", "//watcher:hunter2@")}/`, "same-origin");
     expect(answer.ok).toBe(false);
     if (answer.ok) return;
     expect(answer.error, "the password was printed").not.toContain("hunter2");
@@ -142,12 +200,12 @@ describe("s34 — the fetcher will not be redirected off the site", () => {
     // It used to throw past `runWatch`, which took the reports, the state and
     // the flags for the other forty-four sources with it (Standards review,
     // 2026-09-24).
-    const answer = await fetchSource("not-an-address");
+    const answer = await fetchSource("not-an-address", "same-origin");
     expect(answer.ok, "a malformed url was treated as a reading").toBe(false);
   });
 
   it("says nothing about where it read when it read where it was asked", async () => {
-    const answer = await fetchSource(`${sourceOrigin}/`);
+    const answer = await fetchSource(`${sourceOrigin}/`, "same-origin");
     expect(answer.ok).toBe(true);
     if (!answer.ok) return;
     expect(answer.from, "an unmoved read claims to have moved").toBeUndefined();

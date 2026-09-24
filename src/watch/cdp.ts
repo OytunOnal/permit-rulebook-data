@@ -96,12 +96,13 @@ export function attach(socket: WebSocket, close: () => void): Session {
   /**
    * The one origin this tab may be told who is asking, per tab.
    *
-   * `Network.setExtraHTTPHeaders` and `setUserAgentOverride` are per-SESSION,
-   * so they identify the watch to every host a page embeds — measured
-   * 2026-09-24, a cross-origin iframe was handed both `x-source-contact` and
-   * the watch's name in the User-Agent. The fetcher only ever names itself to
-   * the source it was pointed at; this is what makes the browser tier keep
-   * the same promise.
+   * `setUserAgentOverride` is per-SESSION, so the watch's name in the
+   * User-Agent reaches every host a page embeds — measured 2026-09-24, a
+   * cross-origin iframe was handed it, along with the contact header the
+   * session used to carry as well. The fetcher only ever names itself to the
+   * source it was pointed at; this is what makes the browser tier keep the
+   * same promise, by putting the name back to plain Chrome on the way out to
+   * anybody else and adding the contact header only on the way to the source.
    */
   const identifyTo = new Map<string, string>();
   /** Requests each tab has started and not yet finished — one half of what
@@ -222,11 +223,12 @@ export function attach(socket: WebSocket, close: () => void): Session {
      * Every request the tab makes, paused just long enough to decide whether
      * this host is the one we are talking to.
      *
-     * The source's own origin is continued untouched, so it sees exactly what
-     * it saw before. Everything else — an embed, a consent widget, a font — is
-     * continued with the watch's name taken out of the User-Agent and the
-     * contact header dropped: those two say WHO is reading and WHY, and a
-     * third party the source happens to embed is owed neither.
+     * The source's own requests are continued with the watch's name already
+     * in the User-Agent and the contact header added here. Everything else —
+     * an embed, a consent widget, a font — is continued with the name taken
+     * back out and no contact header ever added: those two say WHO is reading
+     * and WHY, and a third party the source happens to embed is owed neither.
+     * Nothing is dropped off-origin, because nothing is put there.
      *
      * Every paused request is continued, including on the failure path: a
      * request left paused stops the page, and while the read's own deadline

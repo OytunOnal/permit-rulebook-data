@@ -280,7 +280,13 @@
       "strategy": "link",
       "kind": "sentinel",
       "learn_for": "recognition_de",
-      "note": "Learn link for 'where does German recognition stand'. Liveness only: the portal's own text is not our claim. Liveness is checked from wherever the watch runs, which is not where the reader sits: gesetze-im-internet.de answers CI and times out from Türkiye. A source reachable from many places beats a canonical one that is not."
+      "note": "Learn link for 'where does German recognition stand'. Liveness only: the portal's own text is not our claim. Liveness is checked from wherever the watch runs, which is not where the reader sits: gesetze-im-internet.de answers CI and times out from Türkiye. A source reachable from many places beats a canonical one that is not. This link redirects, and where to depends on who is asking: from the runner on 2026-09-24 it answered https with a 301 to plain http on the same host (run 35934301563), and from a developer machine the same day it stayed on https and landed on /cms/public/startseite. Either way the daily log carries a `read_at` line saying where a click actually went — which is the point of following it: nothing here is hashed, so nothing an on-path rewrite could touch is ever quoted, and what is watched is that a person arrives somewhere. The downgrade is the portal's choice to make and worth a reader knowing about.",
+      "history": [
+        {
+          "changed_at": "2026-09-24",
+          "note": "No change to the entry. Recorded because the run of 2026-09-24 reported it unreachable for a day: the fetch tier's same-origin redirect guard, written for readings, refused this link's 301 from https to plain http. The guard now follows the strategy — a link follows anywhere, a reading does not (s34)."
+        }
+      ]
     },
     {
       "id": "learn-18g-aufenthg",

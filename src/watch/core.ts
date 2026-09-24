@@ -5,6 +5,7 @@ import { repairKnownGlyphs, unboundedReason, type GlyphSubstitution } from "./co
 import { noticeSources, provenancedValuesOf, routeStatements, statementSources, forEachCriterion } from "../engine.js";
 import { countryVocabulary } from "../countries.js";
 import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type WatchState } from "./state.js";
+import { printableAddress, shortAddress } from "./fetch-source.js";
 import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
 /**
@@ -30,9 +31,32 @@ export type WatchStrategy = "html" | "browser" | "pdf" | "pdf-text" | "human" | 
  * 2026-09-07). One table now, and a strategy that forgets a row will not
  * compile.
  */
+/**
+ * How far a redirect may be followed, and why that is not one answer.
+ *
+ * `same-origin` is the rule for anything whose bytes become a READING: what
+ * a source redirects to is not the source, and an off-site landing — or a
+ * downgrade to plain http, where anyone on the path may rewrite the page —
+ * must not be hashed as the authority's words and checked against its quotes.
+ *
+ * `anywhere` is the rule for an entry that produces no reading. A learn link
+ * backs no value and is never compared; what is watched is that a person who
+ * clicks it arrives somewhere. Following it the way that person's browser
+ * would is the only way to learn that, and refusing a redirect they would
+ * happily take reports a working link as broken — which is what happened:
+ * `anabin.kmk.org` answers https with a 301 to plain http on the same host,
+ * and the guard written for readings turned a live government link red every
+ * morning (runner run 35934301563, 2026-09-24).
+ *
+ * The hop cap applies to both, and neither will carry credentials.
+ */
+export type RedirectPolicy = "same-origin" | "anywhere";
+
 export const STRATEGIES: Record<WatchStrategy, {
   /** Whether a pass fetches the source at all. */
   fetches: boolean;
+  /** How far a redirect may be followed on this strategy — the rule above. */
+  redirects: RedirectPolicy;
   /** Whether what came back is compared against the last snapshot. A learn
    * link is fetched and not compared: its wording may change freely, and only
    * silence is news. */
@@ -44,7 +68,7 @@ export const STRATEGIES: Record<WatchStrategy, {
   remediation: string;
 }> = {
   html: {
-    fetches: true, compares: true,
+    fetches: true, compares: true, redirects: "same-origin",
     no_text_snapshot: "html tier — no text snapshot; the source has not been fetched yet",
     remediation: "Update the dataset value(s) with quote + retrieval date; move the old value into history.",
   },
@@ -53,27 +77,32 @@ export const STRATEGIES: Record<WatchStrategy, {
     // difference is the reader and nothing else. What comes back is the page a
     // person sees rather than the shell a `fetch` is handed, so the words a
     // curator is sent to fix are the same words, found the same way.
-    fetches: true, compares: true,
+    fetches: true, compares: true, redirects: "same-origin",
     no_text_snapshot: "browser tier — no text snapshot; no browser has opened the page yet",
     remediation: "Update the dataset value(s) with quote + retrieval date; move the old value into history.",
   },
   "pdf-text": {
-    fetches: true, compares: true,
+    fetches: true, compares: true, redirects: "same-origin",
     no_text_snapshot: "pdf-text tier — no text snapshot; the source has not been fetched yet",
     remediation: "The PDF's WORDS changed, not just its bytes. Read the diff context below, then update the dataset value(s) with quote + retrieval date; move the old value into history.",
   },
   pdf: {
-    fetches: true, compares: true,
+    fetches: true, compares: true, redirects: "same-origin",
     no_text_snapshot: "pdf tier — the bytes are watched; nothing here reads the document's words",
     remediation: "PDF changed — a human must read it; no value is extracted automatically.",
   },
   link: {
-    fetches: true, compares: false,
+    // The one strategy that follows a redirect anywhere, because it is the
+    // one that is not reading anything: what it watches is whether a person
+    // who clicks arrives, and a person's browser follows.
+    fetches: true, compares: false, redirects: "anywhere",
     no_text_snapshot: "link tier — a learn link backs no value, so no quote rests on it",
     remediation: "A learn link backs no value; only silence is news here.",
   },
   human: {
-    fetches: false, compares: false,
+    // Never fetched, so the policy is a formality — the table is exhaustive
+    // on purpose, and the strict answer is the safe one to leave here.
+    fetches: false, compares: false, redirects: "same-origin",
     no_text_snapshot: "human tier — read by a person; no machine snapshot to check against",
     remediation: "Scheduled human re-verification is due. After verifying, update `last_verified` for this entry in watch/watchlist.json.",
   },
@@ -183,7 +212,12 @@ export type FetchResult =
     from?: string;
   }
   | { ok: false; status?: number; error: string };
-export type Fetcher = (url: string) => Promise<FetchResult>;
+/**
+ * What reads a source over HTTP. Takes the redirect policy rather than the
+ * entry, because that is the only thing about the entry it needs and the one
+ * thing it must not be able to get wrong by default: there is no default.
+ */
+export type Fetcher = (url: string, redirects: RedirectPolicy) => Promise<FetchResult>;
 
 /**
  * What opens a browser entry, injected beside the fetcher.
@@ -324,8 +358,19 @@ export async function runWatch(
   const nextEntries: Record<string, Snapshot> = { ...state.entries };
 
   for (const entry of watchlist.entries) {
+    /**
+     * What every report about this entry says, made once.
+     *
+     * The url is printed without its userinfo HERE, at the one place reports
+     * are made, rather than at each of the places one is printed. A report
+     * travels into a log line, a flag file and the issue that flag becomes,
+     * and a credentialled entry rode its password through all three beside
+     * the carefully sanitised error (Security review, 2026-09-24). Sanitising
+     * downstream would mean sanitising in three places and remembering it in
+     * the fourth.
+     */
     const base: Pick<WatchReport, "id" | "url" | "strategy" | "kind" | "note"> = {
-      id: entry.id, url: entry.url, strategy: entry.strategy, kind: entry.kind, note: entry.note,
+      id: entry.id, url: printableAddress(entry.url), strategy: entry.strategy, kind: entry.kind, note: entry.note,
     };
 
     if (!STRATEGIES[entry.strategy].fetches) {
@@ -342,7 +387,7 @@ export async function runWatch(
       ? openInBrowser
         ? await openInBrowser(entry)
         : { ok: false as const, error: "no browser reader: this run was given none, so the page was never opened" }
-      : await fetcher(entry.url);
+      : await fetcher(entry.url, STRATEGIES[entry.strategy].redirects);
     if (!fetched.ok) {
       // A blocked or failed fetch must never read as "no change".
       reports.push({ ...base, outcome: "unreachable", error: fetched.error });
@@ -653,11 +698,23 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
     });
   });
   const credentialled = watchlist.entries.flatMap((e) => {
+    /**
+     * The entry is named; the address never is, beyond its origin.
+     *
+     * This is the one place in this file that handles a string chosen to be
+     * withheld, so it prints as little of it as it can. Both branches were
+     * wrong at first: the failure branch printed the raw url — the very
+     * string that may carry the name and password this field exists to keep
+     * out of the log — and `new URL("://watcher:hunter2@host/")` throws, so
+     * that was the likely path for one to arrive by; and the success branch
+     * printed the whole pathname, which is the page's to choose and so
+     * unbounded (Security review, 2026-09-24). A curator has the entry id,
+     * which is what they edit the watchlist by.
+     */
     let parsed: URL;
-    try { parsed = new URL(e.url); } catch { return [`${e.id}: ${e.url} is not an address`]; }
-    // The address is named, the credentials never are.
+    try { parsed = new URL(e.url); } catch { return [`${e.id}: its url is not an address`]; }
     return parsed.username || parsed.password
-      ? [`${e.id}: ${parsed.origin}${parsed.pathname} carries a name and password`]
+      ? [`${e.id}: ${shortAddress(parsed.origin)} carries a name and password`]
       : [];
   });
   return {

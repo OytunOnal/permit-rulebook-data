@@ -58,7 +58,43 @@ export function shortAddress(address: string): string {
     : address;
 }
 
-export const fetchSource: Fetcher = async (url) => {
+/**
+ * The refusal both readers give an address carrying a name and password, or
+ * `null` when there is nothing to refuse.
+ *
+ * One owner, because it is one rule: no source this project reads needs
+ * credentials, and a reader that sends them is a reader that can leak them.
+ * The fetcher met it first; the browser reader asks the same question here
+ * rather than spelling a second opinion of it.
+ *
+ * A malformed address is not this function's fault to report — it has its own
+ * refusal, in each reader.
+ */
+export function refusedForCredentials(url: string): string | null {
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { return null; }
+  return parsed.username || parsed.password
+    ? "the entry address carries a name and password, which this watch will not send"
+    : null;
+}
+
+/**
+ * An address as it may be written down: no name, no password, bounded.
+ *
+ * Everything a report, a log line, a flag or an issue prints about where a
+ * source lives goes through here. The credentials come out; the path and the
+ * query stay, because a report that named a different address than the entry
+ * would be a report about nothing — EUR-Lex's entry IS its query string.
+ */
+export function printableAddress(url: string): string {
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { return "(not an address)"; }
+  parsed.username = "";
+  parsed.password = "";
+  return shortAddress(parsed.href);
+}
+
+export const fetchSource: Fetcher = async (url, redirects) => {
   // Inside the try, because `new URL` throws on a malformed one. Outside it,
   // one bad entry took the whole pass down with it — no reports, no state and
   // no flags for the other forty-four sources, where it had been one
@@ -76,8 +112,8 @@ export const fetchSource: Fetcher = async (url) => {
      * gate refuses such an entry at `npm run check` too — this is the floor
      * under that, for a url that reaches here by any other road.
      */
-    if (entry.username || entry.password)
-      return { ok: false, error: "the entry address carries a name and password, which this watch will not send" };
+    const credentials = refusedForCredentials(url);
+    if (credentials) return { ok: false, error: credentials };
     const asked = entry.origin;
     let target = url;
     // One deadline for the source, shared by every hop it makes.
@@ -141,9 +177,14 @@ export const fetchSource: Fetcher = async (url) => {
             status: res.status,
             error: `HTTP ${res.status} to an address carrying a name and password, which this watch will not send`,
           };
-        // The status reported is the REDIRECT's own, because that is the
-        // answer this source gave; the far server was never asked.
-        if (next.origin !== asked)
+        // Where a reading is at stake, what the source redirects to is not
+        // the source. The status reported is the REDIRECT's own, because that
+        // is the answer this source gave; the far server was never asked.
+        //
+        // An entry that produces no reading is followed the way a person's
+        // browser follows — the policy comes from the strategy table, and the
+        // reason is written there.
+        if (redirects === "same-origin" && next.origin !== asked)
           return {
             ok: false,
             status: res.status,

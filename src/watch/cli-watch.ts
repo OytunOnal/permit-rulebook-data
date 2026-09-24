@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { mergeTargetedRun, runWatch, STRATEGIES, type BrowserReader, type Fetcher, type FetchResult, type WatchReport, type WatchState, type Watchlist } from "./core.js";
 import { openBrowserReader } from "./browser.js";
-import { fetchSource } from "./fetch-source.js";
+import { fetchSource, printableAddress } from "./fetch-source.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -85,15 +85,15 @@ function flagFile(report: WatchReport, today: string) {
  */
 const sayWhereItRead = (entry: { id: string; url: string }, result: FetchResult) => {
   if (!result.ok || !result.from || result.from === entry.url) return;
-  log("info", "watch:read_at", { id: entry.id, asked: entry.url, read_at: result.from });
+  log("info", "watch:read_at", { id: entry.id, asked: printableAddress(entry.url), read_at: result.from });
 };
 
 /** Which entry an address belongs to, so a `read_at` names the entry a
  * curator knows it by rather than repeating the url twice. */
 const entryAt = new Map(watchlist.entries.map((e) => [e.url, e.id]));
 
-const readSourceOverHttp: Fetcher = async (url) => {
-  const result = await fetchSource(url);
+const readSourceOverHttp: Fetcher = async (url, redirects) => {
+  const result = await fetchSource(url, redirects);
   sayWhereItRead({ id: entryAt.get(url) ?? url, url }, result);
   return result;
 };

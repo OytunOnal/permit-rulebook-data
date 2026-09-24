@@ -161,6 +161,37 @@ describe("s34 — a watched address may not carry a name and password", () => {
   it("says nothing about the watchlist this repository ships", () => {
     expect(checkCoverage(dataset, watchlist).urls_with_credentials).toEqual([]);
   });
+
+  it("names the entry and not the address when the url is malformed as well", () => {
+    // `new URL("://watcher:hunter2@host/")` throws, so the failure branch is
+    // the likely way a credentialled address arrives — and it was printing
+    // the raw url, which is the one string this check exists to withhold.
+    const mangled: Watchlist = {
+      entries: [{ ...htmlEntry, url: "://watcher:hunter2@example.invalid/rules", kind: "sentinel" }],
+    };
+    const said = JSON.stringify(checkCoverage(dataset, mangled));
+    expect(said, "the password was printed").not.toContain("hunter2");
+    expect(said, "the name was printed").not.toContain("watcher");
+  });
+
+  it("keeps a credentialled entry's password out of every report it makes", async () => {
+    // A report travels into a log line, a flag file and the issue that flag
+    // becomes. It is sanitised where reports are made, so that no printer
+    // downstream has to remember to (Security review, 2026-09-24).
+    const credentialled: WatchEntry = {
+      ...htmlEntry, id: "credentialled", url: "https://watcher:hunter2@example.invalid/rules",
+    };
+    const { reports } = await runWatch(
+      { entries: [credentialled] }, emptyState,
+      async (url, redirects) => fetchSource(url, redirects), "2026-09-24",
+    );
+    const said = JSON.stringify(reports);
+    expect(said, "the password rode in a report").not.toContain("hunter2");
+    expect(said, "the name rode in a report").not.toContain("watcher");
+    // The report still says which page it is about.
+    expect(reports[0]!.url).toContain("example.invalid/rules");
+    expect(reports[0]!.outcome).toBe("unreachable");
+  });
 });
 
 describe("s34 — one bad source does not take the pass down with it", () => {
@@ -174,7 +205,7 @@ describe("s34 — one bad source does not take the pass down with it", () => {
     const good: Fetcher = async () => ({ ok: true, body: encode("<p>the authority's words</p>") });
     const { reports, nextState } = await runWatch(
       { entries: [mangled, htmlEntry] }, emptyState,
-      async (url) => (url === "not-an-address" ? fetchSource(url) : good(url)),
+      async (url, redirects) => (url === "not-an-address" ? fetchSource(url, redirects) : good(url, redirects)),
       "2026-09-24",
     );
     expect(reports.map((r) => [r.id, r.outcome])).toEqual([
