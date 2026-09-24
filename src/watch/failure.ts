@@ -12,6 +12,14 @@
  * classes a step that found no field and a navigation it refused, and the
  * rule that says which is which must be one rule. `core.ts` would make the
  * browser files import the engine to throw a failure.
+ *
+ * **Where a failure's text ends up, and why every bound in here exists.** An
+ * error travels into a log line, into a flag file, and into the issue that
+ * flag becomes — three places a person reads and a fourth nobody controls.
+ * So what goes into one is what this watch decided, never what a source or a
+ * socket wrote: the kind of an address and not the address, a cause's code
+ * and not its message, a page's own words bounded. Every printer in this
+ * package answers to that sentence, and points here rather than repeating it.
  */
 
 /**
@@ -105,8 +113,8 @@ export function failureOfStatus(status: number): FailureClass {
  * that and nothing else. The code underneath (`ECONNRESET`, `ENOTFOUND`,
  * `UND_ERR_CONNECT_TIMEOUT`) is what tells them apart.
  *
- * The MESSAGE is not taken: undici writes the address into it, and an error
- * travels into a log line, a flag file and the issue that flag becomes.
+ * The MESSAGE is not taken: undici writes the address into it, and the
+ * message is one of the three places this file opens by naming.
  *
  * Neither is anything that is not shaped like a code. `cause.code` is a field
  * name, and a field name is not a promise: a thrower that is not Node can put

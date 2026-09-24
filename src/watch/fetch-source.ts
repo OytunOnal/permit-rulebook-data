@@ -260,8 +260,8 @@ export function refusedTarget(next: URL, entryHost: string): string | null {
  * at the connection (scenario point 2).
  *
  * The refusal names the KIND and not the address. What a name stands for is
- * the source's business and this watch's finding; it is not something to
- * write into a log line, a flag file and the issue that flag becomes.
+ * the source's business and this watch's finding, and not something to write
+ * where a failure's text ends up (`failure.ts`'s opening sentence).
  */
 export function refusedResolution(name: string, addresses: string[], entryHost: string): string | null {
   for (const address of addresses) {
@@ -381,10 +381,10 @@ export function addressWithoutCredentials(url: string): string {
 /**
  * The same address as a person should see it: credentials out, and bounded.
  *
- * Printers use this — a log line, a flag file, the issue a flag becomes. The
- * credentials are removed once, where the report is made; the shortening
- * belongs here, because it is about what is readable and not about what is
- * safe.
+ * Printers use this, and what a printer may print is `failure.ts`'s opening
+ * sentence. The credentials are removed once, where the report is made; the
+ * shortening belongs here, because it is about what is readable and not about
+ * what is safe.
  */
 export function printableAddress(url: string): string {
   return shortAddress(addressWithoutCredentials(url));
@@ -618,8 +618,8 @@ export const fetchSource = (async (
      * timeout — three of the runs s35 was written for say exactly that
      * and nothing else, and the queue line guessed "timeouts" because the log
      * could not say. The cause's CODE is appended and its MESSAGE never is:
-     * the message is where the address is written, and an error travels into a
-     * log line, a flag file and the issue that flag becomes.
+     * the message is where the address is written (`failure.ts`'s opening
+     * sentence).
      *
      * s36 moved this tier off `fetch` and kept the wrapper by hand
      * (`request.ts`), so the sentence a curator reads — and the one

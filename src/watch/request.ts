@@ -52,9 +52,9 @@ export interface Asking {
  * The error the budget running out produces, spelled as `fetch` spelled it.
  *
  * `AbortSignal.timeout` rejected with exactly this — a `TimeoutError`
- * `DOMException` whose text is Node's own — and that text travels into a log
- * line, a flag file and the issue a flag becomes. The move off `fetch` is a
- * change of mechanism and not a change of what a curator reads.
+ * `DOMException` whose text is Node's own — and that text travels everywhere
+ * `failure.ts`'s opening sentence says an error travels. The move off `fetch`
+ * is a change of mechanism and not a change of what a curator reads.
  */
 function budgetSpent(): DOMException {
   return new DOMException("The operation was aborted due to timeout", "TimeoutError");
@@ -66,7 +66,8 @@ function budgetSpent(): DOMException {
  * `fetch` wrapped every one of them as `TypeError: fetch failed` with the real
  * error underneath as `cause`, and `causeCode` prints the CODE and never the
  * message — because a raw Node error writes the address into its message
- * (`connect ECONNREFUSED 10.0.0.5:443`) and an error travels into an issue.
+ * (`connect ECONNREFUSED 10.0.0.5:443`), and where a failure's text ends up is
+ * `failure.ts`'s opening sentence.
  * Keeping the wrapper keeps both: the address stays out, and `fetch failed
  * (ECONNRESET)` is the same sentence in `CONTRIBUTING.md`, in the state file
  * and in every flag written before this slice.
@@ -133,8 +134,7 @@ type Unpacking = (
  * source rather than at us.
  *
  * The sentence names the bound, which is ours, and nothing of the body, which
- * is the source's — an error travels into a log line, a flag file and the
- * issue that flag becomes (`failure.ts`).
+ * is the source's — `failure.ts`'s opening sentence.
  */
 function pastTheBound(): ReadFailure {
   return new ReadFailure(
