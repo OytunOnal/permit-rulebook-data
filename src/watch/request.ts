@@ -126,11 +126,13 @@ type Unpacking = (
  * source rather than at us.
  *
  * The sentence names the bound, which is ours, and nothing of the body, which
- * is the source's — `failure.ts`'s opening sentence.
+ * is the source's — `failure.ts`'s opening sentence. It names WHERE the bound
+ * was passed as well, because the two places are different facts about the
+ * source: a page that inflates past it, and a page that simply is past it.
  */
-function pastTheBound(): ReadFailure {
+function pastTheBound(measured: "unpacked" | "on the wire"): ReadFailure {
   return new ReadFailure(
-    `the body unpacks to more than ${MOST_OF_A_BODY} bytes, which is no page this watch reads`,
+    `the body is more than ${MOST_OF_A_BODY} bytes ${measured}, which is no page this watch reads`,
     "refused-by-source",
   );
 }
@@ -148,7 +150,7 @@ function unpacking(how: Unpacking, bytes: Buffer): Promise<Uint8Array> {
     how(bytes, { maxOutputLength: MOST_OF_A_BODY }, (error, output) => {
       if (error) {
         const code = (error as NodeJS.ErrnoException).code;
-        no(code === "ERR_BUFFER_TOO_LARGE" ? pastTheBound() : error);
+        no(code === "ERR_BUFFER_TOO_LARGE" ? pastTheBound("unpacked") : error);
         return;
       }
       whole(new Uint8Array(output));
@@ -301,11 +303,12 @@ export function ask(target: URL, asking: Asking): Promise<Answer> {
            * cost twice, once in `parts` and once in the concatenation
            * (Security review, 2026-09-24).
            *
-           * Counted on the wire, which is never larger than the page it
-           * becomes: a body already past the bound compressed is past it
-           * unpacked too, so the gate is a floor under the decoders rather
-           * than a second opinion about them. The cost is an addition and a
-           * comparison per chunk.
+           * Counted on the wire, which is where a bound that must hold
+           * under every encoding can be counted: anything that compresses at
+           * all is smaller here than it will be, so this is a floor under the
+           * decoders rather than a second opinion about them, and a body
+           * already past the bound unencoded is past it however it is read.
+           * The cost is an addition and a comparison per chunk.
            *
            * The socket is destroyed rather than read to its end: a source
            * that answers a bound with more bytes is not owed the rest of the
@@ -316,7 +319,7 @@ export function ask(target: URL, asking: Asking): Promise<Answer> {
             arrived += chunk.byteLength;
             if (arrived > MOST_OF_A_BODY) {
               parts.length = 0;
-              failed(pastTheBound());
+              failed(pastTheBound("on the wire"));
               req.destroy();
               return;
             }
