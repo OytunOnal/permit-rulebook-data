@@ -443,17 +443,32 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
     expect(new TextDecoder().decode(answer.body.slice(0, SENTENCE.length))).toBe(SENTENCE);
   });
 
+  /**
+   * Every number in this case is measured, and the machine is named.
+   *
+   * Unpacking runs on libuv's thread pool — four threads unless the
+   * environment says otherwise — and waits its turn there like anything else.
+   * Filling the pool puts the budget's deadline between the last byte
+   * arriving and the page existing, which is the one window a deadline
+   * released on `end` leaves open.
+   *
+   * Measured 2026-09-24 on the builder's machine (Windows 11, 16 logical
+   * cores, Node v24.20.0): four parallel `pbkdf2` of 400,000 sha512 rounds
+   * free the pool at 257 ms, while the fixture's headers arrive at 16 ms and
+   * its last byte at 17 ms behind that same held pool. A 150 ms budget
+   * therefore falls between the body and the page, which is what this case
+   * needs — and the whole case costs about a quarter of a second rather than
+   * the 1,137 ms four rounds of 2,000,000 took.
+   *
+   * A slower machine (CI is `ubuntu-24.04`, 2 vCPU) makes the pool work take
+   * LONGER, which widens the window rather than closing it; what it risks is
+   * duration, so the timeout is explicit — 10 s, about forty times the
+   * measurement above — and a runner that slow fails here by saying so.
+   */
   it("does not let a body that unpacks slowly outlive the budget", async () => {
-    /**
-     * Unpacking runs on libuv's thread pool — four threads unless the
-     * environment says otherwise — and waits its turn there like anything
-     * else. Filling the pool with work that takes about a second puts the
-     * budget's deadline between the last byte arriving and the page existing,
-     * which is the one window a deadline released on `end` leaves open.
-     */
     const pool = Number(process.env.UV_THREADPOOL_SIZE ?? 4);
     const busy = Array.from({ length: pool }, () => new Promise<void>((done) => {
-      pbkdf2("hold the pool", "s36", 2_000_000, 64, "sha512", () => { done(); });
+      pbkdf2("hold the pool", "s36", 400_000, 64, "sha512", () => { done(); });
     }));
     const agent = new Agent();
     try {
@@ -471,7 +486,7 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
       agent.destroy();
       await Promise.all(busy);
     }
-  });
+  }, 10_000);
 });
 
 describe("s36 — a read that ends badly still says what the source said", () => {
