@@ -25,15 +25,26 @@ import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
  *
  * **The address behind a browser entry's name is Chrome's to resolve.** The
  * fetch tier resolves a name itself, judges every address the resolver
- * returns and hands the socket the one it approved (s36, `fetch-source.ts`).
- * This tier cannot: Chrome does its own DNS, inside its own process, and
- * takes no lookup hook — so what this reader gates is what it can gate, and
- * it is the same two gates it has always had: the entry address is refused
- * before Chrome is asked (`refusedAddress`), and a navigation that leaves the
- * entry's origin is refused when it happens (`cdp.ts`). The seven browser
- * entries are fixed pages on public hosts a curator chose, and that — not a
- * check in this file — is what stands between this tier and an address
- * nobody meant to visit.
+ * answers with, and hands the connection back the whole judged list — so
+ * nothing unjudged can be connected to (s36, `fetch-source.ts`). This tier
+ * cannot: Chrome does its own DNS, inside its own process, and takes no
+ * lookup hook.
+ *
+ * So what this reader gates is what it can gate, and it is the same two
+ * gates it has always had, stated for what they are:
+ *
+ * - the entry ADDRESS is refused before Chrome is asked when it is not an
+ *   address at all, carries a name and password, or is on a scheme that is
+ *   not a page (`refusedAddress`) — and that is the whole of it: what KIND
+ *   of address a browser entry names is not asked here, because the fetch
+ *   tier's own entry check is the fetch tier's (`fetchSource`);
+ * - a navigation that leaves the entry's origin is refused when it happens
+ *   (`cdp.ts`).
+ *
+ * The browser entries — seven of the watchlist's 46, counted 2026-09-24 as
+ * those with `strategy: "browser"` — are fixed pages on public hosts a
+ * curator chose, and that, not a check in this file, is what stands between
+ * this tier and an address nobody meant to visit.
  *
  * **Where things are.** This was one file until 2026-09-24, by then five jobs
  * deep, so it is four — split along what each part answers to:

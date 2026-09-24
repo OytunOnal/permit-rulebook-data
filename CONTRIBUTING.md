@@ -264,10 +264,10 @@ are the whole of why a morning is the colour it is:
 
 **A source is refused by what it resolves to, not only by what it is called.**
 The fetch tier asks the system resolver for a host's addresses, classifies
-every one of them, and hands the connection the single address it approved: a
-name that answers `10.0.0.5`, or the address a cloud runner keeps its
-credentials behind, is refused before a packet leaves, and one refused address
-refuses the whole name. The rule is the relative one it always was — a source
+every one of them, and hands the connection back the whole judged list, so
+nothing unjudged can be connected to: a name that answers `10.0.0.5`, or the
+address a cloud runner keeps its credentials behind, is refused before a
+packet leaves, and one refused address refuses the whole name. The rule is the relative one it always was — a source
 may not send this watch somewhere it could not have gone itself, so an entry
 that IS on loopback may stay there — and the refusal names the kind of address,
 never the address. The browser tier is the exception, and says so in its own
