@@ -1,5 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { mergeTargetedRun, runWatch, STRATEGIES, type Fetcher, type WatchReport, type WatchState, type Watchlist } from "./core.js";
+import { mergeTargetedRun, runWatch, STRATEGIES, type BrowserReader, type Fetcher, type FetchResult, type WatchReport, type WatchState, type Watchlist } from "./core.js";
+import { openBrowserReader } from "./browser.js";
+import { fetchSource, printableAddress } from "./fetch-source.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -34,44 +36,6 @@ if (only) {
   watchlist.entries = wanted;
 }
 
-const fetcher: Fetcher = async (url) => {
-  try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      // Who is asking, and where to find whoever sent it — but the address
-      // travels beside the name rather than inside it.
-      //
-      // The name used to carry the repository in parentheses, the way a
-      // crawler conventionally does, and `inclusion.gob.es` answered 403 to
-      // exactly that: the watch failed every day from 2026-09-11 to 15 and
-      // Spain's salary threshold went unread for eight days while the site
-      // still said "re-read daily". Measured on 2026-09-15, same host, same
-      // minute: the full string 403, the string without its trailing purpose
-      // word 403, `Mozilla/5.0 (compatible; …; +https://…)` 403 — and
-      // `permit-rulebook-watch/0.1` **200**, 299,066 bytes. The filter objects
-      // to a URL inside the User-Agent, not to a reader that names itself. So
-      // the name stays, unique enough to find this repository by, and the link
-      // moves to a header of its own, which the same host serves happily
-      // (data #18).
-      headers: {
-        "user-agent": "permit-rulebook-watch/0.1",
-        "x-source-contact": "https://github.com/OytunOnal/permit-rulebook-data",
-      },
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!res.ok) return { ok: false, status: res.status, error: `HTTP ${res.status}` };
-    const body = new Uint8Array(await res.arrayBuffer());
-    // An empty body is not a page, whatever the status line says. EUR-Lex
-    // answers this fetcher with `202 Accepted` and nothing at all — a bot
-    // challenge — and `res.ok` is true for it, so the pass would have recorded
-    // a blank snapshot as a successful read and reported "unchanged" ever
-    // after (measured 2026-09-10, s8).
-    if (body.byteLength === 0) return { ok: false, status: res.status, error: `HTTP ${res.status} with an empty body` };
-    return { ok: true, body };
-  } catch (e) {
-    return { ok: false, error: String(e) };
-  }
-};
 
 /**
  * What a curator does about this flag. The advice per strategy lives in one
@@ -92,7 +56,7 @@ function flagFile(report: WatchReport, today: string) {
   const body = [
     `# Watch flag: ${report.id} — ${report.outcome}`,
     "",
-    `- url: ${report.url}`,
+    `- url: ${printableAddress(report.url)}`,
     `- kind: ${report.kind}`,
     `- date: ${today}`,
     report.old_hash ? `- old: ${report.old_hash}` : "",
@@ -108,13 +72,65 @@ function flagFile(report: WatchReport, today: string) {
   writeFileSync(new URL(name, dir), body + "\n");
 }
 
+/**
+ * Where the reading was actually taken, when that is not where it was asked
+ * for — on either tier, by the same rule.
+ *
+ * Another ORIGIN is refused outright by both readers. This is the journey
+ * inside one: a redirect the fetcher followed, a form that posts back to a
+ * sub-path, a script that swaps the document. It is allowed, and a curator
+ * should be able to see it without opening a browser — which is what the
+ * comment on `from` in `core.ts` promises, and what only the browser tier
+ * was doing until 2026-09-24.
+ */
+const sayWhereItRead = (entry: { id: string; url: string }, result: FetchResult) => {
+  if (!result.ok || !result.from || result.from === entry.url) return;
+  log("info", "watch:read_at", { id: entry.id, asked: printableAddress(entry.url), read_at: result.from });
+};
+
+/** Which entry an address belongs to, so a `read_at` names the entry a
+ * curator knows it by rather than repeating the url twice. */
+const entryAt = new Map(watchlist.entries.map((e) => [e.url, e.id]));
+
+const readSourceOverHttp: Fetcher = async (url, redirects) => {
+  const result = await fetchSource(url, redirects);
+  sayWhereItRead({ id: entryAt.get(url) ?? url, url }, result);
+  return result;
+};
+
+/**
+ * The browser half of the run: one Chrome, opened by the first entry that
+ * needs one and closed on the way out, with what each page cost written down.
+ *
+ * The cost is logged rather than measured afterwards because it is the number
+ * the slice is answerable for — seven rendered pages inside a job that used to
+ * take about two minutes — and a number nobody can read from the run's own log
+ * is a number nobody checks (s34 point 6).
+ */
+const browser = openBrowserReader();
+const openInBrowser: BrowserReader = async (entry, redirects) => {
+  const started = Date.now();
+  const result = await browser.read(entry, redirects);
+  log(result.ok ? "info" : "error", "watch:browser-read", {
+    id: entry.id, seconds: Number(((Date.now() - started) / 1000).toFixed(1)),
+    steps: entry.steps?.length ?? 0, ok: result.ok,
+    // What naming ourselves to the source alone costs this page.
+    ...browser.lastCost(),
+  });
+  sayWhereItRead(entry, result);
+  return result;
+};
+
 const today = new Date().toISOString().slice(0, 10);
-const { reports, nextState } = await runWatch(watchlist, state, fetcher, today);
+const { reports, nextState } = await runWatch(watchlist, state, readSourceOverHttp, today, openInBrowser);
+await browser.close();
 
 let unreachable = 0;
 for (const r of reports) {
   const level = r.outcome === "unreachable" ? "error" : r.outcome === "unchanged" || r.outcome === "ok" ? "info" : "warn";
-  log(level, `watch:${r.outcome}`, { id: r.id, url: r.url, old: r.old_hash, new: r.new_hash, error: r.error });
+  log(level, `watch:${r.outcome}`, {
+    id: r.id, url: printableAddress(r.url), old: r.old_hash, new: r.new_hash, error: r.error,
+  });
   if (r.outcome === "unreachable") unreachable++;
   if (r.outcome === "changed" || r.outcome === "reminder-due") flagFile(r, today);
 }

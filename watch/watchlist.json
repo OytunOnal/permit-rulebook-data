@@ -52,7 +52,7 @@
       "kind": "sentinel",
       "max_age_days": 90,
       "last_verified": "2026-09-02",
-      "note": "Official statute source blocks automated fetchers but is human-reachable (verified via VPN 2026-09-02). Quarterly human re-verification of all buzer-mirrored quotes."
+      "note": "Official statute source blocks automated fetchers but is human-reachable (verified via VPN 2026-09-02). Quarterly human re-verification of all buzer-mirrored quotes. Re-stated 2026-09-23 (s34): this one is a geography, not a client. The page is refused to the runner's address and served to a person on a VPN, so a headless browser on the runner reads it no better than the fetcher does, and the browser strategy of s34 leaves it where it is."
     },
     {
       "id": "fr-f16922-talent",
@@ -162,20 +162,84 @@
     {
       "id": "nl-ind-orientation-year",
       "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
-      "strategy": "human",
+      "strategy": "browser",
       "kind": "value-source",
-      "max_age_days": 90,
-      "last_verified": "2026-09-16",
-      "note": "Backs eight quotes on nl-orientation-year: the three study-programme limbs of its criteria and the five statements (no second orientation year, the research finished within three years, English where the institution was abroad, the Turkish-citizens caveat and the MVV precondition). Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 16 September 2026. The slice marker had reported this page unreachable since the form arrived, so its snapshot was the old page and its quotes still \"verified\" against it. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did."
+      "note": "Backs eight quotes on nl-orientation-year: the three study-programme limbs of its criteria and the five statements (no second orientation year, the research finished within three years, English where the institution was abroad, the Turkish-citizens caveat and the MVV precondition). What a fetch gets: measured 2026-09-16 and again 2026-09-23, HTTP 200 and a ~700-character shell between the page's lede and its footer — the intro, the form and the footer menu, none of the quoted sentences. Browser tier since 2026-09-23; the `steps` below answer the form. Why a fetch cannot, what the form is, and what this slice got wrong on the way: `data/verify-s5e.md` §3. Read from the runner 2026-09-23 (runs 35917878664 and 35926499955). Sliced from the Requirements heading to the footer. Page \"Last update\": 16 September 2026. And a red morning on a browser entry is the cost this tier was taken on: see CONTRIBUTING.md, \"A browser entry can fail where a human one could not\".",
+      "slice": {
+        "from": "Requirements",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "history": [
+        {
+          "changed_at": "2026-09-23",
+          "note": "Strategy moved from `human` to `browser`, the verification age removed, `steps` added, and the slice's `from` marker moved down from the page's lede to the Requirements heading — a marker the form-only page does not carry (s34; `data/verify-s5e.md` §3 says why)."
+        }
+      ],
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Turkish"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
+        }
+      ]
     },
     {
       "id": "nl-ind-blue-card",
       "url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
-      "strategy": "human",
+      "strategy": "browser",
       "kind": "value-source",
-      "max_age_days": 90,
-      "last_verified": "2026-09-16",
-      "note": "Backs seven quotes on nl-blue-card: the six-month contract condition, the diploma leg, the five-year and the IT 3-in-7 experience rules, and the six-month-contract, regulated-profession and MVV preconditions. Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 15 June 2026. The slice marker had reported this page unreachable since the form arrived, so its snapshot was the old page and its quotes still \"verified\" against it. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did."
+      "note": "Backs seven quotes on nl-blue-card: the six-month contract condition, the diploma leg, the five-year and the IT 3-in-7 experience rules, and the six-month-contract, regulated-profession and MVV preconditions. What a fetch gets: measured 2026-09-16 and again 2026-09-23, HTTP 200 and a ~700-character shell between the page's lede and its footer — the intro, the form and the footer menu, none of the quoted sentences. Browser tier since 2026-09-23; the `steps` below answer the form. Why a fetch cannot, what the form is, and what this slice got wrong on the way: `data/verify-s5e.md` §3. Read from the runner 2026-09-23 (runs 35917878664 and 35926499955). Sliced from the Requirements heading to the footer. Page \"Last update\": 15 June 2026. And a red morning on a browser entry is the cost this tier was taken on: see CONTRIBUTING.md, \"A browser entry can fail where a human one could not\".",
+      "slice": {
+        "from": "Requirements",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "history": [
+        {
+          "changed_at": "2026-09-23",
+          "note": "Strategy moved from `human` to `browser`, the verification age removed, `steps` added, and the slice's `from` marker moved down from the page's lede to the Requirements heading — a marker the form-only page does not carry (s34; `data/verify-s5e.md` §3 says why)."
+        }
+      ],
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Turkish"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
+        }
+      ]
     },
     {
       "id": "eu-countries-list",
@@ -216,7 +280,13 @@
       "strategy": "link",
       "kind": "sentinel",
       "learn_for": "recognition_de",
-      "note": "Learn link for 'where does German recognition stand'. Liveness only: the portal's own text is not our claim. Liveness is checked from wherever the watch runs, which is not where the reader sits: gesetze-im-internet.de answers CI and times out from Türkiye. A source reachable from many places beats a canonical one that is not."
+      "note": "Learn link for 'where does German recognition stand'. Liveness only: the portal's own text is not our claim. Liveness is checked from wherever the watch runs, which is not where the reader sits: gesetze-im-internet.de answers CI and times out from Türkiye. A source reachable from many places beats a canonical one that is not. This link redirects, and from the runner on 2026-09-24 it answered https with a 301 to plain http on the same host (run 35934301563) — which is why the redirect policy is the strategy's to set: nothing here is hashed, so nothing an on-path rewrite could touch is ever quoted, and what is watched is that a person arrives somewhere. Where a click lands on any given morning is in that morning's log, as a `read_at` line, rather than written down here where it would rot.",
+      "history": [
+        {
+          "changed_at": "2026-09-24",
+          "note": "No change to the entry. Recorded because the run of 2026-09-24 reported it unreachable for a day: the fetch tier's same-origin redirect guard, written for readings, refused this link's 301 from https to plain http. The guard now follows the strategy — a link follows anywhere, a reading does not (s34)."
+        }
+      ]
     },
     {
       "id": "learn-18g-aufenthg",
@@ -314,11 +384,9 @@
     {
       "id": "nl-ind-highly-skilled-migrant",
       "url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant",
-      "strategy": "human",
+      "strategy": "browser",
       "kind": "value-source",
-      "max_age_days": 90,
-      "last_verified": "2026-09-16",
-      "note": "Backs twelve quotes on the two highly-skilled-migrant routes (six each on nl-hsm-30plus and nl-hsm-under30): the recognised-sponsor contract condition, the market-rate precondition, the recognised-sponsor and BIG-register preconditions, the intra-corporate-transferee caveat and the MVV precondition. Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 11 September 2026 — the run of 2026-09-16 read the form's shell as a change and put all twelve quotes into `missing`; the watchlist history below records the move. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did.",
+      "note": "Backs twelve quotes on the two highly-skilled-migrant routes (six each on nl-hsm-30plus and nl-hsm-under30): the recognised-sponsor contract condition, the market-rate precondition, the recognised-sponsor and BIG-register preconditions, the intra-corporate-transferee caveat and the MVV precondition. What a fetch gets: measured 2026-09-16 and again 2026-09-23, HTTP 200 and a ~700-character shell between the page's lede and its footer — the intro, the form and the footer menu, none of the quoted sentences. Browser tier since 2026-09-23; the `steps` below answer the form. Why a fetch cannot, what the form is, and what this slice got wrong on the way: `data/verify-s5e.md` §3. Read from the runner 2026-09-15 (the bot-wall measurement, DECISIONS) and again 2026-09-23 (runs 35917878664 and 35926499955). Sliced from the intra-corporate-transferee sentence — which this entry quotes, and which sits above the Requirements heading the other four start at — to the footer. Page \"Last update\": 11 September 2026. And a red morning on a browser entry is the cost this tier was taken on: see CONTRIBUTING.md, \"A browser entry can fail where a human one could not\".",
       "history": [
         {
           "changed_at": "2026-09-08",
@@ -327,26 +395,122 @@
         {
           "changed_at": "2026-09-16",
           "note": "Strategy moved from `html` (sliced from the lede to the footer) to `human`, and the slice removed. The page became a \"Your situation\" form whose result has no address, so the run of 2026-09-16 read a ~700-character shell as a change and put every quote on both HSM routes into `missing`. The `changed` flag of that day is the form arriving, not the IND rewriting a requirement; the sentences stand as read, dated, and a person confirms them quarterly (s14)."
+        },
+        {
+          "changed_at": "2026-09-23",
+          "note": "Strategy moved from `human` to `browser`, the verification age removed, `steps` added, and the slice's `from` marker moved down from the page's lede to the intra-corporate-transferee sentence — a marker the form-only page does not carry (s34; `data/verify-s5e.md` §3 says why)."
+        }
+      ],
+      "slice": {
+        "from": "Do you have an employment contract with a company located outside the EU?",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Turkish"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
         }
       ]
     },
     {
       "id": "nl-ind-ict",
       "url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu",
-      "strategy": "human",
+      "strategy": "browser",
       "kind": "value-source",
-      "max_age_days": 90,
-      "last_verified": "2026-09-16",
-      "note": "Backs six quotes on nl-ict: the three-months-outside-the-EU condition, the market-rate salary rule, and the three-months, manager-specialist-or-trainee, protected-profession and MVV preconditions. Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 15 June 2026. The slice marker had reported this page unreachable since the form arrived, so its snapshot was the old page and its quotes still \"verified\" against it. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did."
+      "note": "Backs six quotes on nl-ict: the three-months-outside-the-EU condition, the market-rate salary rule, and the three-months, manager-specialist-or-trainee, protected-profession and MVV preconditions. What a fetch gets: measured 2026-09-16 and again 2026-09-23, HTTP 200 and a ~700-character shell between the page's lede and its footer — the intro, the form and the footer menu, none of the quoted sentences. Browser tier since 2026-09-23; the `steps` below answer the form. Why a fetch cannot, what the form is, and what this slice got wrong on the way: `data/verify-s5e.md` §3. Read from the runner 2026-09-23 (runs 35917878664 and 35926499955). Sliced from the Requirements heading to the footer. Page \"Last update\": 15 June 2026. And a red morning on a browser entry is the cost this tier was taken on: see CONTRIBUTING.md, \"A browser entry can fail where a human one could not\".",
+      "slice": {
+        "from": "Requirements",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "history": [
+        {
+          "changed_at": "2026-09-23",
+          "note": "Strategy moved from `human` to `browser`, the verification age removed, `steps` added, and the slice's `from` marker moved down from the page's lede to the Requirements heading — a marker the form-only page does not carry (s34; `data/verify-s5e.md` §3 says why)."
+        }
+      ],
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Turkish"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
+        }
+      ]
     },
     {
       "id": "nl-ind-researcher",
       "url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
-      "strategy": "human",
+      "strategy": "browser",
       "kind": "value-source",
-      "max_age_days": 90,
-      "last_verified": "2026-09-16",
-      "note": "Backs five quotes on nl-researcher: the contract-or-host-agreement condition, the other-income caveat, and the recognised-sponsor, doctorate-degree and MVV preconditions. Human tier because the requirements are rendered behind a \"Your situation\" form (\"We will first ask you a few questions\": your nationality, whether you already hold a valid Dutch residence permit, and whether you held one that expired less than two years ago while you still live in the Netherlands) and the result has no address of its own — the URL does not change when the form is answered, so there is nothing a fetcher could ask for. Measured 2026-09-16 with this watch's client and with a browser User-Agent: both HTTP 200, both a ~700-character shell between the page's lede and its footer — the intro and the form, none of the quoted sentences. Page \"Last update\": 18 August 2026. The slice marker had reported this page unreachable since the form arrived, so its snapshot was the old page and its quotes still \"verified\" against it. What would move it back is a headless-browser strategy that answers the form (data #17; headless Chrome reads ind.nl: measured yes). Until then a person reads it quarterly, and `last_verified` is the day they did."
+      "note": "Backs five quotes on nl-researcher: the contract-or-host-agreement condition, the other-income caveat, and the recognised-sponsor, doctorate-degree and MVV preconditions. What a fetch gets: measured 2026-09-16 and again 2026-09-23, HTTP 200 and a ~700-character shell between the page's lede and its footer — the intro, the form and the footer menu, none of the quoted sentences. Browser tier since 2026-09-23; the `steps` below answer the form. Why a fetch cannot, what the form is, and what this slice got wrong on the way: `data/verify-s5e.md` §3. Read from the runner 2026-09-23 (runs 35917878664 and 35926499955). Sliced from the Requirements heading to the footer. Page \"Last update\": 18 August 2026. And a red morning on a browser entry is the cost this tier was taken on: see CONTRIBUTING.md, \"A browser entry can fail where a human one could not\".",
+      "slice": {
+        "from": "Requirements",
+        "to": "Cookies Proclaimer Privacy Sitemap"
+      },
+      "history": [
+        {
+          "changed_at": "2026-09-23",
+          "note": "Strategy moved from `human` to `browser`, the verification age removed, `steps` added, and the slice's `from` marker moved down from the page's lede to the Requirements heading — a marker the form-only page does not carry (s34; `data/verify-s5e.md` §3 says why)."
+        }
+      ],
+      "steps": [
+        {
+          "step": "select",
+          "field": "What is your nationality?",
+          "option": "Turkish"
+        },
+        {
+          "step": "answer",
+          "question": "Do you already have a valid Dutch residence permit?",
+          "answer": "no"
+        },
+        {
+          "step": "answer",
+          "question": "Did you have a Dutch residence permit and did it expire less than 2 years ago?",
+          "answer": "no"
+        },
+        {
+          "step": "press",
+          "button": "View information"
+        },
+        {
+          "step": "expand"
+        }
+      ]
     },
     {
       "id": "ind-turkish-citizens",
@@ -377,16 +541,24 @@
       "kind": "value-source",
       "max_age_days": 90,
       "last_verified": "2026-09-10",
-      "note": "Backs the Conseil d'État sentence behind the Algerian talent notice (2e et 7e ch. réunies, 2 mars 2026, n° 500835). Human tier because the site answers this watch's fetcher with HTTP 403 (measured 2026-09-10, with and without a trailing slash); the page is reachable by a person, and one read it on 2026-09-10. There is no mirror to fall back to, so the quote gate reports this sentence as unverifiable rather than counting it verified — which is the honest answer, not a gap. Re-read quarterly: what would move is not the judgment, which is final, but Legifrance's URL for it. The same page opens in a real browser with the sentence in place (2026-09-10): the limit is this fetcher, not the page."
+      "note": "Backs the Conseil d'État sentence behind the Algerian talent notice (2e et 7e ch. réunies, 2 mars 2026, n° 500835). Human tier because the site answers this watch's fetcher with HTTP 403 (measured 2026-09-10, with and without a trailing slash); the page is reachable by a person, and one read it on 2026-09-10. There is no mirror to fall back to, so the quote gate reports this sentence as unverifiable rather than counting it verified — which is the honest answer, not a gap. Re-read quarterly: what would move is not the judgment, which is final, but Legifrance's URL for it. The same page opens in a real browser with the sentence in place (2026-09-10): the limit is this fetcher, not the page. Re-stated 2026-09-23 (s34): headless Chrome from GitHub's runner was measured against this page on 2026-09-15 and did NOT pass — a Cloudflare challenge, which is a wall against the client and not against the address. So the browser strategy that took the other seven off this tier does not take this one, and a person still reads it quarterly. It is now the only sentence in the dataset on the human tier."
     },
     {
       "id": "eur-lex-blue-card-directive",
       "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883",
-      "strategy": "human",
+      "strategy": "browser",
       "kind": "value-source",
-      "max_age_days": 90,
-      "last_verified": "2026-09-10",
-      "note": "Backs Article 3(1) of Directive (EU) 2021/1883, the scope sentence that puts every third-country national inside the Blue Card. Human tier because EUR-Lex answers this watch's fetcher with HTTP 202 and an EMPTY body — a bot challenge that a naive reader would record as a successful read of a blank page. Measured 2026-09-10 on this URL, on /EN/TXT/ without HTML, and on the ELI alias; all three behave the same. A person read it on 2026-09-10. Re-read quarterly: a directive's text is amended by another directive, and the consolidated edition is what would move. The same page opens in a real browser with the sentence in place (2026-09-10): the limit is this fetcher, not the page."
+      "note": "Backs Article 3(1) of Directive (EU) 2021/1883, the scope sentence that puts every third-country national inside the Blue Card. Browser tier because EUR-Lex answers this watch's fetcher with HTTP 202 and an EMPTY body — a bot challenge that a naive reader would record as a successful read of a blank page (measured 2026-09-10 on this URL, on /EN/TXT/ without HTML and on the ELI alias; all three behave the same, and re-measured 2026-09-23: still 202, still nothing). A browser passes the challenge: measured from the runner 2026-09-15 (DECISIONS) and again here on 2026-09-23, headless Chrome renders the consolidated text with the Article 3 sentence in place. No steps: the page renders its own text. Sliced to Article 3 alone — from its heading to Article 4's — because that is the article this dataset quotes, and the other fifty would each flag a directive amended somewhere that changes nothing here. And a red morning on a browser entry is the cost this tier was taken on: see CONTRIBUTING.md, \"A browser entry can fail where a human one could not\". Read from the runner 2026-09-15 (the bot-wall measurement, DECISIONS) and again 2026-09-23 (runs 35917878664 and 35926499955).",
+      "slice": {
+        "from": "Article 3 Scope",
+        "to": "Article 4 More favourable"
+      },
+      "history": [
+        {
+          "changed_at": "2026-09-23",
+          "note": "Entry moved from `human` to `browser` and the verification age removed, and the entry gained a slice (s34). Its own note of 2026-09-10 said the limit was this fetcher and not the page; the watch now uses the client the page answers."
+        }
+      ]
     },
     {
       "id": "fr-f2215-certificat-algerien",
@@ -506,17 +678,23 @@
     {
       "id": "de-bmi-chancenkarte",
       "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html",
-      "strategy": "human",
+      "strategy": "browser",
       "kind": "sentinel",
-      "max_age_days": 90,
-      "last_verified": "2026-09-17",
-      "note": "The Opportunity Card's \"Official page\" (de-chancenkarte.info_url) since 2026-09-17: the Federal Ministry of the Interior's own English notice on the card, where the route's quotes and the reader's door were on different sites before (data #13). Backs no value — the route's sentences are quoted from the Cairo leaflet and the statute — so it is a sentinel: what this entry watches is that the page a reader is sent to still exists. Human tier because the page is served only after a cookie round-trip: measured 2026-09-17 with this watch's client (and with a browser User-Agent, and with none), the URL answers HTTP 307 to /cookie-check-d973 and sets an AL_CHK-S cookie; the check answers 307 back to the page, which is HTTP 200 (64,498 bytes, English, static) only when the cookie comes with the request. This fetcher follows redirects and keeps no cookie jar, so it lands on an HTTP 400 \"Zugriff nicht möglich\" — an html entry would have failed the daily run every day, and a link entry the same. A person opens it quarterly and confirms the sentinel sentence is still there: \"The opportunity card is a new type of residence permit for those coming to Germany to look for work.\" `last_verified` is the day they did. What would move it to the machine is a fetcher that carries the cookie back (one hop, no JavaScript).",
+      "note": "The Opportunity Card's \"Official page\" (de-chancenkarte.info_url) since 2026-09-17: the Federal Ministry of the Interior's own English notice on the card, where the route's quotes and the reader's door were on different sites before (data #13). Backs no value — the route's sentences are quoted from the Cairo leaflet and the statute — so it is a sentinel: what this entry watches is that the page a reader is sent to still exists, carrying \"The opportunity card is a new type of residence permit for those coming to Germany to look for work.\" Browser tier because the page is served only after a cookie round-trip: measured 2026-09-17 with this watch's client, the URL answers HTTP 307 to /cookie-check-d973 and sets an AL_CHK-S cookie, and this fetcher keeps no cookie jar, so it lands on an HTTP 400 \"Zugriff nicht möglich\" (re-measured 2026-09-23: still HTTP 400, 858 bytes). A browser keeps the cookie without being asked — measured 2026-09-23, headless Chrome renders the notice, 125 kB of HTML and the sentinel sentence in place. No steps: nothing has to be answered or opened, only kept. Sliced to the notice's own body, from its requirements heading to the end of the article, so the ministry's rotating press-release teasers above it do not flag a page that has not moved. And a red morning on a browser entry is the cost this tier was taken on: see CONTRIBUTING.md, \"A browser entry can fail where a human one could not\". Read from the runner 2026-09-23 (runs 35917878664 and 35926499955).",
       "history": [
         {
           "changed_at": "2026-09-17",
           "note": "Entry born with the move of de-chancenkarte.info_url from https://handbookgermany.de/en/opportunity-card to this page (data #13, s29). The old page was a federally funded guide, not the authority; handbookgermany.de was never watched, so this line is the only dated record of the move — a route's info_url is a bare string in the schema, with no history of its own. Candidates read the same day and passed over: make-it-in-germany.com (a bot-check shell on a plain GET), digital.diplo.de (a JavaScript shell), bamf.de and the Foreign Office (no Chancenkarte page found, 404), buzer.de (the statute, already the route's source)."
+        },
+        {
+          "changed_at": "2026-09-23",
+          "note": "Strategy moved from `human` to `browser` and the verification age removed, and the entry gained a slice (s34). The cookie round-trip this fetcher cannot make is one a browser makes without being asked; the note's own \"what would move it to the machine\" line of 2026-09-17 is what this slice did."
         }
-      ]
+      ],
+      "slice": {
+        "from": "Requirements for the opportunity card",
+        "to": "All news"
+      }
     }
   ]
 }

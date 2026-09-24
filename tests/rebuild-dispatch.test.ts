@@ -57,6 +57,61 @@ function step(yaml: string, name: string): string {
   return lines.slice(start, end).join("\n");
 }
 
+/**
+ * The `workflow_dispatch` inputs and what each one defaults to.
+ *
+ * A small reader rather than a YAML parser, because this package ships one
+ * dependency and it is not a YAML parser. It reads the block by its own
+ * structure — indentation relative to `inputs:` — so a reordering or a
+ * reindentation of the file does not fail a test about which switches exist.
+ */
+function dispatchInputs(yaml: string): Record<string, string> {
+  const lines = yaml.split("\n");
+  const start = lines.findIndex((line) => /^\s*inputs:\s*$/.test(line));
+  expect(start, "the workflow declares no dispatch inputs").toBeGreaterThan(-1);
+  const indent = lines[start]!.search(/\S/);
+  const found: Record<string, string> = {};
+  let current: string | undefined;
+  for (const line of lines.slice(start + 1)) {
+    if (line.trim() === "" || /^\s*#/.test(line)) continue;
+    const depth = line.search(/\S/);
+    if (depth <= indent) break;
+    const name = /^\s*([A-Za-z_][\w-]*):\s*$/.exec(line);
+    if (name && depth === indent + 2) { current = name[1]!; found[current] = ""; continue; }
+    const fallback = /^\s*default:\s*(\S+)\s*$/.exec(line);
+    if (fallback && current) found[current] = fallback[1]!;
+  }
+  return found;
+}
+
+/** One step's `if:` expression, without the `${{ }}` a workflow may wrap it in. */
+function conditionOf(yaml: string, name: string): string {
+  const body = step(yaml, name);
+  const condition = /^\s*if:\s*(.+)$/m.exec(body);
+  expect(condition, `${name} has no condition`).not.toBeNull();
+  return condition![1]!.trim().replace(/^\$\{\{/, "").replace(/\}\}$/, "").trim();
+}
+
+/**
+ * Would that condition fire, given these facts?
+ *
+ * Enough of GitHub's expression language for the conditions this workflow
+ * writes: `&&` of terms, each either `!cancelled()` or a path compared with
+ * `==`/`!=` to a literal. A fact nobody supplies is absent — which is what
+ * `github.event.inputs.x` IS on a schedule, and the reason every guard in this
+ * file is written `!= 'false'`.
+ */
+function fires(condition: string, facts: Record<string, string>): boolean {
+  return condition.split("&&").map((t) => t.trim()).every((term) => {
+    if (term === "!cancelled()") return true;
+    const compared = /^([\w.]+)\s*(==|!=)\s*'([^']*)'$/.exec(term);
+    expect(compared, `this test cannot read the term ${term}`).not.toBeNull();
+    const [, path, operator, value] = compared!;
+    const actual = facts[path!];
+    return operator === "==" ? actual === value : actual !== value;
+  });
+}
+
 describe("a new dataset state wakes the site", () => {
   const dispatch = step(watch, "Tell the site to rebuild");
 
@@ -132,12 +187,16 @@ describe("a new dataset state wakes the site", () => {
         .toBeLessThan(at("Tell the site to rebuild"));
     }
 
-    // And the issues step asks nothing of the dispatch: it is conditioned on
-    // the flags alone.
+    // And the issues step asks nothing of the step that can fail on the token:
+    // it is conditioned on the flags, and since s34 also on the switch that
+    // says this run records nothing at all — never on the dispatch or its
+    // secret. (The two assertions below read `not.toContain("dispatch")` until
+    // 2026-09-23; the word is now a dispatch INPUT's name and appears in this
+    // step's own condition, so the check names the two things it always meant.)
     const issueStep = step(watch, "Open issues for new flags only");
-    expect(issueStep).toContain("if: steps.newflags.outputs.files != ''");
+    expect(issueStep).toContain("steps.newflags.outputs.files != ''");
     expect(issueStep).not.toContain("DISPATCH_TOKEN");
-    expect(issueStep).not.toContain("dispatch");
+    expect(issueStep).not.toContain("steps.persist");
 
     // Being last means an earlier failure would skip it, and a committed state
     // still has to reach the site: it runs unless the run was cancelled.
@@ -196,6 +255,59 @@ describe("a red run is never silent", () => {
     // The old shape, which broke on an untracked directory and on a rename.
     expect(step).not.toContain("git status --porcelain watch/flags");
     expect(step).not.toContain("awk '{print $2}'");
+  });
+
+  it("leaves the schedule's path exactly as it was when the dispatch switches were added", () => {
+    // s34 gave `workflow_dispatch` two booleans — `commit` and `dispatch` — so
+    // the watch could be run once to be timed and once to write baselines on a
+    // branch. The daily run passes no inputs at all, and the way that goes
+    // wrong is silent: on a `schedule` event `github.event.inputs` is null, and
+    // `inputs.commit == false` is TRUE for a null, so the obvious spelling
+    // would have stopped the morning run ever committing again and nothing
+    // would have said so.
+    //
+    // The decision, then: every condition that reads a dispatch input must be
+    // written so that the absent value takes the ACTING branch. That is what is
+    // checked — the shape of each guard, not the sentence any of them is in.
+    const guards = [...watch.matchAll(/github\.event\.inputs\.(\w+)\s*(==|!=)\s*'([^']*)'/g)]
+      .filter((m) => !/^\s*#/.test(watch.slice(watch.lastIndexOf("\n", m.index!) + 1, m.index!)));
+    expect(guards.length, "no step reads a dispatch input").toBeGreaterThan(0);
+    for (const [whole, input, operator, value] of guards)
+      expect(
+        `${operator} ${value}`,
+        `${whole} — a null input (the schedule) does not take the acting branch of this guard`,
+      ).toBe("!= false");
+    // And both switches are declared with the daily run's own behaviour as
+    // their default, so a hand dispatch that changes nothing behaves as today.
+    // The decision, not the layout: which inputs exist and what each defaults
+    // to. How they are indented, what order they are written in and how many
+    // lines they take are the file's business.
+    expect(dispatchInputs(watch)).toEqual({ commit: "true", dispatch: "true" });
+    for (const input of Object.keys(dispatchInputs(watch)))
+      expect(guards.some((g) => g[1] === input), `${input} is declared and never read`).toBe(true);
+  });
+
+  it("cannot tell the site to rebuild from anywhere but master", () => {
+    // A `workflow_dispatch` on a branch with commit=true pushes state to that
+    // branch, and this step would then tell the site to pin it — and the
+    // site's handler checks only that the sha is forty hex characters before
+    // it deploys and writes it into `data.lock`. This slice's own baseline
+    // runs were one untouched input away from pinning the live site to data
+    // that was not on master (Security review, 2026-09-24). The input is a
+    // switch a person can forget; the ref is not.
+    //
+    // Asked of the condition itself rather than of its wording: the same four
+    // facts, run through it, in the shapes that matter.
+    const when = conditionOf(watch, "Tell the site to rebuild");
+    const committed = { "steps.persist.outputs.committed": "true" };
+    expect(fires(when, { "github.ref": "refs/heads/master", ...committed }),
+      "the daily run on master does not dispatch").toBe(true);
+    expect(fires(when, { "github.ref": "refs/heads/s34-browser-strategy", ...committed }),
+      "a branch run dispatches").toBe(false);
+    expect(fires(when, { "github.ref": "refs/heads/master", "github.event.inputs.dispatch": "false", ...committed }),
+      "dispatch=false is ignored").toBe(false);
+    expect(fires(when, { "github.ref": "refs/heads/master" }),
+      "a run that committed nothing still dispatches").toBe(false);
   });
 
   it("opens or updates one issue when the run itself fails, with the run's link", () => {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
+import { fetchSource } from "../src/watch/fetch-source.js";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { htmlToText, normalize } from "../src/watch/normalize.js";
@@ -473,10 +476,23 @@ describe("the highly-skilled-migrant slice", () => {
     + " And are you going to be transferred as a manager, specialist or trainee?"
     + " Then you are an intra corporate transferee and other requirements apply to you.";
 
-  it("is gone, with the page: a human-tier entry watches no region and keeps no snapshot", () => {
-    expect(entry.strategy).toBe("human");
-    expect(entry.slice).toBeUndefined();
-    expect(shippedState.entries["nl-ind-highly-skilled-migrant"]).toBeUndefined();
+  it("is back, with the page — and starts at the sentence, not at the lede", () => {
+    // INVERTED BY s34, 2026-09-23. This case read "is gone, with the page: a
+    // human-tier entry watches no region and keeps no snapshot" — the state
+    // s14 left. The page is read in a browser now, so the slice is back.
+    //
+    // It does NOT go back to the lede, which is where a person moved it on
+    // 2026-09-08 (the case below still holds that record and the reason). The
+    // form-only page ind.nl serves this watch carries the lede and the footer
+    // both, so a slice bounded by them matches a page with no requirement on
+    // it — which is how the first runner read of this slice recorded 892
+    // characters of form as a clean baseline. The marker is the quoted
+    // transferee sentence instead: it is the first thing the rendered list
+    // carries, it is above the Requirements heading the other four start at,
+    // and no shell has it.
+    expect(entry.strategy).toBe("browser");
+    expect(entry.slice?.from).toBe(SENTENCE.slice(0, entry.slice!.from.length));
+    expect(entry.steps?.length, "the form is not answered").toBeGreaterThan(0);
   });
 
   it("records that a person moved the marker, so the flag is not read as the page changing", () => {
@@ -491,6 +507,14 @@ describe("the highly-skilled-migrant slice", () => {
     expect(formed, "a strategy change with no history entry").toBeDefined();
     expect(formed!.note).toMatch(/form/i);
     expect(formed!.note).toMatch(/human/);
+  });
+
+  it("records the way back to the machine, so the flag of 2026-09-23 is not read as one either", () => {
+    // Every strategy change on this entry leaves a dated line. Three now: the
+    // marker a person moved, the form arriving, and the browser taking it back.
+    const browser = entry.history?.find((h) => h.changed_at === "2026-09-23");
+    expect(browser, "a strategy change with no history entry").toBeDefined();
+    expect(browser!.note).toMatch(/browser/);
   });
 
   it("the quote the widened slice exists for is in the dataset, dated the day it was read", () => {
@@ -835,19 +859,41 @@ describe("a tooltip's placeholder is not part of the page's words", () => {
  * and put where to find you beside it (data #18, 2026-09-15).
  */
 describe("the watch says who is asking", () => {
-  const source = readFileSync(new URL("../src/watch/cli-watch.ts", import.meta.url), "utf8");
-  const headers = source.slice(source.indexOf("const fetcher"), source.indexOf("signal:"));
+  /**
+   * Asked of the request the fetcher actually sends, not of the file it is
+   * written in.
+   *
+   * These three read `cli-watch.ts` as text until 2026-09-24 and broke the
+   * day the fetcher moved into a module of its own — which is the failure
+   * mode the no-source-grep rule exists for. A server that writes down what
+   * arrived answers the same three questions and cannot be fooled by where
+   * the code lives.
+   */
+  const sent = async (): Promise<Record<string, string | string[] | undefined>> => {
+    let seen: Record<string, string | string[] | undefined> = {};
+    const server = createServer((req, res) => {
+      seen = req.headers;
+      res.writeHead(200, { "content-type": "text/html" });
+      res.end("<p>ok</p>");
+    });
+    await new Promise<void>((resolve) => { server.listen(0, "127.0.0.1", () => resolve()); });
+    try {
+      const answer = await fetchSource(`http://127.0.0.1:${(server.address() as AddressInfo).port}/`, "same-origin");
+      expect(answer.ok, "the fetcher could not read its own test server").toBe(true);
+      return seen;
+    } finally { server.close(); }
+  };
 
-  it("names itself", () => {
-    expect(headers).toContain("permit-rulebook-watch");
+  it("names itself", async () => {
+    expect(String((await sent())["user-agent"])).toContain("permit-rulebook-watch");
   });
 
-  it("carries no address inside the name", () => {
-    const ua = /"user-agent":\s*"([^"]*)"/.exec(headers)?.[1] ?? "";
-    expect(ua, "the User-Agent").not.toMatch(/https?:\/\//);
+  it("carries no address inside the name", async () => {
+    expect(String((await sent())["user-agent"]), "the User-Agent").not.toMatch(/https?:\/\//);
   });
 
-  it("still says where to find whoever sent it", () => {
-    expect(headers).toContain("https://github.com/OytunOnal/permit-rulebook-data");
+  it("still says where to find whoever sent it", async () => {
+    expect(String((await sent())["x-source-contact"]))
+      .toBe("https://github.com/OytunOnal/permit-rulebook-data");
   });
 });

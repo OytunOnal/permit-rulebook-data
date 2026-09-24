@@ -224,19 +224,23 @@ describe("s8 — the new sources are watched and quote-checked like every other 
       expect(watchlist.entries.find((e) => e.id === id), id).toBeDefined();
   });
 
-  it("declares the two sources no fetcher here can reach, rather than pretending to check them", () => {
-    // Legifrance answers this watch with HTTP 403 and EUR-Lex with a 202 and
-    // an empty body (both measured 2026-09-10). The honest tier for a page a
-    // person can read and a machine cannot is the one the statute book already
-    // uses — and the quote gate must SAY so rather than counting them verified.
-    for (const id of ["legifrance-ce-algerian-titles", "eur-lex-blue-card-directive"]) {
-      const entry = watchlist.entries.find((e) => e.id === id)!;
-      expect(entry.strategy, id).toBe("human");
-      expect(entry.kind, id).toBe("value-source");
-      expect(entry.last_verified, id).toBe("2026-09-10");
-    }
+  it("declares the source no client here can reach, rather than pretending to check it", () => {
+    // NARROWED BY s34, 2026-09-23. This case read "declares the two sources no
+    // fetcher here can reach" and asserted the human strategy and the
+    // 2026-09-10 read date for BOTH. EUR-Lex's 202-with-an-empty-body is a
+    // challenge a real browser passes, so the directive is a browser entry now
+    // and its sentence is verified against a rendered snapshot — the half of
+    // the promise `tests/s34.test.ts` took over. Legifrance's 403 is a wall a
+    // browser met too (Cloudflare, from the runner, 2026-09-15), so the
+    // Conseil d'État sentence is still the gate's honest "I cannot check
+    // this", and that is what this case keeps.
+    const legifrance = watchlist.entries.find((e) => e.id === "legifrance-ce-algerian-titles")!;
+    expect(legifrance.strategy).toBe("human");
+    expect(legifrance.kind).toBe("value-source");
+    expect(legifrance.last_verified).toBe("2026-09-10");
     const unverifiable = checkQuotes(dataset, watchlist, state).unverifiable.map((u) => u.source_url);
-    for (const url of [COUNCIL_SOURCE, DIRECTIVE_SOURCE]) expect(unverifiable, url).toContain(url);
+    expect(unverifiable).toContain(COUNCIL_SOURCE);
+    expect(unverifiable, "the directive is read by a browser now").not.toContain(DIRECTIVE_SOURCE);
   });
 
   it("slices the page it can read to the enumeration the notice reports, re-baselined in the same change", () => {

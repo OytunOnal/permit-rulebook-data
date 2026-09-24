@@ -50,6 +50,15 @@ blank snapshot and reported "unchanged" ever after. The fetcher now refuses an
 empty body (`src/watch/cli-watch.ts`), and both entries are declared
 `strategy: "human"`, `kind: "value-source"` on the watchlist, re-read quarterly.
 
+> **HALF CLOSED — 2026-09-23 (s34).** EUR-Lex left this tier: a browser passes
+> its 202 challenge, so `eur-lex-blue-card-directive` is a `browser` entry and
+> its sentence is machine-verified every morning. Legifrance did not: headless
+> Chrome from GitHub's runner met a Cloudflare challenge there on 2026-09-15,
+> which is a wall against the client and not against the address, so the
+> Conseil d'État sentence below stays with a person, quarterly — the **one**
+> sentence left on the human tier. Nothing here is deleted; the EUR-Lex
+> subsection below stays as the record of its last human read, on 2026-09-10.
+
 ### Conseil d'État — `notice:fr-dz-talent-open-question`
 
 https://www.legifrance.gouv.fr/ceta/id/CETATEXT000053612496
@@ -303,10 +312,13 @@ list is the one a first-time applicant from outside the EU sees; the sentences
 below were read from that list on the dates given, when the page still carried
 it without a form.
 
-**The road back** is a headless-browser strategy that answers the form for the
-watch (data #17). The one measurement it is gated on has been taken: headless
-Chrome reads ind.nl. Until it exists, `last_verified` on each entry is the day
-a person last read the list, and `max_age_days: 90` is the reminder.
+**The road back** was a headless-browser strategy that answers the form for
+the watch (data #17), and it landed on 2026-09-23 (s34). The recipe in the
+paragraph above is no longer instructions for a person: it is the five
+entries' `steps`, performed every morning. It stays written here because it is
+the record of how the list was reached on the dates beside each sentence
+below, and because it is what a person would do if they ever had to check the
+watch's reading by hand.
 
 **A pass:** the sentence appears in the rendered requirement list, word for
 word. **A fail:** the sentence has moved or been reworded — that is a value
@@ -481,6 +493,43 @@ Page "Last update": 18 August 2026. 5 quotes.
       sentence and confirm it word for word: "A valid provisional residence
       permit (MVV) is needed for this application"
 
+> **CLOSED — 2026-09-23 (s34).** These five pages moved to the `browser` watch
+> strategy. The watch opens them in headless Chrome, answers the form with the
+> recipe below — it is now the entry's own `steps`, in the watchlist, in a
+> vocabulary the coverage gate checks — and reads the requirement list that
+> renders. All thirty-eight sentences verify against a snapshot again, machine
+> read, and **are not re-verified by hand**. Nothing here is deleted: the list
+> stays as the record of the last human read, on 2026-09-16, and the dates
+> beside each sentence are the dates it was read. The next human read, which
+> had been due on 2026-12-15, is not due.
+>
+> **What the form is**, read in a real browser and then driven: the nationality
+> field is a typeahead whose list holds nationality ADJECTIVES — the option is
+> *Turkish*, not *Türkiye* — filtering on what is typed and rendering its
+> suggestions as links; the two permit questions are native radios styled as a
+> segmented pair, where the visible label is what a person hits and the third
+> question appears only once the second is answered; *View information* is a
+> submit button that appears only once the third is. The **"Show details"**
+> disclosure below the list is opened by the `expand` step and, measured
+> 2026-09-23, holds none of the thirty-eight: the sliced text is identical with
+> the step and without it. The step is kept as the guard it was written to be.
+>
+> **Two errors the build made here, recorded rather than smoothed over.** Read
+> from a developer machine that day, these pages showed no form at all — the
+> requirement list rendered unasked — and the build concluded the form was gone
+> and declared no steps. ind.nl serves the list unasked to a client it
+> recognises and the form to one that names itself, and the watch is the
+> second kind; the runner rendered the form on all five. That error was caught
+> by the second: the slice markers of the no-steps attempt were the page's own
+> lede and its footer, which the form-only page carries BOTH of, so the
+> runner's first baselines were 892 characters of form recorded as a clean
+> read of a page whose every quoted sentence was missing. A marker a shell can
+> match turns a failed read into a green one. The `from` marker now starts
+> below the form — `Requirements` on four; on the highly-skilled-migrant page
+> the intra-corporate-transferee sentence, which is quoted and sits above that
+> heading — and `tests/s34.test.ts` keeps the shell the runner rendered and
+> checks that no marker of the five can match it.
+
 ## 4. What did not need a human
 
 The scenario expected the German hosts, the Spanish UGE and the client-rendered
@@ -556,6 +605,12 @@ keeps no cookie jar, so it lands on an **HTTP 400** "Zugriff nicht möglich" —
 on the html tier the daily run would have failed every day. The road back to
 the machine is a fetcher that returns the cookie on the next hop (one hop, no
 JavaScript) — a smaller step than the headless browser data #17 asks for.
+
+> **CLOSED — 2026-09-23 (s34).** `de-bmi-chancenkarte` moved to the `browser`
+> watch strategy: a browser makes the cookie round-trip without being asked,
+> so the watch confirms the sentinel sentence every morning and **no person
+> re-reads it by hand**. Nothing here is deleted — it stays as the record of
+> the read of 2026-09-17, and of why a fetcher could not make it.
 
 ### Launch of opportunity card — `de-chancenkarte` (info page)
 
