@@ -2,6 +2,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { chromePath, openBrowserReader } from "../src/watch/browser.js";
+import { MOST_OF_AN_ADDRESS } from "../src/watch/fetch-source.js";
 import { runWatch, type Fetcher, type WatchEntry } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 
@@ -1176,6 +1177,28 @@ for (var i = 0; i < 12; i++) {
       // opens anything, so there is no request to carry the credentials.
       expect(metAtSource.length - before, "the source was contacted anyway").toBe(0);
     } finally { await reader.close(); }
+  });
+
+  it("bounds the address it reports back, on the branch that does not check the origin", async () => {
+    // The `anywhere` branch of the browser's origin check returns an address
+    // straight from the page, and a page can make one as long as it likes.
+    // No browser entry takes that branch today, which is exactly how a bound
+    // goes missing — so it is pinned here, at the call site, rather than by
+    // asking the helper it calls (Standards review, 2026-09-25).
+    served = `<!doctype html><html><body>
+<p>Lede: what this permit is for.</p>
+<footer>Cookies Proclaimer</footer>
+<script>history.pushState({}, "", "/" + "a".repeat(9000));</script>
+</body></html>`;
+    const reader = openBrowserReader();
+    try {
+      const answer = await reader.read(entry({ steps: [], slice: undefined }), "anywhere");
+      expect(answer.ok, answer.ok ? "" : answer.error).toBe(true);
+      if (!answer.ok) return;
+      expect(answer.from!.length, "the address the page chose was reported whole")
+        .toBeLessThanOrEqual(MOST_OF_AN_ADDRESS + `… (${answer.from!.length} characters)`.length + 16);
+      expect(answer.from, "the reading does not say it was shortened").toContain("characters)");
+    } finally { await reader.close(); served = fixture(); }
   });
 
   it("does not carry one page's interception counts onto the next page's line", async () => {

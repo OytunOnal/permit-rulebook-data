@@ -119,10 +119,10 @@ export function attach(socket: WebSocket, close: () => void): Session {
    * two entries have already moved close enough to it to be worth watching
    * (s34, 2026-09-25).
    *
-   * `paused` counts requests this driver paused and let go again; `pausedMs`
-   * is the time they spent waiting on it, summed. Neither counts a request
-   * that was already gone when the driver reached it, because nothing was
-   * waiting on that one.
+   * `paused` counts every request this driver was handed to decide about,
+   * including one that turned out to be gone by the time it was let go.
+   * `pausedMs` counts only the ones that were let go successfully, since a
+   * request nobody received spent no time waiting on us.
    */
   const interceptions = new Map<string, { paused: number; pausedMs: number }>();
   const costOf = (sessionId: string) => {

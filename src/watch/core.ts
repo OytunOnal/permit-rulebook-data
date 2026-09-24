@@ -742,7 +742,8 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
   const unchecked = watchlist.entries
     .filter((e) => (datasetUrls.has(e.url) || e.kind === "value-source")
       && STRATEGIES[e.strategy].fetches && !STRATEGIES[e.strategy].compares)
-    .map((e) => `${e.id}: a dataset value rests on it, and the ${e.strategy} strategy fetches but never compares`);
+    .map((e) => `${e.id}: ${datasetUrls.has(e.url) ? "a dataset value rests on it" : "it is declared a value-source"}`
+      + `, and the ${e.strategy} strategy fetches but never compares`);
   return {
     ok: missing.length === 0 && orphans.length === 0 && unbounded.length === 0
       && steps.length === 0 && credentialled.length === 0 && unchecked.length === 0,

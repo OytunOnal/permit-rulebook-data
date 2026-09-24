@@ -50,7 +50,7 @@ const MOST_HOPS = 5;
  * 2026-09-24). The same bound the browser tier puts on the same kind of
  * string.
  */
-const MOST_OF_AN_ADDRESS = 200;
+export const MOST_OF_AN_ADDRESS = 200;
 
 export function shortAddress(address: string): string {
   return address.length > MOST_OF_AN_ADDRESS
@@ -71,10 +71,25 @@ export function shortAddress(address: string): string {
  * the path and not only by the source, so the REQUEST is the harm even where
  * the bytes are never hashed.
  *
- * What it can and cannot see is worth stating: a literal address is judged
- * here, and a name is not, because judging a name means resolving it and then
- * hoping the resolution that mattered was the one we saw. A source that
- * points a hostname at a private address gets through this.
+ * What it can and cannot see is worth stating. A literal address is judged,
+ * and so are the two names that can only mean this machine — `localhost` and
+ * anything under it. Every other name is taken at face value, because judging
+ * one means resolving it and then hoping the resolution that mattered was the
+ * one we saw. A source that points a hostname at a private address gets
+ * through this.
+ *
+ * **The boundary, drawn once — sınır, 2026-09-24.** What these rules read: a
+ * literal IPv4 in any spelling the URL parser normalises; a literal IPv6 with
+ * `::` expanded, an embedded dotted quad taken as its last two groups, and an
+ * IPv4-mapped address judged by the IPv4 rule on the address it embeds; and
+ * the two names that can only mean this machine. What they do not read: the
+ * transition and legacy prefixes that embed or stand for another address —
+ * NAT64 `64:ff9b::/96`, 6to4 `2002::/16`, the compat form `::/96`, site-local
+ * `fec0::/10` — and any name that resolves to a private address. Those belong
+ * to a check made at resolve time, which this project has not got and which
+ * is a `later` candidate. Inside that boundary a corner is a lie told by an
+ * address, not a finding against this code: the line is here, and it is drawn
+ * where a spelling stops being decidable without asking the network.
  *
  * The rule is relative, not absolute: a source may not send the watch
  * somewhere it could not have gone itself. A public source redirecting into
@@ -82,7 +97,7 @@ export function shortAddress(address: string): string {
  * test fixture, a mirror on a machine's own loopback — may redirect within
  * its own kind.
  */
-type AddressKind = "loopback" | "link-local" | "private" | "public";
+export type AddressKind = "loopback" | "link-local" | "private" | "public";
 
 const NAMED_LOOPBACK = [/^localhost$/i, /\.localhost$/i];
 
@@ -132,7 +147,7 @@ function ipv4Kind(address: string): AddressKind {
   return IPV4_KINDS.find(([, shape]) => shape.test(address))?.[0] ?? "public";
 }
 
-function addressKind(hostname: string): AddressKind {
+export function addressKind(hostname: string): AddressKind {
   if (NAMED_LOOPBACK.some((shape) => shape.test(hostname))) return "loopback";
   const groups = hextets(hostname);
   if (!groups) return ipv4Kind(hostname);

@@ -1,7 +1,9 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { fetchSource, refusedTarget, shortAddress } from "../src/watch/fetch-source.js";
+import {
+  addressKind, fetchSource, MOST_OF_AN_ADDRESS, refusedTarget, shortAddress,
+} from "../src/watch/fetch-source.js";
 
 /**
  * s34 — the fetch tier follows a redirect around a site, and not off it.
@@ -51,14 +53,6 @@ const source: Server = createServer((req, res) => {
   if (path === "/to-file") { res.writeHead(302, { location: "file:///etc/passwd" }); res.end(); return; }
   if (path === "/to-metadata") { res.writeHead(302, { location: "http://169.254.169.254/latest/meta-data/" }); res.end(); return; }
   if (path === "/to-private") { res.writeHead(302, { location: "http://10.0.0.1/admin" }); res.end(); return; }
-  // The same addresses, spelled as IPv6. Each of these IS one of the decimal
-  // forms above, and a pattern looking for "127." or "169.254." sees none.
-  if (path === "/v6-loopback-mapped") { res.writeHead(302, { location: "http://[::ffff:7f00:1]/admin" }); res.end(); return; }
-  if (path === "/v6-metadata-mapped") { res.writeHead(302, { location: "http://[::ffff:a9fe:a9fe]/latest/" }); res.end(); return; }
-  if (path === "/v6-unspecified") { res.writeHead(302, { location: "http://[::]/admin" }); res.end(); return; }
-  if (path === "/v6-loopback-long") { res.writeHead(302, { location: "http://[0:0:0:0:0:0:0:1]/admin" }); res.end(); return; }
-  if (path === "/v6-link-local") { res.writeHead(302, { location: "http://[fe80::1]/admin" }); res.end(); return; }
-  if (path === "/v6-private") { res.writeHead(302, { location: "http://[fd00::1]/admin" }); res.end(); return; }
   if (path === "/long") {
     res.writeHead(302, { location: `${elsewhereOrigin}/${"a".repeat(9_000)}` });
     res.end();
@@ -178,22 +172,29 @@ describe("s34 — there is a floor under following a link anywhere", () => {
     ["plain 10.0.0.1", "http://10.0.0.1/admin", "private"],
   ] as const) {
     it(`refuses ${what} when the source is on the open web`, () => {
-      const why = refusedTarget(new URL(address), "rules.example.org");
+      const target = new URL(address);
+      // The classifier is the decision; the refusal has to name what IT says
+      // this address is, not a word this test chose.
+      expect(addressKind(target.hostname), `${what} is not classed as ${kind}`).toBe(kind);
+      const why = refusedTarget(target, "rules.example.org");
       expect(why, `${what} was allowed`).not.toBeNull();
-      expect(why, "the refusal does not say what kind of address it is").toContain(kind);
+      expect(why, "the refusal does not say what kind of address it is")
+        .toContain(addressKind(target.hostname));
     });
   }
 
   it("bounds an address before it is written down, however long a page makes it", () => {
-    // `shortAddress` is the one bound, used by both readers and by the
-    // printers. The browser's `anywhere` branch had returned an address
-    // straight from the page — a branch no entry takes today, which is
-    // exactly how a bound goes missing (Standards review, 2026-09-25).
+    // The one bound, used by both readers and by every printer. Where the
+    // browser's `anywhere` branch applies it is pinned in
+    // `tests/s34-browser.test.ts`, at the call site.
     const long = `https://rules.example.org/${"a".repeat(9_000)}`;
-    expect(shortAddress(long).length, "an address the page chose was written down whole").toBeLessThan(300);
-    expect(shortAddress(long)).toContain(`${long.length} characters`);
+    const suffix = `… (${long.length} characters)`;
+    // The bound is `MOST_OF_AN_ADDRESS` and the suffix that says what was cut
+    // — asked of the constant, so moving it moves the test with it.
+    expect(shortAddress(long)).toBe(long.slice(0, MOST_OF_AN_ADDRESS) + suffix);
     // And an ordinary one is left exactly as it is.
     const ordinary = "https://anabin.kmk.org/anabin.html";
+    expect(ordinary.length).toBeLessThanOrEqual(MOST_OF_AN_ADDRESS);
     expect(shortAddress(ordinary)).toBe(ordinary);
   });
 
