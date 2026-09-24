@@ -28,8 +28,12 @@ const SENTENCE = "<p>The authority's own words</p>";
 function pageOf(bytes: number): Buffer {
   return Buffer.from(SENTENCE.repeat(Math.ceil(bytes / SENTENCE.length)));
 }
+/** A page past the bound, before anything decides how it travels. */
+const PAST_THE_BOUND = pageOf(MOST_OF_A_BODY + 1024 * 1024);
 /** A body that unpacks past the bound, and is a few kilobytes on the wire. */
-const OVER_THE_BOUND = gzipSync(pageOf(MOST_OF_A_BODY + 1024 * 1024));
+const OVER_THE_BOUND = gzipSync(PAST_THE_BOUND);
+/** Exactly the bound, which is the largest page this watch still reads. */
+const AT_THE_BOUND = PAST_THE_BOUND.subarray(0, MOST_OF_A_BODY);
 /** A page far larger than any the watch reads, and still inside the bound. */
 const A_BIG_PAGE = pageOf(2 * 1024 * 1024);
 const BIG_ZIPPED = gzipSync(A_BIG_PAGE);
@@ -56,6 +60,26 @@ const fixture: Server = createServer((req, res) => {
   if (path === "/too-big") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-encoding": "gzip" });
     res.end(OVER_THE_BOUND);
+    return;
+  }
+  // The same page past the bound, arriving as the bytes the wire carried: no
+  // decoder sees this one, which is the shape a source takes by answering
+  // un-encoded, and the shape it takes by naming an encoding this watch does
+  // not know.
+  if (path === "/too-big-plain") {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    res.end(PAST_THE_BOUND);
+    return;
+  }
+  if (path === "/too-big-unknown") {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-encoding": "compress" });
+    res.end(PAST_THE_BOUND);
+    return;
+  }
+  // The bound itself, un-encoded: the largest body the gate lets by.
+  if (path === "/at-the-bound") {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+    res.end(AT_THE_BOUND);
     return;
   }
   // A big page that is still a page.
@@ -345,6 +369,42 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
     // A refusal, not a crash: the pass goes on to the source after it.
     const next = await fetchSource(`${fixtureOrigin}/`, "same-origin");
     expect(next.ok, next.ok ? "" : next.error).toBe(true);
+  });
+
+  /**
+   * The bound over the other shape of body: the bytes as they arrive.
+   *
+   * A decoder is given `maxOutputLength` and refuses past it, so a compressed
+   * body was bounded from the start. A body nothing decodes — answered
+   * un-encoded, or under an encoding this watch cannot name and therefore
+   * hands on untouched — reached `Buffer.concat` with nothing counting it
+   * (Security review, 2026-09-24). Both shapes now pass the same bound.
+   */
+  for (const [what, path] of [
+    ["un-encoded", "/too-big-plain"],
+    ["under an encoding this watch does not know", "/too-big-unknown"],
+  ] as const) {
+    it(`refuses a body past the bound that arrives ${what}`, async () => {
+      const answer = await fetchSource(`${fixtureOrigin}${path}`, "same-origin");
+      expect(answer.ok, "a body larger than the bound was read").toBe(false);
+      if (answer.ok) return;
+      // The same reading the decoders give: the source answered, and the
+      // answer was not a page — which is the same answer in three minutes.
+      expect(answer.failure).toBe("refused-by-source");
+      expect(answer.status, "the source's own answer went unreported").toBe(200);
+      // Nothing of what the body said reaches the log line, the flag file or
+      // the issue the flag becomes.
+      expect(answer.error, "the failure carries the body's own words").not.toContain("authority");
+    });
+  }
+
+  it("reads a body of exactly the bound, whole", async () => {
+    // The gate is a bound and not a budget: the largest body it allows is the
+    // bound itself, and the byte after it is the refusal above.
+    const answer = await fetchSource(`${fixtureOrigin}/at-the-bound`, "same-origin");
+    expect(answer.ok, answer.ok ? "" : answer.error).toBe(true);
+    if (!answer.ok) return;
+    expect(answer.body.byteLength, "the page came back short").toBe(MOST_OF_A_BODY);
   });
 
   it("reads a body that unpacks inside the bound, whole", async () => {

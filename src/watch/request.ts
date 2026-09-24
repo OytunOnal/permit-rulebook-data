@@ -268,7 +268,40 @@ export function ask(target: URL, asking: Asking): Promise<Answer> {
           const failed = (e: unknown) => { over(); no(e); };
           failBody = failed;
           const parts: Buffer[] = [];
-          res.on("data", (chunk: Buffer) => { parts.push(chunk); });
+          /**
+           * What has arrived, so that the bound is one rule over both shapes
+           * of body.
+           *
+           * A decoder is handed `maxOutputLength` and refuses past it, so a
+           * compressed body was bounded the moment it was named. A body
+           * nothing decodes — answered un-encoded, or under an encoding this
+           * file cannot name and therefore hands on as it arrived — used to
+           * reach `Buffer.concat` with nothing counting it: a source could
+           * push whatever it managed inside the budget and the run wore the
+           * cost twice, once in `parts` and once in the concatenation
+           * (Security review, 2026-09-24).
+           *
+           * Counted on the wire, which is never larger than the page it
+           * becomes: a body already past the bound compressed is past it
+           * unpacked too, so the gate is a floor under the decoders rather
+           * than a second opinion about them. The cost is an addition and a
+           * comparison per chunk.
+           *
+           * The socket is destroyed rather than read to its end: a source
+           * that answers a bound with more bytes is not owed the rest of the
+           * conversation.
+           */
+          let arrived = 0;
+          res.on("data", (chunk: Buffer) => {
+            arrived += chunk.byteLength;
+            if (arrived > MOST_OF_A_BODY) {
+              parts.length = 0;
+              failed(pastTheBound());
+              req.destroy();
+              return;
+            }
+            parts.push(chunk);
+          });
           res.on("error", (e) => { failed(thrownAs(e)); });
           res.on("end", () => {
             unpacked(Buffer.concat(parts), oneHeader(res.headers["content-encoding"]))
