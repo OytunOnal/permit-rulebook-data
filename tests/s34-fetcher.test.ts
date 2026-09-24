@@ -363,8 +363,14 @@ describe("s35 — the fetcher says what kind of failure it met", () => {
     // Not the wording of the failure — the code Node put underneath it, which
     // is what the log did not have.
     expect(answer.error, "the cause code is not in the text").toMatch(/\((ECONNRESET|UND_ERR_SOCKET|ECONNABORTED|EPIPE)\)/);
-    // And never the cause's own message, which can carry the address.
-    expect(answer.error.length, "the cause's message was printed too").toBeLessThan(200);
+    // And never the cause's own message, which is where undici writes the
+    // address. The decision is that the address does not reach a log line, a
+    // flag file or the issue that flag becomes — not that the sentence came
+    // out short, which a short undici message satisfies by accident
+    // (Standards review, 2026-09-24).
+    expect(answer.error, "the cause's message was printed too").not.toContain(sourceOrigin);
+    expect(answer.error, "the address reached the text without its scheme")
+      .not.toContain(new URL(sourceOrigin).host);
   });
 
   it("calls a bot wall the source's own refusal, and a busy source transient", async () => {
