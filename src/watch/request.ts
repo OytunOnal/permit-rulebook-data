@@ -1,6 +1,5 @@
-import { request as httpRequest, type IncomingMessage } from "node:http";
+import { request as httpRequest, type Agent, type IncomingMessage } from "node:http";
 import { request as httpsRequest } from "node:https";
-import type { Agent } from "node:http";
 import type { LookupFunction } from "node:net";
 import { brotliDecompressSync, gunzipSync, inflateRawSync, inflateSync } from "node:zlib";
 import { ReadFailure } from "./failure.js";
