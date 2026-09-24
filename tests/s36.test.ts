@@ -220,8 +220,8 @@ describe("s36 — a name is refused by what it resolves to", () => {
   it("refuses a name when ANY of its addresses is refused", async () => {
     // A resolver answers a list, and a reader that took the first allowed one
     // would connect wherever the list's author liked on the next answer.
-    const started = Date.now();
     const before = asked.length;
+    const startedAt = resolutions;
     const answer = await fetchSource(
       `http://both.test:${port}/`, "same-origin",
       answering({ "both.test": [["93.184.216.34", "10.0.0.5"]] }),
@@ -231,10 +231,14 @@ describe("s36 — a name is refused by what it resolves to", () => {
     expect(answer.failure).toBe("refused-by-us");
     expect(answer.error).toContain("private");
     expect(asked.length - before).toBe(0);
-    // A refusal is a decision and not a connection that failed: the public
-    // address in that list was never dialled, which is the difference between
-    // returning in a millisecond and returning when a socket gives up.
-    expect(Date.now() - started, "something was dialled before the refusal").toBeLessThan(1_000);
+    // A refusal is a decision and not a connection that failed. The public
+    // address in that list was never dialled, and the difference is readable
+    // without a stopwatch: a dial that goes nowhere comes back as a wrapped
+    // socket error, `transient`, worth one more read. This one names a kind of
+    // address, is ours, and reddens the morning it happens.
+    expect(answer.error, "the refusal reads as a socket that gave up").not.toContain("fetch failed");
+    // One answer, judged. A reader that dialled would have had to ask again.
+    expect(resolutions - startedAt, "the name was resolved more than once").toBe(1);
   });
 
   it("still reads a name that resolves where its entry already is", async () => {
