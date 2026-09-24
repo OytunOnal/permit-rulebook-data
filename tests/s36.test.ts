@@ -4,6 +4,7 @@ import { pbkdf2 } from "node:crypto";
 import type { AddressInfo, LookupFunction } from "node:net";
 import { brotliCompressSync, deflateSync, gzipSync } from "node:zlib";
 import { addressKind, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
+import { runWatch, type Watchlist } from "../src/watch/core.js";
 import { ask, ENCODINGS_ASKED_FOR, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js";
 
 /**
@@ -55,8 +56,8 @@ const fixture: Server = createServer((req, res) => {
     return;
   }
   // A body that unpacks to more than any page the watch reads. Five kilobytes
-  // of gzip stand for seventeen megabytes of page, which is the whole of why a
-  // bound is read off the unpacked size and not off the wire.
+  // of gzip stand for seventeen megabytes of page, which is the whole of why
+  // the bound is read off the unpacked size as well as off the wire.
   if (path === "/too-big") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-encoding": "gzip" });
     res.end(OVER_THE_BOUND);
@@ -383,7 +384,7 @@ const noLookup: LookupFunction = (hostname, _options, done) => {
 };
 
 describe("s36 — a body is unpacked under a bound and inside the budget", () => {
-  it("refuses a body that unpacks past the bound, and reads the next source anyway", async () => {
+  it("refuses a body that unpacks past the bound", async () => {
     const answer = await fetchSource(`${fixtureOrigin}/too-big`, "same-origin");
     expect(answer.ok, "a body larger than the bound was read").toBe(false);
     if (answer.ok) return;
@@ -396,9 +397,6 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
     // Nothing of what the body said reaches the log line, the flag file or the
     // issue the flag becomes.
     expect(answer.error, "the failure carries the body's own words").not.toContain("authority");
-    // A refusal, not a crash: the pass goes on to the source after it.
-    const next = await fetchSource(`${fixtureOrigin}/`, "same-origin");
-    expect(next.ok, next.ok ? "" : next.error).toBe(true);
   });
 
   /**
@@ -491,5 +489,31 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     expect(answer.status, "the source's own answer went unreported").toBe(200);
     // Nothing about the source said no; the reading simply did not happen.
     expect(answer.failure).toBe("transient");
+  });
+});
+
+describe("s36 — one oversize body does not take the pass with it", () => {
+  it("reports the oversize source unreachable and reads the source after it", async () => {
+    /**
+     * The regression this guards is the PASS dying, not the read failing: one
+     * source answering seventeen megabytes used to be able to spend the
+     * runner's memory before any report was written, and the forty-five
+     * entries behind it were never asked. So it is proved where that would
+     * show — through `runWatch`, with a source behind the oversize one.
+     */
+    const watchlist: Watchlist = {
+      entries: [
+        { id: "s36-over-the-bound", url: `${fixtureOrigin}/too-big-plain`, strategy: "html", kind: "sentinel" },
+        { id: "s36-behind-it", url: `${fixtureOrigin}/`, strategy: "html", kind: "sentinel" },
+      ],
+    };
+    const { reports, nextState } = await runWatch(watchlist, { entries: {} }, fetchSource, "2026-09-24");
+    const over = reports.find((report) => report.id === "s36-over-the-bound")!;
+    expect(over.outcome, "an oversize body was read as a page").toBe("unreachable");
+    expect(over.failure, "the oversize body is worth asking about again").toBe("refused-by-source");
+    // The source behind it was asked, read, and written down.
+    const behind = reports.find((report) => report.id === "s36-behind-it")!;
+    expect(behind.outcome, behind.error).toBe("baseline");
+    expect(nextState.entries["s36-behind-it"], "the pass wrote no snapshot for it").toBeDefined();
   });
 });
