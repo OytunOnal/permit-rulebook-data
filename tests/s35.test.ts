@@ -5,7 +5,8 @@ import {
   type BrowserReader, type Fetcher, type FetchResult, type WatchEntry, type Watchlist, type WatchReport,
 } from "../src/watch/core.js";
 import {
-  causeCode, classOfThrown, failureOfStatus, MOST_OF_A_FAILURE, ReadFailure, type FailureClass,
+  causeCode, classOfThrown, failureOfStatus, MOST_OF_A_FAILURE, ReadFailure, shortFailure,
+  type FailureClass,
 } from "../src/watch/failure.js";
 import { unreadSources, type WatchState } from "../src/watch/state.js";
 import type { Dataset } from "../src/types.js";
@@ -119,21 +120,24 @@ describe("s35 — a failure has a class, and the reader names it", () => {
     expect(causeCode(new Error("no cause at all"))).toBeUndefined();
   });
 
-  it("bounds the words a failure carries, however long the page made them", () => {
-    // A `ReadFailure` is the one failure whose message can be the SOURCE's
-    // string: the browser tier throws a page's own exception `description`,
-    // stack and all, and the stack names the page. The bound is here, at the
-    // failure, so no thrower has to remember it (Security review,
-    // 2026-09-24).
-    const thrown = new ReadFailure(
-      `Error: ${"A".repeat(10_000)}
-    at https://source.test/x:1:1`, "refused-by-source",
-    );
-    expect(thrown.message.length).toBeLessThanOrEqual(MOST_OF_A_FAILURE);
-    expect(thrown.message, "the page's own address travelled with its words").not.toContain("source.test");
-    // A failure of ours is short and arrives whole.
-    expect(new ReadFailure("the form has no such field", "refused-by-source").message)
-      .toBe("the form has no such field");
+  it("keeps as much of a source's own words as a person can read, and no more", () => {
+    // The browser tier throws a page's own exception `description`, stack and
+    // all, and the stack names the page. What survives has to be the bound
+    // and not the page (Security review, 2026-09-24). The call site is
+    // pinned against a real Chrome in `tests/s34-browser.test.ts`; this is
+    // the rule itself.
+    const words = shortFailure(`Error: ${"A".repeat(10_000)}
+    at https://source.test/x:1:1`);
+    expect(words.length).toBeLessThanOrEqual(MOST_OF_A_FAILURE);
+    expect(words, "the page's own address travelled with its words").not.toContain("source.test");
+    expect(words, "the reading does not say it was shortened").toContain("characters)");
+    // And a failure of OURS is not bound by it. The step diagnosis that names
+    // what the page offered instead of the option asked for runs to five
+    // hundred characters on purpose, and is the whole of what a curator acts
+    // on — so the bound lives at the throw that takes a source's string, not
+    // on every failure the browser tier makes.
+    const ours = "step select: the option is not in the field. The field offered: " + "x".repeat(400);
+    expect(new ReadFailure(ours, "refused-by-source").message, "our own diagnosis was cut").toBe(ours);
   });
 
   it("lets a reader carry its own class out of a throw", () => {

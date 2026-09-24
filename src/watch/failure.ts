@@ -44,28 +44,31 @@ export type FailureClass = "transient" | "refused-by-source" | "refused-by-us";
 export class ReadFailure extends Error {
   readonly failure: FailureClass;
   constructor(message: string, failure: FailureClass) {
-    super(shortFailure(message));
+    super(message);
     this.name = "ReadFailure";
     this.failure = failure;
   }
 }
 
 /**
- * As much of a failure's words as belongs in a message a person reads.
+ * As much of a SOURCE's own words as belongs in a failure a person reads.
  *
- * The browser tier throws a page's OWN exception `description` — the page's
- * string, its stack included, and the stack names the page — and that message
- * reaches `report.error` and the run's log. A page can make it as long as it
- * likes: the fetcher already binds every address it prints at 200 characters
- * for the same reason (`MOST_OF_AN_ADDRESS`, measured 2026-09-24: a 9,000
- * character `location` header made a 9,111 character error), and a failure's
- * text is the one printed thing that had no bound (Security review,
- * 2026-09-24).
+ * The browser tier throws a page's own exception `description` — the page's
+ * string, its stack included, and the stack names the page — and that becomes
+ * the failure a run logs. A page can make it as long as it likes: measured
+ * 2026-09-24 at 10,104 characters carrying the page's origin. The fetcher
+ * already binds every address it prints at 200 for the same reason
+ * (`MOST_OF_AN_ADDRESS`), and this was the one printed string with no bound
+ * at all (Security review, 2026-09-24).
  *
  * The bound is TOTAL, unlike the address's, because this is the whole of what
- * a log line carries about a failure rather than one field inside it; and it
- * is applied in the constructor above, so that no thrower several layers down
- * has to remember it.
+ * a line says about a failure rather than one field inside it.
+ *
+ * It is NOT applied to every `ReadFailure`. Most of them are OURS — the step
+ * diagnosis that names what the page offered instead of the option asked for
+ * runs to five hundred characters on purpose, and is the whole reason a
+ * curator can act on it. The bound belongs where a string arrives from the
+ * source, which is at the throw.
  */
 export const MOST_OF_A_FAILURE = 200;
 

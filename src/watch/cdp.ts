@@ -1,7 +1,7 @@
 import type { RedirectPolicy, WatchEntry, WatchStep } from "./core.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
 import { shortAddress } from "./fetch-source.js";
-import { failureOfStatus, ReadFailure } from "./failure.js";
+import { failureOfStatus, ReadFailure, shortFailure } from "./failure.js";
 
 /**
  * The DevTools client: attaching to a tab, asking Chrome things, keeping the
@@ -381,8 +381,15 @@ export function attach(socket: WebSocket, close: () => void): Session {
           if (answer.exceptionDetails)
             // The page's own script threw under us, which is the page having
             // changed and not a minute that will pass.
+            //
+            // The words are the PAGE's, stack and all, and the stack names
+            // the page: bounded here, where they arrive, because everything
+            // downstream of this throw treats them as a failure's text like
+            // any other (Security review, 2026-09-24).
             throw new ReadFailure(
-              answer.exceptionDetails.exception?.description ?? answer.exceptionDetails.text ?? "the page threw",
+              shortFailure(
+                answer.exceptionDetails.exception?.description ?? answer.exceptionDetails.text ?? "the page threw",
+              ),
               "refused-by-source");
           return answer.result?.value;
         };
