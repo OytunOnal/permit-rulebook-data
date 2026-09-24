@@ -538,7 +538,7 @@ export async function runWatch(
  * answered drops off, and its day with it.
  *
  * A previous list written before s35 carries no day at all. The source was
- * still unread on that run — that is what being on the list means - so the
+ * still unread on that run — that is what being on the list means — so the
  * earliest day this run can honestly claim for it is the day that run
  * happened, and it reads as the outage it is rather than starting over.
  */
@@ -560,7 +560,7 @@ export interface RunVerdict {
   /** Refused by us on its first day: red the same morning, because waiting a
    * day changes nothing about an address this watch will not request. */
   refused: UnreadEntry[];
-  /** Whether the run is red - the exit code, decided once, here. */
+  /** Whether the run is red — the exit code, decided once, here. */
   red: boolean;
 }
 
