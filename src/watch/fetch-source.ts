@@ -4,7 +4,7 @@ import { Agent as HttpsAgent } from "node:https";
 import type { LookupFunction } from "node:net";
 import type { Fetcher, FetchResult, RedirectPolicy } from "./core.js";
 import { causeCode, classOfThrown, failureOfStatus, ReadFailure } from "./failure.js";
-import { ask } from "./request.js";
+import { ask, ENCODINGS_ASKED_FOR } from "./request.js";
 
 /**
  * The watch's first reader: one HTTP request, no browser.
@@ -392,7 +392,9 @@ export function printableAddress(url: string): string {
  *
  * `accept-encoding` is the one with a consequence past politeness: sources
  * send gzip because of it, and the body is unpacked in `request.ts` before
- * anything is fingerprinted.
+ * anything is fingerprinted. It is that file's own `ENCODINGS_ASKED_FOR` and
+ * not a second spelling of it: what is asked for and what can be unpacked
+ * have to move together, and two constants move apart.
  */
 const ASKING: Readonly<Record<string, string>> = Object.freeze({
   "user-agent": WATCH_NAME,
@@ -400,7 +402,7 @@ const ASKING: Readonly<Record<string, string>> = Object.freeze({
   "accept": "*/*",
   "accept-language": "*",
   "sec-fetch-mode": "cors",
-  "accept-encoding": "gzip, deflate",
+  "accept-encoding": ENCODINGS_ASKED_FOR,
 });
 
 /** 2xx and nothing else, which is what `fetch`'s `res.ok` meant. */
