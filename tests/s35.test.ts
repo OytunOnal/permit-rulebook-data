@@ -721,6 +721,34 @@ describe("s35 — the days on the state are read as days or not at all", () => {
     const pass = await runWatch(only, unreadable, passing, TODAY);
     expect(mergeTargetedRun(unreadable, pass.nextState, only, TODAY).lapses).toEqual({ down: [TODAY] });
   });
+
+  it("keeps the week's most recent mornings, not the last seven a list happens to end with", async () => {
+    // A state's list is not promised to be in the order a run wrote it, and
+    // the cap is a bound on how many mornings a week can hold — not a choice
+    // of which ones. Eight August days written after yesterday's push it off
+    // the end of the list, and then all eight prune out: a source silent
+    // yesterday and again this morning would report a lapse and exit 0 where
+    // the brake says outage (Spec review, 2026-09-24).
+    const august = Array.from({ length: 8 }, (_, i) => `2026-08-${String(10 + i).padStart(2, "0")}`);
+    const { fetcher } = scripted({ [addressOf("x")]: [fail("transient")] });
+    const state = stateWith({ x: [YESTERDAY, ...august] }, "x");
+    const { nextState, verdict } = await runWatch(watching("x"), state, fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ x: [YESTERDAY, TODAY] });
+    expect(verdict.outages.map((u) => u.id)).toEqual(["x"]);
+    expect(verdict.red, "the week's own morning was cut by a cap made of older days").toBe(true);
+  });
+
+  it("counts a morning written twice as the one morning it is", async () => {
+    // The brake counts mornings, so a list repeating one of them would make a
+    // single silence look like an outage — and this source has been silent
+    // once, this morning, however many times the state says so.
+    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const state = stateWith({ down: [TODAY, TODAY] });
+    const { nextState, verdict } = await runWatch(watching("down"), state, fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ down: [TODAY] });
+    expect(verdict.lapsed.map((u) => u.id)).toEqual(["down"]);
+    expect(verdict.red, "one silence written twice was read as two").toBe(false);
+  });
 });
 
 describe("s35 — the verdict is the run's, in one place", () => {

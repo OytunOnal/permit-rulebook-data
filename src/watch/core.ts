@@ -581,6 +581,10 @@ const THE_WEEK = 7;
  * bound on what is written to the state file and printed in the run's log
  * (Security review, 2026-09-24), not a second pruning rule: a week's own
  * days never reach it.
+ *
+ * It keeps a tail, so which seven it keeps is whatever order it was handed —
+ * and that is why `theWeekOf` sorts before it asks (Spec review,
+ * 2026-09-24).
  */
 const aWeekOf = (days: string[]): string[] => days.slice(-THE_WEEK);
 
@@ -588,9 +592,9 @@ const aWeekOf = (days: string[]): string[] => days.slice(-THE_WEEK);
 function inTheWeek(day: string, today: string): boolean {
   const back = (Date.parse(today) - Date.parse(day)) / 86_400_000;
   // Only the old side is pruned, and it is the only side: a day that is not
-  // a day never arrives here — `knownLapses` is where a day is refused, and
-  // what it passes on parses — while a day ahead of today is a clock nobody
-  // here can correct, so it is kept and ages out on its own.
+  // a day never arrives here — every caller is `theWeekOf`, which is handed
+  // what the shape check passed — while a day ahead of today is a clock
+  // nobody here can correct, so it is kept and ages out on its own.
   return back < THE_WEEK;
 }
 
@@ -600,15 +604,14 @@ function inTheWeek(day: string, today: string): boolean {
  * Every day the state knew about is carried forward, whether or not the
  * source answered today — that is the whole of the fix, because a source that
  * answers on its good morning is precisely the one the first rule forgot —
- * and today is added to every source this run could not read. Days older than
- * the week drop out here, which is the only place they are forgotten.
+ * and today is added to every source this run could not read. What the state
+ * knew is a week already: pruning is part of reading a day, and `knownLapses`
+ * is where a day is read. The cap is asked again once today is on the list,
+ * because a state whose days are all ahead of today hands over seven the week
+ * keeps and this run has an eighth morning to add.
  */
 function lapsesAfter(reports: WatchReport[], previous: WatchState, today: string): Record<string, string[]> {
-  const next: Record<string, string[]> = {};
-  for (const [id, days] of Object.entries(knownLapses(previous, today))) {
-    const kept = days.filter((day) => inTheWeek(day, today));
-    if (kept.length) next[id] = kept;
-  }
+  const next: Record<string, string[]> = { ...knownLapses(previous, today) };
   for (const report of reports) {
     if (report.outcome !== "unreachable") continue;
     const days = next[report.id] ?? [];
@@ -638,18 +641,39 @@ const isADay = (value: unknown): value is string =>
  * the last run wrote, what an editor did to it and what a commit put there —
  * and these days are counted by the brake and printed in the public run log.
  * A list that is not a list, an entry that is not a day, a day `Date.parse`
- * cannot read, a page of them: each is refused here rather than believed,
- * because a run that dies on the shape of a field reads no source at all and
- * a printed line carries whatever it is handed (Security review,
+ * cannot read: each is refused here rather than believed, because a run that
+ * dies on the shape of a field reads no source at all and a printed line
+ * carries whatever it is handed (Security review, 2026-09-24). What survives
+ * is a list of days, and `theWeekOf` is what makes a week of it.
+ */
+function daysOf(value: unknown, today: string): string[] {
+  if (!Array.isArray(value)) return [];
+  return theWeekOf(value.filter(isADay), today);
+}
+
+/**
+ * Days that have been read as days, as one source's week: one of each, in
+ * order, inside the week, seven at most.
+ *
+ * The order is a decision and not a tidying. `aWeekOf` keeps a list's tail,
+ * so a state whose days are not ascending — a hand-edited file, a list
+ * appended to out of order — would have its cap fall on the newest mornings
+ * and keep the oldest, and a source silent yesterday and again this morning
+ * would come out a lapse where the brake says outage. Sorting first makes
+ * the cut "the seven most recent", and pruning before the cut means the cut
+ * only ever falls on mornings the week still holds (Spec review,
  * 2026-09-24).
  *
  * The same morning twice is one morning: the brake counts mornings, and a
  * list repeating one of them would make a single silence look like an
  * outage.
+ *
+ * Days are ten characters of the same shape, so sorting them as strings
+ * sorts them by date.
  */
-function daysOf(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return aWeekOf([...new Set(value.filter(isADay))]);
+function theWeekOf(days: string[], today: string): string[] {
+  const inOrder = [...new Set(days)].sort();
+  return aWeekOf(inOrder.filter((day) => inTheWeek(day, today)));
 }
 
 /**
@@ -701,12 +725,12 @@ function knownLapses(previous: WatchState, today: string): Record<string, string
   const known: Record<string, string[]> = {};
   if (recorded && typeof recorded === "object" && !Array.isArray(recorded)) {
     for (const [id, value] of Object.entries(recorded)) {
-      const days = daysOf(value);
+      const days = daysOf(value, today);
       if (days.length) known[id] = days;
     }
   }
-  const morning = migratedMorning(previous, today);
-  for (const source of previous.unread ?? []) known[source.id] ??= [morning];
+  const morning = theWeekOf([migratedMorning(previous, today)], today);
+  if (morning.length) for (const source of previous.unread ?? []) known[source.id] ??= [...morning];
   return known;
 }
 
