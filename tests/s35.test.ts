@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
-  mergeTargetedRun, runWatch, runSummary, unreadNotices, verdictOf,
+  atMostAWeek, mergeTargetedRun, runWatch, runSummary, unreadNotices, verdictOf,
   type BrowserReader, type Fetcher, type FetchResult, type WatchEntry, type Watchlist, type WatchReport,
 } from "../src/watch/core.js";
 import {
@@ -603,6 +603,17 @@ describe("s35 — the days on the state are read as days or not at all", () => {
     expect(nextState.lapses).toEqual({ down: [YESTERDAY, TODAY] });
     expect(verdict.red).toBe(true);
     expect(unreadNotices(verdict, TODAY).map((n) => n.event)).toEqual(["outage"]);
+  });
+
+  it("keeps the seven newest of a longer list, and a shorter list whole", () => {
+    // The cap on what is written and printed, asked of itself: the week
+    // filter already leaves it nothing to cut (a morning after today is
+    // refused, so seven in-week days include today), and a bound nothing
+    // exercises is unproved code (Spec and Standards reviews, 2026-09-24).
+    // Ascending in, the oldest is what goes.
+    const eight = Array.from({ length: 8 }, (_, i) => daysAfter(i - 8));
+    expect(atMostAWeek(eight)).toEqual(eight.slice(1));
+    expect(atMostAWeek(eight.slice(0, 3))).toEqual(eight.slice(0, 3));
   });
 
   it("carries at most the week's worth of days out of a state that holds thousands", async () => {

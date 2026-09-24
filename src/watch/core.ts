@@ -586,7 +586,7 @@ const THE_WEEK = 7;
  * and that is why `theWeekOf` sorts before it asks (Spec review,
  * 2026-09-24).
  */
-const atMostAWeek = (days: string[]): string[] => days.slice(-THE_WEEK);
+export const atMostAWeek = (days: string[]): string[] => days.slice(-THE_WEEK);
 
 /** Is this day inside the week of runs ending today? */
 function inTheWeek(day: string, today: string): boolean {
@@ -635,6 +635,10 @@ const daysBySource = (): Record<string, string[]> => Object.create(null) as Reco
  * that do not include today is not a list the calendar can make.
  */
 function lapsesAfter(reports: WatchReport[], previous: WatchState, today: string): Record<string, string[]> {
+  // `Object.assign` onto an empty `daysBySource()`, not a spread into a
+  // literal: `{ ...record }` makes a plain object whose `__proto__` setter
+  // is live again, and `next[report.id] ?? []` below would read through it
+  // (Standards review, 2026-09-24). The copy is what keeps the prototype off.
   const next: Record<string, string[]> = Object.assign(daysBySource(), knownLapses(previous, today));
   for (const report of reports) {
     if (report.outcome !== "unreachable") continue;
@@ -780,16 +784,16 @@ const migratedMorning = (previous: WatchState, today: string): string[] =>
  */
 function knownLapses(previous: WatchState, today: string): Record<string, string[]> {
   const recorded: unknown = previous.lapses;
-  const known: Record<string, string[]> = daysBySource();
+  const mornings: Record<string, string[]> = daysBySource();
   if (recorded && typeof recorded === "object" && !Array.isArray(recorded)) {
     for (const [id, value] of Object.entries(recorded)) {
       const days = daysOf(value, today);
-      if (days.length) known[id] = days;
+      if (days.length) mornings[id] = days;
     }
   }
   const morning = migratedMorning(previous, today);
-  if (morning.length) for (const source of unreadOf(previous.unread)) known[source.id] ??= [...morning];
-  return known;
+  if (morning.length) for (const source of unreadOf(previous.unread)) mornings[source.id] ??= [...morning];
+  return mornings;
 }
 
 /** One unread source, with the silent mornings the week behind it holds. */
