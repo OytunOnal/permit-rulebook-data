@@ -454,6 +454,17 @@ describe("s35 — the verdict is the run's, in one place", () => {
     expect(clean).toEqual({ lapsed: [], outages: [], refused: [], red: false });
   });
 
+  it("is red for an unreachable source that arrived with no class at all", () => {
+    // An unreachable report carries its class, and the type is what says so —
+    // but a state on disk and a caller outside TypeScript are not bound by
+    // it. An unknown failure is not a thing to be green about: it was not
+    // retried either, and nobody was told why (Security review, 2026-09-24).
+    const unclassed = { ...unreachable("mystery", "transient"), failure: undefined } as unknown as WatchReport;
+    const verdict = verdictOf([unclassed], silent("mystery", [TODAY]));
+    expect(verdict.lapsed, "a failure with no class was given a day of grace").toEqual([]);
+    expect(verdict.red).toBe(true);
+  });
+
   it("says each unread source once, and says an outage loudly", async () => {
     const { fetcher } = scripted({
       [addressOf("fresh")]: [fail("transient")],

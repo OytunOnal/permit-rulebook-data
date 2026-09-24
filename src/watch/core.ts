@@ -248,22 +248,35 @@ export type BrowserReader = (entry: WatchEntry, redirects: RedirectPolicy) => Pr
 
 export type Outcome = "unchanged" | "changed" | "baseline" | "unreachable" | "reminder-due" | "ok";
 
-export interface WatchReport {
+/** Everything a report says about a source, whatever the run made of it. */
+interface ReportOfSource {
   id: string;
   url: string;
   strategy: WatchStrategy;
   kind: "value-source" | "sentinel";
   note?: string;
-  outcome: Outcome;
   old_hash?: string;
   new_hash?: string;
   /** for html changes: quoted context around the first difference */
   context?: string;
   error?: string;
-  /** unreachable only: what kind of failure it was, from the reader that met
-   * it. The retry and the verdict both read this and nothing else. */
-  failure?: FailureClass;
 }
+
+/**
+ * What one source came to in one run.
+ *
+ * An unreachable report carries its class and the others carry none, and the
+ * type is what says so: the retry reads the class and so does the verdict,
+ * and a report that reached either with no class fell through both — skipped
+ * by the retry and counted green by the verdict, which is the safe default
+ * for exactly nothing (Security review, 2026-09-24). Written as two arms
+ * rather than one optional field so that a producer cannot omit it; the
+ * absent arm names the field as `undefined` so that `report.failure` is still
+ * one question a caller can ask of any report.
+ */
+export type WatchReport =
+  | (ReportOfSource & { outcome: Exclude<Outcome, "unreachable">; failure?: undefined })
+  | (ReportOfSource & { outcome: "unreachable"; failure: FailureClass });
 
 /**
  * The fingerprint of an entry's slice — absent for an entry that watches a
@@ -631,8 +644,13 @@ export interface RunVerdict {
   lapsed: UnreadDays[];
   /** Unread today and on at least one other morning inside the week. Red. */
   outages: UnreadDays[];
-  /** Refused by us on its first day: red the same morning, because waiting a
-   * day changes nothing about an address this watch will not request. */
+  /**
+   * Red the same morning, whatever the week says: a refusal by us, because
+   * waiting a day changes nothing about an address this watch will not
+   * request — and a failure that arrived with no class at all, because a
+   * failure nobody named was retried by nothing and explained to nobody, and
+   * that is not a thing to be green about.
+   */
   refused: UnreadDays[];
   /** Whether the run is red — the exit code, decided once, here. */
   red: boolean;
@@ -662,7 +680,7 @@ export function verdictOf(reports: WatchReport[], next: WatchState): RunVerdict 
     const silence: UnreadDays = { id: source.id, url: source.url, days };
     const met = failure.get(source.id);
     if (days.length > 1) outages.push(silence);
-    else if (met === "refused-by-us") refused.push(silence);
+    else if (met === "refused-by-us" || met === undefined) refused.push(silence);
     else lapsed.push(silence);
   }
   return { lapsed, outages, refused, red: outages.length > 0 || refused.length > 0 };
