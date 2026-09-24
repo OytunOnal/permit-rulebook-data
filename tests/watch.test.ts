@@ -740,7 +740,7 @@ describe("the watch stamps the day it read everything, and only then", () => {
     const pass: WatchState = { entries: { one: { hash: "b", retrieved_at: "2026-09-12", history: [] } }, last_run: "2026-09-12", unread: [] };
     const merged = mergeTargetedRun(previous, pass, {
       entries: [{ id: "one", url: "https://example.org/a", strategy: "html", kind: "value-source" }],
-    });
+    }, "2026-09-12");
     expect(merged.last_run).toBe("2026-09-08");
     expect(merged.entries.one!.retrieved_at).toBe("2026-09-12");
   });

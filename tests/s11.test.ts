@@ -231,7 +231,7 @@ describe("a targeted re-baseline, which is not a run", () => {
     const pass: WatchState = {
       entries: { "es-uge-umbral-pdf": snapshot("2026-09-16") }, last_run: "2026-09-16", unread: [],
     };
-    const merged = mergeTargetedRun(previous, pass, list("es-uge-umbral-pdf"));
+    const merged = mergeTargetedRun(previous, pass, list("es-uge-umbral-pdf"), "2026-09-16");
     expect(merged.unread).toEqual([]);
     expect(merged.last_run).toBe(LAST_RUN);
     // The lie this exists to prevent, in the words the page would have used.
@@ -244,7 +244,7 @@ describe("a targeted re-baseline, which is not a run", () => {
     const pass: WatchState = {
       entries: { "bamf-fachkraft": snapshot("2026-09-16") }, last_run: "2026-09-16", unread: [],
     };
-    const merged = mergeTargetedRun(previous, pass, list("bamf-fachkraft"));
+    const merged = mergeTargetedRun(previous, pass, list("bamf-fachkraft"), "2026-09-16");
     expect(merged.unread).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL }]);
     expect(unreadSentence(unreadSources(dataset, merged)))
       .toBe("A Spanish source did not answer on the last run; the values it backs were read on 2026-09-07.");
@@ -254,12 +254,12 @@ describe("a targeted re-baseline, which is not a run", () => {
     const previous: WatchState = { entries: { "bamf-fachkraft": snapshot("2026-09-02") }, last_run: LAST_RUN };
     const clean = mergeTargetedRun(previous, {
       entries: { "bamf-fachkraft": snapshot("2026-09-16") }, last_run: "2026-09-16", unread: [],
-    }, list("bamf-fachkraft"));
+    }, list("bamf-fachkraft"), "2026-09-16");
     expect(clean.unread, "an empty list is a claim about a pass that made none").toBeUndefined();
 
     const refused = mergeTargetedRun(previous, {
       entries: {}, last_run: "2026-09-16", unread: [{ id: "bamf-fachkraft", url: FACHKRAFT }],
-    }, list("bamf-fachkraft"));
+    }, list("bamf-fachkraft"), "2026-09-16");
     expect(refused.unread).toEqual([{ id: "bamf-fachkraft", url: FACHKRAFT }]);
   });
 });

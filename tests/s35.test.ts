@@ -456,12 +456,63 @@ describe("s35 — two silent mornings inside the week are an outage", () => {
     const { fetcher } = scripted({ [addressOf("targeted")]: [page("it answered")] });
     const only = watching("targeted");
     const { nextState } = await runWatch(only, previous, fetcher, TODAY);
-    const merged = mergeTargetedRun(previous, nextState, only);
+    const merged = mergeTargetedRun(previous, nextState, only, TODAY);
     expect(merged.unread).toEqual([{ id: "untouched", url: addressOf("untouched") }]);
     // A targeted pass learned nothing about the sources it did not fetch, so
     // their mornings stand as the last full run left them; the one entry it
     // did fetch is the pass's to speak for.
     expect(merged.lapses).toEqual({ untouched: ["2026-09-20"], targeted: [YESTERDAY] });
+  });
+
+  it("migrates the untouched sources' mornings on a state that carries none", async () => {
+    // The shape every state on disk has this morning: sources listed unread
+    // with no days at all. A targeted pass writes a `lapses` where there was
+    // none, and a written `lapses` is what stops the next full run migrating
+    // — so if the pass does not migrate the sources it never fetched, their
+    // mornings are gone for good and the week starts them over (Spec review,
+    // 2026-09-24).
+    const legacy: WatchState = {
+      entries: {}, last_run: YESTERDAY,
+      unread: [
+        { id: "one", url: addressOf("one") },
+        { id: "two", url: addressOf("two") },
+      ],
+    };
+    const { fetcher } = scripted({ [addressOf("three")]: [fail("transient")] });
+    const only = watching("three");
+    const { nextState } = await runWatch(only, legacy, fetcher, TODAY);
+    const merged = mergeTargetedRun(legacy, nextState, only, TODAY);
+    expect(merged.lapses).toEqual({ one: [YESTERDAY], two: [YESTERDAY], three: [TODAY] });
+
+    // And the morning after, a full run counts their second silent morning
+    // rather than calling it their first.
+    const { fetcher: again } = scripted({
+      [addressOf("one")]: [fail("transient")],
+      [addressOf("two")]: [fail("transient")],
+      [addressOf("three")]: [page("it answered")],
+    });
+    const full = await runWatch(watching("one", "two", "three"), merged, again, TODAY);
+    expect(full.verdict.outages.map((u) => u.id)).toEqual(["one", "two"]);
+    expect(full.verdict.red, "a migrated morning was lost through the targeted pass").toBe(true);
+  });
+
+  it("gives a targeted pass the migrated morning of the entry it did fetch", async () => {
+    // The pass reads the same state, so it counts the same silent morning:
+    // an entry the migration gave one morning and the pass could not read
+    // either is an outage, on the pass's own days.
+    const legacy: WatchState = {
+      entries: {}, last_run: YESTERDAY,
+      unread: [
+        { id: "one", url: addressOf("one") },
+        { id: "two", url: addressOf("two") },
+      ],
+    };
+    const { fetcher } = scripted({ [addressOf("one")]: [fail("transient")] });
+    const only = watching("one");
+    const { nextState, verdict } = await runWatch(only, legacy, fetcher, TODAY);
+    expect(verdict.outages.map((u) => u.id)).toEqual(["one"]);
+    const merged = mergeTargetedRun(legacy, nextState, only, TODAY);
+    expect(merged.lapses).toEqual({ one: [YESTERDAY, TODAY], two: [YESTERDAY] });
   });
 });
 

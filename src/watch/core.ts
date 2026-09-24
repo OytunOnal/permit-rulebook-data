@@ -762,7 +762,7 @@ export function runSummary(reports: WatchReport[], verdict: RunVerdict): RunSumm
  * here: silence is what it claims, and a `--only` pass has learned nothing
  * about the sources it did not fetch.
  */
-export function mergeTargetedRun(previous: WatchState, pass: WatchState, fetched: Watchlist): WatchState {
+export function mergeTargetedRun(previous: WatchState, pass: WatchState, fetched: Watchlist, today: string): WatchState {
   const touched = new Set(fetched.entries.map((e) => e.id));
   const unread = [
     ...(previous.unread ?? []).filter((e) => !touched.has(e.id)),
@@ -772,8 +772,15 @@ export function mergeTargetedRun(previous: WatchState, pass: WatchState, fetched
   // pass learned whether the entry it fetched answered and nothing at all
   // about the rest, so every other source's week stands exactly as the last
   // full run left it.
+  //
+  // They come through `knownLapses`, which is where a state's days are read
+  // and where a state that names none has its unread list migrated. A pass
+  // that skipped that migration would write a `lapses` where there was none
+  // — and a written `lapses` is exactly what stops the next full run
+  // migrating, so every untouched source's earlier mornings would be gone
+  // for good and the week would start them over (Spec review, 2026-09-24).
   const lapses: Record<string, string[]> = {};
-  for (const [id, days] of Object.entries(previous.lapses ?? {})) if (!touched.has(id)) lapses[id] = days;
+  for (const [id, days] of Object.entries(knownLapses(previous, today))) if (!touched.has(id)) lapses[id] = days;
   for (const [id, days] of Object.entries(pass.lapses ?? {})) if (touched.has(id)) lapses[id] = days;
   return {
     entries: { ...previous.entries, ...pass.entries },

@@ -162,7 +162,7 @@ if (commit) {
   // it may say something about is the one entry it did fetch. The rule lives
   // beside the code that writes a full run's state, where it can be read by a
   // test rather than by a grep over this file.
-  const merged = only ? mergeTargetedRun(state, nextState, watchlist) : nextState;
+  const merged = only ? mergeTargetedRun(state, nextState, watchlist, today) : nextState;
   writeFileSync(statePath, JSON.stringify(merged, null, 2) + "\n");
   log("info", "state committed", {
     entries: Object.keys(merged.entries).length, only: only ?? null, last_run: merged.last_run,
