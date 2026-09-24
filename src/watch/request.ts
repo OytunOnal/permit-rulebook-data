@@ -109,11 +109,13 @@ export const MOST_OF_A_BODY = 16 * 1024 * 1024;
 /**
  * The encodings a request asks for, spelled as the header that asks for them.
  *
- * `ASKING` in `fetch-source.ts` sends this verbatim and `unpacked` below reads
- * exactly it, so the set asked for and the set unpacked are one constant and
- * cannot drift apart — which is the failure mode of writing them twice: a
- * source is sent an encoding this file cannot read, and the watch fingerprints
- * a compressed stream.
+ * `ASKING` in `fetch-source.ts` sends this verbatim, and `unpacked` below
+ * reads every encoding named in it — so what is asked for cannot drift away
+ * from what can be read, which is the failure mode of writing them twice: a
+ * source is sent an encoding this file cannot unpack, and the watch
+ * fingerprints a compressed stream. What `unpacked` reads BEYOND it is `br`,
+ * for a server that sends it unasked; that direction is safe and is written
+ * down there.
  */
 export const ENCODINGS_ASKED_FOR = "gzip, deflate";
 
