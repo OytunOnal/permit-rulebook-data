@@ -421,6 +421,23 @@ const ASKING: Readonly<Record<string, string>> = Object.freeze({
 });
 
 /** 2xx and nothing else, which is what `fetch`'s `res.ok` meant. */
+/**
+ * A failure's sentence with the answer that came before it, when there was one.
+ *
+ * The structured `status` a fetcher returns is read by this file's own callers
+ * and stops at the report's door: a `WatchReport` carries the sentence, not
+ * the number (`core.ts`). So a refusal decided after a source answered says
+ * the answer in words, which is what the redirect refusals have always done
+ * ("HTTP 302, not followed") and what a curator finds in the log line, the
+ * flag file and the issue that flag becomes.
+ *
+ * The status only. What the source SAID past its status line is the source's
+ * own words and stays out (`failure.ts`'s opening sentence).
+ */
+function afterAnswer(sentence: string, status: number | undefined): string {
+  return status === undefined ? sentence : `${sentence}, after HTTP ${status}`;
+}
+
 function answered(status: number): boolean {
   return status >= 200 && status < 300;
 }
@@ -629,7 +646,7 @@ export const fetchSource = (async (
       return {
         ok: false,
         ...(answerStatus !== undefined ? { status: answerStatus } : {}),
-        error: e.message,
+        error: afterAnswer(e.message, answerStatus),
         failure: e.failure,
       };
     /**
@@ -657,7 +674,7 @@ export const fetchSource = (async (
     return {
       ok: false,
       ...(answerStatus !== undefined ? { status: answerStatus } : {}),
-      error: code ? `${String(e)} (${code})` : String(e),
+      error: afterAnswer(code ? `${String(e)} (${code})` : String(e), answerStatus),
       failure: classOfThrown(e),
     };
   }

@@ -438,6 +438,12 @@ export async function runWatch(
       : await fetcher(entry.url, STRATEGIES[entry.strategy].redirects);
     if (!fetched.ok) {
       // A blocked or failed fetch must never read as "no change".
+      //
+      // The reader's structured `status` stops here, deliberately. A report
+      // is what a curator reads, and it is one shape for both readers — the
+      // browser tier has no status to give — so what the source answered
+      // travels in the sentence rather than in a field of its own
+      // (`fetch-source.ts`'s `afterAnswer`, Spec review 2026-09-24).
       return { ...base, outcome: "unreachable", error: fetched.error, failure: fetched.failure };
     }
     // Nor may an empty one. EUR-Lex answers this fetcher HTTP 202 with no

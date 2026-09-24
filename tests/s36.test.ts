@@ -489,6 +489,9 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     expect(answer.status, "the source's own answer went unreported").toBe(200);
     // Nothing about the source said no; the reading simply did not happen.
     expect(answer.failure).toBe("transient");
+    // And says so in the sentence, which is what travels into the log line,
+    // the flag file and the issue that flag becomes.
+    expect(answer.error, "the sentence does not say what the source answered").toContain("HTTP 200");
   });
 });
 
@@ -511,6 +514,11 @@ describe("s36 — one oversize body does not take the pass with it", () => {
     const over = reports.find((report) => report.id === "s36-over-the-bound")!;
     expect(over.outcome, "an oversize body was read as a page").toBe("unreachable");
     expect(over.failure, "the oversize body is worth asking about again").toBe("refused-by-source");
+    // What the source answered reaches the report a curator reads. The
+    // fetcher's `status` field stops at the report's door (`core.ts`), so the
+    // sentence is where it has to be said — as the redirect refusals say it.
+    expect(over.error, "the report does not say what the source answered").toContain("HTTP 200");
+    expect(over.error, "the report carries the body's own words").not.toContain("authority");
     // The source behind it was asked, read, and written down.
     const behind = reports.find((report) => report.id === "s36-behind-it")!;
     expect(behind.outcome, behind.error).toBe("baseline");
