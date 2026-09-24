@@ -407,8 +407,9 @@ export function printableAddress(url: string): string {
  * `accept-encoding` is the one with a consequence past politeness: sources
  * send gzip because of it, and the body is unpacked in `request.ts` before
  * anything is fingerprinted. It is that file's own `ENCODINGS_ASKED_FOR` and
- * not a second spelling of it: what is asked for and what can be unpacked
- * have to move together, and two constants move apart.
+ * not a second spelling of it — and that constant is itself named from the
+ * table that unpacks them, so this header cannot come to ask for an encoding
+ * the watch cannot read.
  */
 const ASKING: Readonly<Record<string, string>> = Object.freeze({
   "user-agent": WATCH_NAME,

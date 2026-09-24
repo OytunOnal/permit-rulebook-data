@@ -109,19 +109,6 @@ function oneHeader(value: string | string[] | undefined): string | null {
  */
 export const MOST_OF_A_BODY = 16 * 1024 * 1024;
 
-/**
- * The encodings a request asks for, spelled as the header that asks for them.
- *
- * `ASKING` in `fetch-source.ts` sends this verbatim, and `unpacked` below
- * reads every encoding named in it — so what is asked for cannot drift away
- * from what can be read, which is the failure mode of writing them twice: a
- * source is sent an encoding this file cannot unpack, and the watch
- * fingerprints a compressed stream. What `unpacked` reads BEYOND it is `br`,
- * for a server that sends it unasked; that direction is safe and is written
- * down there.
- */
-export const ENCODINGS_ASKED_FOR = "gzip, deflate";
-
 /** Every unpacking zlib offers this file, narrowed to the one way it is called. */
 type Unpacking = (
   input: Buffer,
@@ -170,6 +157,49 @@ function unpacking(how: Unpacking, bytes: Buffer): Promise<Uint8Array> {
 }
 
 /**
+ * Every encoding this file can read, and what reads it.
+ *
+ * The one owner of the subject: the header below is named FROM these keys, so
+ * an encoding cannot be asked for that nothing here unpacks. Written twice —
+ * a header in one place and a switch in another — the drift is silent and
+ * costs the watch its fingerprint: a source sends what it was asked for and
+ * the watch hashes a compressed stream, which reads as a changed page every
+ * morning the compressor's mood changes.
+ *
+ * It reads MORE than it asks for, which is the safe direction: `x-gzip` is
+ * gzip's older spelling, and `br` arrives unasked from servers that decide
+ * for themselves.
+ */
+const UNPACKINGS = Object.freeze({
+  "gzip": (bytes: Buffer) => unpacking(gunzip, bytes),
+  "x-gzip": (bytes: Buffer) => unpacking(gunzip, bytes),
+  // `deflate` has two spellings in the wild — zlib-wrapped, as the RFC says,
+  // and raw — and the second is tried when the first fails, which is what
+  // every browser does. Only when THIS one is what failed: a body that passed
+  // the bound passed it in either spelling, and inflating it a second time to
+  // learn that is the bound paid for twice.
+  "deflate": (bytes: Buffer) => unpacking(inflate, bytes).catch((e: unknown) => {
+    if (e instanceof ReadFailure) throw e;
+    return unpacking(inflateRaw, bytes);
+  }),
+  "br": (bytes: Buffer) => unpacking(brotliDecompress, bytes),
+});
+
+/** An encoding this file can read, spelled the way a header spells it. */
+type Readable = keyof typeof UNPACKINGS;
+
+/**
+ * The encodings a request asks for, named from the table that reads them.
+ *
+ * `ASKING` in `fetch-source.ts` sends this verbatim. The list is typed as
+ * keys of `UNPACKINGS`, so asking for an encoding this file cannot unpack is
+ * a build failure rather than a silent one; the pair was measured from what
+ * `fetch` sent (`fetch-source.ts`, 2026-09-24).
+ */
+const ASKED_FOR: readonly Readable[] = ["gzip", "deflate"];
+export const ENCODINGS_ASKED_FOR = ASKED_FOR.join(", ");
+
+/**
  * The body as the page wrote it, not as the wire carried it.
  *
  * `fetch` did this invisibly, and it matters more than it looks: the watch
@@ -177,28 +207,15 @@ function unpacking(how: Unpacking, bytes: Buffer): Promise<Uint8Array> {
  * morning to the next would read as changed every day if the compressed
  * stream were what got hashed.
  *
- * Only what the request asked for is unpacked (`ENCODINGS_ASKED_FOR`, measured
- * from what `fetch` sent), plus `br` for a server that sends it unasked.
- * `deflate` has two spellings in the wild — zlib-wrapped, as the RFC says, and
- * raw — and the second is tried when the first fails, which is what every
- * browser does. Anything else is left exactly as it arrived, which is what
- * `fetch` did with an encoding it had not asked for.
+ * An encoding no key above names is left exactly as it arrived, which is what
+ * `fetch` did with an encoding it had not asked for — and what arrives that
+ * way is bounded where it arrives (`ask`), not here.
  */
 export function unpacked(bytes: Buffer, encoding: string | null): Promise<Uint8Array> {
   if (bytes.byteLength === 0) return Promise.resolve(new Uint8Array(0));
-  switch ((encoding ?? "").trim().toLowerCase()) {
-    case "gzip": case "x-gzip": return unpacking(gunzip, bytes);
-    case "br": return unpacking(brotliDecompress, bytes);
-    case "deflate":
-      // The other spelling is tried only when THIS one is what failed. A body
-      // that passed the bound passed it in either spelling, and inflating it a
-      // second time to learn that is the bound paid for twice.
-      return unpacking(inflate, bytes).catch((e: unknown) => {
-        if (e instanceof ReadFailure) throw e;
-        return unpacking(inflateRaw, bytes);
-      });
-    default: return Promise.resolve(new Uint8Array(bytes));
-  }
+  const named = (encoding ?? "").trim().toLowerCase();
+  const how = Object.hasOwn(UNPACKINGS, named) ? UNPACKINGS[named as Readable] : undefined;
+  return how ? how(bytes) : Promise.resolve(new Uint8Array(bytes));
 }
 
 export function ask(target: URL, asking: Asking): Promise<Answer> {

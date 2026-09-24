@@ -2,9 +2,9 @@ import { afterAll, describe, expect, it } from "vitest";
 import { Agent, createServer, type IncomingHttpHeaders, type Server } from "node:http";
 import { pbkdf2 } from "node:crypto";
 import type { AddressInfo, LookupFunction } from "node:net";
-import { gzipSync } from "node:zlib";
+import { brotliCompressSync, deflateSync, gzipSync } from "node:zlib";
 import { addressKind, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
-import { ask, MOST_OF_A_BODY } from "../src/watch/request.js";
+import { ask, ENCODINGS_ASKED_FOR, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js";
 
 /**
  * s36 — the address the watch connects to.
@@ -338,6 +338,27 @@ describe("s36 — what the watch reads does not change", () => {
     // stream's — otherwise every source that varies its compression would
     // read as changed every morning.
     expect(new TextDecoder().decode(answer.body)).toBe("<p>The authority's own words</p>");
+  });
+
+  it("unpacks every encoding its own header asks for", async () => {
+    /**
+     * The header a source reads and the switch that reads the answer are one
+     * list or they are a silent drift: a source sends what it was asked for
+     * and the watch fingerprints a compressed stream. The type refuses an
+     * asked-for encoding that has no unpacking; this is the same claim at
+     * runtime, for the encodings the header names today.
+     */
+    const packing: Record<string, (page: Buffer) => Buffer> = {
+      gzip: gzipSync, deflate: deflateSync, br: brotliCompressSync,
+    };
+    const asked = ENCODINGS_ASKED_FOR.split(",").map((one) => one.trim());
+    expect(asked.length, "the watch asks for no encoding at all").toBeGreaterThan(0);
+    for (const encoding of asked) {
+      const pack = packing[encoding];
+      expect(pack, `${encoding} is asked for and this test cannot send it`).toBeTypeOf("function");
+      const page = await unpacked(pack!(Buffer.from(SENTENCE)), encoding);
+      expect(new TextDecoder().decode(page), `${encoding} is asked for and not unpacked`).toBe(SENTENCE);
+    }
   });
 });
 
