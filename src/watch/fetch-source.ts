@@ -382,12 +382,13 @@ export function printableAddress(url: string): string {
  * The first two are the watch's own and the reason they are shaped this way
  * is written at the request below. The other four are `fetch`'s, kept
  * verbatim: measured 2026-09-24 against this repository's Node (v24.20.0),
- * undici sent `accept: *​/*`, `accept-language: *`, `sec-fetch-mode: cors`
- * and `accept-encoding: gzip, deflate` on every request this tier made, and
- * the 46 sources answered that client. s36 changed the mechanism underneath;
- * it did not set out to introduce this watch to anybody a second time, and a
- * bot wall that answered one set of headers is under no obligation to answer
- * another.
+ * undici sent an `accept` of any type at all, an `accept-language` of any
+ * language, `sec-fetch-mode: cors` and `accept-encoding: gzip, deflate` on
+ * every request this tier made — the four written out below, where they can
+ * be read — and the 46 sources answered that client. s36 changed the
+ * mechanism underneath; it did not set out to introduce this watch to anybody
+ * a second time, and a bot wall that answered one set of headers is under no
+ * obligation to answer another.
  *
  * `accept-encoding` is the one with a consequence past politeness: sources
  * send gzip because of it, and the body is unpacked in `request.ts` before
