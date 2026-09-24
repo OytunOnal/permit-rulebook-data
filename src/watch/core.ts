@@ -661,23 +661,30 @@ function daysOf(value: unknown): string[] {
  * claim about any morning, which is the same thing a state written before
  * s35 says, and the unread list is then all there is to read.
  *
+ * The migration is asked of each source, not of the record: a `lapses` that
+ * holds nothing this source can be read from — because it is absent, because
+ * it is not a record, or because everything it held for THIS id was refused
+ * — says nothing about this source's mornings, and the unread list still
+ * says one. Reading it per record instead let one corrupted day cancel the
+ * migration of every source beside it, so the same corruption decided two
+ * ways depending on which branch read it, one of them green (Security
+ * review, 2026-09-24).
+ *
  * This is the one place a state's days are read — the full run's and a
  * targeted pass's alike — and therefore the one place they are checked.
  */
 function knownLapses(previous: WatchState, today: string): Record<string, string[]> {
   const recorded: unknown = previous.lapses;
+  const known: Record<string, string[]> = {};
   if (recorded && typeof recorded === "object" && !Array.isArray(recorded)) {
-    const known: Record<string, string[]> = {};
     for (const [id, value] of Object.entries(recorded)) {
       const days = daysOf(value);
       if (days.length) known[id] = days;
     }
-    return known;
   }
-  const day = previous.last_run ?? today;
-  const migrated: Record<string, string[]> = {};
-  for (const source of previous.unread ?? []) migrated[source.id] = [day];
-  return migrated;
+  const morning = previous.last_run ?? today;
+  for (const source of previous.unread ?? []) known[source.id] ??= [morning];
+  return known;
 }
 
 /** One unread source, with the silent mornings the week behind it holds. */

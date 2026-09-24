@@ -626,11 +626,12 @@ describe("s35 — the days on the state are read as days or not at all", () => {
       [addressOf("down")]: [fail("transient")],
       [addressOf("alone")]: [fail("transient")],
     });
-    const state = stateWith({ down: ["not-a-day", YESTERDAY, "2026-02-30"], alone: YESTERDAY }, "down", "alone");
+    const state = stateWith({ down: ["not-a-day", YESTERDAY, "2026-02-30"], alone: ["not-a-day"] }, "down");
     const { nextState, verdict } = await runWatch(watching("down", "alone"), state, fetcher, TODAY);
     expect(nextState.lapses).toEqual({ down: [YESTERDAY, TODAY], alone: [TODAY] });
-    // `down` kept the one real morning and is out; `alone`'s days were not a
-    // list at all, so it has nothing but this morning and keeps its grace.
+    // `down` kept the one real morning and is out; `alone` was on no unread
+    // list, so nothing says it was ever silent before and its refused days
+    // leave it this morning alone, with its day of grace.
     expect(verdict.outages.map((u) => u.id)).toEqual(["down"]);
     expect(verdict.lapsed.map((u) => u.id)).toEqual(["alone"]);
   });
@@ -638,12 +639,56 @@ describe("s35 — the days on the state are read as days or not at all", () => {
   it("drops a day wearing a day's first ten characters", async () => {
     // `Date.parse` takes a whole timestamp and would call this a morning;
     // the state writes days, and a day is ten characters long. Anything
-    // else is something else wearing the shape of one.
+    // else is something else wearing the shape of one — and this source is
+    // on no unread list, so the timestamp is the only thing that could speak
+    // for a morning before today.
     const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
-    const state = stateWith({ down: [`${YESTERDAY}T07:00:00Z`] }, "down");
+    const state = stateWith({ down: [`${YESTERDAY}T07:00:00Z`] });
     const { nextState, verdict } = await runWatch(watching("down"), state, fetcher, TODAY);
     expect(nextState.lapses).toEqual({ down: [TODAY] });
     expect(verdict.red, "a timestamp was counted as a silent morning").toBe(false);
+  });
+
+  it("counts the migrated morning of a source whose every recorded day was refused", async () => {
+    // A record that names one day, one hyphen short of being one. Refusing
+    // the day must not also cancel the migration: the source is on the unread
+    // list, so it WAS silent on the morning of the run that listed it, and
+    // dropping that morning turns an outage green — the same corruption
+    // deciding two ways depending on which branch read it (Security review,
+    // 2026-09-24).
+    const { fetcher } = scripted({ [addressOf("bamf")]: [fail("transient")] });
+    const { nextState, verdict } = await runWatch(
+      watching("bamf"), stateWith({ bamf: ["2026-9-23"] }, "bamf"), fetcher, TODAY,
+    );
+    expect(nextState.lapses).toEqual({ bamf: [YESTERDAY, TODAY] });
+    expect(verdict.outages.map((u) => u.id)).toEqual(["bamf"]);
+    expect(verdict.red, "a refused day cancelled the migration and the outage with it").toBe(true);
+  });
+
+  it("migrates the source whose days were refused beside the one whose days were read", async () => {
+    // One record, two sources: the days are read per source, so one id's
+    // corruption is not the other id's loss and not its own free pass.
+    const { fetcher } = scripted({
+      [addressOf("kept")]: [fail("transient")],
+      [addressOf("refused")]: [fail("transient")],
+    });
+    const state = stateWith({ kept: ["2026-09-20"], refused: "not a list of days" }, "kept", "refused");
+    const { nextState, verdict } = await runWatch(watching("kept", "refused"), state, fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ kept: ["2026-09-20", TODAY], refused: [YESTERDAY, TODAY] });
+    expect(verdict.outages.map((u) => u.id)).toEqual(["kept", "refused"]);
+  });
+
+  it("does not write an empty lapses over the migration on a targeted pass", async () => {
+    // The same crafted record through `--only`. A written `lapses` is what
+    // stops the next full run migrating, so a pass that writes `{}` here
+    // makes the lost morning permanent: the source's week starts over and
+    // its next silence is called its first (Security review, 2026-09-24).
+    const previous = stateWith({ bamf: ["2026-9-23"] }, "bamf");
+    const { fetcher } = scripted({ [addressOf("other")]: [page("it answered")] });
+    const only = watching("other");
+    const { nextState } = await runWatch(only, previous, fetcher, TODAY);
+    const merged = mergeTargetedRun(previous, nextState, only, TODAY);
+    expect(merged.lapses).toEqual({ bamf: [YESTERDAY] });
   });
 });
 
