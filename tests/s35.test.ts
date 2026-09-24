@@ -392,6 +392,27 @@ describe("s35 — two silent mornings inside the week are an outage", () => {
     expect(verdict.red).toBe(false);
   });
 
+  it("counts the sixth morning back and lets the seventh go", async () => {
+    // The window's own edge, from both sides. Seven calendar days ending
+    // today: 2026-09-17 is the seventh morning back from 2026-09-24 and the
+    // one the week has just left; 2026-09-18 is the sixth and still inside
+    // it. A day either way is a brake that holds a morning it should have
+    // let go, or lets an outage through.
+    const edge = async (day: string) => {
+      const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+      return runWatch(watching("down"), {
+        entries: {}, last_run: YESTERDAY, unread: [], lapses: { down: [day] },
+      }, fetcher, TODAY);
+    };
+    const gone = await edge("2026-09-17");
+    expect(gone.nextState.lapses).toEqual({ down: [TODAY] });
+    expect(gone.verdict.red, "a morning the week had left still reddened the run").toBe(false);
+
+    const held = await edge("2026-09-18");
+    expect(held.nextState.lapses).toEqual({ down: ["2026-09-18", TODAY] });
+    expect(held.verdict.red, "a morning inside the week was forgotten").toBe(true);
+  });
+
   it("drops a source that answered off the unread list and keeps the mornings it was silent", async () => {
     const { fetcher } = scripted({ [addressOf("down")]: [page("it answered today")] });
     const { nextState, verdict } = await runWatch(watching("down"), alreadyUnread("down"), fetcher, TODAY);
