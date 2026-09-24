@@ -116,6 +116,20 @@ export function failureOfStatus(status: number): FailureClass {
  * and undici's own spelling — capitals, digits and underscores — and short;
  * anything else is something else wearing the name, and is simply not
  * printed, which costs a log line one parenthesis.
+ *
+ * Forty is measured, not chosen. Against this repository's Node (v24.20.0,
+ * 2026-09-24): undici ships twenty-four `UND_ERR_*` codes and the longest,
+ * `UND_ERR_REQ_CONTENT_LENGTH_MISMATCH`, is 35 characters; of the 134 errno
+ * names `os.constants.errno` carries the longest is `WSAEPROVIDERFAILEDINIT`
+ * at 22, and the longest of the 76 that are not Windows' own is
+ * `EPROTONOSUPPORT` at 15. Forty is the round number above both, with five
+ * characters of room for the next code either of them ships.
+ *
+ * It does not cover OpenSSL's `ERR_SSL_*` family, which Node builds at run
+ * time out of OpenSSL's own reason strings and which therefore has no list
+ * to measure (the longest in the binary runs to 44). A TLS failure whose
+ * code is that long prints its message without the code, which is the cost
+ * this bound was accepted at.
  */
 const A_CODE = /^[A-Z0-9_]{1,40}$/;
 
