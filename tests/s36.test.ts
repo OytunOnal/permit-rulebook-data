@@ -3,9 +3,9 @@ import { Agent, createServer, type IncomingHttpHeaders, type Server } from "node
 import { pbkdf2 } from "node:crypto";
 import type { AddressInfo, LookupFunction } from "node:net";
 import { brotliCompressSync, deflateSync, gzipSync } from "node:zlib";
-import { addressKind, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
-import { runWatch, type Watchlist } from "../src/watch/core.js";
-import { MOST_OF_A_CODE, MOST_OF_A_FAILURE } from "../src/watch/failure.js";
+import { addressKind, afterAnswer, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
+import { processingFailure, runWatch, type Watchlist } from "../src/watch/core.js";
+import { MOST_OF_A_CODE, MOST_OF_A_FAILURE, saidByThrown } from "../src/watch/failure.js";
 import { ask, MEASURED, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js";
 
 /**
@@ -519,7 +519,7 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
  * retyped, so the sentence and the number cannot drift apart (Standards
  * review, 2026-09-24).
  */
-const OURS_BESIDE_THE_WORDS = " (".length + MOST_OF_A_CODE + ")".length + "after HTTP 302, ".length;
+const OURS_BESIDE_THE_WORDS = " (".length + MOST_OF_A_CODE + ")".length + afterAnswer("", 302).length;
 
 describe("s36 — a read that ends badly still says what the source said", () => {
   it("reports the answer's own status when the socket dies mid-body", async () => {
@@ -538,7 +538,11 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     expect(answer.failure).toBe("transient");
     // And says so in the sentence, which is what travels into the log line,
     // the flag file and the issue that flag becomes.
-    expect(answer.error, "the sentence does not say what the source answered").toContain("HTTP 200");
+    // The clause is named from the contract that builds it, not retyped:
+    // the decision is that the answer comes first in the sentence and names
+    // the status (`afterAnswer`).
+    expect(answer.error.startsWith(afterAnswer("", 200)),
+      "the sentence does not open with what the source answered").toBe(true);
   });
 
   it("bounds a thrown thing's own words, and still says the code and the answer", async () => {
@@ -551,7 +555,7 @@ describe("s36 — a read that ends badly still says what the source said", () =>
      * arrived, and this file's own sentence says that text travels into the
      * log line, the flag file and the issue the flag becomes
      * (`failure.ts`). The bound is the browser tier's, one owner for both
-     * tiers (`shortFailure`, asked for at the throw in `cdp.ts` and on the
+     * tiers (`printableWithin`, asked for at the throw in `cdp.ts` and on the
      * browser tier's own return path in `browser.ts`).
      *
      * Driven through the resolver seam, which is where a throw misses the
@@ -571,8 +575,8 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     expect(answer.error, "the thrown message travelled whole").not.toContain("B".repeat(MOST_OF_A_FAILURE));
     // The two facts a curator acts on survive the cut.
     expect(answer.error, "the cause's code was cut away with the message").toContain("ECONNRESET");
-    expect(answer.error, "what the source answered before the throw went unreported")
-      .toContain("after HTTP 302");
+    expect(answer.error.startsWith(afterAnswer("", 302)),
+      "the sentence does not open with what the source answered before the throw").toBe(true);
     expect(answer.status, "the source's own answer went unreported").toBe(302);
   });
 
@@ -619,8 +623,50 @@ describe("s36 — a read that ends badly still says what the source said", () =>
       .toBeLessThanOrEqual(MOST_OF_A_FAILURE + OURS_BESIDE_THE_WORDS);
     // And the two facts a curator acts on survive being made printable.
     expect(answer.error, "the cause's code was lost with the bytes").toContain("ENOTFOUND");
-    expect(answer.error, "what the source answered before the throw went unreported")
-      .toContain("after HTTP 302");
+    expect(answer.error.startsWith(afterAnswer("", 302)),
+      "the sentence does not open with what the source answered before the throw").toBe(true);
+  });
+
+  it("says what a thrown thing said, and not the name of the class that said it", () => {
+    // `String(e)` on an `Error` is "Error: " and then the message. That
+    // prefix names the shape of an object in a runtime nobody reading the
+    // morning's issue is looking at, and the browser tier has printed the
+    // message alone since s34 — until s36 moved the bound onto that branch
+    // and brought a `String(e)` with it (Spec review, 2026-09-24). Both of
+    // that tier's printers ask this one function; the reader's own no-Chrome
+    // case proves the branch a test can drive (`tests/s34-browser.test.ts`).
+    expect(saidByThrown(new Error("Chrome closed the connection")),
+      "the sentence carries the name of the class that threw")
+      .toBe("Chrome closed the connection");
+    expect(saidByThrown(new TypeError("fetch failed")), "a subclass names itself in the sentence")
+      .toBe("fetch failed");
+    // A thrower may throw anything, and a string is already what it said.
+    expect(saidByThrown("the page refused"), "a thrown string was not printed as itself")
+      .toBe("the page refused");
+  });
+
+  it("bounds and prints the words of a page it could not process", () => {
+    // The third place a thrown thing becomes a printed sentence, beside the
+    // two catches this delta made honest — and the last one still handing
+    // `String(e)` straight to the log line, the flag file and the issue that
+    // flag becomes (the human's word, 2026-09-24).
+    const thrown = new Error(`the marker is gone\u202e\n  at ${"x".repeat(10_000)}`);
+    const said = processingFailure(thrown);
+    expect(said, "the sentence is more than one line").not.toMatch(/[\r\n]/);
+    expect(said, "a byte a terminal acts on travelled with the words")
+      .not.toMatch(/[\u0000-\u001f\u007f-\u009f]/);
+    expect(said, "a character that reorders what is printed travelled with the words")
+      .not.toMatch(/[\u200b-\u200f\u2060-\u2064\u2066-\u2069\u202a-\u202e]/);
+    expect(said.length, "the thrown thing decided how long a log line is")
+      .toBeLessThanOrEqual(MOST_OF_A_FAILURE + "processing: ".length);
+    // The curator still learns which stage failed, and what it said.
+    expect(said.startsWith("processing: "), "the sentence does not say which stage failed").toBe(true);
+    expect(said, "the thrown thing's own words were thrown away with the bytes")
+      .toContain("the marker is gone");
+    // And the sentence a mangled page has produced since s11 is unchanged.
+    expect(processingFailure(new Error("slice marker missing: from")),
+      "an ordinary processing failure now reads differently")
+      .toBe("processing: Error: slice marker missing: from");
   });
 });
 

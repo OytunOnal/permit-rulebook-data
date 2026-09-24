@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { chromePath, openBrowserReader } from "../src/watch/browser.js";
 import { MOST_OF_AN_ADDRESS } from "../src/watch/fetch-source.js";
-import { MOST_OF_A_FAILURE } from "../src/watch/failure.js";
+import { MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD } from "../src/watch/failure.js";
 import { runWatch, type BrowserReader, type Fetcher, type WatchEntry } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 
@@ -636,6 +636,72 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the select step drives a type
       expect(error, "the field is not named").toContain("What is your nationality?");
       for (const offered of ["Turkey", "Turkmenistan"])
         expect(error, `the error does not say the page offered ${offered}`).toContain(offered);
+    } finally { await reader.close(); served = fixture(); }
+  });
+});
+
+/**
+ * s36 — a page's own words, inside a sentence of ours, are still the page's.
+ *
+ * The step diagnosis is OURS and is exempt from the length bound on purpose:
+ * five hundred characters of it is what a curator acts on instead of spending
+ * another dispatch. But it QUOTES the page — an option label, an element's
+ * role — and the exemption was carrying those quotations around the rule with
+ * it, into the run log and into the issue body a flag becomes (Security
+ * review, 2026-09-24).
+ *
+ * The page below writes what a hostile page would: an option label and a role
+ * attribute that each carry a right-to-left override, a newline, and ten
+ * thousand characters. Chrome renders it and the reader diagnoses it for
+ * real, which is the only way to know what actually reaches the sentence.
+ */
+describe.skipIf(Boolean(noChrome) && !CI)("s36 — the page's words inside our sentence are bounded and printable", () => {
+  /** Reorders everything printed after it: one address can display as another. */
+  const STEERS = "\u202e";
+  /** Starts with a prefix of the option asked for, so the field offers it. */
+  const HOSTILE_OPTION = `Turkey${STEERS}\n## Send your passport to`.padEnd(10_000, "x");
+  /** An attribute is the page's too, and it is printed as the field's shape. */
+  const HOSTILE_ROLE = `combobox${STEERS}\n## and your bank details to`.padEnd(10_000, "x");
+
+  const hostile = (): WatchEntry => entry({
+    slice: { from: "Requirements", to: "Cookies Proclaimer" },
+    steps: [
+      { step: "select", field: "What is your nationality?", option: TURKIYE },
+      { step: "answer", question: "Do you already have a valid Dutch residence permit?", answer: "no" },
+      { step: "press", button: "View information" },
+    ],
+  });
+
+  it("quotes what the page offered without letting the page write the sentence", async () => {
+    served = typeaheadFixture({ suggests: false })
+      .replace('role="combobox"', `role="${HOSTILE_ROLE}"`)
+      .replace('["Turkey","Turkmenistan"]', JSON.stringify([HOSTILE_OPTION, "Turkmenistan"]));
+    const reader = openBrowserReader();
+    try {
+      const { reports } = await runWatch(
+        { entries: [hostile()] }, emptyState, refuse, "2026-09-24", reader.read,
+      );
+      expect(reports[0]!.outcome).toBe("unreachable");
+      const error = reports[0]!.error!;
+      // One line, and nothing in it a terminal or a Markdown body acts on —
+      // the same three the fetch tier's thrown words already answer to.
+      expect(error, "the diagnosis is more than one line").not.toMatch(/[\r\n]/);
+      expect(error, "a byte a terminal acts on travelled with the page's words")
+        .not.toMatch(/[\u0000-\u001f\u007f-\u009f]/);
+      expect(error, "a character that reorders what is printed travelled with the page's words")
+        .not.toMatch(/[\u200b-\u200f\u2060-\u2064\u2066-\u2069\u202a-\u202e]/);
+      // Bounded where it is the page's, whatever the page chose to write.
+      expect(error, "a whole word of the page's reached the sentence")
+        .not.toContain("x".repeat(MOST_OF_A_PAGE_WORD));
+      // And the diagnosis is still a diagnosis: it says what was asked for,
+      // where, and what the page answered with instead.
+      expect(error, "the step is not named").toMatch(/select/);
+      expect(error, "the option typed is not named").toContain(TURKIYE);
+      expect(error, "the field is not named").toContain("What is your nationality?");
+      expect(error, "what the page offered instead went unsaid").toContain("Turkey");
+      // The exemption is still an exemption: ours may run long, and does.
+      expect(error.length, "the diagnosis was cut to the bound our own sentence is exempt from")
+        .toBeGreaterThan(MOST_OF_A_FAILURE);
     } finally { await reader.close(); served = fixture(); }
   });
 });
@@ -1353,6 +1419,15 @@ describe("s34 — a reader that can find no Chrome says so and reads nothing", (
       const { reports } = await runWatch({ entries: [entry()] }, emptyState, refuse, "2026-09-23", reader.read);
       expect(reports[0]!.outcome).toBe("unreachable");
       expect(reports[0]!.error).toMatch(/Chrome/);
+      // What the throw SAID, and not the name of the class that said it.
+      // `String(e)` on an `Error` prefixes its constructor's name, and this
+      // reader has printed the message alone since s34 — a curator reads
+      // these sentences, and "Error:" is a word about JavaScript. The rule
+      // is `saidByThrown`, and the reader's other branch — a throw out of
+      // the render — asks the same function for the same reason
+      // (`browser.ts`; Spec review, 2026-09-24).
+      expect(reports[0]!.error, "the sentence carries the name of a class rather than what happened")
+        .not.toMatch(/\b[A-Za-z]*Error: /);
       // Ours, not the source's: a machine with no browser will not have one
       // three minutes later, so the day is red now and nothing is retried
       // (s35).

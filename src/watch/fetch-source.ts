@@ -3,7 +3,7 @@ import { Agent as HttpAgent } from "node:http";
 import { Agent as HttpsAgent } from "node:https";
 import type { LookupFunction } from "node:net";
 import type { Fetcher, FetchResult, RedirectPolicy } from "./core.js";
-import { causeCode, classOfThrown, failureOfStatus, ReadFailure, shortFailure } from "./failure.js";
+import { causeCode, classOfThrown, failureOfStatus, MOST_OF_A_FAILURE, printableWithin, ReadFailure } from "./failure.js";
 import { ask, ENCODINGS_ASKED_FOR } from "./request.js";
 
 /**
@@ -441,8 +441,14 @@ const ASKING: Readonly<Record<string, string>> = Object.freeze({
  *
  * The status only. What the source SAID past its status line is the source's
  * own words and stays out (`failure.ts`'s opening sentence).
+ *
+ * Exported because a test that asks whether the answer reached the sentence
+ * was retyping the clause — `"after HTTP 302"` — which is the fault
+ * `MEASURED` closed one file over: a check keyed to a substring pins the
+ * words rather than the decision, and the decision here is that the answer's
+ * clause comes FIRST and names the status (Standards review, 2026-09-24).
  */
-function afterAnswer(sentence: string, status: number | undefined): string {
+export function afterAnswer(sentence: string, status: number | undefined): string {
   return status === undefined ? sentence : `after HTTP ${status}, ${sentence}`;
 }
 
@@ -691,7 +697,7 @@ export const fetchSource = (async (
      * browser tier's, which asks for it at the throw in `cdp.ts` and again on
      * its own return path in `browser.ts`. One owner cuts the length AND takes
      * out what a terminal or a Markdown body would act on; neither tier has a
-     * second opinion about either half (`shortFailure`).
+     * second opinion about either half (`printableWithin`).
      *
      * `request.ts`'s wrapper makes this five words most mornings, but a
      * wrapper is not a bound: anything thrown inside this `try` that never
@@ -705,7 +711,7 @@ export const fetchSource = (async (
      * cause code, which `MOST_OF_A_CODE` holds, and `afterAnswer`
      * adds a status number.
      */
-    const said = shortFailure(String(e));
+    const said = printableWithin(String(e), MOST_OF_A_FAILURE);
     return {
       ok: false,
       ...(answerStatus !== undefined ? { status: answerStatus } : {}),

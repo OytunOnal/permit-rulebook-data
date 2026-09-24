@@ -5,7 +5,7 @@ import { repairKnownGlyphs, unboundedReason, type GlyphSubstitution } from "./co
 import { noticeSources, provenancedValuesOf, routeStatements, statementSources, forEachCriterion } from "../engine.js";
 import { countryVocabulary } from "../countries.js";
 import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type UnreadEntry, type WatchState } from "./state.js";
-import { failureOfStatus, type FailureClass } from "./failure.js";
+import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, type FailureClass } from "./failure.js";
 import { addressWithoutCredentials, shortAddress } from "./fetch-source.js";
 import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
@@ -360,6 +360,34 @@ function readSource(entry: WatchEntry, body: Uint8Array): Reading {
   }
 }
 
+/**
+ * What a page this watch could not READ says, and how much of it.
+ *
+ * The third place a thrown thing becomes a printed sentence, beside the fetch
+ * tier's catch and the browser tier's — and, until this was named, the only
+ * one of the three still handing a thrown thing's whole `String` to the log
+ * line, the flag file and the issue that flag becomes, with no bound on it
+ * and nothing taken out of it. Nothing that throws inside `readSource` today
+ * says anything long or steering; the rule is not about today's throwers, it
+ * is about the sentence being the same sentence wherever it is made
+ * (`failure.ts`'s opening; the human's word, 2026-09-24).
+ *
+ * `processing:` stays in front, because the first thing a curator needs is
+ * which stage failed: a source that answered and could not be read is a
+ * different morning from one that never answered.
+ *
+ * `String(e)` rather than the message alone, unchanged. This sentence has
+ * carried a thrown thing's whole `String` since s11 and s36 promised the same
+ * errors; the browser tier is the one place that prints the message alone,
+ * and `saidByThrown` is where that difference is written down.
+ *
+ * Exported so the decision can be asked of the function rather than of a
+ * fixture that would have to mangle a PDF to reach it.
+ */
+export function processingFailure(e: unknown): string {
+  return `processing: ${printableWithin(String(e), MOST_OF_A_FAILURE)}`;
+}
+
 /** A reading, dated — the fields a snapshot keeps, minus its history. */
 function snapshotOf(reading: Reading, today: string, entry: WatchEntry): Omit<Snapshot, "history"> {
   const slice = sliceFingerprint(entry);
@@ -478,7 +506,7 @@ export async function runWatch(
       // The source's failure, not ours and not a hiccup: a slice marker that
       // is no longer on the page, or a PDF that no longer decodes, is the
       // page having changed under us, and reading it again changes nothing.
-      return { ...base, outcome: "unreachable", error: `processing: ${String(e)}`, failure: "refused-by-source" };
+      return { ...base, outcome: "unreachable", error: processingFailure(e), failure: "refused-by-source" };
     }
 
     const { hash, text } = reading;

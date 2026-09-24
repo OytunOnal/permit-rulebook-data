@@ -1,7 +1,7 @@
 import type { RedirectPolicy, WatchEntry, WatchStep } from "./core.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
 import { printableAddress, shortAddress } from "./fetch-source.js";
-import { failureOfStatus, ReadFailure, shortFailure } from "./failure.js";
+import { failureOfStatus, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD, printableWithin, ReadFailure } from "./failure.js";
 
 /**
  * The DevTools client: attaching to a tab, asking Chrome things, keeping the
@@ -174,12 +174,23 @@ export function attach(socket: WebSocket, close: () => void): Session {
     traffic.set(sessionId, seen);
     return seen;
   };
-  /** Host and path only — never a query, which is where a page puts what was typed. */
+  /**
+   * Host and path only — never a query, which is where a page puts what was
+   * typed.
+   *
+   * The address is the PAGE's: it asked for it, and this list goes into a step
+   * diagnosis. A parsed one is already printable — the URL parser
+   * percent-encodes every byte and every steering character that would act on
+   * a reader — so it needs the length half only, which is every printer of an
+   * address's own `MOST_OF_AN_ADDRESS`. The fallback needs both: nothing
+   * parsed there, and the page's raw string is all there is
+   * (`failure.ts`; Security review, 2026-09-24).
+   */
   const withoutQuery = (url: string) => {
     try {
       const parsed = new URL(url);
-      return parsed.protocol === "data:" ? "data:..." : `${parsed.host}${parsed.pathname}`;
-    } catch { return url.slice(0, 60); }
+      return parsed.protocol === "data:" ? "data:..." : shortAddress(`${parsed.host}${parsed.pathname}`);
+    } catch { return printableWithin(url, MOST_OF_A_PAGE_WORD); }
   };
   const askedSince = (sessionId: string, since: number): string[] =>
     [...trafficOf(sessionId).values()]
@@ -405,8 +416,9 @@ export function attach(socket: WebSocket, close: () => void): Session {
             // downstream of this throw treats them as a failure's text like
             // any other (Security review, 2026-09-24).
             throw new ReadFailure(
-              shortFailure(
+              printableWithin(
                 answer.exceptionDetails.exception?.description ?? answer.exceptionDetails.text ?? "the page threw",
+                MOST_OF_A_FAILURE,
               ),
               "refused-by-source");
           return answer.result?.value;

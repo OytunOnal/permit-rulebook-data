@@ -1,6 +1,6 @@
 import { chromePath, launch } from "./chrome.js";
 import { BUDGET_MS, refusedAddress } from "./fetch-source.js";
-import { classOfThrown, ReadFailure, shortFailure } from "./failure.js";
+import { classOfThrown, MOST_OF_A_FAILURE, printableWithin, ReadFailure, saidByThrown } from "./failure.js";
 import type { Session } from "./cdp.js";
 import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 
@@ -135,7 +135,7 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
         session = await withDeadline(launch(findChrome(), budgetMs), budgetMs,
           `Chrome did not become usable within ${Math.round(budgetMs / 1000)}s`);
       } catch (e) {
-        launchFailure = `no browser: ${e instanceof Error ? e.message : String(e)}`;
+        launchFailure = `no browser: ${saidByThrown(e)}`;
         return { ok: false, error: launchFailure, failure: "refused-by-us" };
       }
     }
@@ -159,9 +159,17 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
       // own protocol error text, most of it (`cdp.ts`) — and was the one
       // printed string on this tier that passed no bound and no printable
       // rule at all (Standards review, 2026-09-24).
+      //
+      // What is bounded is what the thing SAID, and not the name of the class
+      // that said it: s36 moved the bound onto this branch and brought a
+      // `String(e)` — and its "Error: " prefix — with it, where this reader
+      // had printed the message alone since s34. The bound stays and the
+      // prefix does not (`saidByThrown`; Spec review, 2026-09-24).
       return {
         ok: false,
-        error: e instanceof ReadFailure ? e.message : shortFailure(String(e)),
+        error: e instanceof ReadFailure
+          ? e.message
+          : printableWithin(saidByThrown(e), MOST_OF_A_FAILURE),
         failure: classOfThrown(e),
       };
     }

@@ -1,4 +1,5 @@
 import type { WatchStep } from "./core.js";
+import { MOST_OF_A_PAGE_WORD, printableWithin, PRINTABLE_WITHIN_SOURCE } from "./failure.js";
 
 /**
  * The step vocabulary: how a field is driven whatever the page built it out
@@ -85,6 +86,30 @@ export async function selectInto(
   const setterValue = attempt.value ?? "";
 
   /**
+   * One thing the page wrote, quoted into a sentence of ours.
+   *
+   * The sentence below is OURS and runs long on purpose — but an option's
+   * label, a field's value and a control's role are the PAGE's, and a
+   * quotation belongs to whoever wrote it (`failure.ts`'s opening). So each
+   * one is bounded and made printable here, where it is quoted, rather than
+   * riding the diagnosis's length exemption into the log line and the issue
+   * (Security review, 2026-09-24).
+   *
+   * `JSON.stringify` stays around the outside: it is what puts the quotation
+   * marks on, and what stops a page's own quote mark ending ours.
+   */
+  const quoted = (said: string) => JSON.stringify(printableWithin(said, MOST_OF_A_PAGE_WORD));
+
+  /** At most eight of anything: a page chooses how many options it has, and a
+   * watch does not get to put all of them in an error that becomes a flag and
+   * an issue. Measured 2026-09-24: 5,000 options made a 441,449-character
+   * message. */
+  const list = (offers: string[]) => offers.length
+    ? offers.slice(0, 8).map(quoted).join(", ")
+      + (offers.length > 8 ? `, ... (${offers.length} in all)` : "")
+    : "nothing";
+
+  /**
    * Why it failed, in one line, without spending another run to find out.
    *
    * Two things hide behind "offered nothing": a control that wants more
@@ -101,18 +126,10 @@ export async function selectInto(
     await inPage(step, "clear");
     await type(prefix);
     const reading = await waitForOption(step, inPage, PROBE_MS);
-    probes.push(`"${prefix}" (the field then held ${JSON.stringify(reading.value ?? "")}) -> `
-      + `${reading.offers?.length ? reading.offers.slice(0, 8).map((o) => JSON.stringify(o)).join(", ") : "nothing"}`);
+    probes.push(`"${prefix}" (the field then held ${quoted(reading.value ?? "")}) -> `
+      + `${reading.offers?.length ? list(reading.offers) : "nothing"}`);
   }
 
-  /** At most eight of anything, like the probes above: a page chooses how many
-   * options it has, and a watch does not get to put all of them in an error
-   * that becomes a flag and an issue. Measured 2026-09-24: 5,000 options made
-   * a 441,449-character message. */
-  const list = (offers: string[]) => offers.length
-    ? offers.slice(0, 8).map((o) => JSON.stringify(o)).join(", ")
-      + (offers.length > 8 ? `, ... (${offers.length} in all)` : "")
-    : "nothing";
   /**
    * What the page asked the network for while all of that was happening.
    *
@@ -124,9 +141,9 @@ export async function selectInto(
    */
   const asked = askedSince(typingStarted);
   return `step select: the option "${step.option}" is not in the field "${step.field}". `
-    + `The field is ${shape.shape}. Real key events left it holding ${JSON.stringify(keyValue)} `
-    + `(aria-expanded ${keyExpanded ?? "unset"}) and offered ${list(afterKeys)}; `
-    + `the value setter left it holding ${JSON.stringify(setterValue)} and offered ${list(afterSetter)}. `
+    + `The field is ${shape.shape}. Real key events left it holding ${quoted(keyValue)} `
+    + `(aria-expanded ${keyExpanded == null ? "unset" : quoted(keyExpanded)}) and offered ${list(afterKeys)}; `
+    + `the value setter left it holding ${quoted(setterValue)} and offered ${list(afterSetter)}. `
     + `By prefix: ${probes.join("; ")}. `
     + `The page asked for: ${asked.length ? asked.join(" | ") : "nothing at all after the typing"}.`;
 }
@@ -172,6 +189,13 @@ async function waitForOption(step: unknown, inPage: InPage, patience = SUGGEST_M
  * candidates would read the page in a state nobody declared.
  */
 export const PERFORM_STEP = `function (step, phase) {
+  // The watch's one rule about what may be printed, spliced in from its owner
+  // in failure.ts because this half runs in Chrome and cannot import it.
+  // Every fragment below that the PAGE wrote goes through it before it lands
+  // in a message: an option's label, a control's tag, type and role, the text
+  // beside a label. The message around them is ours; they are not.
+  ${PRINTABLE_WITHIN_SOURCE}
+  var MOST_OF_A_PAGE_WORD = ${MOST_OF_A_PAGE_WORD};
   function norm(s) { return String(s == null ? "" : s).replace(/\\u00a0/g, " ").replace(/\\s+/g, " ").trim().toLowerCase(); }
   // An id is the page's to choose and may hold a quote; unescaped into a
   // selector it throws a DOMException, which surfaces as the page being
@@ -212,14 +236,22 @@ export const PERFORM_STEP = `function (step, phase) {
     var box = el.getBoundingClientRect();
     return box.width > 0 && box.height > 0;
   }
-  /** What a set of elements IS, for a message that has to diagnose from afar. */
+  /** What a set of elements IS, for a message that has to diagnose from afar.
+   *
+   * A tag name, a type and a role are all the page's own words — a role is an
+   * attribute, and an attribute is whatever the author put in it. Measured
+   * 2026-09-24: one role attribute carried ten thousand characters, a newline
+   * and a right-to-left override into the middle of the step diagnosis. */
   function shapes(list) {
     var all = [].slice.call(list);
     return all.slice(0, MOST).map(function (e) {
-      var role = e.getAttribute("role");
-      return e.tagName + (e.type ? "[type=" + e.type + "]" : "") + (role ? "[role=" + role + "]" : "");
+      var role = word(e.getAttribute("role"));
+      var type = word(e.type);
+      return word(e.tagName) + (type ? "[type=" + type + "]" : "") + (role ? "[role=" + role + "]" : "");
     }).join(", ") + (all.length > MOST ? ", ... (" + all.length + " in all)" : "");
   }
+  /** One thing the page wrote, as much of it as a message may carry. */
+  function word(said) { return printableWithin(said, MOST_OF_A_PAGE_WORD); }
   function named(selector, label, what) {
     var wanted = norm(label);
     var hits = [].slice.call(document.querySelectorAll(selector)).filter(function (el) {
@@ -251,13 +283,17 @@ export const PERFORM_STEP = `function (step, phase) {
   function fire(el, type) { el.dispatchEvent(new Event(type, { bubbles: true })); }
   /** The first few things on offer, so a wrong option says what the right ones are. */
   function offered(list) {
-    var words = list.map(function (o) { return JSON.stringify(String(o.textContent || o.value || "").trim().slice(0, 40)); });
+    var words = list.map(function (o) { return JSON.stringify(word(o.textContent || o.value || "")); });
     return words.length ? words.slice(0, 6).join(", ") + (words.length > 6 ? ", ..." : "") : "nothing";
   }
   /** At most this many of anything in a message a person has to read. A page
    * chooses how many options and how many controls it has; a watch does not
    * get to put all of them in an error, a flag and an issue. */
   var MOST = 8;
+  /** And this much of the page's own prose where a whole sentence of it is
+   * the diagnosis — four times a word, because a label that is not where it
+   * was is found by reading what IS there. */
+  var MOST_OF_NEARBY_TEXT = 4 * MOST_OF_A_PAGE_WORD;
   /**
    * What is actually near this label, for a step that could not act on it.
    *
@@ -276,7 +312,7 @@ export const PERFORM_STEP = `function (step, phase) {
     var scope = holder.parentNode || holder;
     var found = [].slice.call(scope.querySelectorAll("select,input,button,textarea,[role]")).slice(0, 8);
     return " — near that label the page has: " + (found.length ? shapes(found) : "no control at all")
-      + '; the text there reads "' + norm(scope.textContent).slice(0, 160) + '"';
+      + "; the text there reads " + JSON.stringify(printableWithin(norm(scope.textContent), MOST_OF_NEARBY_TEXT));
   }
   /**
    * Wherever a control keeps its options, once it has any.
@@ -367,15 +403,21 @@ export const PERFORM_STEP = `function (step, phase) {
     var reading = named(FIELD, step.field, "the field");
     if (reading.error) return { error: reading.error };
     var list = optionsOf(reading.el);
+    // These three are DATA rather than a message — Node decides what to say
+    // about them — but they are the page's words and they travel over the
+    // protocol to get there, so they are cut to what anything downstream can
+    // use rather than shipped whole. Node quotes them through the same rule
+    // when it builds the sentence, in selectInto.
     return {
-      offers: list.map(function (o) { return String(o.textContent || "").trim().slice(0, 40); }),
+      offers: list.map(function (o) { return word(o.textContent || ""); }),
       // What the field actually holds, and whether it says it opened. Between
       // them these separate the three ways typing fails: the keys never
       // landed (the box is still empty), the box filled and the control never
       // reacted (it wants something else), or it reacted and had no match
       // (the option is spelled differently, or needs more characters).
-      value: String(reading.el.value == null ? "" : reading.el.value),
-      expanded: reading.el.getAttribute("aria-expanded")
+      value: word(reading.el.value),
+      expanded: reading.el.getAttribute("aria-expanded") == null
+        ? null : word(reading.el.getAttribute("aria-expanded"))
     };
   }
 
