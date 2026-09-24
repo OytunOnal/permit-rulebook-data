@@ -452,6 +452,20 @@ export const fetchSource = (async (
   // Refused by us, every one of them: the floor declined to make the request
   // at all, and it will decline the same request three minutes later.
   if (refused) return { ok: false, error: refused, failure: "refused-by-us" };
+  /**
+   * The last thing this source actually said, kept for a refusal made after it.
+   *
+   * A hop refused from its `location` header reports the redirect's own status,
+   * because that is the answer the source gave (s34). A hop refused at the
+   * connection — the resolver answered an address this watch will not dial —
+   * is the same hop, refused a few microseconds later, and reported the same
+   * answer with the status missing. Where a refusal was DECIDED is not the
+   * source's business; what the source said is, so it is said either way.
+   *
+   * It stays `undefined` until something answers, which is the honest report
+   * for an entry refused before it was ever asked.
+   */
+  let answerStatus: number | undefined;
   // Everything below is inside the try because `new URL` throws, and one bad
   // entry used to take the whole pass down with it — no reports, no state and
   // no flags for the other forty-four sources, where it had been a single
@@ -514,6 +528,7 @@ export const fetchSource = (async (
           agent: here.protocol === "https:" ? pools["https:"] : pools["http:"],
           msLeft: deadline - Date.now(),
         });
+        answerStatus = res.status;
 
         if (res.status >= 300 && res.status < 400) {
           // A redirect's body is nobody's reading, and the socket is wanted for
@@ -609,7 +624,13 @@ export const fetchSource = (async (
      * not dressed up as a failure that happened TO us, because it did not
      * happen: we declined it.
      */
-    if (e instanceof ReadFailure) return { ok: false, error: e.message, failure: e.failure };
+    if (e instanceof ReadFailure)
+      return {
+        ok: false,
+        ...(answerStatus !== undefined ? { status: answerStatus } : {}),
+        error: e.message,
+        failure: e.failure,
+      };
     /**
      * Where `fetch failed` stops being five words.
      *

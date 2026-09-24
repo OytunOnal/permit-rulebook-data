@@ -198,6 +198,8 @@ describe("s36 — a name is refused by what it resolves to", () => {
     expect(answer.failure).toBe("refused-by-us");
     expect(answer.error, "the refusal does not say what kind of address it is").toContain("private");
     expect(answer.error, "the address behind the name was printed").not.toContain("10.0.0.5");
+    // Nothing answered, so there is nothing of the source's to report.
+    expect(answer.status, "a source that never answered was given a status").toBeUndefined();
     expect(asked.length - before, "something was requested").toBe(0);
   });
 
@@ -269,6 +271,11 @@ describe("s36 — a name is refused by what it resolves to", () => {
     if (answer.ok) return;
     expect(answer.failure).toBe("refused-by-us");
     expect(answer.error).toContain("private");
+    // The source's own answer, reported whichever way the hop was refused:
+    // read off the `location` header, or made at the connection. s34 pinned
+    // that a report says what the source said, and where the refusal was
+    // decided is not the source's business.
+    expect(answer.status, "the source's own answer went unreported").toBe(302);
     // The entry, and nothing after it.
     expect(asked.length - before, "the hop was taken anyway").toBe(1);
   });
@@ -325,6 +332,9 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
     // The source answered, and the answer was not a page. That is the same
     // answer in three minutes, so it is not asked again (`failure.ts`).
     expect(answer.failure).toBe("refused-by-source");
+    // The source answered 200 and what came back was not a page: both halves
+    // of that belong in the report.
+    expect(answer.status, "the source's own answer went unreported").toBe(200);
     // Nothing of what the body said reaches the log line, the flag file or the
     // issue the flag becomes.
     expect(answer.error, "the failure carries the body's own words").not.toContain("authority");
