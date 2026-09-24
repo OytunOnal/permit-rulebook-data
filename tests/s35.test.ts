@@ -128,11 +128,19 @@ describe("s35 — a failure has a class, and the reader names it", () => {
     // and not the page (Security review, 2026-09-24). The call site is
     // pinned against a real Chrome in `tests/s34-browser.test.ts`; this is
     // the rule itself.
-    const words = shortFailure(`Error: ${"A".repeat(10_000)}
-    at https://source.test/x:1:1`);
-    expect(words.length).toBeLessThanOrEqual(MOST_OF_A_FAILURE);
+    const said = `Error: ${"A".repeat(10_000)}
+    at https://source.test/x:1:1`;
+    const words = shortFailure(said);
+    expect(words.length, "a page decided how long a log line is").toBeLessThanOrEqual(MOST_OF_A_FAILURE);
     expect(words, "the page's own address travelled with its words").not.toContain("source.test");
-    expect(words, "the reading does not say it was shortened").toContain("characters)");
+    // What is left is the beginning of what the page said and not a
+    // rewriting of it — asked of the first half of the bound, which is
+    // inside whatever the reading costs at the end.
+    expect(said.startsWith(words.slice(0, MOST_OF_A_FAILURE / 2)), "what survives is not how the page began")
+      .toBe(true);
+    // And a failure a person can already read is not touched.
+    const brief = "Error: the page said no";
+    expect(shortFailure(brief), "a failure short enough to read was cut anyway").toBe(brief);
     // And a failure of OURS is not bound by it. The step diagnosis that names
     // what the page offered instead of the option asked for runs to five
     // hundred characters on purpose, and is the whole of what a curator acts
