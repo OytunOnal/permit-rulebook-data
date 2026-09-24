@@ -717,8 +717,12 @@ const migratedMorning = (previous: WatchState, today: string): string =>
  * ways depending on which branch read it, one of them green (Security
  * review, 2026-09-24).
  *
- * This is the one place a state's days are read — the full run's and a
- * targeted pass's alike — and therefore the one place they are checked.
+ * This is the one place a file's days are read — the state a full run starts
+ * from and the state a targeted pass starts from alike — and therefore the
+ * one place they are checked. The other days this module handles are its
+ * own: a pass's `lapses`, which `mergeTargetedRun` carries straight across,
+ * were made by `lapsesAfter` out of days that came through here, and a day
+ * this code wrote a moment ago is not a day to check a second time.
  */
 function knownLapses(previous: WatchState, today: string): Record<string, string[]> {
   const recorded: unknown = previous.lapses;
@@ -887,6 +891,9 @@ export function mergeTargetedRun(previous: WatchState, pass: WatchState, fetched
   // for good and the week would start them over (Spec review, 2026-09-24).
   const lapses: Record<string, string[]> = {};
   for (const [id, days] of Object.entries(knownLapses(previous, today))) if (!touched.has(id)) lapses[id] = days;
+  // The pass's own days are the code's, not a file's: `lapsesAfter` made them
+  // out of the same previous state, read and checked at `knownLapses` on the
+  // way in, so they are taken as they come.
   for (const [id, days] of Object.entries(pass.lapses ?? {})) if (touched.has(id)) lapses[id] = days;
   return {
     entries: { ...previous.entries, ...pass.entries },
