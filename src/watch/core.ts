@@ -599,6 +599,26 @@ function inTheWeek(day: string, today: string): boolean {
 }
 
 /**
+ * An empty record of days, keyed by source id and answering for no id it was
+ * not given.
+ *
+ * A source id is a watchlist entry's, and nothing in this repository says how
+ * one may be spelled: `checkCoverage` asks an entry's url, kind, steps and
+ * glyph rules, and never the shape of its id. So `constructor`, `toString`
+ * and `__proto__` are legal ids — and on a plain `{}` every one of them is
+ * already answered before a day is written, by the prototype every object
+ * carries. `known[id] ??= morning` then wrote nothing and the source lost its
+ * migrated morning green-ward; `next[id] ?? []` handed a function to
+ * `days.includes` and killed the run (Security review, 2026-09-24).
+ *
+ * A record with no prototype answers only for what was put in it, and
+ * `__proto__` is a key of it like any other word — written to the state file
+ * as a key, read back off it as a key by `JSON.parse`, printed and counted
+ * like any other source's.
+ */
+const daysBySource = (): Record<string, string[]> => Object.create(null) as Record<string, string[]>;
+
+/**
  * Each source's silent mornings inside the week, after this run.
  *
  * Every day the state knew about is carried forward, whether or not the
@@ -611,7 +631,7 @@ function inTheWeek(day: string, today: string): boolean {
  * keeps and this run has an eighth morning to add.
  */
 function lapsesAfter(reports: WatchReport[], previous: WatchState, today: string): Record<string, string[]> {
-  const next: Record<string, string[]> = { ...knownLapses(previous, today) };
+  const next: Record<string, string[]> = Object.assign(daysBySource(), knownLapses(previous, today));
   for (const report of reports) {
     if (report.outcome !== "unreachable") continue;
     const days = next[report.id] ?? [];
@@ -726,7 +746,7 @@ const migratedMorning = (previous: WatchState, today: string): string =>
  */
 function knownLapses(previous: WatchState, today: string): Record<string, string[]> {
   const recorded: unknown = previous.lapses;
-  const known: Record<string, string[]> = {};
+  const known: Record<string, string[]> = daysBySource();
   if (recorded && typeof recorded === "object" && !Array.isArray(recorded)) {
     for (const [id, value] of Object.entries(recorded)) {
       const days = daysOf(value, today);
@@ -889,7 +909,7 @@ export function mergeTargetedRun(previous: WatchState, pass: WatchState, fetched
   // — and a written `lapses` is exactly what stops the next full run
   // migrating, so every untouched source's earlier mornings would be gone
   // for good and the week would start them over (Spec review, 2026-09-24).
-  const lapses: Record<string, string[]> = {};
+  const lapses: Record<string, string[]> = daysBySource();
   for (const [id, days] of Object.entries(knownLapses(previous, today))) if (!touched.has(id)) lapses[id] = days;
   // The pass's own days are the code's, not a file's: `lapsesAfter` made them
   // out of the same previous state, read and checked at `knownLapses` on the

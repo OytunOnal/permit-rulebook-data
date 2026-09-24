@@ -749,6 +749,47 @@ describe("s35 — the days on the state are read as days or not at all", () => {
     expect(verdict.lapsed.map((u) => u.id)).toEqual(["down"]);
     expect(verdict.red, "one silence written twice was read as two").toBe(false);
   });
+
+  it("counts the migrated morning of a source whose id is a word every object answers to", async () => {
+    // The ids are the watchlist's, and the watchlist has no grammar for them:
+    // `checkCoverage` asks what an entry's url is, what kind it is and what
+    // steps it declares, and never how its id is spelled. So `constructor` is
+    // a legal id, and a record keyed by ids must not answer for it before
+    // anything was written — the read used to come back non-nullish, the
+    // migrated morning was never stored, and the source's next silence was a
+    // lapse where the migration meant an outage (Security review,
+    // 2026-09-24).
+    const { fetcher } = scripted({ [addressOf("constructor")]: [fail("transient")] });
+    const { nextState, verdict } = await runWatch(
+      watching("constructor"), stateWith(undefined, "constructor"), fetcher, TODAY,
+    );
+    expect(nextState.lapses!["constructor"]).toEqual([YESTERDAY, TODAY]);
+    expect(verdict.outages.map((u) => u.id)).toEqual(["constructor"]);
+    expect(verdict.red, "a source named after a prototype's own word lost its migrated morning").toBe(true);
+  });
+
+  it("writes a source whose id is `__proto__` as a key, and reads it back as one", async () => {
+    // The same legality, and the one id that would not merely be read through
+    // the prototype but move it: nothing in this repository forbids it, so it
+    // is carried as what it is — a key of the record, written into the state
+    // file and read out of it like any other id.
+    const { fetcher } = scripted({ [addressOf("__proto__")]: [fail("transient")] });
+    const { nextState, verdict } = await runWatch(
+      watching("__proto__"), stateWith(undefined, "__proto__"), fetcher, TODAY,
+    );
+    expect(Object.keys(nextState.lapses!)).toEqual(["__proto__"]);
+    expect(nextState.lapses!["__proto__"]).toEqual([YESTERDAY, TODAY]);
+    expect(verdict.outages.map((u) => u.id)).toEqual(["__proto__"]);
+
+    // And through the file: the state the run writes is JSON, and the morning
+    // after reads its days back off it.
+    const onDisk = JSON.parse(JSON.stringify(nextState)) as WatchState;
+    expect(Object.keys(onDisk.lapses!)).toEqual(["__proto__"]);
+    const { fetcher: again } = scripted({ [addressOf("__proto__")]: [fail("transient")] });
+    const after = await runWatch(watching("__proto__"), onDisk, again, TOMORROW);
+    expect(after.nextState.lapses!["__proto__"]).toEqual([YESTERDAY, TODAY, TOMORROW]);
+    expect(after.verdict.outages.map((u) => u.id)).toEqual(["__proto__"]);
+  });
 });
 
 describe("s35 — the verdict is the run's, in one place", () => {
