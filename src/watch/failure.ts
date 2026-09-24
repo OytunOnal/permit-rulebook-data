@@ -58,8 +58,9 @@ export class ReadFailure extends Error {
  * the failure a run logs. A page can make it as long as it likes: measured
  * 2026-09-24 at 10,104 characters carrying the page's origin. The fetcher
  * already binds every address it prints at 200 for the same reason
- * (`MOST_OF_AN_ADDRESS`), and this was the one printed string with no bound
- * at all (Security review, 2026-09-24).
+ * (`MOST_OF_AN_ADDRESS`). This was one of the two printed strings the slice
+ * left with no bound at all; the other is a cause's `code`, bound by
+ * `A_CODE` below (Security review, 2026-09-24).
  *
  * The bound is TOTAL, unlike the address's, because this is the whole of what
  * a line says about a failure rather than one field inside it.
@@ -109,8 +110,9 @@ export function failureOfStatus(status: number): FailureClass {
  *
  * Neither is anything that is not shaped like a code. `cause.code` is a field
  * name, and a field name is not a promise: a thrower that is not Node can put
- * whatever it likes there, and this is the one printed string in the watch
- * that had no bound at all (Security review, 2026-09-24). A code is Node's
+ * whatever it likes there — the second of the two printed strings the slice
+ * left with no bound at all, beside a page's own words above
+ * (`MOST_OF_A_FAILURE`; Security review, 2026-09-24). A code is Node's
  * and undici's own spelling — capitals, digits and underscores — and short;
  * anything else is something else wearing the name, and is simply not
  * printed, which costs a log line one parenthesis.
