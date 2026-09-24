@@ -618,7 +618,7 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     expect(answer.error, "the sentence is still more than one line").not.toMatch(/[\r\n]/);
     expect(hasControl(answer.error), "a byte a terminal acts on travelled with the words")
       .toBe(false);
-    expect(hasSteering(answer.error), "a character that reorders what is printed travelled with the words")
+    expect(hasSteering(answer.error), "a character that prints nothing travelled with the words")
       .toBe(false);
     // The words themselves are still the source's own, not a rewriting of
     // them: what was said survives, only the bytes nobody reads are gone.
@@ -677,7 +677,7 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     expect(said, "the sentence is more than one line").not.toMatch(/[\r\n]/);
     expect(hasControl(said), "a byte a terminal acts on travelled with the words")
       .toBe(false);
-    expect(hasSteering(said), "a character that reorders what is printed travelled with the words")
+    expect(hasSteering(said), "a character that prints nothing travelled with the words")
       .toBe(false);
     expect(said.length, "the thrown thing decided how long a log line is")
       .toBeLessThanOrEqual(MOST_OF_A_FAILURE + "processing: ".length);
@@ -768,7 +768,7 @@ describe("s36 — the sanitiser is the whole set, and it cuts on characters", ()
       expect(hasSteering(steering), "the rule does not know this character steers").toBe(true);
       expect(
         hasSteering(printableWithin(`the page said no${steering} and then this`, MOST_OF_A_FAILURE)),
-        "a character that reorders what is printed travelled with the page's words",
+        "a character that prints nothing travelled with the page's words",
       ).toBe(false);
     }
     // Dropped and not collapsed: a steering character has no width, and a

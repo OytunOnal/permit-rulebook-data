@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { chromePath, openBrowserReader } from "../src/watch/browser.js";
 import { MOST_OF_AN_ADDRESS } from "../src/watch/fetch-source.js";
-import { hasControl, hasSteering, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD } from "../src/watch/failure.js";
+import { hasControl, hasSteering, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD, NOTE_AFTER } from "../src/watch/failure.js";
 import { runWatch, type BrowserReader, type Fetcher, type WatchEntry } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 
@@ -435,9 +435,9 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — a real browser performs the s
       // run past forty characters, and the name is the whole of what this
       // line tells a curator (Security review, 2026-09-24).
       expect(hasControl(said), "a byte a terminal acts on travelled with Chrome's words").toBe(false);
-      expect(hasSteering(said), "a character that reorders what is printed travelled with Chrome's words")
+      expect(hasSteering(said), "a character that prints nothing travelled with Chrome's words")
         .toBe(false);
-      expect(said, "Chrome's own error name arrived cut").not.toContain("characters)");
+      expect(said, "Chrome's own error name arrived cut").not.toContain(NOTE_AFTER);
       expect(said, "Chrome's own error name did not arrive whole").toMatch(/net::ERR_[A-Z0-9_]+$/);
     } finally { await reader.close(); }
   });
@@ -699,7 +699,7 @@ describe.skipIf(Boolean(noChrome) && !CI)("s36 — the page's words inside our s
       expect(error, "the diagnosis is more than one line").not.toMatch(/[\r\n]/);
       expect(hasControl(error), "a byte a terminal acts on travelled with the page's words")
         .toBe(false);
-      expect(hasSteering(error), "a character that reorders what is printed travelled with the page's words")
+      expect(hasSteering(error), "a character that prints nothing travelled with the page's words")
         .toBe(false);
       // Bounded where it is the page's, whatever the page chose to write.
       expect(error, "a whole word of the page's reached the sentence")
@@ -1275,7 +1275,7 @@ for (var i = 0; i < 12; i++) {
       if (!answer.ok) return;
       expect(answer.from!.length, "the address the page chose was reported whole")
         .toBeLessThanOrEqual(MOST_OF_AN_ADDRESS + `… (${answer.from!.length} characters)`.length + 16);
-      expect(answer.from, "the reading does not say it was shortened").toContain("characters)");
+      expect(answer.from, "the reading does not say it was shortened").toContain(NOTE_AFTER);
     } finally { await reader.close(); served = fixture(); }
   });
 
@@ -1394,7 +1394,7 @@ Object.defineProperty(Element.prototype, "outerHTML", {
       expect(answer.error, "the page decided where the sentence ends").not.toMatch(/[\r\n]/);
       expect(hasControl(answer.error), "a byte a terminal acts on travelled with the page's words")
         .toBe(false);
-      expect(hasSteering(answer.error), "a character that reorders what is printed travelled with the page's words")
+      expect(hasSteering(answer.error), "a character that prints nothing travelled with the page's words")
         .toBe(false);
       // And the page's own words are still the page's: cut and cleaned, not
       // rewritten.

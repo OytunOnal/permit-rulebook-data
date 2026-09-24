@@ -102,18 +102,23 @@ export class ReadFailure extends Error {
  * `DerivedCoreProperties.txt`, and the derivation is worth having in the eye:
  * `Other_Default_Ignorable_Code_Point` plus the format characters (`Cf`) plus
  * the variation selectors, less the ones that are whitespace, less the
- * interlinear annotation characters (U+FFF9–U+FFFB) and the prepended
- * concatenation marks — the four Unicode says do print.
+ * three interlinear annotation characters (U+FFF9–U+FFFB) and the thirteen
+ * prepended concatenation marks — the ones Unicode says do print (counted
+ * on this Node, v24.20.0, 2026-09-25: three and thirteen, and the property
+ * holds 4,174 code points in all).
  *
  * **Why the rule is the superset and not the two families it was written
  * for.** It was spelled as Unicode's twelve `Bidi_Control` code points and
  * the invisible joiners, and a hand-listed set is only as good as its
  * author's eye. U+061C ARABIC LETTER MARK sat outside the ranges it was
  * written with and travelled whole into all three places a failure is printed
- * (Security review, 2026-09-24). A round later the same reading found six
- * more the list could not have caught, because they are in neither family:
- * the soft hyphen (U+00AD), the Mongolian vowel separator (U+180E) and the
- * four Hangul fillers (U+115F, U+1160, U+3164, U+FFA0) print nothing, `\s`
+ * (Security review, 2026-09-24). A round later the same reading found more
+ * the list could not have caught, because they are in neither family: the
+ * soft hyphen (U+00AD), the Mongolian vowel separator (U+180E), the four
+ * Hangul fillers (U+115F, U+1160, U+3164, U+FFA0), the combining grapheme
+ * joiner (U+034F) and the Khmer inherent vowels (U+17B4, U+17B5) print
+ * nothing — the last three are not even format characters, which is the
+ * shape of the fault: a hand-listed set is a guess at a property. `\s`
  * does not match a soft hyphen and the control ranges below do not reach one
  * — so two labels that are not the same string rendered alike in a sentence
  * a curator reads (Security review, 2026-09-25). The names stay: a character
@@ -316,7 +321,7 @@ export function noteOfLength(characters: number): string {
  * where the count stood, so the sentence exists once in this file and the
  * page's copy cannot drift from it.
  */
-const [NOTE_BEFORE, NOTE_AFTER] = noteOfLength(0).split("0") as [string, string];
+export const [NOTE_BEFORE, NOTE_AFTER] = noteOfLength(0).split("0") as [string, string];
 
 /**
  * The same rule, as source, for the one reader that cannot call it.

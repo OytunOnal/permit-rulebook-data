@@ -86,6 +86,16 @@ export const MOST_OF_AN_ADDRESS = 200;
  * tier's request list reaches this function with a page's own address
  * (`cdp.ts`), so a page chose those characters (Security review, 2026-09-25).
  *
+ * **A bound is all this one applies, and that is the caller's invariant, not
+ * this function's luck.** Every caller hands it URL-serialised text — a
+ * parsed `origin`, `host + pathname`, a `location.href`, a punycoded name —
+ * and the URL serializer percent-encodes every code point above U+007E in a
+ * path, so a character that prints nothing cannot arrive here spelled as
+ * itself. A caller that ever passes a page's words unserialised asks
+ * `printableWithin` first: the rule is `failure.ts`'s, and this function
+ * bounds a field rather than sanitising a sentence (Security review,
+ * 2026-09-25).
+ *
  * The note is asked of `failure.ts`, which owns the wording: a curator reads
  * one spelling wherever this package shortens something, and this was the
  * second copy of it (Standards review, 2026-09-25).
