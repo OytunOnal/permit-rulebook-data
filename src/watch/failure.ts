@@ -113,8 +113,9 @@ export function failureOfStatus(status: number): FailureClass {
  * that and nothing else. The code underneath (`ECONNRESET`, `ENOTFOUND`,
  * `UND_ERR_CONNECT_TIMEOUT`) is what tells them apart.
  *
- * The MESSAGE is not taken: undici writes the address into it, and the
- * message is one of the three places this file opens by naming.
+ * The MESSAGE is not taken: undici writes the address into it, and this
+ * message is the text that travels into all three places this file opens by
+ * naming — the log line, the flag file, and the issue that flag becomes.
  *
  * Neither is anything that is not shaped like a code. `cause.code` is a field
  * name, and a field name is not a promise: a thrower that is not Node can put
