@@ -4,7 +4,8 @@ import { pdfToText } from "./pdf-text.js";
 import { repairKnownGlyphs, unboundedReason, type GlyphSubstitution } from "./corrections.js";
 import { noticeSources, provenancedValuesOf, routeStatements, statementSources, forEachCriterion } from "../engine.js";
 import { countryVocabulary } from "../countries.js";
-import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type WatchState } from "./state.js";
+import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type UnreadEntry, type WatchState } from "./state.js";
+import { failureOfStatus, type FailureClass } from "./failure.js";
 import { addressWithoutCredentials, shortAddress } from "./fetch-source.js";
 import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
@@ -16,7 +17,10 @@ import type { Dataset, UnsourcedReasonWord } from "../types.js";
  * become a second door onto everything that reads it.
  */
 export { datasetSourceUrls } from "./state.js";
-export type { Snapshot, WatchState } from "./state.js";
+export type { Snapshot, UnreadEntry, WatchState } from "./state.js";
+/** What kind of failure a read was — the rule, and both readers' one owner. */
+export { failureOfStatus, ReadFailure } from "./failure.js";
+export type { FailureClass } from "./failure.js";
 
 export type WatchStrategy = "html" | "browser" | "pdf" | "pdf-text" | "human" | "link";
 
@@ -211,7 +215,18 @@ export type FetchResult =
      */
     from?: string;
   }
-  | { ok: false; status?: number; error: string };
+  | {
+    ok: false;
+    status?: number;
+    error: string;
+    /**
+     * What kind of failure this was — what decides whether it is asked
+     * again, and on which morning it reddens the run. Required, because a
+     * reader that does not say is a reader whose failures all mean the same
+     * thing, which is the fault s35 was written for.
+     */
+    failure: FailureClass;
+  };
 /**
  * What reads a source over HTTP. Takes the redirect policy rather than the
  * entry, because that is the only thing about the entry it needs and the one
@@ -233,19 +248,35 @@ export type BrowserReader = (entry: WatchEntry, redirects: RedirectPolicy) => Pr
 
 export type Outcome = "unchanged" | "changed" | "baseline" | "unreachable" | "reminder-due" | "ok";
 
-export interface WatchReport {
+/** Everything a report says about a source, whatever the run made of it. */
+interface ReportOfSource {
   id: string;
   url: string;
   strategy: WatchStrategy;
   kind: "value-source" | "sentinel";
   note?: string;
-  outcome: Outcome;
   old_hash?: string;
   new_hash?: string;
   /** for html changes: quoted context around the first difference */
   context?: string;
   error?: string;
 }
+
+/**
+ * What one source came to in one run.
+ *
+ * An unreachable report carries its class and the others carry none, and the
+ * type is what says so: the retry reads the class and so does the verdict,
+ * and a report that reached either with no class fell through both — skipped
+ * by the retry and counted green by the verdict, which is the safe default
+ * for exactly nothing (Security review, 2026-09-24). Written as two arms
+ * rather than one optional field so that a producer cannot omit it; the
+ * absent arm names the field as `undefined` so that `report.failure` is still
+ * one question a caller can ask of any report.
+ */
+export type WatchReport =
+  | (ReportOfSource & { outcome: Exclude<Outcome, "unreachable">; failure?: undefined })
+  | (ReportOfSource & { outcome: "unreachable"; failure: FailureClass });
 
 /**
  * The fingerprint of an entry's slice — absent for an entry that watches a
@@ -353,11 +384,19 @@ export async function runWatch(
   fetcher: Fetcher,
   today: string,
   openInBrowser?: BrowserReader,
-): Promise<{ reports: WatchReport[]; nextState: WatchState }> {
-  const reports: WatchReport[] = [];
+): Promise<{ reports: WatchReport[]; nextState: WatchState; verdict: RunVerdict }> {
   const nextEntries: Record<string, Snapshot> = { ...state.entries };
 
-  for (const entry of watchlist.entries) {
+  /**
+   * One source, read and judged — the whole of what a pass does to an entry.
+   *
+   * It is a function rather than the body of the loop because the retry asks
+   * for exactly this a second time, and the second answer has to be judged
+   * the way the first was: a source that answers on the retry is a source
+   * that was READ today, with its snapshot written and its report `baseline`,
+   * `unchanged` or `changed` — not one that failed and was forgiven.
+   */
+  const judge = async (entry: WatchEntry): Promise<WatchReport> => {
     /**
      * What every report about this entry says, made once.
      *
@@ -379,8 +418,7 @@ export async function runWatch(
 
     if (!STRATEGIES[entry.strategy].fetches) {
       const age = entry.last_verified ? daysSince(entry.last_verified, today) : Infinity;
-      reports.push({ ...base, outcome: age > (entry.max_age_days ?? 90) ? "reminder-due" : "ok" });
-      continue;
+      return { ...base, outcome: age > (entry.max_age_days ?? 90) ? "reminder-due" : "ok" };
     }
 
     // A run given no browser reader has not opened these pages, and says so
@@ -390,12 +428,17 @@ export async function runWatch(
     const fetched = entry.strategy === "browser"
       ? openInBrowser
         ? await openInBrowser(entry, STRATEGIES[entry.strategy].redirects)
-        : { ok: false as const, error: "no browser reader: this run was given none, so the page was never opened" }
+        : {
+          ok: false as const,
+          error: "no browser reader: this run was given none, so the page was never opened",
+          // Our own gap, not the source's minute: a run that brought no
+          // browser will not have one three minutes later either.
+          failure: "refused-by-us" as const,
+        }
       : await fetcher(entry.url, STRATEGIES[entry.strategy].redirects);
     if (!fetched.ok) {
       // A blocked or failed fetch must never read as "no change".
-      reports.push({ ...base, outcome: "unreachable", error: fetched.error });
-      continue;
+      return { ...base, outcome: "unreachable", error: fetched.error, failure: fetched.failure };
     }
     // Nor may an empty one. EUR-Lex answers this fetcher HTTP 202 with no
     // body, and `ok` is true for 202: the pass hashed nothing, wrote a blank
@@ -404,8 +447,9 @@ export async function runWatch(
     // a test's, a future host's — because a reading nobody can read is not one
     // (Standards review, 2026-09-10).
     if (fetched.body.byteLength === 0) {
-      reports.push({ ...base, outcome: "unreachable", error: "the response carried an empty body" });
-      continue;
+      // Transient: EUR-Lex's challenge answers exactly this way and the page
+      // is there a minute later, which is the whole of what transient means.
+      return { ...base, outcome: "unreachable", error: "the response carried an empty body", failure: "transient" };
     }
 
     // A learn link backs no value, so its wording may change freely — what
@@ -414,8 +458,7 @@ export async function runWatch(
     // flag that cries every week is the flag nobody reads. Only silence is
     // news here, and silence is already reported above.
     if (!STRATEGIES[entry.strategy].compares) {
-      reports.push({ ...base, outcome: "ok" });
-      continue;
+      return { ...base, outcome: "ok" };
     }
 
     let reading: Reading;
@@ -423,17 +466,19 @@ export async function runWatch(
       reading = readSource(entry, fetched.body);
     } catch (e) {
       // One mangled page must not kill the whole pass (review finding #7).
-      reports.push({ ...base, outcome: "unreachable", error: `processing: ${String(e)}` });
-      continue;
+      // The source's failure, not ours and not a hiccup: a slice marker that
+      // is no longer on the page, or a PDF that no longer decodes, is the
+      // page having changed under us, and reading it again changes nothing.
+      return { ...base, outcome: "unreachable", error: `processing: ${String(e)}`, failure: "refused-by-source" };
     }
 
     const { hash, text } = reading;
     const prev = state.entries[entry.id];
     if (!prev) {
-      reports.push({ ...base, outcome: "baseline", new_hash: hash });
       nextEntries[entry.id] = { ...snapshotOf(reading, today, entry), history: [] };
-    } else if (prev.hash === hash) {
-      reports.push({ ...base, outcome: "unchanged", old_hash: prev.hash, new_hash: hash });
+      return { ...base, outcome: "baseline", new_hash: hash };
+    }
+    if (prev.hash === hash) {
       // The reading stands, and this run just confirmed it through today's
       // slice: the date the value was first seen does not move, the record of
       // what it was read through does.
@@ -442,31 +487,427 @@ export async function runWatch(
         const { slice_read: _dropped, ...rest } = prev;
         nextEntries[entry.id] = { ...rest, ...(slice ? { slice_read: slice } : {}) };
       }
-    } else {
-      reports.push({
-        ...base, outcome: "changed", old_hash: prev.hash, new_hash: hash,
-        context: text !== undefined && prev.text !== undefined ? diffContext(prev.text, text) : undefined,
-      });
-      nextEntries[entry.id] = {
-        ...snapshotOf(reading, today, entry),
-        history: [...prev.history, { hash: prev.hash, retrieved_at: prev.retrieved_at }],
-      };
+      return { ...base, outcome: "unchanged", old_hash: prev.hash, new_hash: hash };
     }
+    nextEntries[entry.id] = {
+      ...snapshotOf(reading, today, entry),
+      history: [...prev.history, { hash: prev.hash, retrieved_at: prev.retrieved_at }],
+    };
+    return {
+      ...base, outcome: "changed", old_hash: prev.hash, new_hash: hash,
+      context: text !== undefined && prev.text !== undefined ? diffContext(prev.text, text) : undefined,
+    };
+  };
+
+  // The pass: every entry, in the watchlist's order, once.
+  const reports: WatchReport[] = [];
+  for (const entry of watchlist.entries) reports.push(await judge(entry));
+
+  /**
+   * The second try — after the LAST source of the first pass, never beside
+   * the failure that earned it.
+   *
+   * The gap IS the rest of the pass, about three minutes on the runner, and
+   * that gap is the only thing that makes a second read worth anything: a
+   * retry taken where the failure happened asks the same second over again.
+   * One more go, the same reader, the same budget; a second answer replaces
+   * the first report entirely and a second failure stands. Refusals are not
+   * here: the source's answer will not change in three minutes, and ours
+   * must not.
+   *
+   * `reports[i]` is `watchlist.entries[i]` — the pass writes exactly one
+   * report per entry, in order — so the retry replaces a report in place and
+   * what a curator reads stays in the watchlist's order.
+   */
+  for (const [i, report] of reports.entries()) {
+    if (report.outcome !== "unreachable" || report.failure !== "transient") continue;
+    reports[i] = await judge(watchlist.entries[i]!);
   }
 
+  const nextState: WatchState = {
+    entries: nextEntries,
+    last_run: today,
+    // What the run could not read, from the reports it just wrote — not from
+    // a flag an arm has to remember to raise. It is the one fact about a pass
+    // that the entries cannot carry: an unreachable source leaves the
+    // previous snapshot standing, and so does a source that answered and had
+    // not changed. The list is written on a clean day too, empty, because
+    // "nothing went unread" is a claim worth having on disk (s11).
+    unread: unreadNow(reports),
+    // And the week behind it, which is a different question with a different
+    // answer: a source read this morning can still have been silent on two
+    // mornings of the last seven.
+    lapses: lapsesAfter(reports, state, today),
+  };
+  // The run's own verdict, made here from what the run just learned: the CLI
+  // reads it rather than working the same question out a second time from a
+  // state it would have to compare against the one it started with.
+  return { reports, nextState, verdict: verdictOf(reports, nextState) };
+}
+
+/**
+ * The sources THIS run did not read, and nothing more.
+ *
+ * It is the site's list: `/data/` counts it to tell a reader how many sources
+ * the last run failed to reach, so a source that answered this morning must
+ * not be on it, however many mornings it has missed lately. Those mornings
+ * are counted beside it, in `lapses`.
+ */
+function unreadNow(reports: WatchReport[]): UnreadEntry[] {
+  return reports
+    .filter((r) => r.outcome === "unreachable")
+    .map((r) => ({ id: r.id, url: r.url }));
+}
+
+/**
+ * How far back the run looks when it asks whether a source is out: seven
+ * calendar days, this one included.
+ *
+ * The first rule asked only about the run before, and a source that failed on
+ * alternating mornings was never on it: it was a lapse every time, dropped
+ * off the unread list on its good day and took its start date with it, so
+ * nothing accumulated anywhere and a bot wall or an intermittent CDN could
+ * halve how often a source was read without ever reddening a run. The week is
+ * the window because the claim this watch makes is about a week (the human's
+ * word, DECISIONS 2026-09-24).
+ */
+const THE_WEEK = 7;
+
+/**
+ * At most the week's mornings, and the latest of them.
+ *
+ * Seven calendar days hold seven mornings, so seven is the whole of what one
+ * source's week can be, however long a list a state hands over. It is a
+ * bound on what is written to the state file and printed in the run's log
+ * (Security review, 2026-09-24), not a second pruning rule: a week's own
+ * days never reach it.
+ *
+ * It keeps a tail, so which seven it keeps is whatever order it was handed —
+ * and that is why `theWeekOf` sorts before it asks (Spec review,
+ * 2026-09-24).
+ */
+export const atMostAWeek = (days: string[]): string[] => days.slice(-THE_WEEK);
+
+/** Is this day inside the week of runs ending today? */
+function inTheWeek(day: string, today: string): boolean {
+  const back = (Date.parse(today) - Date.parse(day)) / 86_400_000;
+  // Both sides are pruned. The old side is the week's own rule. The new side
+  // is that a morning after today did not happen: nothing was silent on it,
+  // no run went through it, and — unlike an old day — it would never age out,
+  // so a state naming one would have it rewritten on every run and redden
+  // each then-unread source at its next single silence, permanently (Security
+  // review, 2026-09-24). A day that is not a day never arrives here at all:
+  // every caller is `theWeekOf`, which is handed what the shape check passed.
+  return back >= 0 && back < THE_WEEK;
+}
+
+/**
+ * An empty record of days, keyed by source id and answering for no id it was
+ * not given.
+ *
+ * A source id is a watchlist entry's, and nothing in this repository says how
+ * one may be spelled: `checkCoverage` asks an entry's url, kind, steps and
+ * glyph rules, and never the shape of its id. So `constructor`, `toString`
+ * and `__proto__` are legal ids — and on a plain `{}` every one of them is
+ * already answered before a day is written, by the prototype every object
+ * carries. `known[id] ??= morning` then wrote nothing and the source lost its
+ * migrated morning green-ward; `next[id] ?? []` handed a function to
+ * `days.includes` and killed the run (Security review, 2026-09-24).
+ *
+ * A record with no prototype answers only for what was put in it, and
+ * `__proto__` is a key of it like any other word — written to the state file
+ * as a key, read back off it as a key by `JSON.parse`, printed and counted
+ * like any other source's.
+ */
+const daysBySource = (): Record<string, string[]> => Object.create(null) as Record<string, string[]>;
+
+/**
+ * Each source's silent mornings inside the week, after this run.
+ *
+ * Every day the state knew about is carried forward, whether or not the
+ * source answered today — that is the whole of the fix, because a source that
+ * answers on its good morning is precisely the one the first rule forgot —
+ * and today is added to every source this run could not read. What the state
+ * knew is a week already: pruning is part of reading a day, and `knownLapses`
+ * is where a day is read. The cap is asked again where the list grows,
+ * because the bound belongs wherever a day is added — it cuts nothing now
+ * that a morning after today is refused, since seven days inside the week
+ * that do not include today is not a list the calendar can make.
+ */
+function lapsesAfter(reports: WatchReport[], previous: WatchState, today: string): Record<string, string[]> {
+  // `Object.assign` onto an empty `daysBySource()`, not a spread into a
+  // literal: `{ ...record }` makes a plain object whose `__proto__` setter
+  // is live again, and `next[report.id] ?? []` below would read through it
+  // (Standards review, 2026-09-24). The copy is what keeps the prototype off.
+  const next: Record<string, string[]> = Object.assign(daysBySource(), knownLapses(previous, today));
+  for (const report of reports) {
+    if (report.outcome !== "unreachable") continue;
+    const days = next[report.id] ?? [];
+    if (!days.includes(today)) days.push(today);
+    next[report.id] = atMostAWeek(days);
+  }
+  return next;
+}
+
+/** A day as the state writes one: four digits, two, two, and nothing else. */
+const A_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Is this value a day — the shape the state writes, and one a calendar has?
+ *
+ * The shape is asked first because `Date.parse` takes a whole timestamp and
+ * would call `2026-09-23T07:00:00Z` a morning; the calendar is asked after,
+ * because `2026-02-30` has the shape and no day behind it.
+ */
+const isADay = (value: unknown): value is string =>
+  typeof value === "string" && A_DAY.test(value) && Number.isFinite(Date.parse(value));
+
+/**
+ * One source's silent mornings as the state gave them, read as days.
+ *
+ * `watch/state.json` is a file in the repository, so what it holds is what
+ * the last run wrote, what an editor did to it and what a commit put there —
+ * and these days are counted by the brake and printed in the public run log.
+ * A list that is not a list, an entry that is not a day, a day `Date.parse`
+ * cannot read: each is refused here rather than believed, because a run that
+ * dies on the shape of a field reads no source at all and a printed line
+ * carries whatever it is handed (Security review, 2026-09-24). What survives
+ * is a list of days, and `theWeekOf` is what makes a week of it.
+ */
+function daysOf(value: unknown, today: string): string[] {
+  if (!Array.isArray(value)) return [];
+  return theWeekOf(value.filter(isADay), today);
+}
+
+/**
+ * The unread list as the state gave it, read as sources.
+ *
+ * It is a field of the same file as `lapses` and is read by the same rule: an
+ * unread source is an id and the page it names, and anything else on that
+ * list is not one. A list that is not a list says nothing about any source —
+ * it used to throw `is not iterable` before the first source was read, which
+ * is a watch that reads nothing because one field was the wrong shape, the
+ * very harm `daysOf` exists to prevent (Security review, 2026-09-24).
+ *
+ * Both fields are read here rather than trusted because the site is shipped
+ * this file: an entry with no page is an entry `/data/` cannot print.
+ */
+function unreadOf(value: unknown): UnreadEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((e): e is UnreadEntry =>
+    !!e && typeof e === "object" && typeof (e as UnreadEntry).id === "string"
+    && typeof (e as UnreadEntry).url === "string");
+}
+
+/**
+ * Days that have been read as days, as one source's week: one of each, in
+ * order, inside the week, seven at most.
+ *
+ * The order is a decision and not a tidying. `atMostAWeek` keeps a list's tail,
+ * so a state whose days are not ascending — a hand-edited file, a list
+ * appended to out of order — would have its cap fall on the newest mornings
+ * and keep the oldest, and a source silent yesterday and again this morning
+ * would come out a lapse where the brake says outage. Sorting first makes
+ * the cut "the seven most recent", and pruning before the cut means the cut
+ * only ever falls on mornings the week still holds (Spec review,
+ * 2026-09-24).
+ *
+ * The same morning twice is one morning: the brake counts mornings, and a
+ * list repeating one of them would make a single silence look like an
+ * outage.
+ *
+ * Days are ten characters of the same shape, so sorting them as strings
+ * sorts them by date.
+ */
+function theWeekOf(days: string[], today: string): string[] {
+  const inOrder = [...new Set(days)].sort();
+  return atMostAWeek(inOrder.filter((day) => inTheWeek(day, today)));
+}
+
+/**
+ * The morning a source on the state's unread list went silent — the day that
+ * run happened, if the file says which day that was.
+ *
+ * `last_run` is a field of the same file as `lapses`, and the migration turns
+ * it into a day the brake counts and the run prints — so it takes the same
+ * check as any other day off that file (Standards review, 2026-09-24), and
+ * the same pruning: a `last_run` the week has left, or one after today, is no
+ * morning to carry.
+ *
+ * A `last_run` that is not a day at all leaves nothing to migrate. The
+ * migration is the bridge from the states on disk, and every one of them
+ * carries a day — `watch/state.json` reads `last_run: "2026-09-24"` — so a
+ * file whose `last_run` is not a day is corrupt past this migration's
+ * reading, and a corrupt file is not a witness that any particular source
+ * was silent on any particular morning. Stamping today instead recorded a
+ * silent morning for a source that answered this very morning, and tomorrow's
+ * log printed a day it had been read on (Security review, 2026-09-24).
+ */
+const migratedMorning = (previous: WatchState, today: string): string[] =>
+  isADay(previous.last_run) ? theWeekOf([previous.last_run], today) : [];
+
+/**
+ * The silent mornings the state before this run knew about.
+ *
+ * A state written before s35 has no `lapses` at all: it lists the sources its
+ * run could not read and says nothing about any other day. Such a source WAS
+ * unread on that run — that is what being on the list means — so it counts as
+ * one silent morning, on the day that run happened. The two `bamf` entries of
+ * 2026-09-24 therefore start under this rule with one morning each, and a
+ * second one inside the week makes them an outage: the same colour the first
+ * rule gave them, reached by counting rather than by membership.
+ *
+ * A state that carries no unread list either starts empty, which is what it
+ * claims. So does a `lapses` that is not a record of days at all: it makes no
+ * claim about any morning, which is the same thing a state written before
+ * s35 says, and the unread list is then all there is to read.
+ *
+ * The migration is asked of each source, not of the record: a `lapses` that
+ * holds nothing this source can be read from — because it is absent, because
+ * it is not a record, or because everything it held for THIS id was refused
+ * — says nothing about this source's mornings, and the unread list still
+ * says one. Reading it per record instead let one corrupted day cancel the
+ * migration of every source beside it, so the same corruption decided two
+ * ways depending on which branch read it, one of them green (Security
+ * review, 2026-09-24).
+ *
+ * The unread list the migration walks is that same file's, so it is read the
+ * same way: `unreadOf` takes the sources off it and nothing else. Neither
+ * field may be believed for being next to a valid one.
+ *
+ * This is the one place a file's days are read — the state a full run starts
+ * from and the state a targeted pass starts from alike — and therefore the
+ * one place they are checked. The other days this module handles are its
+ * own: a pass's `lapses`, which `mergeTargetedRun` carries straight across,
+ * were made by `lapsesAfter` out of days that came through here, and a day
+ * this code wrote a moment ago is not a day to check a second time.
+ */
+function knownLapses(previous: WatchState, today: string): Record<string, string[]> {
+  const recorded: unknown = previous.lapses;
+  const mornings: Record<string, string[]> = daysBySource();
+  if (recorded && typeof recorded === "object" && !Array.isArray(recorded)) {
+    for (const [id, value] of Object.entries(recorded)) {
+      const days = daysOf(value, today);
+      if (days.length) mornings[id] = days;
+    }
+  }
+  const morning = migratedMorning(previous, today);
+  if (morning.length) for (const source of unreadOf(previous.unread)) mornings[source.id] ??= [...morning];
+  return mornings;
+}
+
+/** One unread source, with the silent mornings the week behind it holds. */
+export interface UnreadDays {
+  id: string;
+  url: string;
+  /** The days inside the week this source went unread, ascending. Today is
+   * the last of them, because a source counted here went unread today. */
+  days: string[];
+}
+
+/** What a run came to, beyond its reports — the three words and the colour. */
+export interface RunVerdict {
+  /** Unread today and on no other morning inside the week: the day of grace,
+   * and green. */
+  lapsed: UnreadDays[];
+  /** Unread today and on at least one other morning inside the week. Red. */
+  outages: UnreadDays[];
+  /**
+   * Red the same morning, whatever the week says: a refusal by us, because
+   * waiting a day changes nothing about an address this watch will not
+   * request — and a failure that arrived with no class at all, because a
+   * failure nobody named was retried by nothing and explained to nobody, and
+   * that is not a thing to be green about.
+   */
+  refused: UnreadDays[];
+  /** Whether the run is red — the exit code, decided once, here. */
+  red: boolean;
+}
+
+/**
+ * What the run's unread sources mean, and whether the day is red.
+ *
+ * One place, so that the workflow never learns to count and the CLI never
+ * re-derives it: the exit code stays the one signal the workflow reads, and
+ * this is what decides it. Every unread source gets exactly one of the three
+ * words, so the counts on the run's last line add up to `unreachable`.
+ *
+ * Two silent mornings inside the week is an outage whatever failed on either
+ * of them — the silence is the fact, and the reason may well have changed
+ * between them. Membership in the week is asked first, so a source that is
+ * both refused by us today and silent on an earlier morning gets the one word
+ * that covers both mornings; the colour is red either way.
+ */
+export function verdictOf(reports: WatchReport[], next: WatchState): RunVerdict {
+  const failure = new Map(reports.map((r) => [r.id, r.failure] as const));
+  const lapsed: UnreadDays[] = [];
+  const outages: UnreadDays[] = [];
+  const refused: UnreadDays[] = [];
+  for (const source of next.unread ?? []) {
+    const days = next.lapses?.[source.id] ?? [];
+    const silence: UnreadDays = { id: source.id, url: source.url, days };
+    const met = failure.get(source.id);
+    if (days.length > 1) outages.push(silence);
+    else if (met === "refused-by-us" || met === undefined) refused.push(silence);
+    else lapsed.push(silence);
+  }
+  return { lapsed, outages, refused, red: outages.length > 0 || refused.length > 0 };
+}
+
+/** One unread source, as the run says it out loud. */
+export interface UnreadNotice {
+  level: "warn" | "error";
+  event: "lapse" | "outage" | "refused";
+  id: string;
+  url: string;
+  /** The mornings inside the week this source went unread, ascending — an
+   * outage's line is the days it was counted from, so a curator reads what
+   * the brake counted instead of taking its word. */
+  days: string[];
+  /** The day of this run — the last of an outage's dates. */
+  today: string;
+}
+
+/**
+ * What the run says about each source it did not read, and how loudly.
+ *
+ * A lapse is a warning: the site already tells a reader the run did not reach
+ * it, and the morning is not one anybody has to act on. An outage and a
+ * refusal are errors, because both are red and both are somebody's to fix.
+ */
+export function unreadNotices(verdict: RunVerdict, today: string): UnreadNotice[] {
+  const say = (event: UnreadNotice["event"], level: UnreadNotice["level"]) =>
+    (u: UnreadDays): UnreadNotice => ({ level, event, id: u.id, url: u.url, days: u.days, today });
+  return [
+    ...verdict.lapsed.map(say("lapse", "warn")),
+    ...verdict.outages.map(say("outage", "error")),
+    ...verdict.refused.map(say("refused", "error")),
+  ];
+}
+
+/** The numbers the run's last line carries. */
+export interface RunSummary {
+  total: number;
+  changed: number;
+  unreachable: number;
+  lapsed: number;
+  outages: number;
+  refused: number;
+}
+
+/**
+ * The run in six numbers, so a green day with a lapse is visible in the log
+ * and not only in the state — and so the three words add up to `unreachable`
+ * rather than leaving a reader to guess which bucket the rest fell in.
+ */
+export function runSummary(reports: WatchReport[], verdict: RunVerdict): RunSummary {
   return {
-    reports,
-    nextState: {
-      entries: nextEntries,
-      last_run: today,
-      // What the run could not read, from the reports it just wrote — not from
-      // a flag an arm has to remember to raise. It is the one fact about a pass
-      // that the entries cannot carry: an unreachable source leaves the
-      // previous snapshot standing, and so does a source that answered and had
-      // not changed. The list is written on a clean day too, empty, because
-      // "nothing went unread" is a claim worth having on disk (s11).
-      unread: reports.filter((r) => r.outcome === "unreachable").map((r) => ({ id: r.id, url: r.url })),
-    },
+    total: reports.length,
+    changed: reports.filter((r) => r.outcome === "changed").length,
+    unreachable: reports.filter((r) => r.outcome === "unreachable").length,
+    lapsed: verdict.lapsed.length,
+    outages: verdict.outages.length,
+    refused: verdict.refused.length,
   };
 }
 
@@ -489,16 +930,34 @@ export async function runWatch(
  * here: silence is what it claims, and a `--only` pass has learned nothing
  * about the sources it did not fetch.
  */
-export function mergeTargetedRun(previous: WatchState, pass: WatchState, fetched: Watchlist): WatchState {
+export function mergeTargetedRun(previous: WatchState, pass: WatchState, fetched: Watchlist, today: string): WatchState {
   const touched = new Set(fetched.entries.map((e) => e.id));
   const unread = [
-    ...(previous.unread ?? []).filter((e) => !touched.has(e.id)),
+    ...unreadOf(previous.unread).filter((e) => !touched.has(e.id)),
     ...(pass.unread ?? []),
   ];
+  // The silent mornings travel by the same rule, for the same reason: the
+  // pass learned whether the entry it fetched answered and nothing at all
+  // about the rest, so every other source's week stands exactly as the last
+  // full run left it.
+  //
+  // They come through `knownLapses`, which is where a state's days are read
+  // and where a state that names none has its unread list migrated. A pass
+  // that skipped that migration would write a `lapses` where there was none
+  // — and a written `lapses` is exactly what stops the next full run
+  // migrating, so every untouched source's earlier mornings would be gone
+  // for good and the week would start them over (Spec review, 2026-09-24).
+  const lapses: Record<string, string[]> = daysBySource();
+  for (const [id, days] of Object.entries(knownLapses(previous, today))) if (!touched.has(id)) lapses[id] = days;
+  // The pass's own days are the code's, not a file's: `lapsesAfter` made them
+  // out of the same previous state, read and checked at `knownLapses` on the
+  // way in, so they are taken as they come.
+  for (const [id, days] of Object.entries(pass.lapses ?? {})) if (touched.has(id)) lapses[id] = days;
   return {
     entries: { ...previous.entries, ...pass.entries },
     last_run: previous.last_run,
     ...(previous.unread || unread.length ? { unread } : {}),
+    ...(previous.lapses || Object.keys(lapses).length ? { lapses } : {}),
   };
 }
 

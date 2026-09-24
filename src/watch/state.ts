@@ -88,6 +88,28 @@ export interface WatchState {
    * nothing, and nothing is said about it.
    */
   unread?: UnreadEntry[];
+  /**
+   * Each source's recent silent mornings — the ISO days, ascending, inside
+   * the week of runs ending with the one that wrote this.
+   *
+   * It is a second list and not a field on `unread` because the two answer
+   * different questions and only one of them is the site's. `unread` is what
+   * THIS run could not read, which is what `/data/` counts; this is what the
+   * BRAKE counts, and a source that read clean this morning still belongs to
+   * it if it was silent on Tuesday. Holding both on one item would mean
+   * either listing a source the run did read as unread, or forgetting its
+   * earlier mornings the moment it answered — which is exactly the hole the
+   * first rule had (DECISIONS 2026-09-24).
+   *
+   * A day older than the week is forgotten rather than kept: the claim this
+   * watch makes is about a week, and a source silent twice in a fortnight has
+   * not broken it.
+   *
+   * Absent on a state written before 2026-09-24. Such a state lists the
+   * sources its run could not read and says nothing about any other day, so
+   * each of them counts as one silent morning on that run's own date.
+   */
+  lapses?: Record<string, string[]>;
 }
 
 /** Does this dataset read the country vocabulary at all? */

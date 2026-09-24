@@ -151,11 +151,14 @@ describe("what the run has to write down", () => {
   const watchlist: Watchlist = { entries: [entry("es-uge-umbral-pdf", UMBRAL), entry("bamf-fachkraft", FACHKRAFT)] };
   const body = new TextEncoder().encode("<p>the page, unchanged</p>");
   const refusesSpain: Fetcher = async (url) =>
-    url === UMBRAL ? { ok: false, status: 403, error: "HTTP 403" } : { ok: true, body };
+    url === UMBRAL ? { ok: false, status: 403, error: "HTTP 403", failure: "refused-by-source" } : { ok: true, body };
 
   it("records what it could not read, by id and by page", async () => {
     const before = await runWatch(watchlist, { entries: {} }, async () => ({ ok: true, body }), "2026-09-07");
     const { nextState } = await runWatch(watchlist, before.nextState, refusesSpain, LAST_RUN);
+    // The list is still what THIS run could not read, by id and by page: the
+    // mornings that tell one silent day from two are counted apart from it,
+    // on the state's own `lapses` (s35, 2026-09-24).
     expect(nextState.unread).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL }]);
     expect(nextState.last_run).toBe(LAST_RUN);
   });
@@ -228,7 +231,7 @@ describe("a targeted re-baseline, which is not a run", () => {
     const pass: WatchState = {
       entries: { "es-uge-umbral-pdf": snapshot("2026-09-16") }, last_run: "2026-09-16", unread: [],
     };
-    const merged = mergeTargetedRun(previous, pass, list("es-uge-umbral-pdf"));
+    const merged = mergeTargetedRun(previous, pass, list("es-uge-umbral-pdf"), "2026-09-16");
     expect(merged.unread).toEqual([]);
     expect(merged.last_run).toBe(LAST_RUN);
     // The lie this exists to prevent, in the words the page would have used.
@@ -241,7 +244,7 @@ describe("a targeted re-baseline, which is not a run", () => {
     const pass: WatchState = {
       entries: { "bamf-fachkraft": snapshot("2026-09-16") }, last_run: "2026-09-16", unread: [],
     };
-    const merged = mergeTargetedRun(previous, pass, list("bamf-fachkraft"));
+    const merged = mergeTargetedRun(previous, pass, list("bamf-fachkraft"), "2026-09-16");
     expect(merged.unread).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL }]);
     expect(unreadSentence(unreadSources(dataset, merged)))
       .toBe("A Spanish source did not answer on the last run; the values it backs were read on 2026-09-07.");
@@ -251,12 +254,12 @@ describe("a targeted re-baseline, which is not a run", () => {
     const previous: WatchState = { entries: { "bamf-fachkraft": snapshot("2026-09-02") }, last_run: LAST_RUN };
     const clean = mergeTargetedRun(previous, {
       entries: { "bamf-fachkraft": snapshot("2026-09-16") }, last_run: "2026-09-16", unread: [],
-    }, list("bamf-fachkraft"));
+    }, list("bamf-fachkraft"), "2026-09-16");
     expect(clean.unread, "an empty list is a claim about a pass that made none").toBeUndefined();
 
     const refused = mergeTargetedRun(previous, {
       entries: {}, last_run: "2026-09-16", unread: [{ id: "bamf-fachkraft", url: FACHKRAFT }],
-    }, list("bamf-fachkraft"));
+    }, list("bamf-fachkraft"), "2026-09-16");
     expect(refused.unread).toEqual([{ id: "bamf-fachkraft", url: FACHKRAFT }]);
   });
 });

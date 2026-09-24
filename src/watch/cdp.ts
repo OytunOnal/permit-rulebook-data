@@ -1,6 +1,7 @@
 import type { RedirectPolicy, WatchEntry, WatchStep } from "./core.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
-import { shortAddress } from "./fetch-source.js";
+import { printableAddress, shortAddress } from "./fetch-source.js";
+import { failureOfStatus, ReadFailure, shortFailure } from "./failure.js";
 
 /**
  * The DevTools client: attaching to a tab, asking Chrome things, keeping the
@@ -78,6 +79,24 @@ export interface Session {
     cost: { paused: number; pausedMs: number };
   }>;
   close(): void;
+}
+
+/**
+ * What a document response the browser cannot use says, in a line a person
+ * reads.
+ *
+ * The status is read by the fetcher's own rule, so a `503` in the browser
+ * waits the same minute a `503` over HTTP does. The address is the SOURCE's:
+ * a redirect ends wherever the response sent the tab, credentials and all,
+ * and it lands in the public run log beside every other address — so it is
+ * printed by the one rule that prints an address, which takes the
+ * credentials out and binds the length (Security review, 2026-09-24). A
+ * response from the address that was asked for says nothing about an address
+ * at all.
+ */
+export function servedFailure(status: number, servedUrl: string | undefined, asked: string): ReadFailure {
+  const redirected = servedUrl && servedUrl !== asked ? ` (after redirect to ${printableAddress(servedUrl)})` : "";
+  return new ReadFailure(`HTTP ${status} in the browser${redirected}`, failureOfStatus(status));
 }
 
 /** The session over an open DevTools socket — the protocol half of `launch`. */
@@ -335,7 +354,9 @@ export function attach(socket: WebSocket, close: () => void): Session {
         // page, and every Document event that is not its is a subframe's.
         const tree = await send("Page.getFrameTree", {}, sessionId) as { frameTree?: { frame?: { id?: string } } };
         const rootId = tree.frameTree?.frame?.id;
-        if (!rootId) throw new Error("the browser would not say which frame is the page");
+        // Nothing about the source refused anything: the browser did not
+        // answer a question it always answers, and one more go costs a render.
+        if (!rootId) throw new ReadFailure("the browser would not say which frame is the page", "transient");
         mainFrame.set(sessionId, rootId);
         await send("Runtime.enable", {}, sessionId);
         await send("Network.enable", {}, sessionId);
@@ -376,7 +397,18 @@ export function attach(socket: WebSocket, close: () => void): Session {
             expression, returnByValue: true, awaitPromise: true,
           }, sessionId) as { result?: { value?: unknown }; exceptionDetails?: { text?: string; exception?: { description?: string } } };
           if (answer.exceptionDetails)
-            throw new Error(answer.exceptionDetails.exception?.description ?? answer.exceptionDetails.text ?? "the page threw");
+            // The page's own script threw under us, which is the page having
+            // changed and not a minute that will pass.
+            //
+            // The words are the PAGE's, stack and all, and the stack names
+            // the page: bounded here, where they arrive, because everything
+            // downstream of this throw treats them as a failure's text like
+            // any other (Security review, 2026-09-24).
+            throw new ReadFailure(
+              shortFailure(
+                answer.exceptionDetails.exception?.description ?? answer.exceptionDetails.text ?? "the page threw",
+              ),
+              "refused-by-source");
           return answer.result?.value;
         };
 
@@ -386,13 +418,16 @@ export function attach(socket: WebSocket, close: () => void): Session {
         const navigation = await send("Page.navigate", { url: entry.url }, sessionId) as { errorText?: string };
         // Chrome says here whether it got anywhere. Asking the DOM instead is
         // asking the error page whether it is the page.
-        if (navigation.errorText) throw new Error(`the browser could not reach the page: ${navigation.errorText}`);
+        // The browser tier's own socket failure: nothing answered, which is
+        // the same fact the fetcher calls `fetch failed`.
+        if (navigation.errorText)
+          throw new ReadFailure(`the browser could not reach the page: ${navigation.errorText}`, "transient");
         await settle(evaluate, stillLoading, renderBy);
         const servedOk = () => {
           const served = documentStatus.get(sessionId);
-          if (!served) throw new Error("the browser received no document response for this page");
-          if (served.status < 200 || served.status >= 300)
-            throw new Error(`HTTP ${served.status} in the browser${served.url && served.url !== entry.url ? ` (after redirect to ${served.url})` : ""}`);
+          if (!served)
+            throw new ReadFailure("the browser received no document response for this page", "transient");
+          if (served.status < 200 || served.status >= 300) throw servedFailure(served.status, served.url, entry.url);
         };
         servedOk();
 
@@ -434,7 +469,10 @@ export function attach(socket: WebSocket, close: () => void): Session {
           // bound is the fetcher's, because it met the same thing first.
           const short = shortAddress(href);
           if (origin !== allowedOrigin)
-            throw new Error(`${when}: the page was asked for at ${allowedOrigin} and the browser is at ${short}`);
+            // Ours: a third party's bytes must never be hashed as the
+            // authority's, and that is a decision, not a bad minute.
+            throw new ReadFailure(
+              `${when}: the page was asked for at ${allowedOrigin} and the browser is at ${short}`, "refused-by-us");
           return short;
         };
         await mustBeHome("the page redirected to another site before it could be read");
@@ -462,7 +500,10 @@ export function attach(socket: WebSocket, close: () => void): Session {
             // the second failure carries the same diagnosis as the first.
             await settle(evaluate, stillLoading, renderBy);
             failure = await perform(step);
-            if (failure) throw new Error(failure);
+            // The page changed: a control the authority renamed, a question
+            // that is no longer asked. The same page answers the same way in
+            // three minutes, so this is the source's refusal and not a hiccup.
+            if (failure) throw new ReadFailure(failure, "refused-by-source");
           }
           await settle(evaluate, stillLoading, renderBy, STEP_QUIET_MS);
         }

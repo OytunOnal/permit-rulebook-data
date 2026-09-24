@@ -1,4 +1,5 @@
 import type { Fetcher } from "./core.js";
+import { causeCode, classOfThrown, failureOfStatus } from "./failure.js";
 
 /**
  * The watch's first reader: one HTTP request, no browser.
@@ -261,7 +262,9 @@ export const fetchSource: Fetcher = async (url, redirects) => {
    * any other road.
    */
   const refused = refusedAddress(url);
-  if (refused) return { ok: false, error: refused };
+  // Refused by us, every one of them: the floor declined to make the request
+  // at all, and it will decline the same request three minutes later.
+  if (refused) return { ok: false, error: refused, failure: "refused-by-us" };
   // Everything below is inside the try because `new URL` throws, and one bad
   // entry used to take the whole pass down with it — no reports, no state and
   // no flags for the other forty-four sources, where it had been a single
@@ -312,10 +315,19 @@ export const fetchSource: Fetcher = async (url, redirects) => {
       if (res.status >= 300 && res.status < 400) {
         const location = res.headers.get("location");
         if (!location)
-          return { ok: false, status: res.status, error: `HTTP ${res.status} with nowhere to go` };
+          return {
+            ok: false, status: res.status, error: `HTTP ${res.status} with nowhere to go`,
+            // The source's own broken answer, and the same one tomorrow.
+            failure: "refused-by-source",
+          };
         let next: URL;
         try { next = new URL(location, target); }
-        catch { return { ok: false, status: res.status, error: `HTTP ${res.status} to somewhere that is not an address` }; }
+        catch {
+          return {
+            ok: false, status: res.status, failure: "refused-by-source",
+            error: `HTTP ${res.status} to somewhere that is not an address`,
+          };
+        }
         /**
          * A target carrying a name and password is refused before it is
          * asked for, and the credentials are never printed.
@@ -326,7 +338,8 @@ export const fetchSource: Fetcher = async (url, redirects) => {
          * the source had actually answered (Security review, 2026-09-24).
          */
         const forbidden = refusedTarget(next, entry.hostname);
-        if (forbidden) return { ok: false, status: res.status, error: `HTTP ${res.status} ${forbidden}` };
+        if (forbidden)
+          return { ok: false, status: res.status, error: `HTTP ${res.status} ${forbidden}`, failure: "refused-by-us" };
         // Where a reading is at stake, what the source redirects to is not
         // the source. The status reported is the REDIRECT's own, because that
         // is the answer this source gave; the far server was never asked.
@@ -339,6 +352,8 @@ export const fetchSource: Fetcher = async (url, redirects) => {
             ok: false,
             status: res.status,
             error: `redirected off the site: asked ${asked}, sent to ${shortAddress(`${next.origin}${next.pathname}`)} (HTTP ${res.status}, not followed)`,
+            // Ours: the source answered, and we declined to follow it.
+            failure: "refused-by-us",
           };
         if (hop >= MOST_HOPS)
           return {
@@ -347,22 +362,48 @@ export const fetchSource: Fetcher = async (url, redirects) => {
             // Where it had got to, not where it started: under `anywhere` a
             // chain may have left the entry's origin long before the cap.
             error: `redirected more than ${MOST_HOPS} times, last to ${shortAddress(next.origin + next.pathname)}`,
+            failure: "refused-by-us",
           };
         target = next.href;
         continue;
       }
 
-      if (!res.ok) return { ok: false, status: res.status, error: `HTTP ${res.status}` };
+      // 408, 425, 429 and every 5xx may answer differently in three minutes;
+      // every other 4xx is a wall, a page that moved or a page that is gone.
+      // The rule is `failure.ts`'s, so both readers read the same one.
+      if (!res.ok)
+        return { ok: false, status: res.status, error: `HTTP ${res.status}`, failure: failureOfStatus(res.status) };
       const body = new Uint8Array(await res.arrayBuffer());
       // An empty body is not a page, whatever the status line says. EUR-Lex
       // answers this fetcher with `202 Accepted` and nothing at all — a bot
       // challenge — and `res.ok` is true for it, so the pass would have recorded
       // a blank snapshot as a successful read and reported "unchanged" ever
       // after (measured 2026-09-10, s8).
-      if (body.byteLength === 0) return { ok: false, status: res.status, error: `HTTP ${res.status} with an empty body` };
+      if (body.byteLength === 0)
+        return {
+          ok: false, status: res.status, error: `HTTP ${res.status} with an empty body`,
+          // The challenge is over by the next read, so this is worth one.
+          failure: "transient",
+        };
       return { ok: true, body, ...(target !== url ? { from: shortAddress(target) } : {}) };
     }
   } catch (e) {
-    return { ok: false, error: String(e) };
+    /**
+     * Where `fetch failed` stops being five words.
+     *
+     * Node wraps every socket failure as `TypeError: fetch failed`, the same
+     * text for a reset connection, a name that does not resolve and a connect
+     * timeout — three of the runs this slice was written for say exactly that
+     * and nothing else, and the queue line guessed "timeouts" because the log
+     * could not say. The cause's CODE is appended and its MESSAGE never is:
+     * undici writes the address into the message, and an error travels into a
+     * log line, a flag file and the issue that flag becomes.
+     */
+    const code = causeCode(e);
+    return {
+      ok: false,
+      error: code ? `${String(e)} (${code})` : String(e),
+      failure: classOfThrown(e),
+    };
   }
 };
