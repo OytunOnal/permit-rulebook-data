@@ -194,6 +194,39 @@ describe("s35 — a transient failure is read again, after the pass", () => {
     expect(reports.map((r) => r.id)).toEqual(["first", "hiccup", "last"]);
   });
 
+  it("reports a retried read that matches the snapshot as unchanged, and does not move its day", async () => {
+    // Every other retry case here runs against an empty state and lands on
+    // `baseline`, which is the one outcome that cannot show this: a second
+    // read is a read like any other, so a source whose words did not move is
+    // `unchanged` and keeps the day the reading it still stands on was taken
+    // (Spec review, 2026-09-24).
+    const words = "the authority's words";
+    const first = await runWatch(
+      watching("hiccup"), emptyState, scripted({ [addressOf("hiccup")]: [page(words)] }).fetcher, YESTERDAY,
+    );
+    const { fetcher, asked } = scripted({ [addressOf("hiccup")]: [fail("transient"), page(words)] });
+    const { reports, nextState } = await runWatch(watching("hiccup"), first.nextState, fetcher, TODAY);
+    expect(asked("hiccup"), "the failure was not read again").toBe(2);
+    expect(reportFor(reports, "hiccup").outcome).toBe("unchanged");
+    expect(nextState.entries["hiccup"]!.retrieved_at, "a confirming read moved the day of the reading")
+      .toBe(YESTERDAY);
+    expect(nextState.entries["hiccup"]!.history, "a reading that did not change was filed as history")
+      .toEqual([]);
+  });
+
+  it("reports a retried read that differs as changed, and keeps what it replaced", async () => {
+    const first = await runWatch(
+      watching("hiccup"), emptyState, scripted({ [addressOf("hiccup")]: [page("the old words")] }).fetcher, YESTERDAY,
+    );
+    const was = first.nextState.entries["hiccup"]!.hash;
+    const { fetcher } = scripted({ [addressOf("hiccup")]: [fail("transient"), page("the new words")] });
+    const { reports, nextState } = await runWatch(watching("hiccup"), first.nextState, fetcher, TODAY);
+    expect(reportFor(reports, "hiccup").outcome).toBe("changed");
+    expect(reportFor(reports, "hiccup").old_hash).toBe(was);
+    expect(nextState.entries["hiccup"]!.retrieved_at).toBe(TODAY);
+    expect(nextState.entries["hiccup"]!.history.map((h) => h.hash)).toEqual([was]);
+  });
+
   it("asks a source that refused us nothing more", async () => {
     // Neither refusal is a question of timing. A 403 is a bot wall and a 404
     // is a page that moved: both answer the same in three minutes, and asking
