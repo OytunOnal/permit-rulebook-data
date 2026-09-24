@@ -29,6 +29,7 @@ import type { Dataset } from "../src/types.js";
 
 const TODAY = "2026-09-24";
 const YESTERDAY = "2026-09-23";
+const TOMORROW = "2026-09-25";
 
 const encode = (html: string) => new TextEncoder().encode(html);
 const addressOf = (id: string) => `https://example.org/${id}`;
@@ -689,6 +690,36 @@ describe("s35 — the days on the state are read as days or not at all", () => {
     const { nextState } = await runWatch(only, previous, fetcher, TODAY);
     const merged = mergeTargetedRun(previous, nextState, only, TODAY);
     expect(merged.lapses).toEqual({ bamf: [YESTERDAY] });
+  });
+
+  it("counts today when the day the migration would use is not a day", async () => {
+    // `last_run` comes off the same file as `lapses` and becomes a day the
+    // brake counts and the run prints, so it takes the same check. A
+    // `last_run` nobody can read leaves this run knowing the source was
+    // silent and not when, and today is what it counts then: the morning is
+    // kept rather than invented or dropped, and the next silence is the
+    // source's second either way.
+    const unreadable = {
+      entries: {}, last_run: "yesterday", unread: [{ id: "down", url: addressOf("down") }],
+    } as unknown as WatchState;
+    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const { nextState, verdict } = await runWatch(watching("down"), unreadable, fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ down: [TODAY] });
+    expect(verdict.red, "a `last_run` that is not a day was counted as a second morning").toBe(false);
+
+    // And the morning after, the second silence reddens the run.
+    const { fetcher: again } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const after = await runWatch(watching("down"), nextState, again, TOMORROW);
+    expect(after.nextState.lapses).toEqual({ down: [TODAY, TOMORROW] });
+    expect(after.verdict.outages.map((u) => u.id)).toEqual(["down"]);
+    expect(after.verdict.red, "a second silent morning left the run green").toBe(true);
+
+    // The day that reaches the file is that same morning: a targeted pass
+    // writes the mornings of the sources it never fetched straight back.
+    const only = watching("other");
+    const { fetcher: passing } = scripted({ [addressOf("other")]: [page("it answered")] });
+    const pass = await runWatch(only, unreadable, passing, TODAY);
+    expect(mergeTargetedRun(unreadable, pass.nextState, only, TODAY).lapses).toEqual({ down: [TODAY] });
   });
 });
 

@@ -622,6 +622,16 @@ function lapsesAfter(reports: WatchReport[], previous: WatchState, today: string
 const A_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * Is this value a day — the shape the state writes, and one a calendar has?
+ *
+ * The shape is asked first because `Date.parse` takes a whole timestamp and
+ * would call `2026-09-23T07:00:00Z` a morning; the calendar is asked after,
+ * because `2026-02-30` has the shape and no day behind it.
+ */
+const isADay = (value: unknown): value is string =>
+  typeof value === "string" && A_DAY.test(value) && Number.isFinite(Date.parse(value));
+
+/**
  * One source's silent mornings as the state gave them, read as days.
  *
  * `watch/state.json` is a file in the repository, so what it holds is what
@@ -639,11 +649,24 @@ const A_DAY = /^\d{4}-\d{2}-\d{2}$/;
  */
 function daysOf(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
-  const days = value.filter(
-    (day): day is string => typeof day === "string" && A_DAY.test(day) && Number.isFinite(Date.parse(day)),
-  );
-  return aWeekOf([...new Set(days)]);
+  return aWeekOf([...new Set(value.filter(isADay))]);
 }
+
+/**
+ * The morning a source on the state's unread list went silent.
+ *
+ * `last_run` is a field of the same file as `lapses`, and the migration turns
+ * it into a day the brake counts and the run prints — so it takes the same
+ * check as any other day off that file (Standards review, 2026-09-24). A
+ * `last_run` that is not a day leaves this run knowing the source was unread
+ * on the run before and not when that was, and today is what it counts then:
+ * the morning is kept rather than dropped, and nothing is lost red-ward,
+ * because the day it really happened is exactly what an unreadable
+ * `last_run` does not say and the next silence is a second morning either
+ * way.
+ */
+const migratedMorning = (previous: WatchState, today: string): string =>
+  isADay(previous.last_run) ? previous.last_run : today;
 
 /**
  * The silent mornings the state before this run knew about.
@@ -682,7 +705,7 @@ function knownLapses(previous: WatchState, today: string): Record<string, string
       if (days.length) known[id] = days;
     }
   }
-  const morning = previous.last_run ?? today;
+  const morning = migratedMorning(previous, today);
   for (const source of previous.unread ?? []) known[source.id] ??= [morning];
   return known;
 }
