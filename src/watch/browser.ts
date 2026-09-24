@@ -165,6 +165,17 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
       // `String(e)` — and its "Error: " prefix — with it, where this reader
       // had printed the message alone since s34. The bound stays and the
       // prefix does not (`saidByThrown`; Spec review, 2026-09-24).
+      //
+      // **This line is pinned by a case on the expression and not through a
+      // read.** No test can drive it: the two things that reach it as a plain
+      // `Error` are a CDP protocol error and a socket that closes with a
+      // command in flight (`cdp.ts`), and neither can be provoked through a
+      // real Chrome from a test — measured 2026-09-24, closing the reader
+      // four seconds into a twenty-second read left the command in flight
+      // unrejected (the socket's close never completes, because Chrome is
+      // killed with it) and the read ended on its own budget, which is the
+      // branch above. `tests/s36.test.ts` asserts this expression as it is
+      // written here; if it is edited, edit that case too.
       return {
         ok: false,
         error: e instanceof ReadFailure

@@ -1,7 +1,7 @@
 import type { RedirectPolicy, WatchEntry, WatchStep } from "./core.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
-import { printableAddress, shortAddress } from "./fetch-source.js";
-import { failureOfStatus, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD, printableWithin, ReadFailure } from "./failure.js";
+import { MOST_OF_AN_ADDRESS, printableAddress, shortAddress } from "./fetch-source.js";
+import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, ReadFailure } from "./failure.js";
 
 /**
  * The DevTools client: attaching to a tab, asking Chrome things, keeping the
@@ -185,20 +185,37 @@ export function attach(socket: WebSocket, close: () => void): Session {
    * address's own `MOST_OF_AN_ADDRESS`. The fallback needs both: nothing
    * parsed there, and the page's raw string is all there is
    * (`failure.ts`; Security review, 2026-09-24).
+   *
+   * Both halves are bounded at `MOST_OF_AN_ADDRESS`, because both are an
+   * ADDRESS. The fallback was bounded at `MOST_OF_A_PAGE_WORD` while the line
+   * above it said an address's bound is the address's own — two numbers for
+   * one thing, and the smaller of them turns the one address a curator cannot
+   * parse into a length (Standards review, 2026-09-24).
    */
   const withoutQuery = (url: string) => {
     try {
       const parsed = new URL(url);
       return parsed.protocol === "data:" ? "data:..." : shortAddress(`${parsed.host}${parsed.pathname}`);
-    } catch { return printableWithin(url, MOST_OF_A_PAGE_WORD); }
+    } catch { return printableWithin(url, MOST_OF_AN_ADDRESS); }
   };
   const askedSince = (sessionId: string, since: number): string[] =>
     [...trafficOf(sessionId).values()]
       .filter((a) => a.at >= since && a.type !== "Document" && a.type !== "Image" && a.type !== "Font")
       .sort((a, b) => a.at - b.at)
       .slice(0, 8)
+      // Chrome's word for what went wrong, through the same owner every other
+      // quoted fragment passes. It is CHROME's vocabulary and not a page's —
+      // `Network.loadingFailed` carries a name out of Chromium's own net
+      // error list — so the bound is the sentence's (`MOST_OF_A_FAILURE`) and
+      // not a page's word (`MOST_OF_A_PAGE_WORD`, measured against option
+      // labels): a net error name runs past forty characters, and a name cut
+      // in half is the one fact this line exists to carry. What the owner is
+      // really asked for here is the printable half, which no reading of that
+      // field has ever proved it does not need (Security review, 2026-09-24).
       .map((a) => `${a.type || "?"} ${withoutQuery(a.url)} -> `
-        + (a.error ? `failed (${a.error})` : a.status === undefined ? "no answer yet" : `${a.status}, ${a.bytes ?? 0} bytes`));
+        + (a.error
+          ? `failed (${printableWithin(a.error, MOST_OF_A_FAILURE)})`
+          : a.status === undefined ? "no answer yet" : `${a.status}, ${a.bytes ?? 0} bytes`));
   socket.addEventListener("message", (event: MessageEvent) => {
     const message = JSON.parse(String(event.data)) as {
       id?: number; method?: string; sessionId?: string;
@@ -432,8 +449,19 @@ export function attach(socket: WebSocket, close: () => void): Session {
         // asking the error page whether it is the page.
         // The browser tier's own socket failure: nothing answered, which is
         // the same fact the fetcher calls `fetch failed`.
+        //
+        // Chrome's word for it, through the owner, for the reason the request
+        // list above gives: the sentence is ours and the name inside it is
+        // Chrome's, and every fragment of somebody else's in a sentence of
+        // ours is made printable where it is quoted. The bound is the
+        // sentence's, so Chrome's longest net error names arrive whole — the
+        // real ones this reader meets (`ERR_CONNECTION_REFUSED`,
+        // `ERR_NAME_NOT_RESOLVED`, `ERR_UNSAFE_PORT`) are pinned whole by
+        // `tests/s34-browser.test.ts` (Security review, 2026-09-24).
         if (navigation.errorText)
-          throw new ReadFailure(`the browser could not reach the page: ${navigation.errorText}`, "transient");
+          throw new ReadFailure(
+            `the browser could not reach the page: ${printableWithin(navigation.errorText, MOST_OF_A_FAILURE)}`,
+            "transient");
         await settle(evaluate, stillLoading, renderBy);
         const servedOk = () => {
           const served = documentStatus.get(sessionId);

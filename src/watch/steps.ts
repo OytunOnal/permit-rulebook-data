@@ -291,8 +291,18 @@ export const PERFORM_STEP = `function (step, phase) {
    * get to put all of them in an error, a flag and an issue. */
   var MOST = 8;
   /** And this much of the page's own prose where a whole sentence of it is
-   * the diagnosis — four times a word, because a label that is not where it
-   * was is found by reading what IS there. */
+   * the diagnosis: a label that is not where it was is found by reading what
+   * IS there, and what is there is a SENTENCE, not a word.
+   *
+   * Four times a word is 160, and 160 is measured rather than chosen: over
+   * the 1,025 sentences of the seven browser entries' own stored text
+   * (watch/state.json, read 2026-09-24), the median sentence is 67
+   * characters and 93.1% of them are within 160 — where a word's own bound,
+   * 40, holds 21.3%. A sentence past it says its own length instead, which
+   * is the next fact a curator needs about it.
+   *
+   * No backtick in this comment: it is inside the page script's template
+   * literal, and one would end it. */
   var MOST_OF_NEARBY_TEXT = 4 * MOST_OF_A_PAGE_WORD;
   /**
    * What is actually near this label, for a step that could not act on it.
