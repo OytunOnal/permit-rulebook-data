@@ -258,8 +258,8 @@ are the whole of why a morning is the colour it is:
 
 | class | what it means | asked again? | red? |
 |---|---|---|---|
-| `transient` | Nothing refused anything; the reading did not happen. A network error (the cause code is printed — `fetch failed (ECONNRESET)`), the 30 s budget spent, `408`, `425`, `429`, any `5xx`, an empty body. | yes, once | after two mornings |
-| `refused-by-source` | The source answered, and the answer was no or was not the page: any other `4xx`, a bot wall, a page that moved; a browser step that finds no field. | no — the same answer comes back in three minutes | after two mornings |
+| `transient` | Nothing refused anything; the reading did not happen. A network error (the cause code is printed — `fetch failed (ECONNRESET)`), the 30 s budget spent, `408`, `425`, `429`, any `5xx`, an empty body. | yes, once | on a second silent morning inside the week |
+| `refused-by-source` | The source answered, and the answer was no or was not the page: any other `4xx`, a bot wall, a page that moved; a browser step that finds no field. | no — the same answer comes back in three minutes | on a second silent morning inside the week |
 | `refused-by-us` | The floor declined to make the request at all: a credentialled or malformed address, an off-origin redirect or navigation, a private or loopback target, too many hops, no Chrome on the runner. | no | the same morning |
 
 A `transient` failure is read once more **after the pass finishes**, never
@@ -269,23 +269,30 @@ anything. A second answer replaces the first report entirely; a second failure
 stands.
 
 What is left over at the end of the pass is written into `watch/state.json`'s
-`unread` list, and each item carries `since` — the first morning that source
-went silent:
+`unread` list: what THIS run could not read, which is what `/data/` counts.
+Beside it the state keeps `lapses` — each source's silent mornings inside the
+week of runs ending with this one. The two lists answer two questions, so a
+source that answers today leaves `unread` the same morning and keeps its
+earlier mornings until they age out of the week.
 
-- A **lapse** is a source unread today that the run before did read. It is
-  reported `unreachable` exactly as now, the site still tells a reader the last
-  run did not reach it, the log carries `watch:lapse` at `warn` — and the run
-  stays **green**. Four of the five runs before this slice were red for
-  something that read clean the next morning; this is the day of grace that
-  buys.
-- An **outage** is a source unread today that was already on yesterday's list.
-  The log carries `watch:outage` at `error` with both days, and the run is
-  **red**.
+- A **lapse** is a source unread today and silent on no other morning inside
+  the week. It is reported `unreachable` exactly as now, the site still tells a
+  reader the last run did not reach it, the log carries `watch:lapse` at `warn`
+  — and the run stays **green**. Four of the five runs before this slice were
+  red for something that read clean the next morning; this is the day of grace
+  that buys.
+- An **outage** is a source unread today and silent on at least one other
+  morning inside the week: two of the last seven days, however they fell. A
+  source that goes quiet every other morning is an outage on its second one —
+  under the first rule it was a lapse every time and nothing ever accumulated
+  (the human's word, DECISIONS 2026-09-24). The log carries `watch:outage` at
+  `error` with the days it counted, and the run is **red**.
 - A refusal by us is **red the same morning**, logged `watch:refused`: waiting
   a day changes nothing about an address this watch will not request, and it is
   a finding for a curator now.
 
-A source that answers drops off the list and its `since` with it. The run's
+A morning older than the week is forgotten, so a source silent twice in a
+fortnight has not broken the claim this watch makes. The run's
 last line, `watch complete`, carries `lapsed`, `outages` and `refused` beside
 `unreachable`, so a green day on which something still went unread is visible
 in the log and not only in the state. The workflow does not count any of this:
