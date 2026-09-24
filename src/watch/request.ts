@@ -87,22 +87,25 @@ function oneHeader(value: string | string[] | undefined): string | null {
 }
 
 /**
- * The most a body may become once it is unpacked.
+ * The most a body may be — on the wire, and once it is unpacked.
  *
  * A compressed body is small on the wire and whatever it likes in memory:
  * five kilobytes of gzip is seventeen megabytes of page, and zlib's own
- * default is `buffer.kMaxLength` — about 4 GiB — which a run on a hosted
- * runner does not survive. So every unpacking below is given this bound, and
- * a body that passes it is a failed read rather than a dead pass.
+ * default is `buffer.kMaxLength`, which on this repository's Node is
+ * 9,007,199,254,740,991 bytes — about 8 PiB (measured 2026-09-24, v24.20.0),
+ * which is to say no bound a hosted runner would ever reach alive. So every
+ * unpacking below is given this bound, and the bytes that arrive are counted
+ * against the same one (`ask`), so a body nothing decodes is held to the rule
+ * as well. A body that passes it is a failed read rather than a dead pass.
  *
  * Sixteen mebibytes is measured, not chosen. The whole watchlist was read on
  * 2026-09-24 with this watch's own headers — 42 of the 44 addressable entries
  * answered — and the largest body, decompressed, was 1,040,895 bytes
  * (`boe-rd-1155-2024`, Spain's consolidated BOE text); the `inclusion.gob.es`
  * PDF was second at 701,825. This is sixteen times the largest of them and
- * 256 times smaller than zlib's default: a source may grow its page by an
- * order of magnitude and still be read, and no source can spend the runner's
- * memory.
+ * 536,870,912 times smaller than zlib's default: a source may grow its page
+ * by an order of magnitude and still be read, and no source can spend the
+ * runner's memory.
  */
 export const MOST_OF_A_BODY = 16 * 1024 * 1024;
 
