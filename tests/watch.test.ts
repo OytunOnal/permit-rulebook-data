@@ -21,7 +21,7 @@ const shippedState = JSON.parse(readFileSync(new URL("../watch/state.json", impo
 const enc = (s: string) => new TextEncoder().encode(s);
 const okFetcher = (pages: Record<string, string | Uint8Array>): Fetcher => async (url) => {
   const body = pages[url];
-  if (body === undefined) return { ok: false, status: 403, error: "blocked" };
+  if (body === undefined) return { ok: false, status: 403, error: "blocked", failure: "refused-by-source" };
   return { ok: true, body: typeof body === "string" ? enc(body) : body };
 };
 
@@ -438,7 +438,7 @@ describe("learn links are watched for liveness, and only for liveness", () => {
     expect(alive.nextState.entries).toEqual({});
 
     const dead = await runWatch(list, { entries: {} },
-      async () => ({ ok: false, error: "connect ETIMEDOUT" }),
+      async () => ({ ok: false, error: "connect ETIMEDOUT", failure: "transient" }),
       "2026-09-06");
     expect(dead.reports.map((r) => r.outcome)).toEqual(list.entries.map(() => "unreachable"));
   });

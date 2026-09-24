@@ -113,7 +113,7 @@ const readJson = (name: string) =>
 const encode = (s: string) => new TextEncoder().encode(s);
 const emptyState: WatchState = { entries: {} };
 const dataset = readJson("../data/dataset.json") as Dataset;
-const refuse: Fetcher = async (url) => ({ ok: false, error: `nothing may fetch ${url}` });
+const refuse: Fetcher = async (url) => ({ ok: false, error: `nothing may fetch ${url}`, failure: "refused-by-us" });
 
 describe("s34 — a browser reading is read exactly as html is", () => {
   const openInBrowser: BrowserReader = async (entry) => {
@@ -168,7 +168,10 @@ describe("s34 — a run with no browser reads the rest and goes red on the seven
     expect(reports[0]!.error, "the error does not say a browser was what was missing").toMatch(/browser/);
     // Red, and the html entry still read: a run that cannot open a browser has
     // not read these pages, and must not say it has.
-    expect(nextState.unread).toEqual([{ id: "fixture-browser", url: "https://example.invalid/rendered" }]);
+    // `since` joined the item at s35 (2026-09-24); this run is its first
+    // silent morning, so the day it started is this one.
+    expect(nextState.unread)
+      .toEqual([{ id: "fixture-browser", url: "https://example.invalid/rendered", since: "2026-09-23" }]);
     expect(nextState.entries["fixture-html"]).toBeDefined();
   });
 });
@@ -188,9 +191,9 @@ describe("s34 — a report's url is the key the site looks a source up by", () =
 
     return runWatch(
       { entries: [entryFor] }, { entries: {} },
-      async () => ({ ok: false, error: "nothing today" }),
+      async () => ({ ok: false, error: "nothing today", failure: "transient" }),
       "2026-09-25",
-      async () => ({ ok: false, error: "nothing today" }),
+      async () => ({ ok: false, error: "nothing today", failure: "transient" }),
     ).then(({ nextState }) => {
       expect(nextState.unread?.map((u) => u.url)).toEqual([longest]);
       // And the site can find it: the lookup is by this exact url.

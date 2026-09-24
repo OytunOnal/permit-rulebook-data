@@ -1,5 +1,6 @@
 import { chromePath, launch } from "./chrome.js";
 import { BUDGET_MS, refusedAddress } from "./fetch-source.js";
+import { classOfThrown, ReadFailure } from "./failure.js";
 import type { Session } from "./cdp.js";
 import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 
@@ -97,8 +98,11 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
     // this watch does not read — is the fetcher's, asked here rather than
     // spelled again.
     const refused = refusedAddress(entry.url);
-    if (refused) return { ok: false, error: refused };
-    if (launchFailure) return { ok: false, error: launchFailure };
+    // Both are ours and neither is a minute: an address this watch will not
+    // open stays one, and a machine with no Chrome will not grow one during
+    // the pass.
+    if (refused) return { ok: false, error: refused, failure: "refused-by-us" };
+    if (launchFailure) return { ok: false, error: launchFailure, failure: "refused-by-us" };
     if (!session) {
       try {
         // Under the same budget as a page. A Chrome that starts and never
@@ -109,7 +113,7 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
           `Chrome did not become usable within ${Math.round(budgetMs / 1000)}s`);
       } catch (e) {
         launchFailure = `no browser: ${e instanceof Error ? e.message : String(e)}`;
-        return { ok: false, error: launchFailure };
+        return { ok: false, error: launchFailure, failure: "refused-by-us" };
       }
     }
     try {
@@ -118,7 +122,11 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
       lastCost = read.cost;
       return { ok: true, body: new TextEncoder().encode(read.html), from: read.from };
     } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+      // Whatever failed named its own class on the way up — a step that found
+      // no field, a navigation off the origin, a status the page was served.
+      // Anything that did not is something that merely did not happen, and is
+      // worth the one more read the pass will give it.
+      return { ok: false, error: e instanceof Error ? e.message : String(e), failure: classOfThrown(e) };
     }
   };
 
@@ -133,13 +141,21 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
   };
 }
 
-/** A promise with a bound on it, so one page cannot hold the whole run. */
+/**
+ * A promise with a bound on it, so one page cannot hold the whole run.
+ *
+ * The budget running out is transient on either tier: the page did not
+ * settle in thirty seconds, which says nothing about whether it will settle
+ * in the next thirty.
+ */
 async function withDeadline<T>(work: Promise<T>, ms: number, timedOut: string): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
   try {
     return await Promise.race([
       work,
-      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error(timedOut)), ms); }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new ReadFailure(timedOut, "transient")), ms);
+      }),
     ]);
   } finally {
     if (timer) clearTimeout(timer);

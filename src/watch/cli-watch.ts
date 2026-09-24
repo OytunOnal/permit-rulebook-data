@@ -1,5 +1,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { mergeTargetedRun, runWatch, STRATEGIES, type BrowserReader, type Fetcher, type FetchResult, type WatchReport, type WatchState, type Watchlist } from "./core.js";
+import {
+  mergeTargetedRun, runSummary, runWatch, STRATEGIES, unreadNotices,
+  type BrowserReader, type Fetcher, type FetchResult, type WatchReport, type WatchState, type Watchlist,
+} from "./core.js";
 import { openBrowserReader } from "./browser.js";
 import { fetchSource, printableAddress } from "./fetch-source.js";
 
@@ -122,17 +125,34 @@ const openInBrowser: BrowserReader = async (entry, redirects) => {
 };
 
 const today = new Date().toISOString().slice(0, 10);
-const { reports, nextState } = await runWatch(watchlist, state, readSourceOverHttp, today, openInBrowser);
+const { reports, nextState, verdict } = await runWatch(watchlist, state, readSourceOverHttp, today, openInBrowser);
 await browser.close();
 
-let unreachable = 0;
 for (const r of reports) {
   const level = r.outcome === "unreachable" ? "error" : r.outcome === "unchanged" || r.outcome === "ok" ? "info" : "warn";
   log(level, `watch:${r.outcome}`, {
     id: r.id, url: printableAddress(r.url), old: r.old_hash, new: r.new_hash, error: r.error,
+    // Which kind of failure it was, so a morning's log says why the run is
+    // the colour it is without anybody reading the error back.
+    failure: r.failure,
   });
-  if (r.outcome === "unreachable") unreachable++;
   if (r.outcome === "changed" || r.outcome === "reminder-due") flagFile(r, today);
+}
+
+/**
+ * What each unread source is, in one line each: a lapse warned about, an
+ * outage and a refusal shouted about.
+ *
+ * The words and the loudness are the run's, decided in `core.ts` beside the
+ * rule that colours the day — so the one place that knows a source has been
+ * silent two mornings running is the one place that says so, and this file
+ * prints what it is handed. An outage's line carries both days: the morning
+ * it started and this one.
+ */
+for (const notice of unreadNotices(verdict, today)) {
+  log(notice.level, `watch:${notice.event}`, {
+    id: notice.id, url: printableAddress(notice.url), since: notice.since, today: notice.today,
+  });
 }
 
 if (commit) {
@@ -151,9 +171,19 @@ if (commit) {
   log("info", "dry run — state untouched (use --commit to persist)");
 }
 
-log(unreachable ? "error" : "info", "watch complete", {
-  total: reports.length,
-  changed: reports.filter((r) => r.outcome === "changed").length,
-  unreachable,
-});
-process.exit(unreachable > 0 ? 1 : 0);
+/**
+ * The run's last line, and the one signal the workflow reads.
+ *
+ * `lapsed` and `outages` sit beside `unreachable` so that a green day on
+ * which a source still went unread is visible in the log and not only in
+ * `watch/state.json`; `refused` is there so the three add up to
+ * `unreachable` rather than leaving a reader to guess where the rest went.
+ *
+ * The exit code is the verdict's, not a count of failures: a source that has
+ * been silent for one morning is a lapse and the run stays green, while an
+ * outage — two mornings running — and anything the floor refused to request
+ * are red the same day. `.github/workflows/watch.yml` keys on this step's
+ * outcome and was not touched (s35 point 5).
+ */
+log(verdict.red ? "error" : "info", "watch complete", { ...runSummary(reports, verdict) });
+process.exit(verdict.red ? 1 : 0);

@@ -4,7 +4,8 @@ import { pdfToText } from "./pdf-text.js";
 import { repairKnownGlyphs, unboundedReason, type GlyphSubstitution } from "./corrections.js";
 import { noticeSources, provenancedValuesOf, routeStatements, statementSources, forEachCriterion } from "../engine.js";
 import { countryVocabulary } from "../countries.js";
-import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type WatchState } from "./state.js";
+import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type UnreadEntry, type WatchState } from "./state.js";
+import { failureOfStatus, type FailureClass } from "./failure.js";
 import { addressWithoutCredentials, shortAddress } from "./fetch-source.js";
 import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
@@ -16,7 +17,10 @@ import type { Dataset, UnsourcedReasonWord } from "../types.js";
  * become a second door onto everything that reads it.
  */
 export { datasetSourceUrls } from "./state.js";
-export type { Snapshot, WatchState } from "./state.js";
+export type { Snapshot, UnreadEntry, WatchState } from "./state.js";
+/** What kind of failure a read was — the rule, and both readers' one owner. */
+export { failureOfStatus, ReadFailure } from "./failure.js";
+export type { FailureClass } from "./failure.js";
 
 export type WatchStrategy = "html" | "browser" | "pdf" | "pdf-text" | "human" | "link";
 
@@ -211,7 +215,18 @@ export type FetchResult =
      */
     from?: string;
   }
-  | { ok: false; status?: number; error: string };
+  | {
+    ok: false;
+    status?: number;
+    error: string;
+    /**
+     * What kind of failure this was — what decides whether it is asked
+     * again, and on which morning it reddens the run. Required, because a
+     * reader that does not say is a reader whose failures all mean the same
+     * thing, which is the fault s35 was written for.
+     */
+    failure: FailureClass;
+  };
 /**
  * What reads a source over HTTP. Takes the redirect policy rather than the
  * entry, because that is the only thing about the entry it needs and the one
@@ -245,6 +260,9 @@ export interface WatchReport {
   /** for html changes: quoted context around the first difference */
   context?: string;
   error?: string;
+  /** unreachable only: what kind of failure it was, from the reader that met
+   * it. The retry and the verdict both read this and nothing else. */
+  failure?: FailureClass;
 }
 
 /**
@@ -353,11 +371,19 @@ export async function runWatch(
   fetcher: Fetcher,
   today: string,
   openInBrowser?: BrowserReader,
-): Promise<{ reports: WatchReport[]; nextState: WatchState }> {
-  const reports: WatchReport[] = [];
+): Promise<{ reports: WatchReport[]; nextState: WatchState; verdict: RunVerdict }> {
   const nextEntries: Record<string, Snapshot> = { ...state.entries };
 
-  for (const entry of watchlist.entries) {
+  /**
+   * One source, read and judged — the whole of what a pass does to an entry.
+   *
+   * It is a function rather than the body of the loop because the retry asks
+   * for exactly this a second time, and the second answer has to be judged
+   * the way the first was: a source that answers on the retry is a source
+   * that was READ today, with its snapshot written and its report `baseline`,
+   * `unchanged` or `changed` — not one that failed and was forgiven.
+   */
+  const judge = async (entry: WatchEntry): Promise<WatchReport> => {
     /**
      * What every report about this entry says, made once.
      *
@@ -379,8 +405,7 @@ export async function runWatch(
 
     if (!STRATEGIES[entry.strategy].fetches) {
       const age = entry.last_verified ? daysSince(entry.last_verified, today) : Infinity;
-      reports.push({ ...base, outcome: age > (entry.max_age_days ?? 90) ? "reminder-due" : "ok" });
-      continue;
+      return { ...base, outcome: age > (entry.max_age_days ?? 90) ? "reminder-due" : "ok" };
     }
 
     // A run given no browser reader has not opened these pages, and says so
@@ -390,12 +415,17 @@ export async function runWatch(
     const fetched = entry.strategy === "browser"
       ? openInBrowser
         ? await openInBrowser(entry, STRATEGIES[entry.strategy].redirects)
-        : { ok: false as const, error: "no browser reader: this run was given none, so the page was never opened" }
+        : {
+          ok: false as const,
+          error: "no browser reader: this run was given none, so the page was never opened",
+          // Our own gap, not the source's minute: a run that brought no
+          // browser will not have one three minutes later either.
+          failure: "refused-by-us" as const,
+        }
       : await fetcher(entry.url, STRATEGIES[entry.strategy].redirects);
     if (!fetched.ok) {
       // A blocked or failed fetch must never read as "no change".
-      reports.push({ ...base, outcome: "unreachable", error: fetched.error });
-      continue;
+      return { ...base, outcome: "unreachable", error: fetched.error, failure: fetched.failure };
     }
     // Nor may an empty one. EUR-Lex answers this fetcher HTTP 202 with no
     // body, and `ok` is true for 202: the pass hashed nothing, wrote a blank
@@ -404,8 +434,9 @@ export async function runWatch(
     // a test's, a future host's — because a reading nobody can read is not one
     // (Standards review, 2026-09-10).
     if (fetched.body.byteLength === 0) {
-      reports.push({ ...base, outcome: "unreachable", error: "the response carried an empty body" });
-      continue;
+      // Transient: EUR-Lex's challenge answers exactly this way and the page
+      // is there a minute later, which is the whole of what transient means.
+      return { ...base, outcome: "unreachable", error: "the response carried an empty body", failure: "transient" };
     }
 
     // A learn link backs no value, so its wording may change freely — what
@@ -414,8 +445,7 @@ export async function runWatch(
     // flag that cries every week is the flag nobody reads. Only silence is
     // news here, and silence is already reported above.
     if (!STRATEGIES[entry.strategy].compares) {
-      reports.push({ ...base, outcome: "ok" });
-      continue;
+      return { ...base, outcome: "ok" };
     }
 
     let reading: Reading;
@@ -423,17 +453,19 @@ export async function runWatch(
       reading = readSource(entry, fetched.body);
     } catch (e) {
       // One mangled page must not kill the whole pass (review finding #7).
-      reports.push({ ...base, outcome: "unreachable", error: `processing: ${String(e)}` });
-      continue;
+      // The source's failure, not ours and not a hiccup: a slice marker that
+      // is no longer on the page, or a PDF that no longer decodes, is the
+      // page having changed under us, and reading it again changes nothing.
+      return { ...base, outcome: "unreachable", error: `processing: ${String(e)}`, failure: "refused-by-source" };
     }
 
     const { hash, text } = reading;
     const prev = state.entries[entry.id];
     if (!prev) {
-      reports.push({ ...base, outcome: "baseline", new_hash: hash });
       nextEntries[entry.id] = { ...snapshotOf(reading, today, entry), history: [] };
-    } else if (prev.hash === hash) {
-      reports.push({ ...base, outcome: "unchanged", old_hash: prev.hash, new_hash: hash });
+      return { ...base, outcome: "baseline", new_hash: hash };
+    }
+    if (prev.hash === hash) {
       // The reading stands, and this run just confirmed it through today's
       // slice: the date the value was first seen does not move, the record of
       // what it was read through does.
@@ -442,31 +474,174 @@ export async function runWatch(
         const { slice_read: _dropped, ...rest } = prev;
         nextEntries[entry.id] = { ...rest, ...(slice ? { slice_read: slice } : {}) };
       }
-    } else {
-      reports.push({
-        ...base, outcome: "changed", old_hash: prev.hash, new_hash: hash,
-        context: text !== undefined && prev.text !== undefined ? diffContext(prev.text, text) : undefined,
-      });
-      nextEntries[entry.id] = {
-        ...snapshotOf(reading, today, entry),
-        history: [...prev.history, { hash: prev.hash, retrieved_at: prev.retrieved_at }],
-      };
+      return { ...base, outcome: "unchanged", old_hash: prev.hash, new_hash: hash };
     }
+    nextEntries[entry.id] = {
+      ...snapshotOf(reading, today, entry),
+      history: [...prev.history, { hash: prev.hash, retrieved_at: prev.retrieved_at }],
+    };
+    return {
+      ...base, outcome: "changed", old_hash: prev.hash, new_hash: hash,
+      context: text !== undefined && prev.text !== undefined ? diffContext(prev.text, text) : undefined,
+    };
+  };
+
+  // The pass: every entry, in the watchlist's order, once.
+  const reports: WatchReport[] = [];
+  for (const entry of watchlist.entries) reports.push(await judge(entry));
+
+  /**
+   * The second try — after the LAST source of the first pass, never beside
+   * the failure that earned it.
+   *
+   * The gap IS the rest of the pass, about three minutes on the runner, and
+   * that gap is the only thing that makes a second read worth anything: a
+   * retry taken where the failure happened asks the same second over again.
+   * One more go, the same reader, the same budget; a second answer replaces
+   * the first report entirely and a second failure stands. Refusals are not
+   * here: the source's answer will not change in three minutes, and ours
+   * must not.
+   *
+   * `reports[i]` is `watchlist.entries[i]` — the pass writes exactly one
+   * report per entry, in order — so the retry replaces a report in place and
+   * what a curator reads stays in the watchlist's order.
+   */
+  for (const [i, report] of reports.entries()) {
+    if (report.outcome !== "unreachable" || report.failure !== "transient") continue;
+    reports[i] = await judge(watchlist.entries[i]!);
   }
 
+  const nextState: WatchState = {
+    entries: nextEntries,
+    last_run: today,
+    // What the run could not read, from the reports it just wrote — not from
+    // a flag an arm has to remember to raise. It is the one fact about a pass
+    // that the entries cannot carry: an unreachable source leaves the
+    // previous snapshot standing, and so does a source that answered and had
+    // not changed. The list is written on a clean day too, empty, because
+    // "nothing went unread" is a claim worth having on disk (s11).
+    unread: unreadSince(reports, state, today),
+  };
+  // The run's own verdict, made here from what the run just learned: the CLI
+  // reads it rather than working the same question out a second time from a
+  // state it would have to compare against the one it started with.
+  return { reports, nextState, verdict: verdictOf(reports, nextState, state) };
+}
+
+/**
+ * The sources this run did not read, each with the day it started.
+ *
+ * `since` is what tells a hiccup from an outage, and it is decided HERE
+ * because this is the one place holding both lists: what the last run could
+ * not read and what this one could not. A source already on the previous list
+ * keeps the day it was first missed; one that was not starts today; one that
+ * answered drops off, and its day with it.
+ *
+ * A previous list written before s35 carries no day at all. The source was
+ * still unread on that run — that is what being on the list means - so the
+ * earliest day this run can honestly claim for it is the day that run
+ * happened, and it reads as the outage it is rather than starting over.
+ */
+function unreadSince(reports: WatchReport[], previous: WatchState, today: string): UnreadEntry[] {
+  const started = new Map(
+    (previous.unread ?? []).map((u) => [u.id, u.since ?? previous.last_run ?? today] as const),
+  );
+  return reports
+    .filter((r) => r.outcome === "unreachable")
+    .map((r) => ({ id: r.id, url: r.url, since: started.get(r.id) ?? today }));
+}
+
+/** What a run came to, beyond its reports — the three words and the colour. */
+export interface RunVerdict {
+  /** Unread today and not on the run before: one day of grace, and green. */
+  lapsed: UnreadEntry[];
+  /** Unread today and unread then too. Red. */
+  outages: UnreadEntry[];
+  /** Refused by us on its first day: red the same morning, because waiting a
+   * day changes nothing about an address this watch will not request. */
+  refused: UnreadEntry[];
+  /** Whether the run is red - the exit code, decided once, here. */
+  red: boolean;
+}
+
+/**
+ * What the run's unread sources mean, and whether the day is red.
+ *
+ * One place, so that the workflow never learns to count and the CLI never
+ * re-derives it: the exit code stays the one signal the workflow reads, and
+ * this is what decides it. Every unread source gets exactly one of the three
+ * words, so the counts on the run's last line add up to `unreachable`.
+ *
+ * A source unread on the run before is an outage whatever failed this time —
+ * two silent mornings in a row is the fact, and the reason may well have
+ * changed between them.
+ */
+export function verdictOf(reports: WatchReport[], next: WatchState, previous: WatchState): RunVerdict {
+  const before = new Set((previous.unread ?? []).map((u) => u.id));
+  const failure = new Map(reports.map((r) => [r.id, r.failure] as const));
+  const lapsed: UnreadEntry[] = [];
+  const outages: UnreadEntry[] = [];
+  const refused: UnreadEntry[] = [];
+  for (const source of next.unread ?? []) {
+    if (before.has(source.id)) outages.push(source);
+    else if (failure.get(source.id) === "refused-by-us") refused.push(source);
+    else lapsed.push(source);
+  }
+  return { lapsed, outages, refused, red: outages.length > 0 || refused.length > 0 };
+}
+
+/** One unread source, as the run says it out loud. */
+export interface UnreadNotice {
+  level: "warn" | "error";
+  event: "lapse" | "outage" | "refused";
+  id: string;
+  url: string;
+  /** The day this source first went unread. */
+  since: string;
+  /** The day of this run — the second of an outage's two dates. */
+  today: string;
+}
+
+/**
+ * What the run says about each source it did not read, and how loudly.
+ *
+ * A lapse is a warning: the site already tells a reader the run did not reach
+ * it, and the morning is not one anybody has to act on. An outage and a
+ * refusal are errors, because both are red and both are somebody's to fix.
+ */
+export function unreadNotices(verdict: RunVerdict, today: string): UnreadNotice[] {
+  const say = (event: UnreadNotice["event"], level: UnreadNotice["level"]) =>
+    (u: UnreadEntry): UnreadNotice => ({ level, event, id: u.id, url: u.url, since: u.since ?? today, today });
+  return [
+    ...verdict.lapsed.map(say("lapse", "warn")),
+    ...verdict.outages.map(say("outage", "error")),
+    ...verdict.refused.map(say("refused", "error")),
+  ];
+}
+
+/** The numbers the run's last line carries. */
+export interface RunSummary {
+  total: number;
+  changed: number;
+  unreachable: number;
+  lapsed: number;
+  outages: number;
+  refused: number;
+}
+
+/**
+ * The run in six numbers, so a green day with a lapse is visible in the log
+ * and not only in the state — and so the three words add up to `unreachable`
+ * rather than leaving a reader to guess which bucket the rest fell in.
+ */
+export function runSummary(reports: WatchReport[], verdict: RunVerdict): RunSummary {
   return {
-    reports,
-    nextState: {
-      entries: nextEntries,
-      last_run: today,
-      // What the run could not read, from the reports it just wrote — not from
-      // a flag an arm has to remember to raise. It is the one fact about a pass
-      // that the entries cannot carry: an unreachable source leaves the
-      // previous snapshot standing, and so does a source that answered and had
-      // not changed. The list is written on a clean day too, empty, because
-      // "nothing went unread" is a claim worth having on disk (s11).
-      unread: reports.filter((r) => r.outcome === "unreachable").map((r) => ({ id: r.id, url: r.url })),
-    },
+    total: reports.length,
+    changed: reports.filter((r) => r.outcome === "changed").length,
+    unreachable: reports.filter((r) => r.outcome === "unreachable").length,
+    lapsed: verdict.lapsed.length,
+    outages: verdict.outages.length,
+    refused: verdict.refused.length,
   };
 }
 

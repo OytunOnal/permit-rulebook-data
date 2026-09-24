@@ -151,12 +151,14 @@ describe("what the run has to write down", () => {
   const watchlist: Watchlist = { entries: [entry("es-uge-umbral-pdf", UMBRAL), entry("bamf-fachkraft", FACHKRAFT)] };
   const body = new TextEncoder().encode("<p>the page, unchanged</p>");
   const refusesSpain: Fetcher = async (url) =>
-    url === UMBRAL ? { ok: false, status: 403, error: "HTTP 403" } : { ok: true, body };
+    url === UMBRAL ? { ok: false, status: 403, error: "HTTP 403", failure: "refused-by-source" } : { ok: true, body };
 
   it("records what it could not read, by id and by page", async () => {
     const before = await runWatch(watchlist, { entries: {} }, async () => ({ ok: true, body }), "2026-09-07");
     const { nextState } = await runWatch(watchlist, before.nextState, refusesSpain, LAST_RUN);
-    expect(nextState.unread).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL }]);
+    // `since` joined the item at s35 (2026-09-24): the day the source first
+    // went unread, which is what tells one silent morning from two.
+    expect(nextState.unread).toEqual([{ id: "es-uge-umbral-pdf", url: UMBRAL, since: LAST_RUN }]);
     expect(nextState.last_run).toBe(LAST_RUN);
   });
 

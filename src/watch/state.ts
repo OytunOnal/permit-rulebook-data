@@ -56,6 +56,21 @@ export interface UnreadEntry {
   /** The page itself, because the state travels without the watchlist: the
    * site is shipped `watch/state.json` and nothing else from the watch. */
   url: string;
+  /**
+   * The first day this source went unread — an ISO day.
+   *
+   * One unread day is a lapse and two in a row are an outage, and this is the
+   * only thing on disk that can tell them apart: the entries cannot, because
+   * an unread source keeps the snapshot and the date of the last reading that
+   * DID happen. The run that first misses a source writes today here; every
+   * run that misses it again carries the same day forward; a source that
+   * answers drops off the list and its day with it (s35).
+   *
+   * Absent on a list written before 2026-09-24, and on no list written after:
+   * the site ignores the field either way, because what it counts is how many
+   * sources the last run did not reach.
+   */
+  since?: string;
 }
 
 export interface WatchState {

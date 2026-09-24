@@ -330,7 +330,7 @@ const entry = (overrides: Partial<WatchEntry> = {}): WatchEntry => ({
   ...overrides,
 });
 
-const refuse: Fetcher = async () => ({ ok: false, error: "nothing here is fetched" });
+const refuse: Fetcher = async () => ({ ok: false, error: "nothing here is fetched", failure: "refused-by-us" });
 const emptyState: WatchState = { entries: {} };
 
 describe.skipIf(Boolean(noChrome) && !CI)("s34 — a real browser performs the steps and hands back the rendered page", () => {
