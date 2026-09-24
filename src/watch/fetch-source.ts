@@ -3,7 +3,7 @@ import { Agent as HttpAgent } from "node:http";
 import { Agent as HttpsAgent } from "node:https";
 import type { LookupFunction } from "node:net";
 import type { Fetcher, FetchResult, RedirectPolicy } from "./core.js";
-import { causeCode, classOfThrown, failureOfStatus, ReadFailure } from "./failure.js";
+import { causeCode, classOfThrown, failureOfStatus, ReadFailure, shortFailure } from "./failure.js";
 import { ask, ENCODINGS_ASKED_FOR } from "./request.js";
 
 /**
@@ -420,24 +420,33 @@ const ASKING: Readonly<Record<string, string>> = Object.freeze({
   "accept-encoding": ENCODINGS_ASKED_FOR,
 });
 
-/** 2xx and nothing else, which is what `fetch`'s `res.ok` meant. */
 /**
  * A failure's sentence with the answer that came before it, when there was one.
  *
- * The structured `status` a fetcher returns is read by this file's own callers
- * and stops at the report's door: a `WatchReport` carries the sentence, not
- * the number (`core.ts`). So a refusal decided after a source answered says
- * the answer in words, which is what the redirect refusals have always done
- * ("HTTP 302, not followed") and what a curator finds in the log line, the
- * flag file and the issue that flag becomes.
+ * The answer's clause goes FIRST. Put last it attached itself to whatever
+ * clause the sentence happened to end on — "…, which is no page this watch
+ * reads, after HTTP 200" reads as the READING being after the answer rather
+ * than the refusal (Spec review, 2026-09-24). In front it reads as a sentence
+ * in both shapes this branch has: a refusal decided after the source spoke,
+ * and a socket that died while it was still speaking.
+ *
+ * The structured `status` a fetcher returns stops at the report's door: a
+ * `WatchReport` carries the sentence and not the number, and `core.ts` — the
+ * one caller — declares the field and never reads it. The field is the shape
+ * the two readers answer in, and what the tests read; the SENTENCE is what a
+ * curator finds in the log line, the flag file and the issue that flag
+ * becomes. So a refusal decided after a source answered says the answer in
+ * words, which is what the redirect refusals have always done ("HTTP 302, not
+ * followed").
  *
  * The status only. What the source SAID past its status line is the source's
  * own words and stays out (`failure.ts`'s opening sentence).
  */
 function afterAnswer(sentence: string, status: number | undefined): string {
-  return status === undefined ? sentence : `${sentence}, after HTTP ${status}`;
+  return status === undefined ? sentence : `after HTTP ${status}, ${sentence}`;
 }
 
+/** 2xx and nothing else, which is what `fetch`'s `res.ok` meant. */
 function answered(status: number): boolean {
   return status >= 200 && status < 300;
 }
@@ -641,6 +650,11 @@ export const fetchSource = (async (
      * travels as a `ReadFailure`, carrying the class it was made with. It is
      * not dressed up as a failure that happened TO us, because it did not
      * happen: we declined it.
+     *
+     * Not bounded, and that is the same rule rather than a second one: a
+     * `ReadFailure` here is OURS — the floor's refusal, or the bound's own —
+     * and the bound belongs where a SOURCE's string arrives, which is the
+     * throw below (`failure.ts`, `MOST_OF_A_FAILURE`).
      */
     if (e instanceof ReadFailure)
       return {
@@ -671,10 +685,28 @@ export const fetchSource = (async (
      * ever answered, which is most of what lands here.
      */
     const code = causeCode(e);
+    /**
+     * Bounded here, because here is where a thrown thing becomes a printed
+     * sentence — the same owner and the same rule as the browser tier's
+     * (`shortFailure`, applied at the throw in `cdp.ts`).
+     *
+     * `request.ts`'s wrapper makes this five words most mornings, but a
+     * wrapper is not a bound: anything thrown inside this `try` that never
+     * passed through it — a lookup hook that throws where Node calls it, the
+     * next thing added beside `ask` — arrives with whatever text it carries,
+     * and that text is what travels into the log line, the flag file and the
+     * issue that flag becomes (`failure.ts`'s opening sentence; Security
+     * review, 2026-09-24).
+     *
+     * What is printed beside it is this tier's own and bounded already: a
+     * cause code, which `A_CODE` holds to forty characters, and `afterAnswer`
+     * adds a status number.
+     */
+    const said = shortFailure(String(e));
     return {
       ok: false,
       ...(answerStatus !== undefined ? { status: answerStatus } : {}),
-      error: afterAnswer(code ? `${String(e)} (${code})` : String(e), answerStatus),
+      error: afterAnswer(code ? `${said} (${code})` : said, answerStatus),
       failure: classOfThrown(e),
     };
   }

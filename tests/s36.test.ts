@@ -5,7 +5,8 @@ import type { AddressInfo, LookupFunction } from "node:net";
 import { brotliCompressSync, deflateSync, gzipSync } from "node:zlib";
 import { addressKind, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
 import { runWatch, type Watchlist } from "../src/watch/core.js";
-import { ask, ENCODINGS_ASKED_FOR, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js";
+import { MOST_OF_A_FAILURE } from "../src/watch/failure.js";
+import { ask, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js";
 
 /**
  * s36 — the address the watch connects to.
@@ -350,24 +351,31 @@ describe("s36 — what the watch reads does not change", () => {
     expect(new TextDecoder().decode(answer.body)).toBe("<p>The authority's own words</p>");
   });
 
-  it("unpacks every encoding its own header asks for", async () => {
+  it("unpacks every encoding the header it actually sent asked for", async () => {
     /**
-     * The header a source reads and the switch that reads the answer are one
-     * list or they are a silent drift: a source sends what it was asked for
-     * and the watch fingerprints a compressed stream. The type refuses an
-     * asked-for encoding that has no unpacking; this is the same claim at
-     * runtime, for the encodings the header names today.
+     * Read from the wire, not from the constant.
+     *
+     * That the asked-for list has an unpacking is a TYPE: `ENCODINGS_ASKED_FOR`
+     * is `keyof typeof UNPACKINGS`, so that drift is a build failure and
+     * round-tripping the constant proves it a second time at run time
+     * (Spec review, 2026-09-24). What no type holds is the step between the
+     * constant and the source: the header a source reads is whatever
+     * `ASKING` put on the wire. So the list comes back from the fixture's own
+     * view of the request, and each encoding in it is sent as a real body and
+     * read back.
      */
     const packing: Record<string, (page: Buffer) => Buffer> = {
       gzip: gzipSync, deflate: deflateSync, br: brotliCompressSync,
     };
-    const asked = ENCODINGS_ASKED_FOR.split(",").map((one) => one.trim());
-    expect(asked.length, "the watch asks for no encoding at all").toBeGreaterThan(0);
-    for (const encoding of asked) {
+    await fetchSource(`${fixtureOrigin}/`, "same-origin");
+    const sent = asked.at(-1)!.headers["accept-encoding"] ?? "";
+    const askedFor = sent.split(",").map((one) => one.trim()).filter((one) => one.length > 0);
+    expect(askedFor.length, "the request asked for no encoding at all").toBeGreaterThan(0);
+    for (const encoding of askedFor) {
       const pack = packing[encoding];
-      expect(pack, `${encoding} is asked for and this test cannot send it`).toBeTypeOf("function");
+      expect(pack, `${encoding} was asked for and this test cannot send it`).toBeTypeOf("function");
       const page = await unpacked(pack!(Buffer.from(SENTENCE)), encoding);
-      expect(new TextDecoder().decode(page), `${encoding} is asked for and not unpacked`).toBe(SENTENCE);
+      expect(new TextDecoder().decode(page), `${encoding} was asked for and is not unpacked`).toBe(SENTENCE);
     }
   });
 });
@@ -397,6 +405,10 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
     // Nothing of what the body said reaches the log line, the flag file or the
     // issue the flag becomes.
     expect(answer.error, "the failure carries the body's own words").not.toContain("authority");
+    // A page that INFLATES past the bound and a page that simply is past it
+    // are two different facts about a source, and the sentence a curator
+    // reads says which one this was (`request.ts`'s `pastTheBound`).
+    expect(answer.error, "the refusal does not say where the bound was passed").toContain("unpacked");
   });
 
   /**
@@ -423,6 +435,10 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
       // Nothing of what the body said reaches the log line, the flag file or
       // the issue the flag becomes.
       expect(answer.error, "the failure carries the body's own words").not.toContain("authority");
+      // And the other half of that sentence: this body was that big, rather
+      // than a small one that inflated.
+      expect(answer.error, "the refusal does not say where the bound was passed").toContain("on the wire");
+      expect(answer.error, "a body nothing decoded was called unpacked").not.toContain("unpacked");
     });
   }
 
@@ -508,35 +524,88 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     // the flag file and the issue that flag becomes.
     expect(answer.error, "the sentence does not say what the source answered").toContain("HTTP 200");
   });
+
+  it("bounds a thrown thing's own words, and still says the code and the answer", async () => {
+    /**
+     * A wrapper is not a bound.
+     *
+     * `request.ts` turns every socket failure into `fetch failed` with the
+     * real error underneath as a cause, so what this branch prints is five
+     * words most mornings. But the print is `String(e)` over whatever
+     * arrived, and this file's own sentence says that text travels into the
+     * log line, the flag file and the issue the flag becomes
+     * (`failure.ts`). The bound is the browser tier's, one owner for both
+     * tiers (`shortFailure`, applied at the throw in `cdp.ts`).
+     *
+     * Driven through the resolver seam, which is where a throw misses the
+     * wrapper: Node calls the lookup hook from inside `http.request` itself,
+     * so a hook that throws throws the request (probed 2026-09-24,
+     * v24.20.0). The hop is to a NAME, so there is a lookup at all — and the
+     * 302 before it is an answer the sentence still owes the curator.
+     */
+    const throwing: Resolver = () => {
+      throw Object.assign(new Error("B".repeat(10_000)), { cause: { code: "ECONNRESET" } });
+    };
+    const answer = await fetchSource(`${fixtureOrigin}/to-name`, "anywhere", throwing);
+    expect(answer.ok, "a throw inside the lookup was read as a page").toBe(false);
+    if (answer.ok) return;
+    /**
+     * The source's words are bounded; what this tier prints beside them is
+     * its own and bounded already — a cause code, which `A_CODE` holds to 40
+     * characters, inside its ` (…)`, and `afterAnswer`'s `after HTTP ` with
+     * a status number.
+     */
+    const OURS_BESIDE_THE_WORDS = " (".length + 40 + ")".length + "after HTTP 302, ".length;
+    expect(answer.error.length, "ten thousand characters of a thrown message reached the log line")
+      .toBeLessThanOrEqual(MOST_OF_A_FAILURE + OURS_BESIDE_THE_WORDS);
+    expect(answer.error, "the thrown message travelled whole").not.toContain("B".repeat(MOST_OF_A_FAILURE));
+    // The two facts a curator acts on survive the cut.
+    expect(answer.error, "the cause's code was cut away with the message").toContain("ECONNRESET");
+    expect(answer.error, "what the source answered before the throw went unreported")
+      .toContain("after HTTP 302");
+    expect(answer.status, "the source's own answer went unreported").toBe(302);
+  });
 });
 
 describe("s36 — one oversize body does not take the pass with it", () => {
-  it("reports the oversize source unreachable and reads the source after it", async () => {
-    /**
-     * The regression this guards is the PASS dying, not the read failing: one
-     * source answering seventeen megabytes used to be able to spend the
-     * runner's memory before any report was written, and the forty-five
-     * entries behind it were never asked. So it is proved where that would
-     * show — through `runWatch`, with a source behind the oversize one.
-     */
-    const watchlist: Watchlist = {
-      entries: [
-        { id: "s36-over-the-bound", url: `${fixtureOrigin}/too-big-plain`, strategy: "html", kind: "sentinel" },
-        { id: "s36-behind-it", url: `${fixtureOrigin}/`, strategy: "html", kind: "sentinel" },
-      ],
-    };
-    const { reports, nextState } = await runWatch(watchlist, { entries: {} }, fetchSource, "2026-09-24");
-    const over = reports.find((report) => report.id === "s36-over-the-bound")!;
-    expect(over.outcome, "an oversize body was read as a page").toBe("unreachable");
-    expect(over.failure, "the oversize body is worth asking about again").toBe("refused-by-source");
-    // What the source answered reaches the report a curator reads. The
-    // fetcher's `status` field stops at the report's door (`core.ts`), so the
-    // sentence is where it has to be said — as the redirect refusals say it.
-    expect(over.error, "the report does not say what the source answered").toContain("HTTP 200");
-    expect(over.error, "the report carries the body's own words").not.toContain("authority");
-    // The source behind it was asked, read, and written down.
-    const behind = reports.find((report) => report.id === "s36-behind-it")!;
-    expect(behind.outcome, behind.error).toBe("baseline");
-    expect(nextState.entries["s36-behind-it"], "the pass wrote no snapshot for it").toBeDefined();
-  });
+  /**
+   * The regression this guards is the PASS dying, not the read failing: one
+   * source answering seventeen megabytes used to be able to spend the
+   * runner's memory before any report was written, and the forty-five
+   * entries behind it were never asked. So it is proved where that would
+   * show — through `runWatch`, with a source behind the oversize one.
+   *
+   * Both shapes, because they are two refusals and either one can take the
+   * pass: the count on the wire and the decoder's own `maxOutputLength`.
+   * Proving one and not the other leaves a decoder refusal free to kill a
+   * pass with nothing failing (Spec review, 2026-09-24).
+   */
+  for (const [shape, id, path] of [
+    ["on the wire", "s36-over-the-bound", "/too-big-plain"],
+    ["unpacked", "s36-over-the-bound-encoded", "/too-big"],
+  ] as const) {
+    it(`reports a source past the bound ${shape} unreachable and reads the source after it`, async () => {
+      const watchlist: Watchlist = {
+        entries: [
+          { id, url: `${fixtureOrigin}${path}`, strategy: "html", kind: "sentinel" },
+          { id: "s36-behind-it", url: `${fixtureOrigin}/`, strategy: "html", kind: "sentinel" },
+        ],
+      };
+      const { reports, nextState } = await runWatch(watchlist, { entries: {} }, fetchSource, "2026-09-24");
+      const over = reports.find((report) => report.id === id)!;
+      expect(over.outcome, "an oversize body was read as a page").toBe("unreachable");
+      expect(over.failure, "the oversize body is worth asking about again").toBe("refused-by-source");
+      // What the source answered reaches the report a curator reads. The
+      // fetcher's `status` field stops at the report's door (`core.ts`), so
+      // the sentence is where it has to be said — as the redirect refusals
+      // say it — and it says which bound was passed.
+      expect(over.error, "the report does not say what the source answered").toContain("HTTP 200");
+      expect(over.error, "the report does not say where the bound was passed").toContain(shape);
+      expect(over.error, "the report carries the body's own words").not.toContain("authority");
+      // The source behind it was asked, read, and written down.
+      const behind = reports.find((report) => report.id === "s36-behind-it")!;
+      expect(behind.outcome, behind.error).toBe("baseline");
+      expect(nextState.entries["s36-behind-it"], "the pass wrote no snapshot for it").toBeDefined();
+    });
+  }
 });
