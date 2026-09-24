@@ -84,18 +84,69 @@ export function shortAddress(address: string): string {
  */
 type AddressKind = "loopback" | "link-local" | "private" | "public";
 
-const ADDRESS_KINDS: [AddressKind, RegExp][] = [
-  ["loopback", /^localhost$/i], ["loopback", /\.localhost$/i],
-  ["loopback", /^127\./], ["loopback", /^0\.0\.0\.0$/], ["loopback", /^\[?::1\]?$/],
-  // Link-local first among the rest: 169.254.169.254 is where a cloud runner
-  // keeps its credentials, and no source is ever there.
-  ["link-local", /^169\.254\./], ["link-local", /^\[?fe80:/i],
+const NAMED_LOOPBACK = [/^localhost$/i, /\.localhost$/i];
+
+const IPV4_KINDS: [AddressKind, RegExp][] = [
+  ["loopback", /^127\./], ["loopback", /^0\.0\.0\.0$/],
+  // Link-local before the private ranges: 169.254.169.254 is where a cloud
+  // runner keeps its credentials, and no source is ever there.
+  ["link-local", /^169\.254\./],
   ["private", /^10\./], ["private", /^192\.168\./], ["private", /^172\.(1[6-9]|2\d|3[01])\./],
-  ["private", /^\[?f[cd][0-9a-f]{2}:/i],
 ];
 
+/**
+ * An IPv6 literal as its eight groups, or `null` if it is not one.
+ *
+ * Written out rather than matched, because matching missed the spellings
+ * that matter: `[::ffff:7f00:1]` IS 127.0.0.1 and `[::ffff:a9fe:a9fe]` IS
+ * 169.254.169.254, and a pattern looking for `127.` or `169.254.` sees
+ * neither (Security review, 2026-09-25). An address has many spellings and
+ * only one meaning; this turns the spelling into the meaning.
+ */
+function hextets(literal: string): number[] | null {
+  let text = literal.replace(/^\[/, "").replace(/\]$/, "");
+  if (!text.includes(":")) return null;
+  // A trailing dotted quad — `::ffff:127.0.0.1` — is the last two groups.
+  let tail: number[] = [];
+  const dotted = /:((?:\d{1,3}\.){3}\d{1,3})$/.exec(text);
+  if (dotted) {
+    const octets = dotted[1]!.split(".").map(Number);
+    if (octets.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return null;
+    tail = [(octets[0]! << 8) | octets[1]!, (octets[2]! << 8) | octets[3]!];
+    text = text.slice(0, dotted.index + 1);
+  }
+  const halves = text.split("::");
+  if (halves.length > 2) return null;
+  const parse = (part: string) => part.split(":").filter(Boolean).map((group) => parseInt(group, 16));
+  const left = parse(halves[0] ?? "");
+  const right = halves.length === 2 ? parse(halves[1]!) : [];
+  if ([...left, ...right].some((group) => !Number.isInteger(group) || group < 0 || group > 0xffff)) return null;
+  const named = left.length + right.length + tail.length;
+  const groups = halves.length === 2
+    ? [...left, ...new Array(Math.max(0, 8 - named)).fill(0), ...right, ...tail]
+    : [...left, ...tail];
+  return groups.length === 8 ? groups : null;
+}
+
+function ipv4Kind(address: string): AddressKind {
+  return IPV4_KINDS.find(([, shape]) => shape.test(address))?.[0] ?? "public";
+}
+
 function addressKind(hostname: string): AddressKind {
-  return ADDRESS_KINDS.find(([, shape]) => shape.test(hostname))?.[0] ?? "public";
+  if (NAMED_LOOPBACK.some((shape) => shape.test(hostname))) return "loopback";
+  const groups = hextets(hostname);
+  if (!groups) return ipv4Kind(hostname);
+  // An IPv4-mapped address is that IPv4 address, and takes its rule.
+  if (groups.slice(0, 5).every((g) => g === 0) && groups[5] === 0xffff) {
+    const [a, b] = [groups[6]!, groups[7]!];
+    return ipv4Kind([a >> 8, a & 0xff, b >> 8, b & 0xff].join("."));
+  }
+  // `::` (unspecified) and `::1` both mean this machine.
+  if (groups.every((g) => g === 0)) return "loopback";
+  if (groups.slice(0, 7).every((g) => g === 0) && groups[7] === 1) return "loopback";
+  if ((groups[0]! & 0xffc0) === 0xfe80) return "link-local";
+  if ((groups[0]! & 0xfe00) === 0xfc00) return "private";
+  return "public";
 }
 
 /**
@@ -183,25 +234,25 @@ export function printableAddress(url: string): string {
 }
 
 export const fetchSource: Fetcher = async (url, redirects) => {
-  // Inside the try, because `new URL` throws on a malformed one. Outside it,
-  // one bad entry took the whole pass down with it — no reports, no state and
-  // no flags for the other forty-four sources, where it had been one
-  // `unreachable` (Standards review, 2026-09-24).
+  /**
+   * What this watch will not ask for at all: a malformed address, one
+   * carrying a name and password, one on a scheme that is not a page.
+   *
+   * Refused before anything is requested and without repeating what is
+   * wrong. `String(e)` on a credentialled address put the password into the
+   * error, the log, a flag and an issue (Security review, 2026-09-24); the
+   * coverage gate refuses such an entry in the watchlist too, where it is a
+   * curator's to fix, and this is the floor under that for a url arriving by
+   * any other road.
+   */
   const refused = refusedAddress(url);
   if (refused) return { ok: false, error: refused };
+  // Everything below is inside the try because `new URL` throws, and one bad
+  // entry used to take the whole pass down with it — no reports, no state and
+  // no flags for the other forty-four sources, where it had been a single
+  // `unreachable` (Standards review, 2026-09-24).
   try {
     const entry = new URL(url);
-    /**
-     * An entry address carrying a name and password is refused before it is
-     * requested, and they are never printed.
-     *
-     * The redirect path was guarded in round 5 and this one was not: undici
-     * refuses `user:pass@host` at request time, and `String(e)` put the
-     * credentials into the error, the log, a flag and an issue (Security
-     * review, 2026-09-24). The watchlist is curator data, so the coverage
-     * gate refuses such an entry at `npm run check` too — this is the floor
-     * under that, for a url that reaches here by any other road.
-     */
     const asked = entry.origin;
     let target = url;
     // One deadline for the source, shared by every hop it makes.

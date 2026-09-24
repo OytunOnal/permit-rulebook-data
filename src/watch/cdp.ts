@@ -118,6 +118,11 @@ export function attach(socket: WebSocket, close: () => void): Session {
    * far side of a round-trip per request and the entry's budget is 30 s — and
    * two entries have already moved close enough to it to be worth watching
    * (s34, 2026-09-25).
+   *
+   * `paused` counts requests this driver paused and let go again; `pausedMs`
+   * is the time they spent waiting on it, summed. Neither counts a request
+   * that was already gone when the driver reached it, because nothing was
+   * waiting on that one.
    */
   const interceptions = new Map<string, { paused: number; pausedMs: number }>();
   const costOf = (sessionId: string) => {
@@ -420,7 +425,7 @@ export function attach(socket: WebSocket, close: () => void): Session {
          * both readers (Standards review, 2026-09-25).
          */
         const mustBeHome = async (when: string) => {
-          if (redirects !== "same-origin") return (await whereAmI()).split(" ")[1] as string;
+          if (redirects !== "same-origin") return shortAddress((await whereAmI()).split(" ")[1] as string);
           const [origin, href] = (await whereAmI()).split(" ") as [string, string];
           // The address is the page's to choose, and a page can make it as
           // long as it likes: one `history.pushState` produced 120,032

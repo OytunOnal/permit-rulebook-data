@@ -258,6 +258,23 @@ describe("s34 — a watched address may not carry a name and password", () => {
     expect(gate.ok).toBe(false);
   });
 
+  it("refuses an entry a dataset value rests on, whatever the entry calls itself", () => {
+    // The flip is two words, not one: a `value-source` on `html` becomes a
+    // `sentinel` on `link` in a single edit, and every check that keys on
+    // `kind` then agrees with it. What does not change is that a shipped
+    // sentence rests on that page (Security review, 2026-09-25).
+    const cited = [...datasetSourceUrls(dataset)][0]!;
+    const flipped: Watchlist = {
+      entries: watchlist.entries.map((e) => (e.url === cited
+        ? { ...e, strategy: "link" as const, kind: "sentinel" as const, learn_for: "recognition_de" }
+        : e)),
+    };
+    const gate = checkCoverage(dataset, flipped);
+    expect(gate.unchecked_value_sources.length, "a cited source was allowed onto a strategy that never compares").toBe(1);
+    expect(gate.unchecked_value_sources[0]).toContain(watchlist.entries.find((e) => e.url === cited)!.id);
+    expect(gate.ok).toBe(false);
+  });
+
   it("says nothing about the sentinels that legitimately sit there", () => {
     // A learn link is a sentinel: it backs no value, so nothing rests on a
     // reading it never takes.

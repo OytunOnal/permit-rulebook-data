@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { fetchSource } from "../src/watch/fetch-source.js";
+import { fetchSource, refusedTarget, shortAddress } from "../src/watch/fetch-source.js";
 
 /**
  * s34 — the fetch tier follows a redirect around a site, and not off it.
@@ -51,6 +51,14 @@ const source: Server = createServer((req, res) => {
   if (path === "/to-file") { res.writeHead(302, { location: "file:///etc/passwd" }); res.end(); return; }
   if (path === "/to-metadata") { res.writeHead(302, { location: "http://169.254.169.254/latest/meta-data/" }); res.end(); return; }
   if (path === "/to-private") { res.writeHead(302, { location: "http://10.0.0.1/admin" }); res.end(); return; }
+  // The same addresses, spelled as IPv6. Each of these IS one of the decimal
+  // forms above, and a pattern looking for "127." or "169.254." sees none.
+  if (path === "/v6-loopback-mapped") { res.writeHead(302, { location: "http://[::ffff:7f00:1]/admin" }); res.end(); return; }
+  if (path === "/v6-metadata-mapped") { res.writeHead(302, { location: "http://[::ffff:a9fe:a9fe]/latest/" }); res.end(); return; }
+  if (path === "/v6-unspecified") { res.writeHead(302, { location: "http://[::]/admin" }); res.end(); return; }
+  if (path === "/v6-loopback-long") { res.writeHead(302, { location: "http://[0:0:0:0:0:0:0:1]/admin" }); res.end(); return; }
+  if (path === "/v6-link-local") { res.writeHead(302, { location: "http://[fe80::1]/admin" }); res.end(); return; }
+  if (path === "/v6-private") { res.writeHead(302, { location: "http://[fd00::1]/admin" }); res.end(); return; }
   if (path === "/long") {
     res.writeHead(302, { location: `${elsewhereOrigin}/${"a".repeat(9_000)}` });
     res.end();
@@ -120,6 +128,7 @@ describe("s34 — a link is followed the way a person's browser follows it", () 
 });
 
 describe("s34 — there is a floor under following a link anywhere", () => {
+
   /**
    * "Anywhere a person's browser would" turned out to be wider than a
    * browser. Measured 2026-09-25: a `data:` target was followed and its
@@ -143,6 +152,56 @@ describe("s34 — there is a floor under following a link anywhere", () => {
       expect(answer.status, "the source's own answer is not reported").toBe(302);
     });
   }
+
+  /**
+   * The same places, spelled the other way, asked as a PUBLIC source asks.
+   *
+   * `[::ffff:7f00:1]` IS 127.0.0.1 and `[::ffff:a9fe:a9fe]` IS
+   * 169.254.169.254 — an address has many spellings and one meaning, and the
+   * floor was matching spellings (Security review, 2026-09-25).
+   *
+   * Asked of `refusedTarget` rather than through the fixtures, because the
+   * fixtures live on loopback and the rule is relative: a loopback entry may
+   * move within loopback, so a loopback fixture cannot pose the question a
+   * public source poses. The end-to-end half is the case below, which proves
+   * a refusal reaches the fetcher and costs the refused address nothing.
+   */
+  for (const [what, address, kind] of [
+    ["an IPv4-mapped loopback address", "http://[::ffff:7f00:1]/admin", "loopback"],
+    ["an IPv4-mapped metadata address", "http://[::ffff:a9fe:a9fe]/latest/", "link-local"],
+    ["the unspecified address", "http://[::]/admin", "loopback"],
+    ["loopback written out in full", "http://[0:0:0:0:0:0:0:1]/admin", "loopback"],
+    ["IPv6 link-local", "http://[fe80::1]/admin", "link-local"],
+    ["IPv6 private", "http://[fd00::1]/admin", "private"],
+    ["plain 127.0.0.1", "http://127.0.0.1/admin", "loopback"],
+    ["plain 169.254.169.254", "http://169.254.169.254/latest/", "link-local"],
+    ["plain 10.0.0.1", "http://10.0.0.1/admin", "private"],
+  ] as const) {
+    it(`refuses ${what} when the source is on the open web`, () => {
+      const why = refusedTarget(new URL(address), "rules.example.org");
+      expect(why, `${what} was allowed`).not.toBeNull();
+      expect(why, "the refusal does not say what kind of address it is").toContain(kind);
+    });
+  }
+
+  it("bounds an address before it is written down, however long a page makes it", () => {
+    // `shortAddress` is the one bound, used by both readers and by the
+    // printers. The browser's `anywhere` branch had returned an address
+    // straight from the page — a branch no entry takes today, which is
+    // exactly how a bound goes missing (Standards review, 2026-09-25).
+    const long = `https://rules.example.org/${"a".repeat(9_000)}`;
+    expect(shortAddress(long).length, "an address the page chose was written down whole").toBeLessThan(300);
+    expect(shortAddress(long)).toContain(`${long.length} characters`);
+    // And an ordinary one is left exactly as it is.
+    const ordinary = "https://anabin.kmk.org/anabin.html";
+    expect(shortAddress(ordinary)).toBe(ordinary);
+  });
+
+  it("still lets an ordinary public address through", () => {
+    expect(refusedTarget(new URL("https://anabin.kmk.org/cms/public/startseite"), "rules.example.org")).toBeNull();
+    // And the downgrade the whole rule exists for: same host, plain http.
+    expect(refusedTarget(new URL("http://anabin.kmk.org/anabin.html"), "anabin.kmk.org")).toBeNull();
+  });
 
   it("asks the refused address for nothing at all", async () => {
     // The refusal is made from the `Location` header, before anything is
@@ -175,7 +234,7 @@ describe("s34 — there is a floor under following a link anywhere", () => {
     expect(answer.ok).toBe(false);
     if (answer.ok) return;
     expect(answer.error, "the password was printed").not.toContain("hunter2");
-    expect(answer.error).toMatch(/not an address/);
+    expect(answer.error, "the name was printed").not.toContain("watcher");
   });
 });
 

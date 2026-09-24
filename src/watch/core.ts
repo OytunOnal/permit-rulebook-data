@@ -735,9 +735,14 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
       ? [`${e.id}: ${shortAddress(parsed.origin)} carries a name and password`]
       : [];
   });
+  // Keyed on what the DATASET cites, not on what the entry calls itself: an
+  // entry flipped to `link` and `sentinel` in one edit would otherwise pass
+  // both this and the orphan check while a shipped sentence went on resting
+  // on a snapshot nothing refreshes (Security review, 2026-09-25).
   const unchecked = watchlist.entries
-    .filter((e) => e.kind === "value-source" && STRATEGIES[e.strategy].fetches && !STRATEGIES[e.strategy].compares)
-    .map((e) => `${e.id}: a value-source on the ${e.strategy} strategy, which fetches but never compares`);
+    .filter((e) => (datasetUrls.has(e.url) || e.kind === "value-source")
+      && STRATEGIES[e.strategy].fetches && !STRATEGIES[e.strategy].compares)
+    .map((e) => `${e.id}: a dataset value rests on it, and the ${e.strategy} strategy fetches but never compares`);
   return {
     ok: missing.length === 0 && orphans.length === 0 && unbounded.length === 0
       && steps.length === 0 && credentialled.length === 0 && unchecked.length === 0,

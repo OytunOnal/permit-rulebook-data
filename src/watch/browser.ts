@@ -1,7 +1,7 @@
 import { chromePath, launch } from "./chrome.js";
 import { BUDGET_MS, refusedAddress } from "./fetch-source.js";
 import type { Session } from "./cdp.js";
-import type { BrowserReader, FetchResult, RedirectPolicy, WatchEntry } from "./core.js";
+import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 
 /**
  * The watch's second reader: a real browser, spoken to over its own protocol.
@@ -84,14 +84,20 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
   let lastCost: { paused: number; pausedMs: number } = { paused: 0, pausedMs: 0 };
 
   const read: BrowserReader = async (entry, redirects) => {
-    // Before anything is opened, because a browser sends credentials the
-    // moment it navigates and keeps sending them: measured 2026-09-24, a
-    // credentialled entry read `ok: true` and the host saw `Authorization:
-    // Basic …` on the page AND on the favicon, with the page behind the
-    // password hashed and ready to commit. The rule is the fetcher's, asked
-    // here rather than spelled again.
-    const credentials = refusedAddress(entry.url);
-    if (credentials) return { ok: false, error: credentials };
+    // This page's counts, and only this page's. A refused or failed read used
+    // to leave the previous page's numbers standing, so the
+    // `watch:browser-read` line reported one entry's cost against another's
+    // name (Standards review, 2026-09-25).
+    lastCost = { paused: 0, pausedMs: 0 };
+    // Before anything is opened. A browser sends credentials the moment it
+    // navigates and keeps sending them: measured 2026-09-24, a credentialled
+    // entry read `ok: true` and the host saw `Authorization: Basic …` on the
+    // page AND on the favicon, with the page behind the password hashed and
+    // ready to commit. The rule — credentials, a malformed address, a scheme
+    // this watch does not read — is the fetcher's, asked here rather than
+    // spelled again.
+    const refused = refusedAddress(entry.url);
+    if (refused) return { ok: false, error: refused };
     if (launchFailure) return { ok: false, error: launchFailure };
     if (!session) {
       try {

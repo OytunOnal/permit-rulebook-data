@@ -1178,6 +1178,27 @@ for (var i = 0; i < 12; i++) {
     } finally { await reader.close(); }
   });
 
+  it("does not carry one page's interception counts onto the next page's line", async () => {
+    // `paused` and `pausedMs` are logged beside an entry's id, so they have
+    // to be that entry's. A refused read used to leave the previous page's
+    // numbers standing (Standards review, 2026-09-25).
+    const reader = openBrowserReader();
+    try {
+      served = fixture();
+      const good = await reader.read(entry({ steps: [], slice: undefined }), "same-origin");
+      expect(good.ok).toBe(true);
+      expect(reader.lastCost().paused, "the first read paused nothing at all").toBeGreaterThan(0);
+
+      // A read that is refused before anything opens.
+      const refused = await reader.read(
+        entry({ url: origin.replace("//", "//watcher:hunter2@"), steps: [] }), "same-origin",
+      );
+      expect(refused.ok).toBe(false);
+      expect(reader.lastCost(), "the refused read reported the previous page's cost")
+        .toEqual({ paused: 0, pausedMs: 0 });
+    } finally { await reader.close(); served = fixture(); }
+  });
+
   it("does not let a subresource that never answers outlast the read's budget", async () => {
     // Every paused request is continued, including on the failure path. This
     // is the backstop under that: a request nothing ever answers costs the
