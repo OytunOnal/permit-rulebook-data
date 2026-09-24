@@ -1,6 +1,6 @@
 import { chromePath, launch } from "./chrome.js";
 import { BUDGET_MS, refusedAddress } from "./fetch-source.js";
-import { classOfThrown, ReadFailure } from "./failure.js";
+import { classOfThrown, MOST_OF_A_FAILURE, printableWithin, ReadFailure, saidByThrown } from "./failure.js";
 import type { Session } from "./cdp.js";
 import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 
@@ -22,6 +22,29 @@ import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
  * and `scripts/chrome.mjs` are where the launch, the endpoint handshake and
  * the profile handling were learned, and this is a port of them: the data
  * package cannot import the site.
+ *
+ * **The address behind a browser entry's name is Chrome's to resolve.** The
+ * fetch tier resolves a name itself, judges every address the resolver
+ * answers with, and hands the connection back the whole judged list — so
+ * nothing unjudged can be connected to (s36, `fetch-source.ts`). This tier
+ * cannot: Chrome does its own DNS, inside its own process, and takes no
+ * lookup hook.
+ *
+ * So what this reader gates is what it can gate, and it is the same two
+ * gates it has always had, stated for what they are:
+ *
+ * - the entry ADDRESS is refused before Chrome is asked when it is not an
+ *   address at all, carries a name and password, or is on a scheme that is
+ *   not a page (`refusedAddress`) — and that is the whole of it: what KIND
+ *   of address a browser entry names is not asked here, because the fetch
+ *   tier's own entry check is the fetch tier's (`fetchSource`);
+ * - a navigation that leaves the entry's origin is refused when it happens
+ *   (`cdp.ts`).
+ *
+ * The browser entries — seven of the watchlist's 46, counted 2026-09-24 as
+ * those with `strategy: "browser"` — are fixed pages on public hosts a
+ * curator chose, and that, not a check in this file, is what stands between
+ * this tier and an address nobody meant to visit.
  *
  * **Where things are.** This was one file until 2026-09-24, by then five jobs
  * deep, so it is four — split along what each part answers to:
@@ -112,7 +135,7 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
         session = await withDeadline(launch(findChrome(), budgetMs), budgetMs,
           `Chrome did not become usable within ${Math.round(budgetMs / 1000)}s`);
       } catch (e) {
-        launchFailure = `no browser: ${e instanceof Error ? e.message : String(e)}`;
+        launchFailure = `no browser: ${saidByThrown(e)}`;
         return { ok: false, error: launchFailure, failure: "refused-by-us" };
       }
     }
@@ -126,7 +149,40 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
       // no field, a navigation off the origin, a status the page was served.
       // Anything that did not is something that merely did not happen, and is
       // worth the one more read the pass will give it.
-      return { ok: false, error: e instanceof Error ? e.message : String(e), failure: classOfThrown(e) };
+      //
+      // And the same split as the fetch tier's catch (`fetch-source.ts`), for
+      // the same reason and through the same owner. A `ReadFailure` is OURS:
+      // the step diagnosis that names what the page offered instead of the
+      // option asked for runs to five hundred characters on purpose, and is
+      // the whole of what a curator acts on (`failure.ts`, `MOST_OF_A_FAILURE`).
+      // Anything else that reaches here is somebody else's string — Chrome's
+      // own protocol error text, most of it (`cdp.ts`) — and was the one
+      // printed string on this tier that passed no bound and no printable
+      // rule at all (Standards review, 2026-09-24).
+      //
+      // What is bounded is what the thing SAID, and not the name of the class
+      // that said it: s36 moved the bound onto this branch and brought a
+      // `String(e)` — and its "Error: " prefix — with it, where this reader
+      // had printed the message alone since s34. The bound stays and the
+      // prefix does not (`saidByThrown`; Spec review, 2026-09-24).
+      //
+      // **This line is pinned by a case on the expression and not through a
+      // read.** No test can drive it: the two things that reach it as a plain
+      // `Error` are a CDP protocol error and a socket that closes with a
+      // command in flight (`cdp.ts`), and neither can be provoked through a
+      // real Chrome from a test — measured 2026-09-24, closing the reader
+      // four seconds into a twenty-second read left the command in flight
+      // unrejected (the socket's close never completes, because Chrome is
+      // killed with it) and the read ended on its own budget, which is the
+      // branch above. `tests/s36.test.ts` asserts this expression as it is
+      // written here; if it is edited, edit that case too.
+      return {
+        ok: false,
+        error: e instanceof ReadFailure
+          ? e.message
+          : printableWithin(saidByThrown(e), MOST_OF_A_FAILURE),
+        failure: classOfThrown(e),
+      };
     }
   };
 

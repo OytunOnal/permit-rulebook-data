@@ -260,7 +260,18 @@ are the whole of why a morning is the colour it is:
 |---|---|---|---|
 | `transient` | Nothing refused anything; the reading did not happen. A network error (the cause code is printed — `fetch failed (ECONNRESET)`), the 30 s budget spent, `408`, `425`, `429`, any `5xx`, an empty body. | yes, once | on a second silent morning inside the week |
 | `refused-by-source` | The source answered, and the answer was no or was not the page: any other `4xx`, a bot wall, a page that moved; a browser step that finds no field. | no — the same answer comes back in three minutes | on a second silent morning inside the week |
-| `refused-by-us` | The floor declined to make the request at all: a credentialled or malformed address, an off-origin redirect or navigation, a private or loopback target, too many hops, no Chrome on the runner. | no | the same morning |
+| `refused-by-us` | The floor declined to make the request at all: a credentialled or malformed address, an off-origin redirect or navigation, a private, loopback or link-local target — spelled as an address or arrived at by resolving a name — too many hops, no Chrome on the runner. | no | the same morning |
+
+**A source is refused by what it resolves to, not only by what it is called.**
+The fetch tier asks the system resolver for a host's addresses, classifies
+every one of them, and hands the connection back the whole judged list, so
+nothing unjudged can be connected to: a name that answers `10.0.0.5`, or the
+address a cloud runner keeps its credentials behind, is refused before a
+packet leaves, and one refused address refuses the whole name. The rule is the relative one it always was — a source
+may not send this watch somewhere it could not have gone itself, so an entry
+that IS on loopback may stay there — and the refusal names the kind of address,
+never the address. The browser tier is the exception, and says so in its own
+header: Chrome resolves for itself.
 
 A `transient` failure is read once more **after the pass finishes**, never
 beside the failure: the gap is the rest of the run, about three minutes on the
