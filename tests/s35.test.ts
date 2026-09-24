@@ -516,6 +516,86 @@ describe("s35 — two silent mornings inside the week are an outage", () => {
   });
 });
 
+/**
+ * The state file is input, and the days on it are read before they are
+ * counted and printed.
+ *
+ * `watch/state.json` is a file in the repository: what it holds is whatever
+ * the last run wrote, whatever a curator's editor did to it, and whatever a
+ * commit put there. The run reads its days in one place, and that is where
+ * they are refused — a day that is not a day, a list that is not a list, a
+ * week's worth and no more — because a run that dies on the shape of a field
+ * reads no source at all, and a line in the public run log carries whatever
+ * it was handed (Security review, 2026-09-24).
+ */
+describe("s35 — the days on the state are read as days or not at all", () => {
+  /** The day `n` mornings before today, in the shape the state writes. */
+  const daysBefore = (n: number) => new Date(Date.parse(TODAY) - n * 86_400_000).toISOString().slice(0, 10);
+  const stateWith = (lapses: unknown, ...ids: string[]): WatchState => ({
+    entries: {}, last_run: YESTERDAY,
+    unread: ids.map((id) => ({ id, url: addressOf(id) })),
+    lapses,
+  } as unknown as WatchState);
+
+  it("reads and reports on a state whose lapses are not a record of days", async () => {
+    // A `lapses` that is a string is not a claim about days — and the run
+    // used to die on it inside `days.filter`, which is a watch that reads no
+    // source because one field was the wrong shape. What is left to read is
+    // the unread list, which is exactly what a state naming no days at all
+    // means, so the migration counts its morning.
+    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const { nextState, verdict } = await runWatch(watching("down"), stateWith("x", "down"), fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ down: [YESTERDAY, TODAY] });
+    expect(verdict.red).toBe(true);
+    expect(unreadNotices(verdict, TODAY).map((n) => n.event)).toEqual(["outage"]);
+  });
+
+  it("carries at most the week's worth of days out of a state that holds thousands", async () => {
+    // The days go into the run's log line, and a state author must not be
+    // able to print a page of them. Seven calendar days is the whole of what
+    // the brake counts (DECISIONS 2026-09-24), so seven is the whole of what
+    // a source's week can hold.
+    //
+    // The days are ahead of today on purpose: a day the week has already
+    // passed is dropped by the pruning rule, and one ahead of it is kept to
+    // age out — so a flood of tomorrows is the list nothing else cuts.
+    const flood = Array.from({ length: 10_000 }, (_, i) => daysBefore(-i));
+    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const { nextState, verdict } = await runWatch(watching("down"), stateWith({ down: flood }, "down"), fetcher, TODAY);
+    expect(nextState.lapses!["down"]!.length, "a page of days reached the state the run writes")
+      .toBeLessThanOrEqual(7);
+    const notice = unreadNotices(verdict, TODAY)[0]!;
+    expect(notice.days.length, "a page of days reached the line the run prints").toBeLessThanOrEqual(7);
+  });
+
+  it("drops a day that is not a day and counts the ones that are", async () => {
+    // The shape check is the one place a day is refused: what survives it is
+    // a morning the brake can count, and the rest is not silently believed.
+    const { fetcher } = scripted({
+      [addressOf("down")]: [fail("transient")],
+      [addressOf("alone")]: [fail("transient")],
+    });
+    const state = stateWith({ down: ["not-a-day", YESTERDAY, "2026-02-30"], alone: YESTERDAY }, "down", "alone");
+    const { nextState, verdict } = await runWatch(watching("down", "alone"), state, fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ down: [YESTERDAY, TODAY], alone: [TODAY] });
+    // `down` kept the one real morning and is out; `alone`'s days were not a
+    // list at all, so it has nothing but this morning and keeps its grace.
+    expect(verdict.outages.map((u) => u.id)).toEqual(["down"]);
+    expect(verdict.lapsed.map((u) => u.id)).toEqual(["alone"]);
+  });
+
+  it("drops a day wearing a day's first ten characters", async () => {
+    // `Date.parse` takes a whole timestamp and would call this a morning;
+    // the state writes days, and a day is ten characters long. Anything
+    // else is something else wearing the shape of one.
+    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const state = stateWith({ down: [`${YESTERDAY}T07:00:00Z`] }, "down");
+    const { nextState, verdict } = await runWatch(watching("down"), state, fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ down: [TODAY] });
+    expect(verdict.red, "a timestamp was counted as a silent morning").toBe(false);
+  });
+});
+
 describe("s35 — the verdict is the run's, in one place", () => {
   const unreachable = (id: string, failure: FailureClass): WatchReport => ({
     id, url: addressOf(id), strategy: "html", kind: "value-source", outcome: "unreachable", failure,

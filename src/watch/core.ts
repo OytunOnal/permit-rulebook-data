@@ -573,13 +573,25 @@ function unreadNow(reports: WatchReport[]): UnreadEntry[] {
  */
 const THE_WEEK = 7;
 
+/**
+ * At most the week's mornings, and the latest of them.
+ *
+ * Seven calendar days hold seven mornings, so seven is the whole of what one
+ * source's week can be, however long a list a state hands over. It is a
+ * bound on what is written to the state file and printed in the run's log
+ * (Security review, 2026-09-24), not a second pruning rule: a week's own
+ * days never reach it.
+ */
+const aWeekOf = (days: string[]): string[] => days.slice(-THE_WEEK);
+
 /** Is this day inside the week of runs ending today? */
 function inTheWeek(day: string, today: string): boolean {
   const back = (Date.parse(today) - Date.parse(day)) / 86_400_000;
-  // Only the old side is pruned: a day this run cannot make sense of at all
-  // is forgotten with them, and a day ahead of today is a clock nobody here
-  // can correct, so it is kept and ages out on its own.
-  return Number.isFinite(back) && back < THE_WEEK;
+  // Only the old side is pruned, and it is the only side: a day that is not
+  // a day never arrives here — `knownLapses` is where a day is refused, and
+  // what it passes on parses — while a day ahead of today is a clock nobody
+  // here can correct, so it is kept and ages out on its own.
+  return back < THE_WEEK;
 }
 
 /**
@@ -601,9 +613,36 @@ function lapsesAfter(reports: WatchReport[], previous: WatchState, today: string
     if (report.outcome !== "unreachable") continue;
     const days = next[report.id] ?? [];
     if (!days.includes(today)) days.push(today);
-    next[report.id] = days;
+    next[report.id] = aWeekOf(days);
   }
   return next;
+}
+
+/** A day as the state writes one: four digits, two, two, and nothing else. */
+const A_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * One source's silent mornings as the state gave them, read as days.
+ *
+ * `watch/state.json` is a file in the repository, so what it holds is what
+ * the last run wrote, what an editor did to it and what a commit put there —
+ * and these days are counted by the brake and printed in the public run log.
+ * A list that is not a list, an entry that is not a day, a day `Date.parse`
+ * cannot read, a page of them: each is refused here rather than believed,
+ * because a run that dies on the shape of a field reads no source at all and
+ * a printed line carries whatever it is handed (Security review,
+ * 2026-09-24).
+ *
+ * The same morning twice is one morning: the brake counts mornings, and a
+ * list repeating one of them would make a single silence look like an
+ * outage.
+ */
+function daysOf(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const days = value.filter(
+    (day): day is string => typeof day === "string" && A_DAY.test(day) && Number.isFinite(Date.parse(day)),
+  );
+  return aWeekOf([...new Set(days)]);
 }
 
 /**
@@ -618,10 +657,23 @@ function lapsesAfter(reports: WatchReport[], previous: WatchState, today: string
  * rule gave them, reached by counting rather than by membership.
  *
  * A state that carries no unread list either starts empty, which is what it
- * claims.
+ * claims. So does a `lapses` that is not a record of days at all: it makes no
+ * claim about any morning, which is the same thing a state written before
+ * s35 says, and the unread list is then all there is to read.
+ *
+ * This is the one place a state's days are read — the full run's and a
+ * targeted pass's alike — and therefore the one place they are checked.
  */
 function knownLapses(previous: WatchState, today: string): Record<string, string[]> {
-  if (previous.lapses) return previous.lapses;
+  const recorded: unknown = previous.lapses;
+  if (recorded && typeof recorded === "object" && !Array.isArray(recorded)) {
+    const known: Record<string, string[]> = {};
+    for (const [id, value] of Object.entries(recorded)) {
+      const days = daysOf(value);
+      if (days.length) known[id] = days;
+    }
+    return known;
+  }
   const day = previous.last_run ?? today;
   const migrated: Record<string, string[]> = {};
   for (const source of previous.unread ?? []) migrated[source.id] = [day];
