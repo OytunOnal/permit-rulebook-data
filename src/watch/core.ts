@@ -5,7 +5,7 @@ import { repairKnownGlyphs, unboundedReason, type GlyphSubstitution } from "./co
 import { noticeSources, provenancedValuesOf, routeStatements, statementSources, forEachCriterion } from "../engine.js";
 import { countryVocabulary } from "../countries.js";
 import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type WatchState } from "./state.js";
-import { printableAddress, shortAddress } from "./fetch-source.js";
+import { addressWithoutCredentials, shortAddress } from "./fetch-source.js";
 import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
 /**
@@ -229,7 +229,7 @@ export type Fetcher = (url: string, redirects: RedirectPolicy) => Promise<FetchR
  * different questions — a fetcher is handed an address, a browser is handed an
  * errand — and the run injects both so a test can stub either.
  */
-export type BrowserReader = (entry: WatchEntry) => Promise<FetchResult>;
+export type BrowserReader = (entry: WatchEntry, redirects: RedirectPolicy) => Promise<FetchResult>;
 
 export type Outcome = "unchanged" | "changed" | "baseline" | "unreachable" | "reminder-due" | "ok";
 
@@ -361,16 +361,20 @@ export async function runWatch(
     /**
      * What every report about this entry says, made once.
      *
-     * The url is printed without its userinfo HERE, at the one place reports
-     * are made, rather than at each of the places one is printed. A report
-     * travels into a log line, a flag file and the issue that flag becomes,
-     * and a credentialled entry rode its password through all three beside
-     * the carefully sanitised error (Security review, 2026-09-24). Sanitising
-     * downstream would mean sanitising in three places and remembering it in
-     * the fourth.
+     * The credentials come out HERE, at the one place reports are made, so no
+     * printer downstream has to remember to: a report travels into a log
+     * line, a flag file and the issue that flag becomes, and a credentialled
+     * entry rode its password through all three beside the carefully
+     * sanitised error (Security review, 2026-09-24).
+     *
+     * Stripped, not shortened. This url is also the KEY the unread list is
+     * built from, which the site looks up against the dataset's own source
+     * urls — so it must stay the entry's address exactly, minus the one thing
+     * that may not be printed. Making it readable is the printer's job, and
+     * `printableAddress` is where that happens.
      */
     const base: Pick<WatchReport, "id" | "url" | "strategy" | "kind" | "note"> = {
-      id: entry.id, url: printableAddress(entry.url), strategy: entry.strategy, kind: entry.kind, note: entry.note,
+      id: entry.id, url: addressWithoutCredentials(entry.url), strategy: entry.strategy, kind: entry.kind, note: entry.note,
     };
 
     if (!STRATEGIES[entry.strategy].fetches) {
@@ -385,7 +389,7 @@ export async function runWatch(
     // that one answers with Chrome's own absence when there is no Chrome.
     const fetched = entry.strategy === "browser"
       ? openInBrowser
-        ? await openInBrowser(entry)
+        ? await openInBrowser(entry, STRATEGIES[entry.strategy].redirects)
         : { ok: false as const, error: "no browser reader: this run was given none, so the page was never opened" }
       : await fetcher(entry.url, STRATEGIES[entry.strategy].redirects);
     if (!fetched.ok) {
@@ -538,6 +542,20 @@ export interface CoverageResult {
    * can fix it before a morning does (s34, 2026-09-24).
    */
   urls_with_credentials: string[];
+  /**
+   * Value sources on a strategy that never compares.
+   *
+   * A `value-source` promises that a dataset sentence rests on this page; a
+   * `compares: false` strategy promises only that something answered. Put
+   * together they make a quiet lie: the run reports `ok` whatever the source
+   * now says, the snapshot the quote gate checks against is never refreshed
+   * so the sentence stays "verified" against a reading nothing is renewing,
+   * and — since s34 — the entry moves onto the redirect policy written for
+   * links, which follows off the site. Flipping an entry to `link` should be
+   * a decision somebody defends, not a switch that goes quiet (s34,
+   * 2026-09-25).
+   */
+  unchecked_value_sources: string[];
 }
 
 /**
@@ -717,13 +735,17 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
       ? [`${e.id}: ${shortAddress(parsed.origin)} carries a name and password`]
       : [];
   });
+  const unchecked = watchlist.entries
+    .filter((e) => e.kind === "value-source" && STRATEGIES[e.strategy].fetches && !STRATEGIES[e.strategy].compares)
+    .map((e) => `${e.id}: a value-source on the ${e.strategy} strategy, which fetches but never compares`);
   return {
     ok: missing.length === 0 && orphans.length === 0 && unbounded.length === 0
-      && steps.length === 0 && credentialled.length === 0,
+      && steps.length === 0 && credentialled.length === 0 && unchecked.length === 0,
     missing_from_watchlist: missing,
     orphan_watch_entries: orphans,
     unbounded_substitutions: unbounded,
     invalid_steps: steps,
     urls_with_credentials: credentialled,
+    unchecked_value_sources: unchecked,
   };
 }

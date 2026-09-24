@@ -449,8 +449,8 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — two readers in one process do
     const first = openBrowserReader();
     const second = openBrowserReader();
     try {
-      const a = await first.read(entry({ steps: [] }));
-      const b = await second.read(entry({ steps: [] }));
+      const a = await first.read(entry({ steps: [] }), "same-origin");
+      const b = await second.read(entry({ steps: [] }), "same-origin");
       expect(a.ok, a.ok ? "" : a.error).toBe(true);
       expect(b.ok, b.ok ? "" : b.error).toBe(true);
     } finally { await first.close(); await second.close(); }
@@ -875,7 +875,7 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — a step may not take the reade
       expect(reports[0]!.outcome, reports[0]!.error).toBe("baseline");
       const read = await openBrowserReader();
       try {
-        const answer = await read.read(walked);
+        const answer = await read.read(walked, "same-origin");
         expect(answer.ok).toBe(true);
         expect(answer.ok && answer.from, "the reading does not say where it was taken")
           .toContain("/elsewhere-here");

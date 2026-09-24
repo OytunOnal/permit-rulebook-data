@@ -1,7 +1,7 @@
 import { chromePath, launch } from "./chrome.js";
-import { BUDGET_MS, refusedForCredentials } from "./fetch-source.js";
+import { BUDGET_MS, refusedAddress } from "./fetch-source.js";
 import type { Session } from "./cdp.js";
-import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
+import type { BrowserReader, FetchResult, RedirectPolicy, WatchEntry } from "./core.js";
 
 /**
  * The watch's second reader: a real browser, spoken to over its own protocol.
@@ -53,6 +53,8 @@ export interface BrowserReaderOptions {
 }
 
 export interface BrowserReaderHandle {
+  /** What the interception cost the page just read. */
+  lastCost(): { paused: number; pausedMs: number };
   /** The reader `runWatch` is handed. Launches Chrome on the first entry that
    * needs it, and keeps it for the rest of the run. */
   read: BrowserReader;
@@ -78,15 +80,17 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
   const findChrome = options.chromeAt ?? chromePath;
   let session: Session | undefined;
   let launchFailure: string | undefined;
+  /** What the interception cost the last page read — for the run's own log. */
+  let lastCost: { paused: number; pausedMs: number } = { paused: 0, pausedMs: 0 };
 
-  const read: BrowserReader = async (entry) => {
+  const read: BrowserReader = async (entry, redirects) => {
     // Before anything is opened, because a browser sends credentials the
     // moment it navigates and keeps sending them: measured 2026-09-24, a
     // credentialled entry read `ok: true` and the host saw `Authorization:
     // Basic …` on the page AND on the favicon, with the page behind the
     // password hashed and ready to commit. The rule is the fetcher's, asked
     // here rather than spelled again.
-    const credentials = refusedForCredentials(entry.url);
+    const credentials = refusedAddress(entry.url);
     if (credentials) return { ok: false, error: credentials };
     if (launchFailure) return { ok: false, error: launchFailure };
     if (!session) {
@@ -103,8 +107,9 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
       }
     }
     try {
-      const read = await withDeadline(session.render(entry, budgetMs), budgetMs,
+      const read = await withDeadline(session.render(entry, budgetMs, redirects), budgetMs,
         `the browser did not finish this page within ${Math.round(budgetMs / 1000)}s`);
+      lastCost = read.cost;
       return { ok: true, body: new TextEncoder().encode(read.html), from: read.from };
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
@@ -113,6 +118,7 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
 
   return {
     read,
+    lastCost: () => lastCost,
     async close() {
       const open = session;
       session = undefined;

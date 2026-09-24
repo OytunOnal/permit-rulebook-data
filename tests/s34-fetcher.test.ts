@@ -47,6 +47,10 @@ const source: Server = createServer((req, res) => {
   }
   if (path === "/around") { res.writeHead(302, { location: "/settled" }); res.end(); return; }
   if (path === "/loop") { res.writeHead(302, { location: "/loop" }); res.end(); return; }
+  if (path === "/to-data") { res.writeHead(302, { location: "data:text/html,<p>inline</p>" }); res.end(); return; }
+  if (path === "/to-file") { res.writeHead(302, { location: "file:///etc/passwd" }); res.end(); return; }
+  if (path === "/to-metadata") { res.writeHead(302, { location: "http://169.254.169.254/latest/meta-data/" }); res.end(); return; }
+  if (path === "/to-private") { res.writeHead(302, { location: "http://10.0.0.1/admin" }); res.end(); return; }
   if (path === "/long") {
     res.writeHead(302, { location: `${elsewhereOrigin}/${"a".repeat(9_000)}` });
     res.end();
@@ -112,6 +116,66 @@ describe("s34 — a link is followed the way a person's browser follows it", () 
     const answer = await fetchSource(`${sourceOrigin}/loop`, "anywhere");
     expect(answer.ok).toBe(false);
     expect(sourceAsked - before, "a loop was followed further than the cap").toBeLessThanOrEqual(6);
+  });
+});
+
+describe("s34 — there is a floor under following a link anywhere", () => {
+  /**
+   * "Anywhere a person's browser would" turned out to be wider than a
+   * browser. Measured 2026-09-25: a `data:` target was followed and its
+   * inline bytes came back as a reading, which a real browser refuses
+   * outright; and `169.254.169.254` — where a cloud runner keeps its
+   * credentials — was attempted, which on a hosted runner is a request that
+   * reaches something. The policy allows a plaintext hop on purpose, so the
+   * next `Location` is chosen by whoever is on the path and not only by the
+   * source: the REQUEST is the harm, even where the bytes are never hashed.
+   */
+  for (const [what, path] of [
+    ["a data: address", "/to-data"],
+    ["a file: address", "/to-file"],
+    ["the cloud metadata address", "/to-metadata"],
+    ["a private network address", "/to-private"],
+  ] as const) {
+    it(`refuses ${what}, even for a link`, async () => {
+      const answer = await fetchSource(`${sourceOrigin}${path}`, "anywhere");
+      expect(answer.ok, `${what} was followed`).toBe(false);
+      if (answer.ok) return;
+      expect(answer.status, "the source's own answer is not reported").toBe(302);
+    });
+  }
+
+  it("asks the refused address for nothing at all", async () => {
+    // The refusal is made from the `Location` header, before anything is
+    // requested — which is the difference between a rule and a regret.
+    const before = elsewhereAsked;
+    await fetchSource(`${sourceOrigin}/to-metadata`, "anywhere");
+    await fetchSource(`${sourceOrigin}/to-private`, "anywhere");
+    expect(elsewhereAsked - before).toBe(0);
+  });
+
+  it("still lets a link move within the kind of address its entry is on", async () => {
+    // The rule is relative: a source may not send the watch somewhere it
+    // could not have gone itself. These fixtures live on loopback, so a
+    // loopback hop between them is exactly the ordinary case and must work —
+    // it is a public source redirecting INTO the private network that is
+    // refused.
+    const answer = await fetchSource(`${sourceOrigin}/away`, "anywhere");
+    expect(answer.ok, answer.ok ? "" : answer.error).toBe(true);
+  });
+
+  it("says where the chain had got to when the cap stopped it", async () => {
+    const answer = await fetchSource(`${sourceOrigin}/loop`, "anywhere");
+    expect(answer.ok).toBe(false);
+    if (answer.ok) return;
+    expect(answer.error, "the message does not say where it was").toContain("/loop");
+  });
+
+  it("refuses a malformed entry address without repeating it", async () => {
+    const answer = await fetchSource("://watcher:hunter2@example.invalid/x", "same-origin");
+    expect(answer.ok).toBe(false);
+    if (answer.ok) return;
+    expect(answer.error, "the password was printed").not.toContain("hunter2");
+    expect(answer.error).toMatch(/not an address/);
   });
 });
 

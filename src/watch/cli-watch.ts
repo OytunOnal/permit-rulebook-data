@@ -56,7 +56,7 @@ function flagFile(report: WatchReport, today: string) {
   const body = [
     `# Watch flag: ${report.id} — ${report.outcome}`,
     "",
-    `- url: ${report.url}`,
+    `- url: ${printableAddress(report.url)}`,
     `- kind: ${report.kind}`,
     `- date: ${today}`,
     report.old_hash ? `- old: ${report.old_hash}` : "",
@@ -108,12 +108,14 @@ const readSourceOverHttp: Fetcher = async (url, redirects) => {
  * is a number nobody checks (s34 point 6).
  */
 const browser = openBrowserReader();
-const openInBrowser: BrowserReader = async (entry) => {
+const openInBrowser: BrowserReader = async (entry, redirects) => {
   const started = Date.now();
-  const result = await browser.read(entry);
+  const result = await browser.read(entry, redirects);
   log(result.ok ? "info" : "error", "watch:browser-read", {
     id: entry.id, seconds: Number(((Date.now() - started) / 1000).toFixed(1)),
     steps: entry.steps?.length ?? 0, ok: result.ok,
+    // What naming ourselves to the source alone costs this page.
+    ...browser.lastCost(),
   });
   sayWhereItRead(entry, result);
   return result;
@@ -126,7 +128,9 @@ await browser.close();
 let unreachable = 0;
 for (const r of reports) {
   const level = r.outcome === "unreachable" ? "error" : r.outcome === "unchanged" || r.outcome === "ok" ? "info" : "warn";
-  log(level, `watch:${r.outcome}`, { id: r.id, url: r.url, old: r.old_hash, new: r.new_hash, error: r.error });
+  log(level, `watch:${r.outcome}`, {
+    id: r.id, url: printableAddress(r.url), old: r.old_hash, new: r.new_hash, error: r.error,
+  });
   if (r.outcome === "unreachable") unreachable++;
   if (r.outcome === "changed" || r.outcome === "reminder-due") flagFile(r, today);
 }

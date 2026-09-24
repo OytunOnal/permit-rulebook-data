@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   runWatch, STRATEGIES,
-  checkCoverage, checkQuotes, datasetQuotes,
+  checkCoverage, checkQuotes, datasetQuotes, datasetSourceUrls,
   type BrowserReader, type Fetcher, type WatchEntry, type Watchlist, type WatchStep, type WatchStrategy,
 } from "../src/watch/core.js";
-import type { WatchState } from "../src/watch/state.js";
+import { unreadSources, type WatchState } from "../src/watch/state.js";
 import type { Dataset } from "../src/types.js";
 import { fetchSource } from "../src/watch/fetch-source.js";
 import { readFileSync } from "node:fs";
@@ -39,6 +39,43 @@ describe("s34 — the browser strategy is html with a different reader", () => {
     // passed by editing the sentence.
     const answers = Object.values(STRATEGIES).map((s) => s.no_text_snapshot);
     expect(new Set(answers).size, "two strategies give the quote gate the same answer").toBe(answers.length);
+  });
+
+  it("lets exactly one strategy follow a redirect anywhere, and makes every row say which", () => {
+    // The decision, pinned where it is made. `anywhere` is for a strategy
+    // that takes no reading — a link — because what a source redirects to is
+    // not the source, and bytes an on-path rewrite could have replaced must
+    // never be hashed as the authority's. Any new strategy has to choose, and
+    // choosing `anywhere` has to be deliberate enough to change this line.
+    const anywhere = Object.entries(STRATEGIES)
+      .filter(([, how]) => how.redirects === "anywhere")
+      .map(([name]) => name);
+    expect(anywhere).toEqual(["link"]);
+    for (const [name, how] of Object.entries(STRATEGIES))
+      expect(["same-origin", "anywhere"], `${name} does not say how far it follows`).toContain(how.redirects);
+    // And the one that follows anywhere is the one that never compares.
+    expect(STRATEGIES.link.compares).toBe(false);
+  });
+
+  it("hands each reader the policy from the table, rather than each keeping its own", () => {
+    // The row said one thing and the browser reader did another, so the row
+    // was decoration — a change to it changed nothing (Standards review,
+    // 2026-09-25).
+    const asked: string[] = [];
+    const fetcher: Fetcher = async (_url, redirects) => {
+      asked.push(`fetch ${redirects}`);
+      return { ok: true, body: encode("<p>plain</p>") };
+    };
+    const browser: BrowserReader = async (_entry, redirects) => {
+      asked.push(`browser ${redirects}`);
+      return { ok: true, body: encode("<p>rendered</p>") };
+    };
+    return runWatch(
+      { entries: [browserEntry, htmlEntry, { ...htmlEntry, id: "a-link", strategy: "link", kind: "sentinel" }] },
+      emptyState, fetcher, "2026-09-25", browser,
+    ).then(() => {
+      expect(asked).toEqual(["browser same-origin", "fetch same-origin", "fetch anywhere"]);
+    });
   });
 
   it("tells a curator what html tells them: the page's words moved, so the value moves", () => {
@@ -136,6 +173,36 @@ describe("s34 — a run with no browser reads the rest and goes red on the seven
   });
 });
 
+describe("s34 — a report's url is the key the site looks a source up by", () => {
+  it("survives the trip from runWatch into the freshness clause", () => {
+    // `report.url` is read by people AND used as the unread list's key, which
+    // `unreadSources` looks up against the dataset's own source urls. It is
+    // stripped of credentials and nothing else: a shortened or re-normalised
+    // url would match nothing there and the source would drop out of the
+    // site's freshness sentence without a word (Standards review,
+    // 2026-09-25).
+    const cited = [...datasetSourceUrls(dataset)];
+    const longest = cited.reduce((a, b) => (b.length > a.length ? b : a), "");
+    const entryFor = watchlist.entries.find((e) => e.url === longest)!;
+    expect(entryFor, "no watch entry for the longest dataset source").toBeDefined();
+
+    return runWatch(
+      { entries: [entryFor] }, { entries: {} },
+      async () => ({ ok: false, error: "nothing today" }),
+      "2026-09-25",
+      async () => ({ ok: false, error: "nothing today" }),
+    ).then(({ nextState }) => {
+      expect(nextState.unread?.map((u) => u.url)).toEqual([longest]);
+      // And the site can find it: the lookup is by this exact url.
+      const withReading: WatchState = {
+        ...nextState,
+        entries: { [entryFor.id]: { hash: "h", retrieved_at: "2026-09-20", history: [] } },
+      };
+      expect(unreadSources(dataset, withReading).map((u) => u.id)).toEqual([entryFor.id]);
+    });
+  });
+});
+
 describe("s34 — a watched address may not carry a name and password", () => {
   it("the gate refuses one, and never prints the credentials", () => {
     // Both readers refuse such an address at run time; this refuses it where
@@ -172,6 +239,29 @@ describe("s34 — a watched address may not carry a name and password", () => {
     const said = JSON.stringify(checkCoverage(dataset, mangled));
     expect(said, "the password was printed").not.toContain("hunter2");
     expect(said, "the name was printed").not.toContain("watcher");
+  });
+
+  it("refuses a value-source on a strategy that fetches but never compares", () => {
+    // Flipping an entry to `link` was silent: the gate stayed empty and `ok`,
+    // the run reported `ok` whatever the source now said, the snapshot the
+    // quote gate checks against was never refreshed — so the sentence stayed
+    // "verified" against a reading nothing renews — and since s34 the entry
+    // moved onto the redirect policy written for links, which follows off the
+    // site. It should be a decision somebody defends (Security review,
+    // 2026-09-25).
+    const flipped: Watchlist = {
+      entries: [{ ...htmlEntry, id: "flipped", strategy: "link", learn_for: "recognition_de" }],
+    };
+    const gate = checkCoverage(dataset, flipped);
+    expect(gate.unchecked_value_sources.length).toBe(1);
+    expect(gate.unchecked_value_sources[0]).toContain("flipped");
+    expect(gate.ok).toBe(false);
+  });
+
+  it("says nothing about the sentinels that legitimately sit there", () => {
+    // A learn link is a sentinel: it backs no value, so nothing rests on a
+    // reading it never takes.
+    expect(checkCoverage(dataset, watchlist).unchecked_value_sources).toEqual([]);
   });
 
   it("keeps a credentialled entry's password out of every report it makes", async () => {

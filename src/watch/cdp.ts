@@ -1,4 +1,4 @@
-import type { WatchEntry, WatchStep } from "./core.js";
+import type { RedirectPolicy, WatchEntry, WatchStep } from "./core.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
 import { shortAddress } from "./fetch-source.js";
 
@@ -71,7 +71,12 @@ const STEP_QUIET_MS = 800;
 
 export interface Session {
   /** The page's HTML, and the address it was actually read at. */
-  render(entry: WatchEntry, budgetMs: number): Promise<{ html: string; from: string }>;
+  render(entry: WatchEntry, budgetMs: number, redirects: RedirectPolicy): Promise<{
+    html: string;
+    from: string;
+    /** What the interception cost this read — paused requests and their total wait. */
+    cost: { paused: number; pausedMs: number };
+  }>;
   close(): void;
 }
 
@@ -105,6 +110,21 @@ export function attach(socket: WebSocket, close: () => void): Session {
    * anybody else and adding the contact header only on the way to the source.
    */
   const identifyTo = new Map<string, string>();
+  /**
+   * What the interception cost this tab: how many requests it paused, and how
+   * long they spent paused in total.
+   *
+   * Measured rather than assumed, because the reading of a page is now on the
+   * far side of a round-trip per request and the entry's budget is 30 s — and
+   * two entries have already moved close enough to it to be worth watching
+   * (s34, 2026-09-25).
+   */
+  const interceptions = new Map<string, { paused: number; pausedMs: number }>();
+  const costOf = (sessionId: string) => {
+    const cost = interceptions.get(sessionId) ?? { paused: 0, pausedMs: 0 };
+    interceptions.set(sessionId, cost);
+    return cost;
+  };
   /** Requests each tab has started and not yet finished — one half of what
    * "the page has stopped" means. */
   const inFlight = new Map<string, Set<string>>();
@@ -259,7 +279,12 @@ export function attach(socket: WebSocket, close: () => void): Session {
             value: name.toLowerCase() === "user-agent" ? value.replace(` ${WATCH_NAME}`, "") : value,
           })),
         };
-      send("Fetch.continueRequest", resume, sessionId).catch(() => {
+      const cost = costOf(sessionId);
+      cost.paused += 1;
+      const pausedAt = Date.now();
+      send("Fetch.continueRequest", resume, sessionId).then(() => {
+        cost.pausedMs += Date.now() - pausedAt;
+      }).catch(() => {
         // The request is already gone — a navigation cancelled it, or the tab
         // closed under it. Nothing is waiting on it either way.
       });
@@ -285,7 +310,7 @@ export function attach(socket: WebSocket, close: () => void): Session {
 
   return {
     close,
-    async render(entry, budgetMs) {
+    async render(entry, budgetMs, redirects) {
       // When this page's budget runs out, measured from the top of the read —
       // the same clock `withDeadline` is holding over this call. A step that
       // bounded its own work by a fresh 30 s would be cut off mid-diagnosis by
@@ -386,7 +411,16 @@ export function attach(socket: WebSocket, close: () => void): Session {
          */
         const allowedOrigin = new URL(entry.url).origin;
         const whereAmI = async () => await evaluate("location.origin + String.fromCharCode(32) + location.href") as string;
+        /**
+         * The rule comes from the strategy table, like the fetcher's.
+         *
+         * Every browser entry is `same-origin` today and this changes nothing
+         * — but the row said one thing and this file did another, so the row
+         * was decoration: a change to it changed no behaviour. One owner for
+         * both readers (Standards review, 2026-09-25).
+         */
         const mustBeHome = async (when: string) => {
+          if (redirects !== "same-origin") return (await whereAmI()).split(" ")[1] as string;
           const [origin, href] = (await whereAmI()).split(" ") as [string, string];
           // The address is the page's to choose, and a page can make it as
           // long as it likes: one `history.pushState` produced 120,032
@@ -451,14 +485,18 @@ export function attach(socket: WebSocket, close: () => void): Session {
          */
         const finalHref = await mustBeHome("a step navigated the browser away from the site");
         servedOk();
-        return { html: await evaluate("document.documentElement.outerHTML") as string, from: finalHref };
+        return {
+          html: await evaluate("document.documentElement.outerHTML") as string,
+          from: finalHref,
+          cost: { ...costOf(sessionId) },
+        };
       } finally {
         // The tab goes, and so does everything this run remembered about it:
         // a session id Chrome may reuse must not arrive carrying the previous
         // page's status line or its half-finished requests.
         for (const id of attached) {
           inFlight.delete(id); documentStatus.delete(id); traffic.delete(id);
-          mainFrame.delete(id); identifyTo.delete(id);
+          mainFrame.delete(id); identifyTo.delete(id); interceptions.delete(id);
         }
         await send("Target.closeTarget", { targetId }).catch(() => { /* the run is ending anyway */ });
       }
