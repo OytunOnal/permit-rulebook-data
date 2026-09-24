@@ -8,6 +8,8 @@ import {
   causeCode, classOfThrown, failureOfStatus, MOST_OF_A_FAILURE, ReadFailure, shortFailure,
   type FailureClass,
 } from "../src/watch/failure.js";
+import { servedFailure } from "../src/watch/cdp.js";
+import { printableAddress } from "../src/watch/fetch-source.js";
 import { unreadSources, type WatchState } from "../src/watch/state.js";
 import type { Dataset } from "../src/types.js";
 
@@ -149,6 +151,26 @@ describe("s35 — a failure has a class, and the reader names it", () => {
       .toBe("refused-by-source");
     expect(classOfThrown(new ReadFailure("the page is at another origin", "refused-by-us")))
       .toBe("refused-by-us");
+  });
+
+  it("names the address a browser redirect ended at the way every address is named", () => {
+    // Where the tab ended up is the SOURCE's choice: a redirect goes
+    // wherever the response says, credentials and all, and the address lands
+    // in the public run log beside every other one. It is printed by the one
+    // rule that prints an address — credentials out, bounded — and not raw
+    // (Security review, 2026-09-24).
+    const sent = `https://watcher:hunter2@elsewhere.test/${"a".repeat(1_000)}`;
+    const failure = servedFailure(403, sent, addressOf("rendered"));
+    expect(failure.message, "the password the source put in the address was printed")
+      .not.toContain("hunter2");
+    expect(failure.message, "the address was printed as the source wrote it").toContain(printableAddress(sent));
+    expect(failure.message.length, "the whole of the address was printed").toBeLessThan(sent.length);
+    // And it is a failure like any other: the status says whose it is.
+    expect(failure.failure).toBe("refused-by-source");
+    // A response from the address that was asked for is not a redirect, and
+    // says nothing about an address at all.
+    expect(servedFailure(503, addressOf("rendered"), addressOf("rendered")).message)
+      .not.toContain(addressOf("rendered"));
   });
 });
 

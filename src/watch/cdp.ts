@@ -1,6 +1,6 @@
 import type { RedirectPolicy, WatchEntry, WatchStep } from "./core.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
-import { shortAddress } from "./fetch-source.js";
+import { printableAddress, shortAddress } from "./fetch-source.js";
 import { failureOfStatus, ReadFailure, shortFailure } from "./failure.js";
 
 /**
@@ -79,6 +79,24 @@ export interface Session {
     cost: { paused: number; pausedMs: number };
   }>;
   close(): void;
+}
+
+/**
+ * What a document response the browser cannot use says, in a line a person
+ * reads.
+ *
+ * The status is read by the fetcher's own rule, so a `503` in the browser
+ * waits the same minute a `503` over HTTP does. The address is the SOURCE's:
+ * a redirect ends wherever the response sent the tab, credentials and all,
+ * and it lands in the public run log beside every other address — so it is
+ * printed by the one rule that prints an address, which takes the
+ * credentials out and binds the length (Security review, 2026-09-24). A
+ * response from the address that was asked for says nothing about an address
+ * at all.
+ */
+export function servedFailure(status: number, servedUrl: string | undefined, asked: string): ReadFailure {
+  const redirected = servedUrl && servedUrl !== asked ? ` (after redirect to ${printableAddress(servedUrl)})` : "";
+  return new ReadFailure(`HTTP ${status} in the browser${redirected}`, failureOfStatus(status));
 }
 
 /** The session over an open DevTools socket — the protocol half of `launch`. */
@@ -409,11 +427,7 @@ export function attach(socket: WebSocket, close: () => void): Session {
           const served = documentStatus.get(sessionId);
           if (!served)
             throw new ReadFailure("the browser received no document response for this page", "transient");
-          if (served.status < 200 || served.status >= 300)
-            throw new ReadFailure(
-              `HTTP ${served.status} in the browser${served.url && served.url !== entry.url ? ` (after redirect to ${served.url})` : ""}`,
-              // The same rule the fetcher reads a status by.
-              failureOfStatus(served.status));
+          if (served.status < 200 || served.status >= 300) throw servedFailure(served.status, served.url, entry.url);
         };
         servedOk();
 
