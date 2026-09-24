@@ -721,20 +721,26 @@ function theWeekOf(days: string[], today: string): string[] {
 }
 
 /**
- * The morning a source on the state's unread list went silent.
+ * The morning a source on the state's unread list went silent — the day that
+ * run happened, if the file says which day that was.
  *
  * `last_run` is a field of the same file as `lapses`, and the migration turns
  * it into a day the brake counts and the run prints — so it takes the same
- * check as any other day off that file (Standards review, 2026-09-24). A
- * `last_run` that is not a day leaves this run knowing the source was unread
- * on the run before and not when that was, and today is what it counts then:
- * the morning is kept rather than dropped, and nothing is lost red-ward,
- * because the day it really happened is exactly what an unreadable
- * `last_run` does not say and the next silence is a second morning either
- * way.
+ * check as any other day off that file (Standards review, 2026-09-24), and
+ * the same pruning: a `last_run` the week has left, or one after today, is no
+ * morning to carry.
+ *
+ * A `last_run` that is not a day at all leaves nothing to migrate. The
+ * migration is the bridge from the states on disk, and every one of them
+ * carries a day — `watch/state.json` reads `last_run: "2026-09-24"` — so a
+ * file whose `last_run` is not a day is corrupt past this migration's
+ * reading, and a corrupt file is not a witness that any particular source
+ * was silent on any particular morning. Stamping today instead recorded a
+ * silent morning for a source that answered this very morning, and tomorrow's
+ * log printed a day it had been read on (Security review, 2026-09-24).
  */
-const migratedMorning = (previous: WatchState, today: string): string =>
-  isADay(previous.last_run) ? previous.last_run : today;
+const migratedMorning = (previous: WatchState, today: string): string[] =>
+  isADay(previous.last_run) ? theWeekOf([previous.last_run], today) : [];
 
 /**
  * The silent mornings the state before this run knew about.
@@ -781,7 +787,7 @@ function knownLapses(previous: WatchState, today: string): Record<string, string
       if (days.length) known[id] = days;
     }
   }
-  const morning = theWeekOf([migratedMorning(previous, today)], today);
+  const morning = migratedMorning(previous, today);
   if (morning.length) for (const source of unreadOf(previous.unread)) known[source.id] ??= [...morning];
   return known;
 }

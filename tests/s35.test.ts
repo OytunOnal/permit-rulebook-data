@@ -693,34 +693,48 @@ describe("s35 — the days on the state are read as days or not at all", () => {
     expect(merged.lapses).toEqual({ bamf: [YESTERDAY] });
   });
 
-  it("counts today when the day the migration would use is not a day", async () => {
+  it("carries no morning at all when the day the migration would use is not a day", async () => {
     // `last_run` comes off the same file as `lapses` and becomes a day the
-    // brake counts and the run prints, so it takes the same check. A
-    // `last_run` nobody can read leaves this run knowing the source was
-    // silent and not when, and today is what it counts then: the morning is
-    // kept rather than invented or dropped, and the next silence is the
-    // source's second either way.
-    const unreadable = {
-      entries: {}, last_run: "yesterday", unread: [{ id: "down", url: addressOf("down") }],
-    } as unknown as WatchState;
-    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
-    const { nextState, verdict } = await runWatch(watching("down"), unreadable, fetcher, TODAY);
-    expect(nextState.lapses).toEqual({ down: [TODAY] });
-    expect(verdict.red, "a `last_run` that is not a day was counted as a second morning").toBe(false);
+    // brake counts and the run prints, so it takes the same check — and what
+    // a failed check means here is a decision. The migration is the bridge
+    // from the states on disk, and every one of them carries a day
+    // (`watch/state.json`: `last_run: "2026-09-24"`), so a file whose
+    // `last_run` is not a day is corrupt past this migration's reading and
+    // names no morning. Stamping today instead recorded a silent morning for
+    // a source that answered this morning (Security review, 2026-09-24).
+    const unreadable = (...ids: string[]) => ({
+      entries: {}, last_run: "yesterday",
+      unread: ids.map((id) => ({ id, url: addressOf(id) })),
+    } as unknown as WatchState);
 
-    // And the morning after, the second silence reddens the run.
+    // A source on that list which reads clean today has nothing against it:
+    // off the unread list, and no day anywhere.
+    const { fetcher: clean } = scripted({ [addressOf("read")]: [page("it answered")] });
+    const answered = await runWatch(watching("read"), unreadable("read"), clean, TODAY);
+    expect(answered.nextState.unread).toEqual([]);
+    expect(answered.nextState.lapses, "a source that answered was recorded silent").toEqual({});
+    expect(answered.verdict.red).toBe(false);
+
+    // And one silent this morning has the morning this run watched it be
+    // silent, which is its first: a lapse, and green.
+    const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
+    const { nextState, verdict } = await runWatch(watching("down"), unreadable("down"), fetcher, TODAY);
+    expect(nextState.lapses).toEqual({ down: [TODAY] });
+    expect(verdict.lapsed.map((u) => u.id)).toEqual(["down"]);
+    expect(verdict.red, "a single silence was red on a state whose `last_run` could not be read").toBe(false);
+
+    // The morning after, that silence is the second one and the run is red.
     const { fetcher: again } = scripted({ [addressOf("down")]: [fail("transient")] });
     const after = await runWatch(watching("down"), nextState, again, TOMORROW);
     expect(after.nextState.lapses).toEqual({ down: [TODAY, TOMORROW] });
     expect(after.verdict.outages.map((u) => u.id)).toEqual(["down"]);
     expect(after.verdict.red, "a second silent morning left the run green").toBe(true);
 
-    // The day that reaches the file is that same morning: a targeted pass
-    // writes the mornings of the sources it never fetched straight back.
+    // A targeted pass reads the same file and invents no morning either.
     const only = watching("other");
     const { fetcher: passing } = scripted({ [addressOf("other")]: [page("it answered")] });
-    const pass = await runWatch(only, unreadable, passing, TODAY);
-    expect(mergeTargetedRun(unreadable, pass.nextState, only, TODAY).lapses).toEqual({ down: [TODAY] });
+    const pass = await runWatch(only, unreadable("down"), passing, TODAY);
+    expect(mergeTargetedRun(unreadable("down"), pass.nextState, only, TODAY).lapses).toBeUndefined();
   });
 
   it("keeps the week's most recent mornings, not the last seven a list happens to end with", async () => {
