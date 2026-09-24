@@ -136,7 +136,12 @@ export function ask(target: URL, asking: Asking): Promise<Answer> {
      * One deadline per SOURCE is computed by the caller; what arrives here is
      * what is left of it, and it covers the body as well as the headers —
      * a source that answers in a millisecond and then dribbles the page for a
-     * minute is the case a header-only timeout misses.
+     * minute is the case a header-only timeout misses. It is cleared on the
+     * request's `close`, which is late enough to mean that: measured
+     * 2026-09-24 against a fixture that held its last chunk back 700 ms, the
+     * order is `data` … `end` (716 ms) then `close` (716 ms), so the bound is
+     * released only once the whole body is in — and released for certain,
+     * which is what keeps a 30 s timer from holding a finished run open.
      */
     const timer = setTimeout(() => { req.destroy(budgetSpent()); }, Math.max(0, asking.msLeft));
     let answered = false;
