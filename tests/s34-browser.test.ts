@@ -1287,12 +1287,18 @@ describe.skipIf(Boolean(noChrome) && !CI)("s35 — the browser tier classes its 
     // run logs. A page can make it as long as it likes, and this one makes it
     // ten thousand characters so that what survives is the bound and not the
     // page (Security review, 2026-09-24).
+    //
+    // And it opens with the bytes a bound does not touch: a carriage return,
+    // a newline, the escape a terminal obeys and an override that reorders
+    // what is printed after it. The same owner cuts the length and takes
+    // those out, so the sentence that reaches the flag file and the issue is
+    // one printable line on this tier too (Security review, 2026-09-24).
     served = `<!doctype html><html><body>
 <p>Lede: what this permit is for.</p>
 <footer>Cookies Proclaimer</footer>
 <script>
 Object.defineProperty(Element.prototype, "outerHTML", {
-  get: function () { throw new Error("A".repeat(10000)); },
+  get: function () { throw new Error("the page said no\\r\\n\\tat \\u001b[31mhere\\u001b[0m\\u202e " + "A".repeat(10000)); },
 });
 </script>
 </body></html>`;
@@ -1307,6 +1313,15 @@ Object.defineProperty(Element.prototype, "outerHTML", {
       expect(answer.error.length, "the page's own words travelled whole")
         .toBeLessThanOrEqual(MOST_OF_A_FAILURE);
       expect(answer.error, "the page's own address travelled with its words").not.toContain(origin);
+      // One line, and nothing in it a terminal or a Markdown body acts on.
+      expect(answer.error, "the page decided where the sentence ends").not.toMatch(/[\r\n]/);
+      expect(answer.error, "a byte a terminal acts on travelled with the page's words")
+        .not.toMatch(/[ --]/);
+      expect(answer.error, "a character that reorders what is printed travelled with the page's words")
+        .not.toMatch(/[​-‏⁠-⁤⁦-⁩‪-‮]/);
+      // And the page's own words are still the page's: cut and cleaned, not
+      // rewritten.
+      expect(answer.error, "what the page said was thrown away with the bytes").toContain("the page said no");
     } finally { await reader.close(); served = fixture(); }
   });
 

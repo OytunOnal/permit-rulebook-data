@@ -1,6 +1,6 @@
 import { chromePath, launch } from "./chrome.js";
 import { BUDGET_MS, refusedAddress } from "./fetch-source.js";
-import { classOfThrown, ReadFailure } from "./failure.js";
+import { classOfThrown, ReadFailure, shortFailure } from "./failure.js";
 import type { Session } from "./cdp.js";
 import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 
@@ -149,7 +149,21 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
       // no field, a navigation off the origin, a status the page was served.
       // Anything that did not is something that merely did not happen, and is
       // worth the one more read the pass will give it.
-      return { ok: false, error: e instanceof Error ? e.message : String(e), failure: classOfThrown(e) };
+      //
+      // And the same split as the fetch tier's catch (`fetch-source.ts`), for
+      // the same reason and through the same owner. A `ReadFailure` is OURS:
+      // the step diagnosis that names what the page offered instead of the
+      // option asked for runs to five hundred characters on purpose, and is
+      // the whole of what a curator acts on (`failure.ts`, `MOST_OF_A_FAILURE`).
+      // Anything else that reaches here is somebody else's string — Chrome's
+      // own protocol error text, most of it (`cdp.ts`) — and was the one
+      // printed string on this tier that passed no bound and no printable
+      // rule at all (Standards review, 2026-09-24).
+      return {
+        ok: false,
+        error: e instanceof ReadFailure ? e.message : shortFailure(String(e)),
+        failure: classOfThrown(e),
+      };
     }
   };
 

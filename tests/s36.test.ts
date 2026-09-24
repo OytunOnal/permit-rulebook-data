@@ -5,8 +5,8 @@ import type { AddressInfo, LookupFunction } from "node:net";
 import { brotliCompressSync, deflateSync, gzipSync } from "node:zlib";
 import { addressKind, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
 import { runWatch, type Watchlist } from "../src/watch/core.js";
-import { MOST_OF_A_FAILURE } from "../src/watch/failure.js";
-import { ask, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js";
+import { MOST_OF_A_CODE, MOST_OF_A_FAILURE } from "../src/watch/failure.js";
+import { ask, MEASURED, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js";
 
 /**
  * s36 — the address the watch connects to.
@@ -367,7 +367,12 @@ describe("s36 — what the watch reads does not change", () => {
     const packing: Record<string, (page: Buffer) => Buffer> = {
       gzip: gzipSync, deflate: deflateSync, br: brotliCompressSync,
     };
-    await fetchSource(`${fixtureOrigin}/`, "same-origin");
+    // The request this reads has to be its own. Without this, a read that
+    // failed before `ask` ever ran would kill the case on `asked.at(-1)!`
+    // and say nothing about the header it came here to prove (Spec review,
+    // 2026-09-24).
+    const read = await fetchSource(`${fixtureOrigin}/`, "same-origin");
+    expect(read.ok, read.ok ? "" : read.error).toBe(true);
     const sent = asked.at(-1)!.headers["accept-encoding"] ?? "";
     const askedFor = sent.split(",").map((one) => one.trim()).filter((one) => one.length > 0);
     expect(askedFor.length, "the request asked for no encoding at all").toBeGreaterThan(0);
@@ -408,7 +413,7 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
     // A page that INFLATES past the bound and a page that simply is past it
     // are two different facts about a source, and the sentence a curator
     // reads says which one this was (`request.ts`'s `pastTheBound`).
-    expect(answer.error, "the refusal does not say where the bound was passed").toContain("unpacked");
+    expect(answer.error, "the refusal does not say where the bound was passed").toContain(MEASURED.unpacked);
   });
 
   /**
@@ -437,8 +442,8 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
       expect(answer.error, "the failure carries the body's own words").not.toContain("authority");
       // And the other half of that sentence: this body was that big, rather
       // than a small one that inflated.
-      expect(answer.error, "the refusal does not say where the bound was passed").toContain("on the wire");
-      expect(answer.error, "a body nothing decoded was called unpacked").not.toContain("unpacked");
+      expect(answer.error, "the refusal does not say where the bound was passed").toContain(MEASURED.onTheWire);
+      expect(answer.error, "a body nothing decoded was called unpacked").not.toContain(MEASURED.unpacked);
     });
   }
 
@@ -505,6 +510,17 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
   }, 10_000);
 });
 
+/**
+ * What this tier prints BESIDE a thrown thing's own words, at its longest.
+ *
+ * Its own and bounded already: a cause code inside its ` (…)`, which the
+ * code's own bound holds, and `afterAnswer`'s `after HTTP ` with the status
+ * the fixture answers before the throw. Named from that bound rather than
+ * retyped, so the sentence and the number cannot drift apart (Standards
+ * review, 2026-09-24).
+ */
+const OURS_BESIDE_THE_WORDS = " (".length + MOST_OF_A_CODE + ")".length + "after HTTP 302, ".length;
+
 describe("s36 — a read that ends badly still says what the source said", () => {
   it("reports the answer's own status when the socket dies mid-body", async () => {
     /**
@@ -535,7 +551,8 @@ describe("s36 — a read that ends badly still says what the source said", () =>
      * arrived, and this file's own sentence says that text travels into the
      * log line, the flag file and the issue the flag becomes
      * (`failure.ts`). The bound is the browser tier's, one owner for both
-     * tiers (`shortFailure`, applied at the throw in `cdp.ts`).
+     * tiers (`shortFailure`, asked for at the throw in `cdp.ts` and on the
+     * browser tier's own return path in `browser.ts`).
      *
      * Driven through the resolver seam, which is where a throw misses the
      * wrapper: Node calls the lookup hook from inside `http.request` itself,
@@ -549,13 +566,6 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     const answer = await fetchSource(`${fixtureOrigin}/to-name`, "anywhere", throwing);
     expect(answer.ok, "a throw inside the lookup was read as a page").toBe(false);
     if (answer.ok) return;
-    /**
-     * The source's words are bounded; what this tier prints beside them is
-     * its own and bounded already — a cause code, which `A_CODE` holds to 40
-     * characters, inside its ` (…)`, and `afterAnswer`'s `after HTTP ` with
-     * a status number.
-     */
-    const OURS_BESIDE_THE_WORDS = " (".length + 40 + ")".length + "after HTTP 302, ".length;
     expect(answer.error.length, "ten thousand characters of a thrown message reached the log line")
       .toBeLessThanOrEqual(MOST_OF_A_FAILURE + OURS_BESIDE_THE_WORDS);
     expect(answer.error, "the thrown message travelled whole").not.toContain("B".repeat(MOST_OF_A_FAILURE));
@@ -564,6 +574,53 @@ describe("s36 — a read that ends badly still says what the source said", () =>
     expect(answer.error, "what the source answered before the throw went unreported")
       .toContain("after HTTP 302");
     expect(answer.status, "the source's own answer went unreported").toBe(302);
+  });
+
+  it("makes a thrown thing's own words one printable line, and still says the code and the answer", async () => {
+    /**
+     * The bound cut LENGTH, and length was never the whole of the rule.
+     *
+     * Two hundred characters of somebody else's string still carried
+     * whatever bytes were inside them: the newline that ends a line, the
+     * carriage return that rewrites the one already printed, the escape a
+     * terminal obeys, the override that reorders what is printed after it.
+     * The log line survives them because it is a JSON field and escapes them
+     * there. The flag file and the issue that flag becomes do not — the
+     * issue is a Markdown body, where a newline ends the paragraph and the
+     * rest of the sentence leaves the sentence (`failure.ts`'s opening
+     * sentence; Security review, 2026-09-24).
+     *
+     * So the owner that cuts the length also makes the sentence printable,
+     * and one owner is the whole point: the same rule at the fetcher's throw
+     * and at the browser tier's. This asks it of the sentence a curator
+     * actually reads, through the same resolver seam as the bound above.
+     */
+    const throwing: Resolver = () => {
+      throw Object.assign(
+        new Error("the source said no\r\n  at [31mgetaddrinfo[0m\n\tand again‮​"),
+        { cause: { code: "ENOTFOUND" } },
+      );
+    };
+    const answer = await fetchSource(`${fixtureOrigin}/to-name`, "anywhere", throwing);
+    expect(answer.ok, "a throw inside the lookup was read as a page").toBe(false);
+    if (answer.ok) return;
+    // One line. Nothing that ends a line, moves a cursor, or reorders what is
+    // printed after it reaches any of the three places this sentence travels.
+    expect(answer.error, "the sentence is still more than one line").not.toMatch(/[\r\n]/);
+    expect(answer.error, "a byte a terminal acts on travelled with the words")
+      .not.toMatch(/[ --]/);
+    expect(answer.error, "a character that reorders what is printed travelled with the words")
+      .not.toMatch(/[​-‏⁠-⁤⁦-⁩‪-‮]/);
+    // The words themselves are still the source's own, not a rewriting of
+    // them: what was said survives, only the bytes nobody reads are gone.
+    expect(answer.error, "the thrown thing's own words were thrown away with the bytes")
+      .toContain("the source said no");
+    expect(answer.error.length, "the printable sentence is past the bound")
+      .toBeLessThanOrEqual(MOST_OF_A_FAILURE + OURS_BESIDE_THE_WORDS);
+    // And the two facts a curator acts on survive being made printable.
+    expect(answer.error, "the cause's code was lost with the bytes").toContain("ENOTFOUND");
+    expect(answer.error, "what the source answered before the throw went unreported")
+      .toContain("after HTTP 302");
   });
 });
 
@@ -581,8 +638,8 @@ describe("s36 — one oversize body does not take the pass with it", () => {
    * pass with nothing failing (Spec review, 2026-09-24).
    */
   for (const [shape, id, path] of [
-    ["on the wire", "s36-over-the-bound", "/too-big-plain"],
-    ["unpacked", "s36-over-the-bound-encoded", "/too-big"],
+    [MEASURED.onTheWire, "s36-over-the-bound", "/too-big-plain"],
+    [MEASURED.unpacked, "s36-over-the-bound-encoded", "/too-big"],
   ] as const) {
     it(`reports a source past the bound ${shape} unreachable and reads the source after it`, async () => {
       const watchlist: Watchlist = {

@@ -686,9 +686,12 @@ export const fetchSource = (async (
      */
     const code = causeCode(e);
     /**
-     * Bounded here, because here is where a thrown thing becomes a printed
-     * sentence — the same owner and the same rule as the browser tier's
-     * (`shortFailure`, applied at the throw in `cdp.ts`).
+     * Bounded and made printable here, because here is where a thrown thing
+     * becomes a printed sentence — the same owner and the same rule as the
+     * browser tier's, which asks for it at the throw in `cdp.ts` and again on
+     * its own return path in `browser.ts`. One owner cuts the length AND takes
+     * out what a terminal or a Markdown body would act on; neither tier has a
+     * second opinion about either half (`shortFailure`).
      *
      * `request.ts`'s wrapper makes this five words most mornings, but a
      * wrapper is not a bound: anything thrown inside this `try` that never
@@ -699,7 +702,7 @@ export const fetchSource = (async (
      * review, 2026-09-24).
      *
      * What is printed beside it is this tier's own and bounded already: a
-     * cause code, which `A_CODE` holds to forty characters, and `afterAnswer`
+     * cause code, which `MOST_OF_A_CODE` holds, and `afterAnswer`
      * adds a status number.
      */
     const said = shortFailure(String(e));

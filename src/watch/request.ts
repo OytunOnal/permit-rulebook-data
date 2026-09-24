@@ -117,6 +117,20 @@ type Unpacking = (
 ) => void;
 
 /**
+ * The two places a body can be past the bound, as values and not as wording.
+ *
+ * They are the DECISION — which of the two facts about the source this was —
+ * and the decision is what a reader, and a test, has to be able to name. A
+ * test that retypes the words instead pins the sentence: rewording it then
+ * fails four assertions that were never about the sentence, and the branch
+ * they meant to hold goes unheld (Spec review, 2026-09-24).
+ */
+export const MEASURED = { unpacked: "unpacked", onTheWire: "on the wire" } as const;
+
+/** Which of the two the bound was passed at. */
+export type Measured = (typeof MEASURED)[keyof typeof MEASURED];
+
+/**
  * The failure a body past the bound is, and the class it deserves.
  *
  * **refused-by-source**, not transient: the source answered, and the answer
@@ -130,7 +144,7 @@ type Unpacking = (
  * was passed as well, because the two places are different facts about the
  * source: a page that inflates past it, and a page that simply is past it.
  */
-function pastTheBound(measured: "unpacked" | "on the wire"): ReadFailure {
+function pastTheBound(measured: Measured): ReadFailure {
   return new ReadFailure(
     `the body is more than ${MOST_OF_A_BODY} bytes ${measured}, which is no page this watch reads`,
     "refused-by-source",
@@ -150,7 +164,7 @@ function unpacking(how: Unpacking, bytes: Buffer): Promise<Uint8Array> {
     how(bytes, { maxOutputLength: MOST_OF_A_BODY }, (error, output) => {
       if (error) {
         const code = (error as NodeJS.ErrnoException).code;
-        no(code === "ERR_BUFFER_TOO_LARGE" ? pastTheBound("unpacked") : error);
+        no(code === "ERR_BUFFER_TOO_LARGE" ? pastTheBound(MEASURED.unpacked) : error);
         return;
       }
       whole(new Uint8Array(output));
@@ -319,7 +333,7 @@ export function ask(target: URL, asking: Asking): Promise<Answer> {
             arrived += chunk.byteLength;
             if (arrived > MOST_OF_A_BODY) {
               parts.length = 0;
-              failed(pastTheBound("on the wire"));
+              failed(pastTheBound(MEASURED.onTheWire));
               req.destroy();
               return;
             }
