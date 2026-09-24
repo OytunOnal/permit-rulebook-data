@@ -543,7 +543,7 @@ describe("s35 — two silent mornings inside the week are an outage", () => {
       [addressOf("two")]: [fail("transient")],
       [addressOf("three")]: [page("it answered")],
     });
-    const full = await runWatch(watching("one", "two", "three"), merged, again, TODAY);
+    const full = await runWatch(watching("one", "two", "three"), merged, again, TOMORROW);
     expect(full.verdict.outages.map((u) => u.id)).toEqual(["one", "two"]);
     expect(full.verdict.red, "a migrated morning was lost through the targeted pass").toBe(true);
   });
@@ -581,8 +581,8 @@ describe("s35 — two silent mornings inside the week are an outage", () => {
  * it was handed (Security review, 2026-09-24).
  */
 describe("s35 — the days on the state are read as days or not at all", () => {
-  /** The day `n` mornings before today, in the shape the state writes. */
-  const daysBefore = (n: number) => new Date(Date.parse(TODAY) - n * 86_400_000).toISOString().slice(0, 10);
+  /** The day `n` mornings after today, in the shape the state writes. */
+  const daysAfter = (n: number) => new Date(Date.parse(TODAY) + n * 86_400_000).toISOString().slice(0, 10);
   const stateWith = (lapses: unknown, ...ids: string[]): WatchState => ({
     entries: {}, last_run: YESTERDAY,
     unread: ids.map((id) => ({ id, url: addressOf(id) })),
@@ -611,7 +611,7 @@ describe("s35 — the days on the state are read as days or not at all", () => {
     // The days are ahead of today on purpose: a day the week has already
     // passed is dropped by the pruning rule, and one ahead of it is kept to
     // age out — so a flood of tomorrows is the list nothing else cuts.
-    const flood = Array.from({ length: 10_000 }, (_, i) => daysBefore(-i));
+    const flood = Array.from({ length: 10_000 }, (_, i) => daysAfter(i));
     const { fetcher } = scripted({ [addressOf("down")]: [fail("transient")] });
     const { nextState, verdict } = await runWatch(watching("down"), stateWith({ down: flood }, "down"), fetcher, TODAY);
     expect(nextState.lapses!["down"]!.length, "a page of days reached the state the run writes")
