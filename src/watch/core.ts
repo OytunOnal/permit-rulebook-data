@@ -440,10 +440,13 @@ export async function runWatch(
       // A blocked or failed fetch must never read as "no change".
       //
       // The reader's structured `status` stops here, deliberately. A report
-      // is what a curator reads, and it is one shape for both readers — the
-      // browser tier has no status to give — so what the source answered
-      // travels in the sentence rather than in a field of its own
-      // (`fetch-source.ts`'s `afterAnswer`, Spec review 2026-09-24).
+      // is what a curator reads, and it is one shape for both readers — and
+      // the browser reader's own answer has no status field to read: the
+      // browser tier knows the served status and spends it inside its own
+      // refusal (`cdp.ts`'s `servedFailure`), so nothing of it reaches
+      // `browser.ts`'s return shape. So what the source answered travels in
+      // the sentence rather than in a field of its own (`fetch-source.ts`'s
+      // `afterAnswer`, Standards review 2026-09-24).
       return { ...base, outcome: "unreachable", error: fetched.error, failure: fetched.failure };
     }
     // Nor may an empty one. EUR-Lex answers this fetcher HTTP 202 with no
