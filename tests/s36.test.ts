@@ -82,6 +82,15 @@ const fixture: Server = createServer((req, res) => {
     res.end(AT_THE_BOUND);
     return;
   }
+  // A source that answers, and then does not finish: the headers are a real
+  // answer and the page never arrives.
+  if (path === "/cut-off") {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-length": "4096" });
+    // Flushed first, destroyed after: the client must SEE the answer before
+    // the connection goes, or nothing answered at all.
+    res.write(SENTENCE, () => { res.socket?.destroy(); });
+    return;
+  }
   // A big page that is still a page.
   if (path === "/big") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-encoding": "gzip" });
@@ -464,5 +473,23 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
       agent.destroy();
       await Promise.all(busy);
     }
+  });
+});
+
+describe("s36 — a read that ends badly still says what the source said", () => {
+  it("reports the answer's own status when the socket dies mid-body", async () => {
+    /**
+     * The source answered 200 and then stopped talking. `fetch-source`'s own
+     * principle — where a refusal was DECIDED is not the source's business,
+     * what the source said is (s34) — reaches this branch too: a read that
+     * ends in a socket error after an answer reports that answer, exactly as
+     * the branch beside it does for a refusal made at the connection.
+     */
+    const answer = await fetchSource(`${fixtureOrigin}/cut-off`, "same-origin");
+    expect(answer.ok, "half a page was read as a page").toBe(false);
+    if (answer.ok) return;
+    expect(answer.status, "the source's own answer went unreported").toBe(200);
+    // Nothing about the source said no; the reading simply did not happen.
+    expect(answer.failure).toBe("transient");
   });
 });

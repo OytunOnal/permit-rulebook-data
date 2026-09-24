@@ -646,10 +646,17 @@ export const fetchSource = (async (
      * s36 moved this tier off `fetch` and kept the wrapper by hand
      * (`request.ts`), so the sentence a curator reads — and the one
      * `CONTRIBUTING.md` prints — is the same sentence it was.
+     *
+     * The answer travels with it for the same reason it travels with the
+     * refusal above: a socket that dies mid-body, or a budget spent while the
+     * page is still arriving, happens AFTER the source said something, and
+     * what the source said is the source's own. It stays absent when nothing
+     * ever answered, which is most of what lands here.
      */
     const code = causeCode(e);
     return {
       ok: false,
+      ...(answerStatus !== undefined ? { status: answerStatus } : {}),
       error: code ? `${String(e)} (${code})` : String(e),
       failure: classOfThrown(e),
     };
