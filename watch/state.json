@@ -368,15 +368,14 @@
       "history": []
     }
   },
-  "last_run": "2026-09-24",
-  "unread": [
-    {
-      "id": "bamf-hochschulabsolvent",
-      "url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Hochschulabsolvent/hochschulabsolvent-node.html"
-    },
-    {
-      "id": "bamf-selbstaendige-taetigkeit",
-      "url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/SelbstaendigeTaetigkeit/selbstaendigetaetigkeit-node.html"
-    }
-  ]
+  "last_run": "2026-09-25",
+  "unread": [],
+  "lapses": {
+    "bamf-hochschulabsolvent": [
+      "2026-09-24"
+    ],
+    "bamf-selbstaendige-taetigkeit": [
+      "2026-09-24"
+    ]
+  }
 }
