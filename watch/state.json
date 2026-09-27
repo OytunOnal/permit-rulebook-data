@@ -368,14 +368,29 @@
       "history": []
     }
   },
-  "last_run": "2026-09-26",
-  "unread": [],
+  "last_run": "2026-09-27",
+  "unread": [
+    {
+      "id": "boe-ley-14-2013",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074"
+    },
+    {
+      "id": "boe-rd-1155-2024",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099"
+    }
+  ],
   "lapses": {
     "bamf-hochschulabsolvent": [
       "2026-09-24"
     ],
     "bamf-selbstaendige-taetigkeit": [
       "2026-09-24"
+    ],
+    "boe-ley-14-2013": [
+      "2026-09-27"
+    ],
+    "boe-rd-1155-2024": [
+      "2026-09-27"
     ]
   }
 }
