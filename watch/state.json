@@ -368,8 +368,13 @@
       "history": []
     }
   },
-  "last_run": "2026-09-28",
-  "unread": [],
+  "last_run": "2026-09-29",
+  "unread": [
+    {
+      "id": "wetten-wav-artikel-8",
+      "url": "https://wetten.overheid.nl/BWBR0007149"
+    }
+  ],
   "lapses": {
     "bamf-hochschulabsolvent": [
       "2026-09-24"
@@ -382,6 +387,9 @@
     ],
     "boe-rd-1155-2024": [
       "2026-09-27"
+    ],
+    "wetten-wav-artikel-8": [
+      "2026-09-29"
     ]
   }
 }
