@@ -6,7 +6,8 @@
  * returns and exits. Every branch that decides what a run says is here, where
  * a test can call it; the CLI holds only I/O.
  */
-import type { Watchlist } from "./core.js";
+import type { FetchResult, Watchlist } from "./core.js";
+import { printableAddress } from "./fetch-source.js";
 
 export type LogLevel = "info" | "warn" | "error";
 
@@ -53,6 +54,28 @@ export function chooseEntries(watchlist: Watchlist, only: string | undefined): E
     return { kind: "no-such-entry", event: { level: "error", msg: "no such watch entry", fields: { id: only } }, exitCode: 2 };
   }
   return { kind: "run", watchlist: { ...watchlist, entries: wanted } };
+}
+
+/**
+ * Where the reading was actually taken, when that is not where it was asked
+ * for — on either tier, by the same rule.
+ *
+ * Another ORIGIN is refused outright by both readers. This is the journey
+ * inside one: a redirect the fetcher followed, a form that posts back to a
+ * sub-path, a script that swaps the document. It is allowed, and a curator
+ * should be able to see it without opening a browser — which is what the
+ * comment on `from` in `core.ts` promises.
+ */
+export function sayWhereItRead(entry: { id: string; url: string }, result: FetchResult): LogEvent | undefined {
+  const readAt = addressReadElsewhere(entry, result);
+  if (!readAt) return undefined;
+  return { level: "info", msg: "watch:read_at", fields: { id: entry.id, asked: printableAddress(entry.url), read_at: readAt } };
+}
+
+/** The address an ok reading was taken at, when it is not the one asked for. */
+function addressReadElsewhere(entry: { url: string }, result: FetchResult): string | undefined {
+  if (!result.ok || result.from === entry.url) return undefined;
+  return result.from || undefined;
 }
 
 /** Windows editors love BOMs; a hand-edited watchlist/state must not crash the watch. */

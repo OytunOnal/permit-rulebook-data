@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { WatchEntry } from "../src/watch/core.js";
-import { chooseEntries, parseJsonText, readRunArgs } from "../src/watch/run-says.js";
+import { chooseEntries, parseJsonText, readRunArgs, sayWhereItRead } from "../src/watch/run-says.js";
 
 /**
  * #54 — what a finished watch run says, out of the CLI.
@@ -42,6 +42,28 @@ describe("chooseEntries — the --only choice", () => {
   it("runs every entry when no id is given", () => {
     expect(chooseEntries(watchlist, undefined)).toEqual({ kind: "run", watchlist });
     expect(chooseEntries(watchlist, "")).toEqual({ kind: "run", watchlist });
+  });
+});
+
+describe("sayWhereItRead — the read_at decision", () => {
+  const asked = { id: "nl-ind-blue-card", url: "https://example.org/permit" };
+  const body = new Uint8Array([1]);
+
+  it("gives one event when an ok reading was taken at another address", () => {
+    expect(sayWhereItRead(asked, { ok: true, body, from: "https://example.org/permit/answered" })).toEqual({
+      level: "info",
+      msg: "watch:read_at",
+      fields: { id: "nl-ind-blue-card", asked: "https://example.org/permit", read_at: "https://example.org/permit/answered" },
+    });
+  });
+
+  it("gives none when the reading was taken at its own address", () => {
+    expect(sayWhereItRead(asked, { ok: true, body, from: "https://example.org/permit" })).toBeUndefined();
+    expect(sayWhereItRead(asked, { ok: true, body })).toBeUndefined();
+  });
+
+  it("gives none when the reading failed", () => {
+    expect(sayWhereItRead(asked, { ok: false, error: "HTTP 503", failure: "transient" })).toBeUndefined();
   });
 });
 

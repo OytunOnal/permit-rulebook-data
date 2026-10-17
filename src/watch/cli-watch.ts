@@ -5,7 +5,7 @@ import {
 } from "./core.js";
 import { openBrowserReader } from "./browser.js";
 import { fetchSource, printableAddress } from "./fetch-source.js";
-import { chooseEntries, parseJsonText, readRunArgs } from "./run-says.js";
+import { chooseEntries, parseJsonText, readRunArgs, sayWhereItRead } from "./run-says.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -64,20 +64,9 @@ function flagFile(report: WatchReport, today: string) {
   writeFileSync(new URL(name, dir), body + "\n");
 }
 
-/**
- * Where the reading was actually taken, when that is not where it was asked
- * for — on either tier, by the same rule.
- *
- * Another ORIGIN is refused outright by both readers. This is the journey
- * inside one: a redirect the fetcher followed, a form that posts back to a
- * sub-path, a script that swaps the document. It is allowed, and a curator
- * should be able to see it without opening a browser — which is what the
- * comment on `from` in `core.ts` promises, and what only the browser tier
- * was doing until 2026-09-24.
- */
-const sayWhereItRead = (entry: { id: string; url: string }, result: FetchResult) => {
-  if (!result.ok || !result.from || result.from === entry.url) return;
-  log("info", "watch:read_at", { id: entry.id, asked: printableAddress(entry.url), read_at: result.from });
+const logWhereItRead = (entry: { id: string; url: string }, result: FetchResult) => {
+  const event = sayWhereItRead(entry, result);
+  if (event) log(event.level, event.msg, event.fields);
 };
 
 /** Which entry an address belongs to, so a `read_at` names the entry a
@@ -86,7 +75,7 @@ const entryAt = new Map(watchlist.entries.map((e) => [e.url, e.id]));
 
 const readSourceOverHttp: Fetcher = async (url, redirects) => {
   const result = await fetchSource(url, redirects);
-  sayWhereItRead({ id: entryAt.get(url) ?? url, url }, result);
+  logWhereItRead({ id: entryAt.get(url) ?? url, url }, result);
   return result;
 };
 
@@ -109,7 +98,7 @@ const openInBrowser: BrowserReader = async (entry, redirects) => {
     // What naming ourselves to the source alone costs this page.
     ...browser.lastCost(),
   });
-  sayWhereItRead(entry, result);
+  logWhereItRead(entry, result);
   return result;
 };
 
