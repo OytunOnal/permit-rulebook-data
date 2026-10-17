@@ -24,7 +24,7 @@ const report = (r: Partial<WatchReport> & Pick<WatchReport, "id" | "outcome">): 
 const htmlChange = report({
   id: "nl-ind-blue-card", url: "https://ind.nl/en/blue-card", outcome: "changed",
   note: "Backs the salary threshold.", old_hash: OLD, new_hash: NEW,
-  context: "the gross monthly salary is at least EUR 5,688",
+  excerpt: "the gross monthly salary is at least EUR 5,688",
 });
 const sentinelChange = report({
   id: "buzer-index", url: "https://www.buzer.de/index.htm", kind: "sentinel", outcome: "changed",

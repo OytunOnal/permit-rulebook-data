@@ -80,7 +80,7 @@ function flagOf(report: WatchReport, today: string): FlagDocument {
     report.old_hash ? `- old: ${report.old_hash}` : "",
     report.new_hash ? `- new: ${report.new_hash}` : "",
     report.note ? `\nIntent: ${report.note}` : "",
-    report.context ? `\n> …${report.context}…` : "",
+    report.excerpt ? `\n> …${report.excerpt}…` : "",
     "",
     remediation(report),
   ].filter(Boolean).join("\n");

@@ -111,7 +111,7 @@ describe("watch pass outcomes", () => {
     const page = reports.find((r) => r.id === "page")!;
     expect(page.outcome).toBe("changed");
     expect(page.old_hash).not.toBe(page.new_hash);
-    expect(page.context).toContain("200 Euro");
+    expect(page.excerpt).toContain("200 Euro");
   });
 
   it("the excerpt is cut on characters, never inside one", async () => {
@@ -124,7 +124,7 @@ describe("watch pass outcomes", () => {
     const { nextState } = await runWatch(single, empty, page("X"), "2026-09-02");
     const { reports } = await runWatch(single, nextState, page("Y"), "2026-09-03");
     // 60 characters before the difference and 120 from it.
-    expect(reports[0]!.context).toBe(`😀${"b".repeat(59)}Y${"c".repeat(118)}😃`);
+    expect(reports[0]!.excerpt).toBe(`😀${"b".repeat(59)}Y${"c".repeat(118)}😃`);
   });
 
   it("whitespace-only page churn does NOT flag (the normalize invariant, end to end)", async () => {
@@ -181,7 +181,7 @@ describe("watch pass outcomes", () => {
     const { reports } = await runWatch(list, nextState, v2, "2026-09-03");
     const doc = reports.find((r) => r.id === "doc")!;
     expect(doc.outcome).toBe("changed");
-    expect(doc.context).toBeUndefined();
+    expect(doc.excerpt).toBeUndefined();
   });
 
   it("human tier: reminder fires only past max_age_days, and nothing is fetched", async () => {

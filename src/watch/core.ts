@@ -257,8 +257,8 @@ interface ReportOfSource {
   note?: string;
   old_hash?: string;
   new_hash?: string;
-  /** for html changes: quoted context around the first difference */
-  context?: string;
+  /** for a change read as text: the page's words around the first difference */
+  excerpt?: string;
   error?: string;
 }
 
@@ -542,7 +542,7 @@ export async function runWatch(
     };
     return {
       ...base, outcome: "changed", old_hash: prev.hash, new_hash: hash,
-      context: text !== undefined && prev.text !== undefined ? cutExcerpt(prev.text, text) : undefined,
+      excerpt: text !== undefined && prev.text !== undefined ? cutExcerpt(prev.text, text) : undefined,
     };
   };
 
