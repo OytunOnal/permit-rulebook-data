@@ -1461,16 +1461,17 @@ describe("#49 — a browser entry on a link-local address is refused before Chro
   };
 
   it.each([
-    ["the metadata address", "http://169.254.169.254/latest/"],
-    ["an IPv6 link-local address", "http://[fe80::1]/admin"],
-    ["the metadata address written as IPv4-mapped IPv6", "http://[::ffff:a9fe:a9fe]/latest/"],
-  ])("refuses %s as ours and asks no browser for it", async (_, url) => {
+    ["the metadata address", "http://169.254.169.254/latest/", "169.254"],
+    ["an IPv6 link-local address", "http://[fe80::1]/admin", "fe80"],
+    ["the metadata address written as IPv4-mapped IPv6", "http://[::ffff:a9fe:a9fe]/latest/", "a9fe"],
+  ])("refuses %s as ours and asks no browser for it", async (_, url, address) => {
     const { asked, reader } = counting();
     try {
       const { reports } = await runWatch({ entries: [entry({ url })] }, emptyState, refuse, "2026-10-17", reader.read);
       expect(reports[0]!.outcome).toBe("unreachable");
       expect(reports[0]!.failure).toBe("refused-by-us");
       expect(reports[0]!.error, "the refusal does not say what kind of address it is").toContain("link-local");
+      expect(reports[0]!.error, "the address was printed").not.toContain(address);
       expect(asked.times, "Chrome was asked for a link-local entry").toBe(0);
     } finally { await reader.close(); }
   });
