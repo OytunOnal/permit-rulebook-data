@@ -5,6 +5,7 @@ import {
 } from "./core.js";
 import { openBrowserReader } from "./browser.js";
 import { fetchSource, printableAddress } from "./fetch-source.js";
+import { parseJsonText } from "./run-says.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -12,8 +13,7 @@ function log(level: "info" | "warn" | "error", msg: string, extra: Record<string
   else console.log(line);
 }
 
-/** Windows editors love BOMs; a hand-edited watchlist/state must not crash the watch. */
-const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
+const readJson = (url: URL) => parseJsonText(readFileSync(url, "utf8"));
 
 const commit = process.argv.includes("--commit");
 /**
