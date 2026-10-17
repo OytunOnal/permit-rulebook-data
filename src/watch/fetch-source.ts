@@ -248,10 +248,9 @@ export function addressKind(hostname: string): AddressKind {
  * Whether an address of this kind may be connected to at all, given where the
  * chain started.
  *
- * One rule, three callers, because there is one rule: a redirect target
- * spelled as a literal, the entry's own address, and every address a name
- * resolves to. It was written out three times in the first draft of s36 and
- * the three copies had already begun to differ.
+ * One rule, two callers, because there is one rule: a redirect target
+ * spelled as a literal, and every address a name resolves to. Two copies of
+ * it would be two rules as soon as one of them changed.
  */
 export function allowedAddress(going: AddressKind, entryHost: string): boolean {
   // Never, for anybody: a link-local address is not a place a source lives,
@@ -366,16 +365,18 @@ function floorLookup(entryHost: string, resolver: Resolver): LookupFunction {
 }
 
 /**
- * The refusal both readers give an address carrying a name and password, or
- * `null` when there is nothing to refuse.
+ * The refusal both readers give an entry address before anything is asked of
+ * it — not an address, carrying a name and password, on a scheme that is not
+ * a page, or on a link-local address — or `null` when there is nothing to
+ * refuse.
  *
- * One owner, because it is one rule: no source this project reads needs
- * credentials, and a reader that sends them is a reader that can leak them.
- * The fetcher met it first; the browser reader asks the same question here
- * rather than spelling a second opinion of it.
- *
- * A malformed address is not this function's fault to report — it has its own
- * refusal, in each reader.
+ * One owner for all four, because each is a question about the entry address
+ * alone, asked before either reader opens anything, and a reader that spelled
+ * its own copy would be the reader whose copy drifts. Each is a door a reader
+ * must not open: credentials a reader sends are credentials it can leak, a
+ * scheme that is not a page is not a source, and a link-local address is
+ * where a hosted runner's credentials answer. The fetcher and the browser
+ * reader both ask here, so an entry one refuses the other refuses too.
  */
 export function refusedAddress(url: string): string | null {
   let parsed: URL;
@@ -390,6 +391,8 @@ export function refusedAddress(url: string): string | null {
     return "the entry address carries a name and password, which this watch will not send";
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
     return `the entry address is a ${parsed.protocol.replace(":", "")} address, which this watch does not read`;
+  if (addressKind(parsed.hostname) === "link-local")
+    return "the entry address is a link-local address and never a source";
   return null;
 }
 
@@ -506,12 +509,13 @@ export const fetchSource = (async (
 ): Promise<FetchResult> => {
   /**
    * What this watch will not ask for at all: a malformed address, one
-   * carrying a name and password, one on a scheme that is not a page.
+   * carrying a name and password, one on a scheme that is not a page, one on
+   * a link-local address.
    *
    * Refused before anything is requested and without repeating what is
-   * wrong. `String(e)` on a credentialled address put the password into the
-   * error, the log, a flag and an issue (Security review, 2026-09-24); the
-   * coverage gate refuses such an entry in the watchlist too, where it is a
+   * wrong: `String(e)` on a credentialled address puts the password into the
+   * error, and from there into the log, a flag and an issue. The coverage
+   * gate refuses a credentialled entry in the watchlist too, where it is a
    * curator's to fix, and this is the floor under that for a url arriving by
    * any other road.
    */
@@ -540,21 +544,8 @@ export const fetchSource = (async (
   try {
     const entry = new URL(url);
     const asked = entry.origin;
-    /**
-     * The entry's own address, judged by the rule that judges every hop.
-     *
-     * A url a curator typed is still an address (scenario point 4). What the
-     * relative rule can refuse about the place a chain STARTS is only a
-     * link-local one — an entry is, by definition, already on its own kind,
-     * which is what keeps a loopback fixture readable. A NAME in the entry is
-     * judged the other way round, at the connection, by the hook below.
-     */
-    if (!allowedAddress(addressKind(entry.hostname), entry.hostname))
-      return {
-        ok: false,
-        error: "the entry address is a link-local address and never a source",
-        failure: "refused-by-us",
-      };
+    // The entry's own address was judged above, by `refusedAddress`; a NAME
+    // in it is judged at the connection, by the hook below.
     let target = url;
     // One deadline for the source, shared by every hop it makes. It is a
     // moment and not a signal because each hop is its own request now, and
