@@ -391,17 +391,8 @@
       "history": []
     }
   },
-  "last_run": "2026-10-16",
-  "unread": [
-    {
-      "id": "wetten-wav-artikel-8",
-      "url": "https://wetten.overheid.nl/BWBR0007149"
-    },
-    {
-      "id": "de-bmi-chancenkarte",
-      "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html"
-    }
-  ],
+  "last_run": "2026-10-17",
+  "unread": [],
   "lapses": {
     "buzer-anlage-aufenthg": [
       "2026-10-14"
