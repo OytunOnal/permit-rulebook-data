@@ -188,8 +188,12 @@ export function hasControl(text: string): boolean {
  * a newline. The flag file and the issue that flag becomes are — the issue
  * is Markdown, where a newline ends the paragraph and everything the source
  * wrote after it is loose in the page (Security review, 2026-09-24).
+ *
+ * Exported because a flag's excerpt is a page's words printed into the same
+ * file and issue, and asks for this rule by name (`run-says.ts`): one rule
+ * for what prints, wherever a page's words are shown.
  */
-function printable(text: string): string {
+export function makePrintable(text: string): string {
   return text.replace(STEERING, "").replace(UNPRINTED, " ").trim();
 }
 
@@ -210,7 +214,7 @@ function printable(text: string): string {
  *
  * **Length was never the whole rule.** Two hundred characters of somebody
  * else's string still carried whatever bytes were inside them into the flag
- * file and the issue, which is what `printable` above now takes out. One
+ * file and the issue, which is what `makePrintable` above now takes out. One
  * owner, because it is one rule: a thrown thing's words are cut AND made
  * printable, in one place, and both call sites — the fetcher's throw and the
  * browser tier's — ask for it by asking here (Security review, 2026-09-24).
@@ -285,7 +289,7 @@ export const MOST_OF_A_PAGE_WORD = 40;
  * better than one that is not bounded at all (Security review, 2026-09-25).
  */
 export function printableWithin(text: string, most: number): string {
-  const said = printable(text);
+  const said = makePrintable(text);
   const characters = [...said];
   if (characters.length <= most) return said;
   const note = noteOfLength(characters.length);
@@ -331,7 +335,7 @@ export const [NOTE_BEFORE, NOTE_AFTER] = noteOfLength(0).split("0") as [string, 
  * that quotes them is built (`steps.ts`). That half cannot import this file,
  * and a second hand-written copy of the rule is how two copies start
  * disagreeing about which characters steer. So the rule is handed over as
- * text, built from the same two class sources this file's own `printable`
+ * text, built from the same two class sources this file's own `makePrintable`
  * uses, and from the same note (`NOTE_BEFORE`/`NOTE_AFTER`): one spelling of
  * every piece, two runtimes.
  *
