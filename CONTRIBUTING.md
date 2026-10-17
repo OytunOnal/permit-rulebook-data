@@ -322,8 +322,8 @@ red morning, and closes it itself on the first morning nothing is overdue. A
 person walks the flags; the issue follows. If the tracker cannot be read, that
 is the check not finishing — `watch run failed`, and `overdue flags` is left as
 it was. A measurement run reads no clock. The decision is
-`src/watch/overdue.ts`; `cli-overdue.js` reads `gh issue list` on standard input
-and exits 0 (clear), 1 (overdue) or 2 (unread).
+`src/watch/overdue.ts`; `cli-overdue.ts` reads `gh issue list` on standard input
+and is the one place its exit codes are written down.
 
 ### Moving a slice re-reads its baseline, in the same commit
 

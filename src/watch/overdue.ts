@@ -33,7 +33,7 @@ export interface OverdueFlag {
 }
 
 /** The days a flag has before the morning that finds it unread turns red. */
-export const OVERDUE_AFTER_DAYS = 2;
+const OVERDUE_AFTER_DAYS = 2;
 
 const DAY_MS = 86_400_000;
 
@@ -56,19 +56,16 @@ export function overdueFlags(open: readonly OpenFlag[], today: string): OverdueF
 }
 
 /**
- * What the morning's run is told, from the tracker's list of open flags.
- *
- * `code` is the CLI's exit code, and the workflow does a different thing for
- * each: 0 closes an open `overdue flags` issue, 1 turns the run red and says
- * which flags in that issue, 2 is the check not finishing — `watch run failed`
- * — and leaves `overdue flags` as it was. A list the clock cannot make sense
- * of is a tracker it did not read; answering 0 to it would be the silent skip
- * that lets "read within two days" quietly stop being true.
+ * What the morning's run is told, from the tracker's list of open flags:
+ * nothing is overdue, some flags are (and `body` names them for the issue), or
+ * the list could not be read. A list the clock cannot make sense of is a
+ * tracker it did not read; calling it clear would be the silent skip that lets
+ * "read within two days" quietly stop being true.
  */
 export type ClockReading =
-  | { code: 0; open: number }
-  | { code: 1; open: number; overdue: OverdueFlag[]; body: string }
-  | { code: 2; reason: string };
+  | { kind: "clear"; open: number }
+  | { kind: "overdue"; open: number; overdue: OverdueFlag[]; body: string }
+  | { kind: "unread"; reason: string };
 
 const isOpenFlag = (f: unknown): f is OpenFlag => {
   if (typeof f !== "object" || f === null) return false;
@@ -83,17 +80,17 @@ export function readClock(listed: string, today: string): ClockReading {
   try {
     open = JSON.parse(listed);
   } catch {
-    return { code: 2, reason: "the tracker's answer is not JSON" };
+    return { kind: "unread", reason: "the tracker's answer is not JSON" };
   }
-  if (!Array.isArray(open)) return { code: 2, reason: "the tracker's answer is not a list" };
-  if (!open.every(isOpenFlag)) return { code: 2, reason: "a flag in the tracker's answer has no number, title or day" };
+  if (!Array.isArray(open)) return { kind: "unread", reason: "the tracker's answer is not a list" };
+  if (!open.every(isOpenFlag)) return { kind: "unread", reason: "a flag in the tracker's answer has no number, title or day" };
 
   const overdue = overdueFlags(open, today);
-  if (!overdue.length) return { code: 0, open: open.length };
+  if (!overdue.length) return { kind: "clear", open: open.length };
   const body = [
     `Flags no person has walked by the second morning after the day they were raised (${today}):`,
     "",
     ...overdue.map((f) => `- #${f.number} ${f.title} — raised ${f.raised}, ${f.days} days`),
   ].join("\n");
-  return { code: 1, open: open.length, overdue, body };
+  return { kind: "overdue", open: open.length, overdue, body };
 }
