@@ -5,7 +5,7 @@ import {
 } from "./core.js";
 import { openBrowserReader } from "./browser.js";
 import { fetchSource, printableAddress } from "./fetch-source.js";
-import { parseJsonText } from "./run-says.js";
+import { chooseEntries, parseJsonText, readRunArgs } from "./run-says.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -15,30 +15,19 @@ function log(level: "info" | "warn" | "error", msg: string, extra: Record<string
 
 const readJson = (url: URL) => parseJsonText(readFileSync(url, "utf8"));
 
-const commit = process.argv.includes("--commit");
-/**
- * `--only=<id>` runs one entry and leaves every other snapshot untouched.
- *
- * A curator who moves a slice marker on purpose has to re-baseline that entry
- * and only that entry: running all thirty would rewrite thirty snapshots and
- * bury the one deliberate change among them. The daily run passes no filter
- * and is unaffected.
- */
-const onlyArg = process.argv.find((a) => a.startsWith("--only="));
-const only = onlyArg?.slice("--only=".length);
-const watchlist = readJson(new URL("../../../watch/watchlist.json", import.meta.url)) as Watchlist;
+const args = readRunArgs(process.argv);
+const commit = args.persist === "commit";
+const only = args.only;
+const listed = readJson(new URL("../../../watch/watchlist.json", import.meta.url)) as Watchlist;
 const statePath = new URL("../../../watch/state.json", import.meta.url);
 const state = readJson(statePath) as WatchState;
 
-if (only) {
-  const wanted = watchlist.entries.filter((e) => e.id === only);
-  if (!wanted.length) {
-    log("error", "no such watch entry", { id: only });
-    process.exit(2);
-  }
-  watchlist.entries = wanted;
+const choice = chooseEntries(listed, only);
+if (choice.kind === "no-such-entry") {
+  log(choice.event.level, choice.event.msg, choice.event.fields);
+  process.exit(choice.exitCode);
 }
-
+const watchlist = choice.watchlist;
 
 /**
  * What a curator does about this flag. The advice per strategy lives in one
