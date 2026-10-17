@@ -248,10 +248,9 @@ export function addressKind(hostname: string): AddressKind {
  * Whether an address of this kind may be connected to at all, given where the
  * chain started.
  *
- * One rule, three callers, because there is one rule: a redirect target
- * spelled as a literal, the entry's own address, and every address a name
- * resolves to. It was written out three times in the first draft of s36 and
- * the three copies had already begun to differ.
+ * One rule, two callers, because there is one rule: a redirect target
+ * spelled as a literal, and every address a name resolves to. Two copies of
+ * it would be two rules as soon as one of them changed.
  */
 export function allowedAddress(going: AddressKind, entryHost: string): boolean {
   // Never, for anybody: a link-local address is not a place a source lives,
@@ -392,17 +391,7 @@ export function refusedAddress(url: string): string | null {
     return "the entry address carries a name and password, which this watch will not send";
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
     return `the entry address is a ${parsed.protocol.replace(":", "")} address, which this watch does not read`;
-  /**
-   * The entry's own address, judged by the rule that judges every hop.
-   *
-   * A url a curator typed is still an address (s36, scenario point 4). What
-   * the relative rule can refuse about the place a chain STARTS is only a
-   * link-local one — an entry is, by definition, already on its own kind,
-   * which is what keeps a loopback fixture readable. A NAME in the entry is
-   * judged the other way round: by the fetch tier at the connection, and by
-   * the browser tier not at all, because Chrome resolves it (#50).
-   */
-  if (!allowedAddress(addressKind(parsed.hostname), parsed.hostname))
+  if (addressKind(parsed.hostname) === "link-local")
     return "the entry address is a link-local address and never a source";
   return null;
 }
