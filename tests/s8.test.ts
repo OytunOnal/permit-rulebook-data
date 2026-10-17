@@ -246,18 +246,15 @@ describe("s8 — the new sources are watched and quote-checked like every other 
   it("slices the page it can read to the enumeration the notice reports, re-baselined in the same change", () => {
     const entry = watchlist.entries.find((e) => e.id === "fr-f2215-certificat-algerien")!;
     expect(entry.slice).toBeDefined();
-    // The watch rule written on 2026-09-09: a change that adds or moves a
-    // slice re-reads that entry's baseline in the same change, or the next
-    // run files our own edit as the authority's. The same rule reaches the two
-    // French fiches whose READING moved when the tooltip artefact was dropped.
-    // The talent fiche was re-read once more on 2026-09-16, when s19 widened
-    // its slice to the Chercheur tab — the same rule, applied again.
-    const reRead: Record<string, string> = { "fr-f16922-talent": "2026-09-16" };
+    // A change that adds or moves a slice re-reads that entry's baseline in the
+    // same change, or the next run files our own edit as the authority's. The
+    // baseline carries the slice it was read under, and that is the decision
+    // asserted here. Its date is not: the daily watch re-reads the baseline,
+    // so the date moves without anything this case guards having changed.
     for (const id of ["fr-f2215-certificat-algerien", "fr-f33952-ict", "fr-f16922-talent"]) {
       const e = watchlist.entries.find((x) => x.id === id)!;
       expect(state.entries[id], id).toBeDefined();
       expect(state.entries[id].slice_read, id).toBe(sliceFingerprint(e));
-      expect(state.entries[id].retrieved_at, id).toBe(reRead[id] ?? "2026-09-10");
     }
   });
 
