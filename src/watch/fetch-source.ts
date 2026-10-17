@@ -366,16 +366,21 @@ function floorLookup(entryHost: string, resolver: Resolver): LookupFunction {
 }
 
 /**
- * The refusal both readers give an address carrying a name and password, or
- * `null` when there is nothing to refuse.
+ * The refusal both readers give an entry address before anything is asked of
+ * it — not an address, carrying a name and password, on a scheme that is not
+ * a page, or on a link-local address — or `null` when there is nothing to
+ * refuse.
  *
  * One owner, because it is one rule: no source this project reads needs
  * credentials, and a reader that sends them is a reader that can leak them.
  * The fetcher met it first; the browser reader asks the same question here
  * rather than spelling a second opinion of it.
  *
- * A malformed address is not this function's fault to report — it has its own
- * refusal, in each reader.
+ * The link-local refusal joined it in #49. The fetch tier refused a
+ * link-local entry inside `fetchSource` from s36 on, and the browser tier,
+ * which asked only this function, opened one: the architecture review of
+ * 2026-10-17 read `http://169.254.169.254/` as an entry Chrome on the runner
+ * would have loaded. Asked here, both readers refuse it by one rule.
  */
 export function refusedAddress(url: string): string | null {
   let parsed: URL;
@@ -390,6 +395,18 @@ export function refusedAddress(url: string): string | null {
     return "the entry address carries a name and password, which this watch will not send";
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
     return `the entry address is a ${parsed.protocol.replace(":", "")} address, which this watch does not read`;
+  /**
+   * The entry's own address, judged by the rule that judges every hop.
+   *
+   * A url a curator typed is still an address (s36, scenario point 4). What
+   * the relative rule can refuse about the place a chain STARTS is only a
+   * link-local one — an entry is, by definition, already on its own kind,
+   * which is what keeps a loopback fixture readable. A NAME in the entry is
+   * judged the other way round: by the fetch tier at the connection, and by
+   * the browser tier not at all, because Chrome resolves it (#50).
+   */
+  if (!allowedAddress(addressKind(parsed.hostname), parsed.hostname))
+    return "the entry address is a link-local address and never a source";
   return null;
 }
 
@@ -540,21 +557,8 @@ export const fetchSource = (async (
   try {
     const entry = new URL(url);
     const asked = entry.origin;
-    /**
-     * The entry's own address, judged by the rule that judges every hop.
-     *
-     * A url a curator typed is still an address (scenario point 4). What the
-     * relative rule can refuse about the place a chain STARTS is only a
-     * link-local one — an entry is, by definition, already on its own kind,
-     * which is what keeps a loopback fixture readable. A NAME in the entry is
-     * judged the other way round, at the connection, by the hook below.
-     */
-    if (!allowedAddress(addressKind(entry.hostname), entry.hostname))
-      return {
-        ok: false,
-        error: "the entry address is a link-local address and never a source",
-        failure: "refused-by-us",
-      };
+    // The entry's own address was judged above, by `refusedAddress`; a NAME
+    // in it is judged at the connection, by the hook below.
     let target = url;
     // One deadline for the source, shared by every hop it makes. It is a
     // moment and not a signal because each hop is its own request now, and

@@ -1446,3 +1446,40 @@ describe("s34 — a reader that can find no Chrome says so and reads nothing", (
     } finally { await reader.close(); }
   });
 });
+
+describe("#49 — a browser entry on a link-local address is refused before Chrome is asked", () => {
+  /**
+   * A reader whose Chrome counts the times it was looked for and is never
+   * found, so a case needs no browser and can tell whether one was asked.
+   */
+  const counting = () => {
+    const asked = { times: 0 };
+    const reader = openBrowserReader({
+      chromeAt: () => { asked.times += 1; throw new Error("no Chrome found"); },
+    });
+    return { asked, reader };
+  };
+
+  it.each([
+    ["the metadata address", "http://169.254.169.254/latest/"],
+    ["an IPv6 link-local address", "http://[fe80::1]/admin"],
+    ["the metadata address written as IPv4-mapped IPv6", "http://[::ffff:a9fe:a9fe]/latest/"],
+  ])("refuses %s as ours and asks no browser for it", async (_, url) => {
+    const { asked, reader } = counting();
+    try {
+      const { reports } = await runWatch({ entries: [entry({ url })] }, emptyState, refuse, "2026-10-17", reader.read);
+      expect(reports[0]!.outcome).toBe("unreachable");
+      expect(reports[0]!.failure).toBe("refused-by-us");
+      expect(reports[0]!.error, "the refusal does not say what kind of address it is").toContain("link-local");
+      expect(asked.times, "Chrome was asked for a link-local entry").toBe(0);
+    } finally { await reader.close(); }
+  });
+
+  it("still asks the browser for an entry on loopback, where every fixture lives", async () => {
+    const { asked, reader } = counting();
+    try {
+      await runWatch({ entries: [entry()] }, emptyState, refuse, "2026-10-17", reader.read);
+      expect(asked.times, "a loopback entry was refused before the browser").toBe(1);
+    } finally { await reader.close(); }
+  });
+});

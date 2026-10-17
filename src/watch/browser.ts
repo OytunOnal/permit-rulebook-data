@@ -34,17 +34,16 @@ import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
  * gates it has always had, stated for what they are:
  *
  * - the entry ADDRESS is refused before Chrome is asked when it is not an
- *   address at all, carries a name and password, or is on a scheme that is
- *   not a page (`refusedAddress`) — and that is the whole of it: what KIND
- *   of address a browser entry names is not asked here, because the fetch
- *   tier's own entry check is the fetch tier's (`fetchSource`);
+ *   address at all, carries a name and password, is on a scheme that is not
+ *   a page, or is a link-local address (`refusedAddress`). The last was the
+ *   fetch tier's alone until #49, and this tier opened such an entry;
  * - a navigation that leaves the entry's origin is refused when it happens
  *   (`cdp.ts`).
  *
  * The browser entries — seven of the watchlist's 46, counted 2026-09-24 as
  * those with `strategy: "browser"` — are fixed pages on public hosts a
  * curator chose, and that, not a check in this file, is what stands between
- * this tier and an address nobody meant to visit.
+ * this tier and a NAME that resolves somewhere nobody meant to visit (#50).
  *
  * **Where things are.** This was one file until 2026-09-24, by then five jobs
  * deep, so it is four — split along what each part answers to:
@@ -118,8 +117,8 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
     // entry read `ok: true` and the host saw `Authorization: Basic …` on the
     // page AND on the favicon, with the page behind the password hashed and
     // ready to commit. The rule — credentials, a malformed address, a scheme
-    // this watch does not read — is the fetcher's, asked here rather than
-    // spelled again.
+    // this watch does not read, a link-local address — is the fetcher's,
+    // asked here rather than spelled again.
     const refused = refusedAddress(entry.url);
     // Both are ours and neither is a minute: an address this watch will not
     // open stays one, and a machine with no Chrome will not grow one during
