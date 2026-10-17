@@ -35,8 +35,8 @@ import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
  *
  * - the entry ADDRESS is refused before Chrome is asked when it is not an
  *   address at all, carries a name and password, is on a scheme that is not
- *   a page, or is a link-local address (`refusedAddress`). The last was the
- *   fetch tier's alone until #49, and this tier opened such an entry;
+ *   a page, or is a link-local address (`refusedAddress`, the fetch tier's
+ *   own entry check, so both tiers refuse an entry by one rule);
  * - a navigation that leaves the entry's origin is refused when it happens
  *   (`cdp.ts`).
  *

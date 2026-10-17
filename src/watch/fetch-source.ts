@@ -371,16 +371,13 @@ function floorLookup(entryHost: string, resolver: Resolver): LookupFunction {
  * a page, or on a link-local address — or `null` when there is nothing to
  * refuse.
  *
- * One owner, because it is one rule: no source this project reads needs
- * credentials, and a reader that sends them is a reader that can leak them.
- * The fetcher met it first; the browser reader asks the same question here
- * rather than spelling a second opinion of it.
- *
- * The link-local refusal joined it in #49. The fetch tier refused a
- * link-local entry inside `fetchSource` from s36 on, and the browser tier,
- * which asked only this function, opened one: the architecture review of
- * 2026-10-17 read `http://169.254.169.254/` as an entry Chrome on the runner
- * would have loaded. Asked here, both readers refuse it by one rule.
+ * One owner for all four, because each is a question about the entry address
+ * alone, asked before either reader opens anything, and a reader that spelled
+ * its own copy would be the reader whose copy drifts. Each is a door a reader
+ * must not open: credentials a reader sends are credentials it can leak, a
+ * scheme that is not a page is not a source, and a link-local address is
+ * where a hosted runner's credentials answer. The fetcher and the browser
+ * reader both ask here, so an entry one refuses the other refuses too.
  */
 export function refusedAddress(url: string): string | null {
   let parsed: URL;
@@ -523,12 +520,13 @@ export const fetchSource = (async (
 ): Promise<FetchResult> => {
   /**
    * What this watch will not ask for at all: a malformed address, one
-   * carrying a name and password, one on a scheme that is not a page.
+   * carrying a name and password, one on a scheme that is not a page, one on
+   * a link-local address.
    *
    * Refused before anything is requested and without repeating what is
-   * wrong. `String(e)` on a credentialled address put the password into the
-   * error, the log, a flag and an issue (Security review, 2026-09-24); the
-   * coverage gate refuses such an entry in the watchlist too, where it is a
+   * wrong: `String(e)` on a credentialled address puts the password into the
+   * error, and from there into the log, a flag and an issue. The coverage
+   * gate refuses a credentialled entry in the watchlist too, where it is a
    * curator's to fix, and this is the floor under that for a url arriving by
    * any other road.
    */
