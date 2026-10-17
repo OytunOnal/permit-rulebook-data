@@ -48,7 +48,8 @@ jobs:
     permissions:
       # Commits watch/state.json and the flag files.
       contents: write
-      # Opens one issue per new flag, and one when the run itself fails.
+      # Opens one issue per new flag, one when the run itself fails, and one
+      # naming the flags no person has walked in two days.
       issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (node24)
@@ -150,6 +151,71 @@ jobs:
           done <<< "$FLAGS"
           exit $failed
 
+      # The clock on a flag (#62). A flag no person has walked by the second
+      # morning after the day it was raised turns the morning red, as a refusal
+      # by us does, and is named in one issue, `overdue flags`; every open
+      # `source-change` flag counts, a due reminder as much as a detected change.
+      #
+      # Three readings, kept apart because each does something different:
+      # `clear`, `overdue`, and the tracker not read at all. The last is this
+      # step failing — the check did not finish, so `watch run failed` says so
+      # and `overdue flags` is left as it was. Exit 1 counts as overdue only
+      # with a body to file: a clock that crashed has read nothing, and a crash
+      # exits 1 too.
+      #
+      # A measurement run reads no clock. It leaves nothing behind, and an open
+      # flag says nothing about what it was dispatched to measure.
+      - name: Read the clock on open flags
+        id: clock
+        if: ${{ !cancelled() && github.event.inputs.commit != 'false' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          status=0
+          if gh issue list --label source-change --state open --json number,title,createdAt --limit 1000 > "$RUNNER_TEMP/open-flags.json"; then
+            node dist/src/watch/cli-overdue.js < "$RUNNER_TEMP/open-flags.json" > "$RUNNER_TEMP/overdue.md" || status=$?
+          else
+            status=2
+          fi
+          if [ "$status" = 0 ]; then
+            echo "reading=clear" >> "$GITHUB_OUTPUT"
+          elif [ "$status" = 1 ] && [ -s "$RUNNER_TEMP/overdue.md" ]; then
+            echo "reading=overdue" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::the tracker's open flags could not be read, so this morning nobody knows whether a flag is overdue"
+            exit 1
+          fi
+
+      # One issue for the clock, never `source-change` (metric 1 counts that
+      # label, and this issue would count itself). It is the run's to keep: a
+      # red morning comments on it, reopening it if it was closed, and the first
+      # morning with nothing overdue says so and closes it — what it says is the
+      # tracker's own state, so leaving it to a person to close would be one
+      # more thing for nobody to read.
+      - name: Say which flags are overdue
+        if: ${{ !cancelled() && (steps.clock.outputs.reading == 'overdue' || steps.clock.outputs.reading == 'clear') }}
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          READING: "${{ steps.clock.outputs.reading }}"
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          title="overdue flags"
+          # The exact title, open or closed: a search matches words, not titles.
+          found=$(gh issue list --label watch --state all --search "$title in:title" --json number,state,title --jq 'map(select(.title == "overdue flags")) | first // empty | "\(.number) \(.state)"')
+          number=${found%% *}
+          state=${found#* }
+          if [ "$READING" = overdue ]; then
+            gh label create watch --color b60205 --description "The daily source watch itself" --force
+            printf '\nRun: %s\n' "$RUN_URL" >> "$RUNNER_TEMP/overdue.md"
+            if [ -z "$found" ]; then
+              gh issue create --title "$title" --body-file "$RUNNER_TEMP/overdue.md" --label watch
+            else
+              if [ "$state" = CLOSED ]; then gh issue reopen "$number"; fi
+              gh issue comment "$number" --body-file "$RUNNER_TEMP/overdue.md"
+            fi
+          elif [ -n "$found" ] && [ "$state" = OPEN ]; then
+            gh issue close "$number" --comment "No overdue flag this morning. Run: $RUN_URL"
+          fi
+
       - name: Fail the run if any source was unreachable
         if: steps.watch.outcome == 'failure'
         run: |
@@ -227,10 +293,20 @@ jobs:
           title="watch run failed"
           body="The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           Commit: ${{ github.sha }}
-          Nothing here says a source changed — it says the check did not finish, so today's sources are unread."
+          Nothing here says a source changed — it says the check did not finish; the failed step in the run says which part went unread."
           existing=$(gh issue list --label watch --state open --search "$title in:title" --json number --jq '.[0].number')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"
           else
             gh issue create --title "$title" --body "$body" --label watch
           fi
+
+      # Last, after `watch run failed` has decided whether to speak. An overdue
+      # flag turns the run red, but it is not the check failing, and
+      # `failure()` cannot tell one red step from another; behind it, this step
+      # reddens the run without filing anything `overdue flags` did not say.
+      - name: Fail the run on an overdue flag
+        if: ${{ !cancelled() && steps.clock.outputs.reading == 'overdue' }}
+        run: |
+          echo "::error::a flag no person has walked is two days old or more — see the issue overdue flags"
+          exit 1
