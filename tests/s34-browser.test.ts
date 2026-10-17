@@ -1114,8 +1114,8 @@ describe.skipIf(Boolean(noChrome) && !CI)("s34 — the watch names itself to the
       // favicon, the lot. Not every request Chrome can make on a page's
       // behalf: a service worker fetches from a context this reader does not
       // intercept, and a source that registers one routes its later requests
-      // through it unnamed. That gap is declared in CONTEXT.md's Browser tier
-      // entry and in the scenario's correction paragraph rather than being
+      // through it unnamed. That gap is declared in the site's GLOSSARY.md
+      // (Browser tier) and in the scenario's correction paragraph rather than being
       // asserted away here (Security review, 2026-09-24).
       expect(metAtSource.length, "the source was never asked for anything").toBeGreaterThan(0);
       expect(metAtSource.every((met) => met.named), "the source was not told who is asking").toBe(true);
