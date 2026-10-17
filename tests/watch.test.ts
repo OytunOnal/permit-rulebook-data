@@ -114,6 +114,19 @@ describe("watch pass outcomes", () => {
     expect(page.context).toContain("200 Euro");
   });
 
+  it("the excerpt is cut on characters, never inside one", async () => {
+    // Under UTF-16 units the first difference sits at unit 61, so the span's
+    // start (61 - 60) falls between the halves of the leading emoji and its
+    // end (61 + 120) between the halves of the trailing one.
+    const single: Watchlist = { entries: [{ id: "page", url: "https://x/page", strategy: "html", kind: "sentinel" }] };
+    const page = (difference: string) =>
+      okFetcher({ "https://x/page": `<p>😀${"b".repeat(59)}${difference}${"c".repeat(118)}😃${"d".repeat(10)}</p>` });
+    const { nextState } = await runWatch(single, empty, page("X"), "2026-09-02");
+    const { reports } = await runWatch(single, nextState, page("Y"), "2026-09-03");
+    // 60 characters before the difference and 120 from it.
+    expect(reports[0]!.context).toBe(`😀${"b".repeat(59)}Y${"c".repeat(118)}😃`);
+  });
+
   it("whitespace-only page churn does NOT flag (the normalize invariant, end to end)", async () => {
     const v1 = okFetcher({ "https://x/page": "<p>Wert: 100  Euro</p>", "https://x/doc.pdf": enc("A") });
     const v2 = okFetcher({ "https://x/page": "<p>\n  Wert: 100 Euro </p>", "https://x/doc.pdf": enc("A") });
