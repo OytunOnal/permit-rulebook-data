@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { WatchEntry } from "../src/watch/core.js";
-import { chooseEntries, parseJsonText, readRunArgs, sayWhereItRead } from "../src/watch/run-says.js";
+import type { WatchEntry, WatchState } from "../src/watch/core.js";
+import { chooseEntries, parseJsonText, readRunArgs, sayWhereItRead, settleState } from "../src/watch/run-says.js";
 
 /**
  * #54 — what a finished watch run says, out of the CLI.
@@ -42,6 +42,46 @@ describe("chooseEntries — the --only choice", () => {
   it("runs every entry when no id is given", () => {
     expect(chooseEntries(watchlist, undefined)).toEqual({ kind: "run", watchlist });
     expect(chooseEntries(watchlist, "")).toEqual({ kind: "run", watchlist });
+  });
+});
+
+describe("settleState — what becomes of the state", () => {
+  const snapshot = (hash: string) => ({ hash, retrieved_at: "2026-10-01", history: [] });
+  const previous: WatchState = { entries: { a: snapshot("1"), b: snapshot("2") }, last_run: "2026-10-16" };
+  const pass: WatchState = { entries: { b: snapshot("3") }, last_run: "2026-10-18", unread: [] };
+  const fetched = { entries: [entry("b")] };
+
+  it("writes nothing on a dry run", () => {
+    expect(settleState({ args: { persist: "dry-run" }, previous, pass, fetched, today: "2026-10-18" }))
+      .toEqual({ outcome: { kind: "dry-run" }, text: null });
+  });
+
+  it("writes a full run's state as the pass left it", () => {
+    const settled = settleState({ args: { persist: "commit" }, previous, pass, fetched, today: "2026-10-18" });
+    expect(settled.outcome).toEqual({ kind: "committed", entries: 1, only: undefined, last_run: "2026-10-18" });
+    expect(settled.text).toBe([
+      "{",
+      '  "entries": {',
+      '    "b": {',
+      '      "hash": "3",',
+      '      "retrieved_at": "2026-10-01",',
+      '      "history": []',
+      "    }",
+      "  },",
+      '  "last_run": "2026-10-18",',
+      '  "unread": []',
+      "}",
+      "",
+    ].join("\n"));
+  });
+
+  it("carries every other entry over on a targeted run, and keeps the last full run's day", () => {
+    const settled = settleState({ args: { persist: "commit", only: "b" }, previous, pass, fetched, today: "2026-10-18" });
+    expect(settled.outcome).toEqual({ kind: "committed", entries: 2, only: "b", last_run: "2026-10-16" });
+    expect(parseJsonText(settled.text ?? "")).toMatchObject({
+      entries: { a: { hash: "1" }, b: { hash: "3" } },
+      last_run: "2026-10-16",
+    });
   });
 });
 

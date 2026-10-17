@@ -6,7 +6,7 @@
  * returns and exits. Every branch that decides what a run says is here, where
  * a test can call it; the CLI holds only I/O.
  */
-import type { FetchResult, Watchlist } from "./core.js";
+import { mergeTargetedRun, type FetchResult, type WatchState, type Watchlist } from "./core.js";
 import { printableAddress } from "./fetch-source.js";
 
 export type LogLevel = "info" | "warn" | "error";
@@ -54,6 +54,43 @@ export function chooseEntries(watchlist: Watchlist, only: string | undefined): E
     return { kind: "no-such-entry", event: { level: "error", msg: "no such watch entry", fields: { id: only } }, exitCode: 2 };
   }
   return { kind: "run", watchlist: { ...watchlist, entries: wanted } };
+}
+
+/** What became of the state at the end of a run. */
+export type StateOutcome =
+  | { kind: "committed"; entries: number; only?: string; last_run?: string }
+  | { kind: "dry-run" };
+
+/** A finished pass, and what the command line asked to do with its state. */
+export interface PassToSettle {
+  args: RunArgs;
+  previous: WatchState;
+  pass: WatchState;
+  /** The entries the pass read: the whole watchlist, or the one `--only` named. */
+  fetched: Watchlist;
+  today: string;
+}
+
+/** What becomes of the state: the outcome the run reports, and the file's text when it is written. */
+export interface SettledState {
+  outcome: StateOutcome;
+  text: string | null;
+}
+
+export function settleState(settle: PassToSettle): SettledState {
+  if (settle.args.persist === "dry-run") return { outcome: { kind: "dry-run" }, text: null };
+  // With `--only`, every other entry's snapshot is carried over untouched: a
+  // targeted re-baseline must not quietly drop the twenty-nine it did not
+  // fetch, and it must not stamp the day every source was last re-read. What
+  // it may say something about is the one entry it did fetch. The rule is
+  // `mergeTargetedRun`, beside the code that writes a full run's state.
+  const merged = settle.args.only
+    ? mergeTargetedRun(settle.previous, settle.pass, settle.fetched, settle.today)
+    : settle.pass;
+  return {
+    outcome: { kind: "committed", entries: Object.keys(merged.entries).length, only: settle.args.only, last_run: merged.last_run },
+    text: JSON.stringify(merged, null, 2) + "\n",
+  };
 }
 
 /**

@@ -1,11 +1,11 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import {
-  mergeTargetedRun, runSummary, runWatch, STRATEGIES, unreadNotices,
+  runSummary, runWatch, STRATEGIES, unreadNotices,
   type BrowserReader, type Fetcher, type FetchResult, type WatchReport, type WatchState, type Watchlist,
 } from "./core.js";
 import { openBrowserReader } from "./browser.js";
 import { fetchSource, printableAddress } from "./fetch-source.js";
-import { chooseEntries, parseJsonText, readRunArgs, sayWhereItRead } from "./run-says.js";
+import { chooseEntries, parseJsonText, readRunArgs, sayWhereItRead, settleState } from "./run-says.js";
 
 function log(level: "info" | "warn" | "error", msg: string, extra: Record<string, unknown> = {}) {
   const line = JSON.stringify({ ts: new Date().toISOString(), level, msg, ...extra });
@@ -16,13 +16,11 @@ function log(level: "info" | "warn" | "error", msg: string, extra: Record<string
 const readJson = (url: URL) => parseJsonText(readFileSync(url, "utf8"));
 
 const args = readRunArgs(process.argv);
-const commit = args.persist === "commit";
-const only = args.only;
 const listed = readJson(new URL("../../../watch/watchlist.json", import.meta.url)) as Watchlist;
 const statePath = new URL("../../../watch/state.json", import.meta.url);
 const state = readJson(statePath) as WatchState;
 
-const choice = chooseEntries(listed, only);
+const choice = chooseEntries(listed, args.only);
 if (choice.kind === "no-such-entry") {
   log(choice.event.level, choice.event.msg, choice.event.fields);
   process.exit(choice.exitCode);
@@ -133,17 +131,11 @@ for (const notice of unreadNotices(verdict, today)) {
   });
 }
 
-if (commit) {
-  // With `--only`, every other entry's snapshot is carried over untouched: a
-  // targeted re-baseline must not quietly drop the twenty-nine it did not
-  // fetch, and it must not stamp the day every source was last re-read. What
-  // it may say something about is the one entry it did fetch. The rule lives
-  // beside the code that writes a full run's state, where it can be read by a
-  // test rather than by a grep over this file.
-  const merged = only ? mergeTargetedRun(state, nextState, watchlist, today) : nextState;
-  writeFileSync(statePath, JSON.stringify(merged, null, 2) + "\n");
+const settled = settleState({ args, previous: state, pass: nextState, fetched: watchlist, today });
+if (settled.text !== null) writeFileSync(statePath, settled.text);
+if (settled.outcome.kind === "committed") {
   log("info", "state committed", {
-    entries: Object.keys(merged.entries).length, only: only ?? null, last_run: merged.last_run,
+    entries: settled.outcome.entries, only: settled.outcome.only ?? null, last_run: settled.outcome.last_run,
   });
 } else {
   log("info", "dry run — state untouched (use --commit to persist)");
