@@ -3,3 +3,5 @@ dist/
 .env
 .env.*
 !.env.example
+# Run output and agents' scratch, never committed.
+.run/
