@@ -225,8 +225,9 @@ them by hand (Standards review, 2026-09-08):
 
 - **`source-change`** — a watched official source changed. The issue carries the
   flag file, and a person reads the diff before any value moves.
-- **`watch`** — the daily run itself failed. It says the check did not finish,
-  which is not the same as a source having changed.
+- **`watch`** — the daily run itself: `watch run failed` says the check did not
+  finish, which is not the same as a source having changed; `overdue flags`
+  says a flag has waited two days for a person (below).
 
 ## The daily watch and the site rebuild
 
@@ -309,6 +310,20 @@ last line, `watch complete`, carries `lapsed`, `outages` and `refused` beside
 in the log and not only in the state. The workflow does not count any of this:
 the CLI's exit code is the one signal it reads, and `watch.yml` was not
 touched.
+
+**An overdue flag is the other red** (#62). The site says a flag is read
+within two days, so a `source-change` issue still open on the second morning
+after the day it was raised — counted in UTC days, a flag raised on the 16th is
+overdue on the 18th whatever hour either run kept — turns the run red, a due
+reminder as much as a detected change. It is not the check failing, so it files
+no `watch run failed`: the run keeps one issue, `overdue flags`, names each
+overdue flag there with the day it was raised and its age, comments on it each
+red morning, and closes it itself on the first morning nothing is overdue. A
+person walks the flags; the issue follows. If the tracker cannot be read, that
+is the check not finishing — `watch run failed`, and `overdue flags` is left as
+it was. A measurement run reads no clock. The decision is
+`src/watch/overdue.ts`; `cli-overdue.ts` reads `gh issue list` on standard input
+and is the one place its exit codes are written down.
 
 ### Moving a slice re-reads its baseline, in the same commit
 
