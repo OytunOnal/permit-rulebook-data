@@ -6,7 +6,10 @@
  * returns and exits. Every branch that decides what a run says is here, where
  * a test can call it; the CLI holds only I/O.
  */
-import { mergeTargetedRun, type FetchResult, type WatchState, type Watchlist } from "./core.js";
+import {
+  mergeTargetedRun, runSummary, STRATEGIES, unreadNotices,
+  type FetchResult, type Outcome, type RunVerdict, type UnreadNotice, type WatchReport, type WatchState, type Watchlist,
+} from "./core.js";
 import { printableAddress } from "./fetch-source.js";
 
 export type LogLevel = "info" | "warn" | "error";
@@ -16,6 +19,145 @@ export interface LogEvent {
   level: LogLevel;
   msg: string;
   fields: Record<string, unknown>;
+}
+
+/** One flag file: its name under `watch/flags/` and its whole text. */
+export interface FlagDocument {
+  name: string;
+  body: string;
+}
+
+/** A finished run: its reports and verdict, its day, and what became of its state. */
+export interface FinishedRun {
+  reports: WatchReport[];
+  verdict: RunVerdict;
+  today: string;
+  state: StateOutcome;
+}
+
+/** What a finished run says: the flags it files, the lines it logs, the code it exits with. */
+export interface RunSays {
+  flags: FlagDocument[];
+  events: LogEvent[];
+  exitCode: 0 | 1;
+}
+
+export function sayRun(run: FinishedRun): RunSays {
+  const { reports, verdict, today } = run;
+  return {
+    flags: reports
+      .filter((r) => r.outcome === "changed" || r.outcome === "reminder-due")
+      .map((r) => flagOf(r, today)),
+    events: [
+      ...reports.map(reportEvent),
+      ...unreadNotices(verdict, today).map(noticeEvent),
+      stateEvent(run.state),
+      completeEvent(reports, verdict),
+    ],
+    exitCode: verdict.red ? 1 : 0,
+  };
+}
+
+/**
+ * What a curator does about this flag. The advice per strategy lives in one
+ * table in core.ts, so a `pdf-text` entry whose WORDS moved is told what to do
+ * with a PDF and not with a web page. What a sentinel means is the exception,
+ * because it is about the entry's kind and not about how it is read.
+ */
+function remediation(report: WatchReport): string {
+  if (report.kind === "sentinel" && report.outcome !== "reminder-due")
+    return "Sentinel changed — it backs no dataset value directly. Read the source, act on the intent below, and extend the watchlist if new value pages appeared.";
+  return STRATEGIES[report.strategy].remediation;
+}
+
+function flagOf(report: WatchReport, today: string): FlagDocument {
+  const body = [
+    `# Watch flag: ${report.id} — ${report.outcome}`,
+    "",
+    `- url: ${printableAddress(report.url)}`,
+    `- kind: ${report.kind}`,
+    `- date: ${today}`,
+    report.old_hash ? `- old: ${report.old_hash}` : "",
+    report.new_hash ? `- new: ${report.new_hash}` : "",
+    report.note ? `\nIntent: ${report.note}` : "",
+    report.context ? `\n> …${report.context}…` : "",
+    "",
+    remediation(report),
+  ].filter(Boolean).join("\n");
+  // Reminders use a stable name (self-overwriting, no daily pile-up);
+  // content changes keep the date so history stays visible.
+  const name = report.outcome === "reminder-due" ? `${report.id}-reminder.md` : `${report.id}-${today}.md`;
+  return { name, body: body + "\n" };
+}
+
+/** How loudly each outcome is logged: a source not read is an error, news is a warning. */
+const LEVEL_OF: Record<Outcome, LogLevel> = {
+  unreachable: "error",
+  unchanged: "info",
+  ok: "info",
+  changed: "warn",
+  baseline: "warn",
+  "reminder-due": "warn",
+};
+
+function reportEvent(r: WatchReport): LogEvent {
+  return {
+    level: LEVEL_OF[r.outcome],
+    msg: `watch:${r.outcome}`,
+    fields: {
+      id: r.id, url: printableAddress(r.url), old: r.old_hash, new: r.new_hash, error: r.error,
+      // Which kind of failure it was, so a morning's log says why the run is
+      // the colour it is without anybody reading the error back.
+      failure: r.failure,
+    },
+  };
+}
+
+/**
+ * What each unread source is, in one line each: a lapse warned about, an
+ * outage and a refusal shouted about.
+ *
+ * The words and the loudness are the run's, decided in `core.ts` beside the
+ * rule that colours the day — so the one place that knows a source has been
+ * silent twice inside the week is the one place that says so, and this module
+ * passes on what it is handed. An outage's line carries the mornings it was
+ * counted from, so a curator reads the days rather than the word alone.
+ */
+function noticeEvent(notice: UnreadNotice): LogEvent {
+  return {
+    level: notice.level,
+    msg: `watch:${notice.event}`,
+    fields: { id: notice.id, url: printableAddress(notice.url), days: notice.days, today: notice.today },
+  };
+}
+
+function stateEvent(state: StateOutcome): LogEvent {
+  if (state.kind === "committed") {
+    return {
+      level: "info",
+      msg: "state committed",
+      fields: { entries: state.entries, only: state.only ?? null, last_run: state.last_run },
+    };
+  }
+  return { level: "info", msg: "dry run — state untouched (use --commit to persist)", fields: {} };
+}
+
+/**
+ * The run's last line, and the exit code: the one signal the workflow reads.
+ *
+ * `lapsed` and `outages` sit beside `unreachable` so that a green day on
+ * which a source still went unread is visible in the log and not only in
+ * `watch/state.json`; `refused` is there so the three add up to
+ * `unreachable` rather than leaving a reader to guess where the rest went.
+ *
+ * The exit code is the verdict's, not a count of failures: a source that has
+ * been silent for one morning is a lapse and the run stays green, while an
+ * outage — two mornings running — and anything the floor refused to request
+ * are red the same day. `.github/workflows/watch.yml` keys on the step's
+ * outcome and counts nothing itself (s35 point 5).
+ */
+function completeEvent(reports: WatchReport[], verdict: RunVerdict): LogEvent {
+  return { level: verdict.red ? "error" : "info", msg: "watch complete", fields: { ...runSummary(reports, verdict) } };
 }
 
 /** What the command line asks of a run. */
