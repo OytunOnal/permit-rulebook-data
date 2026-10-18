@@ -103,7 +103,7 @@ describe("watch pass outcomes", () => {
     expect(second.reports.map((r) => r.outcome)).toEqual(["unchanged", "unchanged", "ok"]);
   });
 
-  it("a content change is flagged with both hashes and quoted context", async () => {
+  it("a content change is flagged with both hashes and an excerpt",async () => {
     const v1 = okFetcher({ "https://x/page": "<p>Wert: 100 Euro fest</p>", "https://x/doc.pdf": enc("A") });
     const v2 = okFetcher({ "https://x/page": "<p>Wert: 200 Euro fest</p>", "https://x/doc.pdf": enc("A") });
     const { nextState } = await runWatch(list, empty, v1, "2026-09-02");

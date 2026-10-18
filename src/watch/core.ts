@@ -88,7 +88,7 @@ export const STRATEGIES: Record<WatchStrategy, {
   "pdf-text": {
     fetches: true, compares: true, redirects: "same-origin",
     no_text_snapshot: "pdf-text tier — no text snapshot; the source has not been fetched yet",
-    remediation: "The PDF's WORDS changed, not just its bytes. Read the diff context below, then update the dataset value(s) with quote + retrieval date; move the old value into history.",
+    remediation: "The PDF's WORDS changed, not just its bytes. Read the excerpt above, then update the dataset value(s) with quote + retrieval date; move the old value into history.",
   },
   pdf: {
     fetches: true, compares: true, redirects: "same-origin",

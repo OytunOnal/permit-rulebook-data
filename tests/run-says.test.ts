@@ -216,7 +216,7 @@ describe("sayRun — the remediation a flag ends on", () => {
 
   it("gives every other report its strategy's sentence", () => {
     expect(lastLine(pdfTextChange)).toBe(
-      "The PDF's WORDS changed, not just its bytes. Read the diff context below, then update the dataset value(s) with quote + retrieval date; move the old value into history.");
+      "The PDF's WORDS changed, not just its bytes. Read the excerpt above, then update the dataset value(s) with quote + retrieval date; move the old value into history.");
     expect(lastLine(report({ id: "p", strategy: "pdf", outcome: "changed", old_hash: OLD, new_hash: NEW }))).toBe(
       "PDF changed — a human must read it; no value is extracted automatically.");
     expect(lastLine(report({ id: "l", strategy: "human", outcome: "reminder-due" }))).toBe(
