@@ -109,7 +109,7 @@ function excerptSection(excerpt: string): string {
   const words = makePrintable(excerpt);
   if (!words) return "The page's words around the first difference print nothing; read the page.";
   const fence = "`".repeat(Math.max(3, longestBacktickRun(words) + 1));
-  return ["The page now reads, around the first difference (cut at both ends):", "", `${fence}text`, words, fence].join("\n");
+  return ["The page now reads, around the first difference (cut where the page goes on):", `${fence}text`, words, fence].join("\n");
 }
 
 /** Bounded by the cut: an excerpt is at most 180 characters. */

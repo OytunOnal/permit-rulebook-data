@@ -53,8 +53,7 @@ describe("sayRun — the flags a run files, in today's format", () => {
         "",
         "Intent: Backs the salary threshold.",
         "",
-        "The page now reads, around the first difference (cut at both ends):",
-        "",
+        "The page now reads, around the first difference (cut where the page goes on):",
         "```text",
         "the gross monthly salary is at least EUR 5,688",
         "```",
@@ -121,7 +120,7 @@ describe("sayRun — the flag's excerpt is the page's", () => {
     // The one link in the flag is our url line; the page's words make none, and no image.
     expect(html.match(/<a\b[^>]*>/g)).toEqual(['<a href="https://ind.nl/en/blue-card">']);
     expect(html).not.toMatch(/<img\b/);
-    expect(outside).toContain("<p>The page now reads, around the first difference (cut at both ends):</p>");
+    expect(outside).toContain("<p>The page now reads, around the first difference (cut where the page goes on):</p>");
     expect(outside).toContain("<p>Update the dataset value(s) with quote + retrieval date; move the old value into history.</p>");
   });
 
@@ -136,8 +135,7 @@ describe("sayRun — the flag's excerpt is the page's", () => {
       "",
       "Intent: Backs the salary threshold.",
       "",
-      "The page now reads, around the first difference (cut at both ends):",
-      "",
+      "The page now reads, around the first difference (cut where the page goes on):",
       "````text",
       "ask @login about #12, see [x](y) <img src=x> and ``` then esrever [31m red 😀 end",
       "````",
