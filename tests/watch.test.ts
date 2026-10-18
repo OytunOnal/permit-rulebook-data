@@ -103,7 +103,7 @@ describe("watch pass outcomes", () => {
     expect(second.reports.map((r) => r.outcome)).toEqual(["unchanged", "unchanged", "ok"]);
   });
 
-  it("a content change is flagged with both hashes and quoted context", async () => {
+  it("a content change is flagged with both hashes and an excerpt",async () => {
     const v1 = okFetcher({ "https://x/page": "<p>Wert: 100 Euro fest</p>", "https://x/doc.pdf": enc("A") });
     const v2 = okFetcher({ "https://x/page": "<p>Wert: 200 Euro fest</p>", "https://x/doc.pdf": enc("A") });
     const { nextState } = await runWatch(list, empty, v1, "2026-09-02");
@@ -111,7 +111,20 @@ describe("watch pass outcomes", () => {
     const page = reports.find((r) => r.id === "page")!;
     expect(page.outcome).toBe("changed");
     expect(page.old_hash).not.toBe(page.new_hash);
-    expect(page.context).toContain("200 Euro");
+    expect(page.excerpt).toContain("200 Euro");
+  });
+
+  it("the excerpt is cut on characters, never inside one", async () => {
+    // Under UTF-16 units the first difference sits at unit 61, so the span's
+    // start (61 - 60) falls between the halves of the leading emoji and its
+    // end (61 + 120) between the halves of the trailing one.
+    const single: Watchlist = { entries: [{ id: "page", url: "https://x/page", strategy: "html", kind: "sentinel" }] };
+    const page = (difference: string) =>
+      okFetcher({ "https://x/page": `<p>😀${"b".repeat(59)}${difference}${"c".repeat(118)}😃${"d".repeat(10)}</p>` });
+    const { nextState } = await runWatch(single, empty, page("X"), "2026-09-02");
+    const { reports } = await runWatch(single, nextState, page("Y"), "2026-09-03");
+    // 60 characters before the difference and 120 from it.
+    expect(reports[0]!.excerpt).toBe(`😀${"b".repeat(59)}Y${"c".repeat(118)}😃`);
   });
 
   it("whitespace-only page churn does NOT flag (the normalize invariant, end to end)", async () => {
@@ -168,7 +181,7 @@ describe("watch pass outcomes", () => {
     const { reports } = await runWatch(list, nextState, v2, "2026-09-03");
     const doc = reports.find((r) => r.id === "doc")!;
     expect(doc.outcome).toBe("changed");
-    expect(doc.context).toBeUndefined();
+    expect(doc.excerpt).toBeUndefined();
   });
 
   it("human tier: reminder fires only past max_age_days, and nothing is fetched", async () => {

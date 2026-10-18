@@ -24,8 +24,8 @@ export interface Snapshot {
    * carry, and the date a reader sees on the card.
    */
   retrieved_at: string;
-  /** normalized text kept for html and pdf-text entries so a change can quote
-   * its diff context — and so the quote gate has something to check against */
+  /** normalized text kept for html and pdf-text entries so a change can show
+   * its excerpt — and so the quote gate has something to check against */
   text?: string;
   /** pdf-text only: the file's own hash, kept beside the words. The words are
    * what a change means; the bytes are what a re-export moves. */
