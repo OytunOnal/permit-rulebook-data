@@ -391,8 +391,13 @@
       "history": []
     }
   },
-  "last_run": "2026-10-17",
-  "unread": [],
+  "last_run": "2026-10-18",
+  "unread": [
+    {
+      "id": "de-bmi-chancenkarte",
+      "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html"
+    }
+  ],
   "lapses": {
     "buzer-anlage-aufenthg": [
       "2026-10-14"
@@ -415,7 +420,8 @@
     ],
     "de-bmi-chancenkarte": [
       "2026-10-15",
-      "2026-10-16"
+      "2026-10-16",
+      "2026-10-18"
     ]
   }
 }
