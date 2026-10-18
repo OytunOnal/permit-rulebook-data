@@ -215,8 +215,8 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   it("logs each report at its outcome's level", () => {
     const outcomes = ["unreachable", "unchanged", "ok", "changed", "baseline", "reminder-due"] as const;
     const reports = outcomes.map((outcome) => outcome === "unreachable" ? unreachable : report({ id: outcome, outcome }));
-    const { events } = sayRun({ reports, verdict: GREEN, today: TODAY, state: DRY });
-    expect(events.slice(0, 6).map((e) => [e.msg, e.level])).toEqual([
+    const { beforeWrites } = sayRun({ reports, verdict: GREEN, today: TODAY, state: DRY });
+    expect(beforeWrites.map((e) => [e.msg, e.level])).toEqual([
       ["watch:unreachable", "error"],
       ["watch:unchanged", "info"],
       ["watch:ok", "info"],
@@ -227,12 +227,12 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   });
 
   it("carries the report's address, hashes, error and failure class on its line", () => {
-    const { events } = sayRun({ reports: [unreachable], verdict: GREEN, today: TODAY, state: DRY });
-    expect(events[0]).toEqual({
+    const { beforeWrites } = sayRun({ reports: [unreachable], verdict: GREEN, today: TODAY, state: DRY });
+    expect(beforeWrites[0]).toEqual({
       level: "error", msg: "watch:unreachable",
       fields: { id: "c", url: "https://example.org/c", error: "HTTP 503", failure: "transient" },
     });
-    const changed = sayRun({ reports: [htmlChange], verdict: GREEN, today: TODAY, state: DRY }).events[0];
+    const changed = sayRun({ reports: [htmlChange], verdict: GREEN, today: TODAY, state: DRY }).beforeWrites[0];
     expect(changed).toEqual({
       level: "warn", msg: "watch:changed",
       fields: { id: "nl-ind-blue-card", url: "https://ind.nl/en/blue-card", old: OLD, new: NEW },
@@ -246,8 +246,8 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
       refused: [{ id: "local", url: "http://10.0.0.5/c", days: ["2026-10-18"] }],
       red: true,
     };
-    const { events } = sayRun({ reports: [], verdict, today: TODAY, state: DRY });
-    expect(events.slice(0, 3)).toEqual([
+    const { beforeWrites } = sayRun({ reports: [], verdict, today: TODAY, state: DRY });
+    expect(beforeWrites).toEqual([
       { level: "warn", msg: "watch:lapse", fields: { id: "es-boe", url: "https://www.boe.es/a", days: ["2026-10-18"], today: TODAY } },
       { level: "error", msg: "watch:outage", fields: { id: "fr-anef", url: "https://anef.example/b", days: ["2026-10-15", "2026-10-18"], today: TODAY } },
       { level: "error", msg: "watch:refused", fields: { id: "local", url: "http://10.0.0.5/c", days: ["2026-10-18"], today: TODAY } },
@@ -255,7 +255,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   });
 
   it("says the state was committed, with its count, its targeted id and its last run", () => {
-    const say = (state: StateOutcome) => sayRun({ reports: [], verdict: GREEN, today: TODAY, state }).events.at(-2);
+    const say = (state: StateOutcome) => sayRun({ reports: [], verdict: GREEN, today: TODAY, state }).afterWrites[0];
     expect(say({ kind: "committed", entries: 30, only: "nl-ind-blue-card", last_run: "2026-10-16" })).toEqual({
       level: "info", msg: "state committed", fields: { entries: 30, only: "nl-ind-blue-card", last_run: "2026-10-16" },
     });
@@ -265,7 +265,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   });
 
   it("says a dry run left the state untouched", () => {
-    expect(sayRun({ reports: [], verdict: GREEN, today: TODAY, state: DRY }).events.at(-2)).toEqual({
+    expect(sayRun({ reports: [], verdict: GREEN, today: TODAY, state: DRY }).afterWrites[0]).toEqual({
       level: "info", msg: "dry run — state untouched (use --commit to persist)", fields: {},
     });
   });
@@ -274,7 +274,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
     const reports = [htmlChange, report({ id: "b", outcome: "ok" }), unreachable];
     const verdict: RunVerdict = { ...GREEN, lapsed: [{ id: "c", url: "https://example.org/c", days: [TODAY] }] };
     const says = sayRun({ reports, verdict, today: TODAY, state: DRY });
-    expect(says.events.at(-1)).toEqual({
+    expect(says.afterWrites.at(-1)).toEqual({
       level: "info", msg: "watch complete",
       fields: { total: 3, changed: 1, unreachable: 1, lapsed: 1, outages: 0, refused: 0 },
     });
@@ -285,19 +285,19 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
     const reports = [unreachable];
     const verdict: RunVerdict = { ...GREEN, outages: [{ id: "c", url: "https://example.org/c", days: ["2026-10-15", TODAY] }], red: true };
     const says = sayRun({ reports, verdict, today: TODAY, state: DRY });
-    expect(says.events.at(-1)).toEqual({
+    expect(says.afterWrites.at(-1)).toEqual({
       level: "error", msg: "watch complete",
       fields: { total: 1, changed: 0, unreachable: 1, lapsed: 0, outages: 1, refused: 0 },
     });
     expect(says.exitCode).toBe(1);
   });
 
-  it("says the reports, the notices, the state and the summary, in that order", () => {
+  it("says what it read before the flags and the state are written, and what became of them after", () => {
     const verdict: RunVerdict = { ...GREEN, lapsed: [{ id: "c", url: "https://example.org/c", days: [TODAY] }] };
     const reports = [htmlChange, unreachable];
-    expect(sayRun({ reports, verdict, today: TODAY, state: DRY }).events.map((e) => e.msg)).toEqual([
-      "watch:changed", "watch:unreachable", "watch:lapse", "dry run — state untouched (use --commit to persist)", "watch complete",
-    ]);
+    const { beforeWrites, afterWrites } = sayRun({ reports, verdict, today: TODAY, state: DRY });
+    expect(beforeWrites.map((e) => e.msg)).toEqual(["watch:changed", "watch:unreachable", "watch:lapse"]);
+    expect(afterWrites.map((e) => e.msg)).toEqual(["dry run — state untouched (use --commit to persist)", "watch complete"]);
   });
 });
 

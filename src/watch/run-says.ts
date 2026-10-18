@@ -8,7 +8,8 @@
  */
 import {
   mergeTargetedRun, runSummary, STRATEGIES, unreadNotices,
-  type FetchResult, type Outcome, type RunVerdict, type UnreadNotice, type WatchReport, type WatchState, type Watchlist,
+  type FetchResult, type Outcome, type RunVerdict, type UnreadNotice, type WatchEntry, type WatchReport, type WatchState,
+  type Watchlist,
 } from "./core.js";
 import { makePrintable } from "./failure.js";
 import { printableAddress } from "./fetch-source.js";
@@ -36,10 +37,19 @@ export interface FinishedRun {
   state: StateOutcome;
 }
 
-/** What a finished run says: the flags it files, the lines it logs, the code it exits with. */
+/**
+ * What a finished run says: the flags it files, the lines it logs around
+ * writing them, the code it exits with.
+ *
+ * The lines come in two groups, printed on either side of the writes, so a
+ * run whose flags or state cannot be written has still printed what it read.
+ */
 export interface RunSays {
   flags: FlagDocument[];
-  events: LogEvent[];
+  /** Each report's line, then each unread notice. */
+  beforeWrites: LogEvent[];
+  /** What became of the state, then `watch complete`. */
+  afterWrites: LogEvent[];
   exitCode: 0 | 1;
 }
 
@@ -49,12 +59,8 @@ export function sayRun(run: FinishedRun): RunSays {
     flags: reports
       .filter((r) => r.outcome === "changed" || r.outcome === "reminder-due")
       .map((r) => flagOf(r, today)),
-    events: [
-      ...reports.map(reportEvent),
-      ...unreadNotices(verdict, today).map(noticeEvent),
-      stateEvent(run.state),
-      completeEvent(reports, verdict),
-    ],
+    beforeWrites: [...reports.map(reportEvent), ...unreadNotices(verdict, today).map(noticeEvent)],
+    afterWrites: [stateEvent(run.state), completeEvent(reports, verdict)],
     exitCode: verdict.red ? 1 : 0,
   };
 }
@@ -278,7 +284,7 @@ export function settleState(settle: PassToSettle): SettledState {
  * should be able to see it without opening a browser — which is what the
  * comment on `from` in `core.ts` promises.
  */
-export function sayWhereItRead(entry: { id: string; url: string }, result: FetchResult): LogEvent | undefined {
+export function sayWhereItRead(entry: Pick<WatchEntry, "id" | "url">, result: FetchResult): LogEvent | undefined {
   const readAt = addressReadElsewhere(entry, result);
   if (!readAt) return undefined;
   return { level: "info", msg: "watch:read_at", fields: { id: entry.id, asked: printableAddress(entry.url), read_at: readAt } };

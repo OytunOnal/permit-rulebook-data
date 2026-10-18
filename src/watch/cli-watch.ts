@@ -1,5 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { runWatch, type BrowserReader, type Fetcher, type FetchResult, type WatchState, type Watchlist } from "./core.js";
+import {
+  runWatch, type BrowserReader, type Fetcher, type FetchResult, type WatchEntry, type WatchState, type Watchlist,
+} from "./core.js";
 import { openBrowserReader } from "./browser.js";
 import { fetchSource } from "./fetch-source.js";
 import {
@@ -10,8 +12,8 @@ import {
  * The daily watch, from the command line.
  *
  * It reads the watchlist and the state, runs the watch with a fetcher and a
- * browser, writes the flag files and the state, prints the log lines and
- * exits. Everything it decides about what a run says is in `run-says.ts`;
+ * browser, prints what it read, writes the flag files and the state, prints
+ * what became of them and exits. Everything it decides about what a run says is in `run-says.ts`;
  * this file only reads, runs, writes and exits.
  */
 
@@ -35,7 +37,7 @@ if (choice.kind === "no-such-entry") {
 }
 const watchlist = choice.watchlist;
 
-const printWhereItRead = (entry: { id: string; url: string }, result: FetchResult) => {
+const printWhereItRead = (entry: Pick<WatchEntry, "id" | "url">, result: FetchResult) => {
   const event = sayWhereItRead(entry, result);
   if (event) print(event);
 };
@@ -84,9 +86,10 @@ await browser.close();
 const settled = settleState({ args, previous: state, pass: nextState, fetched: watchlist, today });
 const says = sayRun({ reports, verdict, today, state: settled.outcome });
 
+for (const event of says.beforeWrites) print(event);
 const flagsDir = new URL("../../../watch/flags/", import.meta.url);
 if (says.flags.length) mkdirSync(flagsDir, { recursive: true });
 for (const flag of says.flags) writeFileSync(new URL(flag.name, flagsDir), flag.body);
 if (settled.text !== null) writeFileSync(statePath, settled.text);
-for (const event of says.events) print(event);
+for (const event of says.afterWrites) print(event);
 process.exit(says.exitCode);
