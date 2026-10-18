@@ -10,6 +10,7 @@ import {
   mergeTargetedRun, runSummary, STRATEGIES, unreadNotices,
   type FetchResult, type Outcome, type RunVerdict, type UnreadNotice, type WatchReport, type WatchState, type Watchlist,
 } from "./core.js";
+import { makePrintable } from "./failure.js";
 import { printableAddress } from "./fetch-source.js";
 
 export type LogLevel = "info" | "warn" | "error";
@@ -70,24 +71,50 @@ function remediation(report: WatchReport): string {
   return STRATEGIES[report.strategy].remediation;
 }
 
+/**
+ * The header is one block with no blank line inside it: the committed-flags
+ * test, and a curator's resolution appended below, read it as everything up
+ * to the first blank line. Every section after it stands apart by one, so our
+ * advice never renders as part of the page's words.
+ */
 function flagOf(report: WatchReport, today: string): FlagDocument {
-  const body = [
+  const header = [
     `# Watch flag: ${report.id} — ${report.outcome}`,
-    "",
     `- url: ${printableAddress(report.url)}`,
     `- kind: ${report.kind}`,
     `- date: ${today}`,
     report.old_hash ? `- old: ${report.old_hash}` : "",
     report.new_hash ? `- new: ${report.new_hash}` : "",
-    report.note ? `\nIntent: ${report.note}` : "",
-    report.context ? `\n> …${report.context}…` : "",
-    "",
-    remediation(report),
   ].filter(Boolean).join("\n");
+  const sections = [
+    header,
+    report.note ? `Intent: ${report.note}` : "",
+    report.excerpt === undefined ? "" : excerptSection(report.excerpt),
+    remediation(report),
+  ].filter(Boolean);
   // Reminders use a stable name (self-overwriting, no daily pile-up);
   // content changes keep the date so history stays visible.
   const name = report.outcome === "reminder-due" ? `${report.id}-reminder.md` : `${report.id}-${today}.md`;
-  return { name, body: body + "\n" };
+  return { name, body: sections.join("\n\n") + "\n" };
+}
+
+/**
+ * The page's words in a fenced block, so nothing in them acts on the issue
+ * they are shown in: no mention, link, image or emphasis. The fence is one
+ * backtick longer than the longest run in the words, so the page cannot close
+ * it, and the words are one line because the printable rule collapses every
+ * newline.
+ */
+function excerptSection(excerpt: string): string {
+  const words = makePrintable(excerpt);
+  if (!words) return "The page's words around the first difference print nothing; read the page.";
+  const fence = "`".repeat(Math.max(3, longestBacktickRun(words) + 1));
+  return ["The page now reads, around the first difference (cut at both ends):", "", `${fence}text`, words, fence].join("\n");
+}
+
+/** Bounded by the cut: an excerpt is at most 180 characters. */
+function longestBacktickRun(text: string): number {
+  return Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
 }
 
 /** How loudly each outcome is logged: a source not read is an error, news is a warning. */

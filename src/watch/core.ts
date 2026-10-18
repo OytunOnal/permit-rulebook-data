@@ -257,8 +257,8 @@ interface ReportOfSource {
   note?: string;
   old_hash?: string;
   new_hash?: string;
-  /** for html changes: quoted context around the first difference */
-  context?: string;
+  /** for a change read as text: the page's words around the first difference */
+  excerpt?: string;
   error?: string;
 }
 
@@ -290,12 +290,22 @@ export function sha256(data: Uint8Array | string): string {
   return createHash("sha256").update(data).digest("hex");
 }
 
-function diffContext(oldText: string, newText: string, span = 120): string {
+/**
+ * The page's words around the first difference: half the span before it and
+ * the whole span from it.
+ *
+ * Counted in characters, not UTF-16 units: a cut between the halves of an
+ * astral character leaves a lone surrogate, which a flag renders as a
+ * replacement character the page never wrote.
+ */
+function cutExcerpt(oldText: string, newText: string, span = 120): string {
+  const was = [...oldText];
+  const is = [...newText];
   let i = 0;
-  const max = Math.min(oldText.length, newText.length);
-  while (i < max && oldText[i] === newText[i]) i++;
+  const max = Math.min(was.length, is.length);
+  while (i < max && was[i] === is[i]) i++;
   const start = Math.max(0, i - span / 2);
-  return newText.slice(start, i + span);
+  return is.slice(start, i + span).join("");
 }
 
 /** Signed age in days; a future or unparsable last_verified counts as fresh
@@ -532,7 +542,7 @@ export async function runWatch(
     };
     return {
       ...base, outcome: "changed", old_hash: prev.hash, new_hash: hash,
-      context: text !== undefined && prev.text !== undefined ? diffContext(prev.text, text) : undefined,
+      excerpt: text !== undefined && prev.text !== undefined ? cutExcerpt(prev.text, text) : undefined,
     };
   };
 

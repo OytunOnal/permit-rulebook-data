@@ -1,3 +1,5 @@
+import { micromark } from "micromark";
+import { gfm, gfmHtml } from "micromark-extension-gfm";
 import { describe, expect, it } from "vitest";
 import type { RunVerdict, WatchEntry, WatchReport, WatchState } from "../src/watch/core.js";
 import {
@@ -5,11 +7,9 @@ import {
 } from "../src/watch/run-says.js";
 
 /**
- * #54 — what a finished watch run says, out of the CLI.
- *
- * Every case here was written against the format the CLI wrote before the
- * move, and passes on both sides of it: the flags, the log lines and the exit
- * code are the same bytes, now reached through a module a test can call.
+ * What a finished watch run says (#54): its flags, its log lines and its exit
+ * code, reached through the module the CLI writes from. A flag's excerpt is
+ * the page's (#14): fenced, so nothing in it acts on the issue it is shown in.
  */
 
 const OLD = "2d6e50243e606ab0c8f3784a88fedd27ca038ca25daa236a5865b5118a11b10a";
@@ -24,7 +24,7 @@ const report = (r: Partial<WatchReport> & Pick<WatchReport, "id" | "outcome">): 
 const htmlChange = report({
   id: "nl-ind-blue-card", url: "https://ind.nl/en/blue-card", outcome: "changed",
   note: "Backs the salary threshold.", old_hash: OLD, new_hash: NEW,
-  context: "the gross monthly salary is at least EUR 5,688",
+  excerpt: "the gross monthly salary is at least EUR 5,688",
 });
 const sentinelChange = report({
   id: "buzer-index", url: "https://www.buzer.de/index.htm", kind: "sentinel", outcome: "changed",
@@ -53,7 +53,12 @@ describe("sayRun — the flags a run files, in today's format", () => {
         "",
         "Intent: Backs the salary threshold.",
         "",
-        "> …the gross monthly salary is at least EUR 5,688…",
+        "The page now reads, around the first difference (cut at both ends):",
+        "",
+        "```text",
+        "the gross monthly salary is at least EUR 5,688",
+        "```",
+        "",
         "Update the dataset value(s) with quote + retrieval date; move the old value into history.",
         "",
       ].join("\n"),
@@ -70,6 +75,7 @@ describe("sayRun — the flags a run files, in today's format", () => {
         "- date: 2026-10-18",
         "",
         "Intent: Re-read the annex by hand.",
+        "",
         "Scheduled human re-verification is due. After verifying, update `last_verified` for this entry in watch/watchlist.json.",
         "",
       ].join("\n"),
@@ -88,6 +94,110 @@ describe("sayRun — the flags a run files, in today's format", () => {
   it("files one flag per change or reminder, in the reports' order", () => {
     expect(flagsOf(htmlChange, report({ id: "b", outcome: "ok" }), sentinelReminder).map((f) => f.name))
       .toEqual(["nl-ind-blue-card-2026-10-18.md", "gesetze-official-recheck-reminder.md"]);
+  });
+});
+
+/** The flag as GitHub would draw it: GFM, with raw HTML passed through as an issue body passes it. */
+const render = (markdown: string) =>
+  micromark(markdown, { allowDangerousHtml: true, extensions: [gfm()], htmlExtensions: [gfmHtml()] });
+const CODE_BLOCK = /<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g;
+const textOf = (html: string) =>
+  html.replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&amp;", "&");
+
+describe("sayRun — the flag's excerpt is the page's", () => {
+  const hostile = report({
+    id: "nl-ind-blue-card", url: "https://ind.nl/en/blue-card", outcome: "changed",
+    note: "Backs the salary threshold.", old_hash: OLD, new_hash: NEW,
+    excerpt: "ask @login about #12, see [x](y) <img src=x> and ``` then \u202Eesrever\u001b[31m red 😀 end",
+  });
+
+  it("fences a hostile excerpt so the renderer acts on none of it", () => {
+    const html = render(flagsOf(hostile)[0]!.body);
+    const blocks = [...html.matchAll(CODE_BLOCK)];
+    expect(blocks).toHaveLength(1);
+    expect(textOf(blocks[0]![1]!)).toBe("ask @login about #12, see [x](y) <img src=x> and ``` then esrever [31m red 😀 end\n");
+    const outside = html.replace(CODE_BLOCK, "");
+    for (const word of ["@login", "#12", "[x](y)", "img", "```", "esrever"]) expect(outside).not.toContain(word);
+    // The one link in the flag is our url line; the page's words make none, and no image.
+    expect(html.match(/<a\b[^>]*>/g)).toEqual(['<a href="https://ind.nl/en/blue-card">']);
+    expect(html).not.toMatch(/<img\b/);
+    expect(outside).toContain("<p>The page now reads, around the first difference (cut at both ends):</p>");
+    expect(outside).toContain("<p>Update the dataset value(s) with quote + retrieval date; move the old value into history.</p>");
+  });
+
+  it("writes the page's words inside the fence as the page wrote them, less what steers", () => {
+    expect(flagsOf(hostile)[0]!.body).toBe([
+      "# Watch flag: nl-ind-blue-card — changed",
+      "- url: https://ind.nl/en/blue-card",
+      "- kind: value-source",
+      "- date: 2026-10-18",
+      `- old: ${OLD}`,
+      `- new: ${NEW}`,
+      "",
+      "Intent: Backs the salary threshold.",
+      "",
+      "The page now reads, around the first difference (cut at both ends):",
+      "",
+      "````text",
+      "ask @login about #12, see [x](y) <img src=x> and ``` then esrever [31m red 😀 end",
+      "````",
+      "",
+      "Update the dataset value(s) with quote + retrieval date; move the old value into history.",
+      "",
+    ].join("\n"));
+  });
+
+  it("a run of four backticks in the excerpt cannot close its fence", () => {
+    const html = render(flagsOf({ ...hostile, excerpt: "before ```` after" })[0]!.body);
+    const blocks = [...html.matchAll(CODE_BLOCK)];
+    expect(blocks).toHaveLength(1);
+    expect(textOf(blocks[0]![1]!)).toBe("before ```` after\n");
+    expect(html.replace(CODE_BLOCK, "")).toContain(
+      "<p>Update the dataset value(s) with quote + retrieval date; move the old value into history.</p>");
+  });
+
+  it("gives an excerpt that prints nothing the print-nothing line and no fence", () => {
+    expect(flagsOf({ ...hostile, excerpt: "\u202E\u200B\u2066" })[0]!.body).toBe([
+      "# Watch flag: nl-ind-blue-card — changed",
+      "- url: https://ind.nl/en/blue-card",
+      "- kind: value-source",
+      "- date: 2026-10-18",
+      `- old: ${OLD}`,
+      `- new: ${NEW}`,
+      "",
+      "Intent: Backs the salary threshold.",
+      "",
+      "The page's words around the first difference print nothing; read the page.",
+      "",
+      "Update the dataset value(s) with quote + retrieval date; move the old value into history.",
+      "",
+    ].join("\n"));
+  });
+
+  it("writes neither the line nor the fence for a report with no excerpt", () => {
+    expect(flagsOf(report({ id: "p", strategy: "pdf", outcome: "changed", old_hash: OLD, new_hash: NEW }))[0]!.body).toBe([
+      "# Watch flag: p — changed",
+      "- url: https://example.org/p",
+      "- kind: value-source",
+      "- date: 2026-10-18",
+      `- old: ${OLD}`,
+      `- new: ${NEW}`,
+      "",
+      "PDF changed — a human must read it; no value is extracted automatically.",
+      "",
+    ].join("\n"));
+  });
+
+  it("keeps the header one block, up to the first blank line, with the url, the date and the hashes", () => {
+    const body = flagsOf(hostile)[0]!.body;
+    expect(body.slice(0, body.indexOf("\n\n"))).toBe([
+      "# Watch flag: nl-ind-blue-card — changed",
+      "- url: https://ind.nl/en/blue-card",
+      "- kind: value-source",
+      "- date: 2026-10-18",
+      `- old: ${OLD}`,
+      `- new: ${NEW}`,
+    ].join("\n"));
   });
 });
 
