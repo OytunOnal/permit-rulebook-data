@@ -66,10 +66,16 @@ export function sayRun(run: FinishedRun): RunSays {
  * because it is about the entry's kind and not about how it is read.
  */
 function remediation(report: WatchReport): string {
-  if (report.kind === "sentinel" && report.outcome !== "reminder-due")
-    return "Sentinel changed — it backs no dataset value directly. Read the source, act on the intent below, and extend the watchlist if new value pages appeared.";
+  if (report.kind === "sentinel" && report.outcome !== "reminder-due") return SENTINEL_REMEDIATION;
   return STRATEGIES[report.strategy].remediation;
 }
+
+/** What a curator does about a sentinel that changed. */
+export const SENTINEL_REMEDIATION =
+  "Sentinel changed — it backs no dataset value directly. Read the source, act on the intent below, and extend the watchlist if new value pages appeared.";
+
+/** Our line directly above the excerpt's fence. */
+export const EXCERPT_INTRODUCTION = "The page now reads, around the first difference (cut where the page goes on):";
 
 /**
  * The header is one block with no blank line inside it: the committed-flags
@@ -109,7 +115,7 @@ function excerptSection(excerpt: string): string {
   const words = makePrintable(excerpt);
   if (!words) return "The page's words around the first difference print nothing; read the page.";
   const fence = "`".repeat(Math.max(3, longestBacktickRun(words) + 1));
-  return ["The page now reads, around the first difference (cut where the page goes on):", `${fence}text`, words, fence].join("\n");
+  return [EXCERPT_INTRODUCTION, `${fence}text`, words, fence].join("\n");
 }
 
 /** Bounded by the cut: an excerpt is at most 180 characters. */

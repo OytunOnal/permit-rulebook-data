@@ -1,9 +1,10 @@
 import { micromark } from "micromark";
 import { gfm, gfmHtml } from "micromark-extension-gfm";
 import { describe, expect, it } from "vitest";
-import type { RunVerdict, WatchEntry, WatchReport, WatchState } from "../src/watch/core.js";
+import { STRATEGIES, type RunVerdict, type WatchEntry, type WatchReport, type WatchState } from "../src/watch/core.js";
 import {
-  chooseEntries, parseJsonText, readRunArgs, sayRun, sayWhereItRead, settleState, type StateOutcome,
+  chooseEntries, EXCERPT_INTRODUCTION, parseJsonText, readRunArgs, sayRun, sayWhereItRead, SENTINEL_REMEDIATION, settleState,
+  type StateOutcome,
 } from "../src/watch/run-says.js";
 
 /**
@@ -35,6 +36,18 @@ const sentinelReminder = report({
   strategy: "human", kind: "sentinel", outcome: "reminder-due", note: "Re-read the annex by hand.",
 });
 const pdfTextChange = report({ id: "fr-decree", strategy: "pdf-text", outcome: "changed", old_hash: OLD, new_hash: NEW });
+const pdfChange = report({ id: "p", strategy: "pdf", outcome: "changed", old_hash: OLD, new_hash: NEW });
+const unreachable = report({ id: "c", outcome: "unreachable", error: "HTTP 503", failure: "transient" });
+
+/** The header block of every flag on `nl-ind-blue-card`, changed on TODAY. */
+const BLUE_CARD_HEADER = [
+  "# Watch flag: nl-ind-blue-card — changed",
+  "- url: https://ind.nl/en/blue-card",
+  "- kind: value-source",
+  "- date: 2026-10-18",
+  `- old: ${OLD}`,
+  `- new: ${NEW}`,
+];
 
 const flagsOf = (...reports: WatchReport[]) =>
   sayRun({ reports, verdict: GREEN, today: TODAY, state: DRY }).flags;
@@ -44,12 +57,7 @@ describe("sayRun — the flags a run files, in today's format", () => {
     expect(flagsOf(htmlChange)).toEqual([{
       name: "nl-ind-blue-card-2026-10-18.md",
       body: [
-        "# Watch flag: nl-ind-blue-card — changed",
-        "- url: https://ind.nl/en/blue-card",
-        "- kind: value-source",
-        "- date: 2026-10-18",
-        `- old: ${OLD}`,
-        `- new: ${NEW}`,
+        ...BLUE_CARD_HEADER,
         "",
         "Intent: Backs the salary threshold.",
         "",
@@ -85,7 +93,7 @@ describe("sayRun — the flags a run files, in today's format", () => {
     expect(flagsOf(
       report({ id: "a", outcome: "unchanged", old_hash: OLD, new_hash: OLD }),
       report({ id: "b", outcome: "ok" }),
-      report({ id: "c", outcome: "unreachable", error: "HTTP 503", failure: "transient" }),
+      unreachable,
       report({ id: "d", outcome: "baseline", new_hash: NEW }),
     )).toEqual([]);
   });
@@ -102,6 +110,11 @@ const render = (markdown: string) =>
 const CODE_BLOCK = /<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g;
 const textOf = (html: string) =>
   html.replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"').replaceAll("&amp;", "&");
+/** The text of each paragraph the renderer drew outside every code block. */
+const paragraphsOutside = (html: string) =>
+  [...html.replace(CODE_BLOCK, "").matchAll(/<p>([\s\S]*?)<\/p>/g)].map((match) => textOf(match[1]!));
+/** Our sentences around an html entry's excerpt. */
+const OURS = [EXCERPT_INTRODUCTION, STRATEGIES.html.remediation];
 
 describe("sayRun — the flag's excerpt is the page's", () => {
   const hostile = report({
@@ -120,18 +133,12 @@ describe("sayRun — the flag's excerpt is the page's", () => {
     // The one link in the flag is our url line; the page's words make none, and no image.
     expect(html.match(/<a\b[^>]*>/g)).toEqual(['<a href="https://ind.nl/en/blue-card">']);
     expect(html).not.toMatch(/<img\b/);
-    expect(outside).toContain("<p>The page now reads, around the first difference (cut where the page goes on):</p>");
-    expect(outside).toContain("<p>Update the dataset value(s) with quote + retrieval date; move the old value into history.</p>");
+    expect(paragraphsOutside(html)).toEqual(expect.arrayContaining(OURS));
   });
 
   it("writes the page's words inside the fence as the page wrote them, less what steers", () => {
     expect(flagsOf(hostile)[0]!.body).toBe([
-      "# Watch flag: nl-ind-blue-card — changed",
-      "- url: https://ind.nl/en/blue-card",
-      "- kind: value-source",
-      "- date: 2026-10-18",
-      `- old: ${OLD}`,
-      `- new: ${NEW}`,
+      ...BLUE_CARD_HEADER,
       "",
       "Intent: Backs the salary threshold.",
       "",
@@ -150,18 +157,12 @@ describe("sayRun — the flag's excerpt is the page's", () => {
     const blocks = [...html.matchAll(CODE_BLOCK)];
     expect(blocks).toHaveLength(1);
     expect(textOf(blocks[0]![1]!)).toBe("before ```` after\n");
-    expect(html.replace(CODE_BLOCK, "")).toContain(
-      "<p>Update the dataset value(s) with quote + retrieval date; move the old value into history.</p>");
+    expect(paragraphsOutside(html)).toEqual(expect.arrayContaining(OURS));
   });
 
   it("gives an excerpt that prints nothing the print-nothing line and no fence", () => {
     expect(flagsOf({ ...hostile, excerpt: "\u202E\u200B\u2066" })[0]!.body).toBe([
-      "# Watch flag: nl-ind-blue-card — changed",
-      "- url: https://ind.nl/en/blue-card",
-      "- kind: value-source",
-      "- date: 2026-10-18",
-      `- old: ${OLD}`,
-      `- new: ${NEW}`,
+      ...BLUE_CARD_HEADER,
       "",
       "Intent: Backs the salary threshold.",
       "",
@@ -173,7 +174,7 @@ describe("sayRun — the flag's excerpt is the page's", () => {
   });
 
   it("writes neither the line nor the fence for a report with no excerpt", () => {
-    expect(flagsOf(report({ id: "p", strategy: "pdf", outcome: "changed", old_hash: OLD, new_hash: NEW }))[0]!.body).toBe([
+    expect(flagsOf(pdfChange)[0]!.body).toBe([
       "# Watch flag: p — changed",
       "- url: https://example.org/p",
       "- kind: value-source",
@@ -188,14 +189,7 @@ describe("sayRun — the flag's excerpt is the page's", () => {
 
   it("keeps the header one block, up to the first blank line, with the url, the date and the hashes", () => {
     const body = flagsOf(hostile)[0]!.body;
-    expect(body.slice(0, body.indexOf("\n\n"))).toBe([
-      "# Watch flag: nl-ind-blue-card — changed",
-      "- url: https://ind.nl/en/blue-card",
-      "- kind: value-source",
-      "- date: 2026-10-18",
-      `- old: ${OLD}`,
-      `- new: ${NEW}`,
-    ].join("\n"));
+    expect(body.slice(0, body.indexOf("\n\n"))).toBe(BLUE_CARD_HEADER.join("\n"));
   });
 });
 
@@ -203,31 +197,24 @@ describe("sayRun — the remediation a flag ends on", () => {
   const lastLine = (r: WatchReport) => flagsOf(r)[0]!.body.trimEnd().split("\n").at(-1);
 
   it("gives a sentinel's change the sentinel sentence", () => {
-    expect(lastLine(sentinelChange)).toBe(
-      "Sentinel changed — it backs no dataset value directly. Read the source, act on the intent below, and extend the watchlist if new value pages appeared.");
+    expect(lastLine(sentinelChange)).toBe(SENTINEL_REMEDIATION);
   });
 
   it("gives a sentinel's due reminder its strategy's sentence", () => {
-    expect(lastLine(sentinelReminder)).toBe(
-      "Scheduled human re-verification is due. After verifying, update `last_verified` for this entry in watch/watchlist.json.");
+    expect(lastLine(sentinelReminder)).toBe(STRATEGIES.human.remediation);
   });
 
   it("gives every other report its strategy's sentence", () => {
-    expect(lastLine(pdfTextChange)).toBe(
-      "The PDF's WORDS changed, not just its bytes. Read the excerpt above, then update the dataset value(s) with quote + retrieval date; move the old value into history.");
-    expect(lastLine(report({ id: "p", strategy: "pdf", outcome: "changed", old_hash: OLD, new_hash: NEW }))).toBe(
-      "PDF changed — a human must read it; no value is extracted automatically.");
-    expect(lastLine(report({ id: "l", strategy: "human", outcome: "reminder-due" }))).toBe(
-      "Scheduled human re-verification is due. After verifying, update `last_verified` for this entry in watch/watchlist.json.");
+    expect(lastLine(pdfTextChange)).toBe(STRATEGIES["pdf-text"].remediation);
+    expect(lastLine(pdfChange)).toBe(STRATEGIES.pdf.remediation);
+    expect(lastLine(report({ id: "l", strategy: "human", outcome: "reminder-due" }))).toBe(STRATEGIES.human.remediation);
   });
 });
 
 describe("sayRun — what the run logs, and the code it exits with", () => {
   it("logs each report at its outcome's level", () => {
     const outcomes = ["unreachable", "unchanged", "ok", "changed", "baseline", "reminder-due"] as const;
-    const reports = outcomes.map((outcome) => outcome === "unreachable"
-      ? report({ id: outcome, outcome, error: "HTTP 503", failure: "transient" })
-      : report({ id: outcome, outcome }));
+    const reports = outcomes.map((outcome) => outcome === "unreachable" ? unreachable : report({ id: outcome, outcome }));
     const { events } = sayRun({ reports, verdict: GREEN, today: TODAY, state: DRY });
     expect(events.slice(0, 6).map((e) => [e.msg, e.level])).toEqual([
       ["watch:unreachable", "error"],
@@ -240,13 +227,10 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   });
 
   it("carries the report's address, hashes, error and failure class on its line", () => {
-    const { events } = sayRun({
-      reports: [report({ id: "es-boe", url: "https://www.boe.es/a", outcome: "unreachable", error: "HTTP 503", failure: "transient" })],
-      verdict: GREEN, today: TODAY, state: DRY,
-    });
+    const { events } = sayRun({ reports: [unreachable], verdict: GREEN, today: TODAY, state: DRY });
     expect(events[0]).toEqual({
       level: "error", msg: "watch:unreachable",
-      fields: { id: "es-boe", url: "https://www.boe.es/a", error: "HTTP 503", failure: "transient" },
+      fields: { id: "c", url: "https://example.org/c", error: "HTTP 503", failure: "transient" },
     });
     const changed = sayRun({ reports: [htmlChange], verdict: GREEN, today: TODAY, state: DRY }).events[0];
     expect(changed).toEqual({
@@ -287,7 +271,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   });
 
   it("ends on watch complete with the run summary, and a green run exits 0", () => {
-    const reports = [htmlChange, report({ id: "b", outcome: "ok" }), report({ id: "c", outcome: "unreachable", error: "HTTP 503", failure: "transient" })];
+    const reports = [htmlChange, report({ id: "b", outcome: "ok" }), unreachable];
     const verdict: RunVerdict = { ...GREEN, lapsed: [{ id: "c", url: "https://example.org/c", days: [TODAY] }] };
     const says = sayRun({ reports, verdict, today: TODAY, state: DRY });
     expect(says.events.at(-1)).toEqual({
@@ -298,7 +282,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   });
 
   it("ends a red run on an error-level watch complete, and exits 1", () => {
-    const reports = [report({ id: "c", outcome: "unreachable", error: "HTTP 503", failure: "transient" })];
+    const reports = [unreachable];
     const verdict: RunVerdict = { ...GREEN, outages: [{ id: "c", url: "https://example.org/c", days: ["2026-10-15", TODAY] }], red: true };
     const says = sayRun({ reports, verdict, today: TODAY, state: DRY });
     expect(says.events.at(-1)).toEqual({
@@ -310,7 +294,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
 
   it("says the reports, the notices, the state and the summary, in that order", () => {
     const verdict: RunVerdict = { ...GREEN, lapsed: [{ id: "c", url: "https://example.org/c", days: [TODAY] }] };
-    const reports = [htmlChange, report({ id: "c", outcome: "unreachable", error: "HTTP 503", failure: "transient" })];
+    const reports = [htmlChange, unreachable];
     expect(sayRun({ reports, verdict, today: TODAY, state: DRY }).events.map((e) => e.msg)).toEqual([
       "watch:changed", "watch:unreachable", "watch:lapse", "dry run — state untouched (use --commit to persist)", "watch complete",
     ]);
