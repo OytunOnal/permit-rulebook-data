@@ -339,6 +339,11 @@ export function judgeResolution(name: string, addresses: readonly string[], entr
  * redirects to. A chain that leaves and comes back ends where it started, which
  * is the whole of what is asked. The address the reader is at is the page's to
  * choose, so it is bounded.
+ *
+ * The origin is read off that address, not off what the page reports as its
+ * own: a page on the entry's origin is read even when it is sandboxed, where
+ * Chrome reports `location.origin` as `"null"`, because its bytes still come
+ * from the host that was asked.
  */
 export function judgeLanding(asked: string, landed: string, setting: RedirectPolicy): string | null {
   if (setting !== "same-origin") return null;
