@@ -137,6 +137,48 @@ describe("trust line — a name is judged by every address it resolves to", () =
   });
 });
 
+describe("#108 — the NAT64 local-use prefix is private", () => {
+  const PRIVATE_ENTRY = new URL("http://10.0.0.1/notice");
+  /**
+   * 169.254.169.254 (`a9.fe.a9.fe`) placed inside `64:ff9b:1::/48` at each of
+   * RFC 6052 §2.2's prefix lengths, the prefix's own bits past /48 zero and
+   * the `u` octet (bits 64 to 71) zero.
+   */
+  const PLACEMENTS = [
+    ["at the /48 position", "64:ff9b:1:a9fe:a9:fe00::"],
+    ["at the /56 position", "64:ff9b:1:a9:fe:a9fe::"],
+    ["at the /64 position", "64:ff9b:1:0:a9:fea9:fe00:0"],
+    ["at the /96 position", "64:ff9b:1::a9fe:a9fe"],
+  ] as const;
+
+  for (const [where, address] of PLACEMENTS) {
+    it(`refuses a redirect to the metadata address ${where} from a public entry`, () => {
+      const target = new URL(`http://[${address}]${PAST_THE_ORIGIN}`);
+      const refusal = judgeRedirect(target, PUBLIC_ENTRY, "anywhere");
+      expect(refusal, `[${address}] was followed`).not.toBeNull();
+      expect(refusal!.rule).toBe("place");
+      expect(refusal!.says, "the refusal does not say it is private").toContain("private");
+      expect(refusal!.says, "the refusal printed the address past its origin").not.toContain(PAST_THE_ORIGIN);
+    });
+
+    it(`refuses a name that resolves to the metadata address ${where} from a public entry`, () => {
+      const refusal = judgeResolution("mirror.test", [address], PUBLIC_ENTRY.hostname);
+      expect(refusal, `${address} was connected to`).not.toBeNull();
+      expect(refusal, "the refusal does not say it is private").toContain("private");
+      expect(refusal, "the address behind the name was printed").not.toContain(address);
+    });
+
+    it(`follows a redirect to the metadata address ${where} from a private entry`, () => {
+      const target = new URL(`http://[${address}]${PAST_THE_ORIGIN}`);
+      expect(judgeRedirect(target, PRIVATE_ENTRY, "anywhere")).toBeNull();
+    });
+
+    it(`connects a name that resolves to the metadata address ${where} from a private entry`, () => {
+      expect(judgeResolution("mirror.test", [address], PRIVATE_ENTRY.hostname)).toBeNull();
+    });
+  }
+});
+
 describe("trust line — the entry address", () => {
   const credentials = ["watcher", "hunter2"];
   for (const [what, url, kind] of [

@@ -199,6 +199,11 @@ function addressKind(hostname: string): AddressKind {
   if (leading(6) || nat64) return ipv4Kind(carried(groups[6]!, groups[7]!));
   // 6to4's `2002::/16`: the first two groups after the prefix.
   if (groups[0] === 0x2002) return ipv4Kind(carried(groups[1]!, groups[2]!));
+  // NAT64's local-use `64:ff9b:1::/48` carries an IPv4 address too, but its
+  // operator chooses where inside the prefix it sits (RFC 8215, at any of RFC
+  // 6052's prefix lengths), so no fixed position can be read: all of it is
+  // private.
+  if (groups[0] === 0x0064 && groups[1] === 0xff9b && groups[2] === 0x0001) return "private";
   if ((groups[0]! & 0xffc0) === 0xfe80) return "link-local";
   if ((groups[0]! & 0xfe00) === 0xfc00) return "private";
   // Site-local, deprecated and still routed on plenty of networks.
