@@ -544,12 +544,12 @@ describe("s34 — no slice of the five can match the form the runner is served",
 
 describe("the coverage gate asks the trust line's entry question", () => {
   /** The shipped watchlist with one entry added, so the gate has nothing else to say. */
-  const withEntry = (url: string): Watchlist =>
+  const watchlistWithAddedEntry = (url: string): Watchlist =>
     ({ entries: [...watchlist.entries, { ...htmlEntry, id: "added-entry", url, kind: "sentinel" }] });
 
   /** The gate over the shipped watchlist and one added entry, which it must refuse alone and by name. */
-  function refusedAlone(address: string): ReturnType<typeof checkCoverage> {
-    const gate = checkCoverage(dataset, withEntry(address));
+  function expectGateRefusesOnlyThis(address: string): ReturnType<typeof checkCoverage> {
+    const gate = checkCoverage(dataset, watchlistWithAddedEntry(address));
     expect(gate.ok, `${address} passed the gate`).toBe(false);
     expect(gate.refused_entry_addresses.length, `${address} was not refused`).toBe(1);
     expect(gate.refused_entry_addresses[0], "the entry is not named").toContain("added-entry");
@@ -563,18 +563,18 @@ describe("the coverage gate asks the trust line's entry question", () => {
       ["https://169.254.169.254/rules", "169.254"],
       ["https://[fe80::1]/rules", "fe80"],
     ] as const) {
-      const gate = refusedAlone(address);
+      const gate = expectGateRefusesOnlyThis(address);
       expect(JSON.stringify(gate), `${address} was printed`).not.toContain(spelled);
     }
   });
 
   it("refuses an entry on a scheme that is not a page", () => {
-    for (const address of ["ftp://example.invalid/rules", "file:///etc/rules"]) refusedAlone(address);
+    for (const address of ["ftp://example.invalid/rules", "file:///etc/rules"]) expectGateRefusesOnlyThis(address);
   });
 
   it("still refuses a malformed entry and a credentialled one, and prints no credential", () => {
     for (const address of ["://watcher:hunter2@example.invalid/rules", "https://watcher:hunter2@example.invalid/rules"]) {
-      const said = JSON.stringify(refusedAlone(address));
+      const said = JSON.stringify(expectGateRefusesOnlyThis(address));
       expect(said, "the password was printed").not.toContain("hunter2");
       expect(said, "the name was printed").not.toContain("watcher");
     }

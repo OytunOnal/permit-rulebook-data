@@ -29,15 +29,15 @@ const PAST_THE_ORIGIN = "/where-it-goes?key=value";
  * bound, the note that says what was cut, and the sentence around them, which
  * together stay under twice the bound.
  */
-const MOST_OF_A_REFUSAL = 2 * ADDRESS_LENGTH_LIMIT;
+const REFUSAL_LENGTH_LIMIT = 2 * ADDRESS_LENGTH_LIMIT;
 
 /**
  * Whether the relative rule lets an entry of this kind go to an address of
  * that kind: link-local never, public always, otherwise only its own kind.
  */
-function allowed(going: Kind, entry: URL): boolean {
-  if (going === "link-local") return false;
-  return going === "public" || (entry === LOOPBACK_ENTRY && going === "loopback");
+function allowed(targetKind: Kind, entry: URL): boolean {
+  if (targetKind === "link-local") return false;
+  return targetKind === "public" || (entry === LOOPBACK_ENTRY && targetKind === "loopback");
 }
 
 /**
@@ -220,7 +220,7 @@ describe("trust line — the entry address", () => {
   it("bounds the scheme it names, however long an entry makes it", () => {
     const refusal = refusalOfEntryAddress(`${"a".repeat(5_000)}:x`);
     expect(refusal, "a 5,000-character scheme was allowed").not.toBeNull();
-    expect(refusal!.length, "the refusal quotes the whole of an entry's scheme").toBeLessThan(MOST_OF_A_REFUSAL);
+    expect(refusal!.length, "the refusal quotes the whole of an entry's scheme").toBeLessThan(REFUSAL_LENGTH_LIMIT);
   });
 
   for (const [what, url] of [
@@ -323,7 +323,7 @@ describe("trust line — a redirect stays on the entry's origin under same-origi
   it("bounds where it says the redirect went, however long a page makes it", () => {
     const refusal = refusalOfRedirect(new URL(`https://elsewhere.example.org/${"a".repeat(9_000)}`), entry, "same-origin");
     expect(refusal?.crossed).toBe("other-origin");
-    expect(refusal!.reason.length, "the refusal quotes the whole of a page's address").toBeLessThan(MOST_OF_A_REFUSAL);
+    expect(refusal!.reason.length, "the refusal quotes the whole of a page's address").toBeLessThan(REFUSAL_LENGTH_LIMIT);
     expect(refusal!.reason, "the refusal does not name where it went").toContain("https://elsewhere.example.org");
   });
 });
@@ -352,7 +352,7 @@ describe("trust line — the page a reader ends on", () => {
     const landed = `https://elsewhere.example.org/${"a".repeat(120_000)}`;
     const refusal = refusalOfLandedPage(asked, landed, "same-origin");
     expect(refusal).not.toBeNull();
-    expect(refusal!.length, "the refusal quotes the whole of a page's address").toBeLessThan(MOST_OF_A_REFUSAL);
+    expect(refusal!.length, "the refusal quotes the whole of a page's address").toBeLessThan(REFUSAL_LENGTH_LIMIT);
   });
 });
 
