@@ -205,7 +205,7 @@ export function makePrintable(text: string): string {
  * string, its stack included, and the stack names the page — and that becomes
  * the failure a run logs. A page can make it as long as it likes, and the
  * stack carries the page's origin. Every printed address is bound at 200 for
- * the same reason (`MOST_OF_AN_ADDRESS`, `trust-line.ts`), and a cause's
+ * the same reason (`ADDRESS_LENGTH_LIMIT`, `trust-line.ts`), and a cause's
  * `code` by `A_CODE` below.
  *
  * The bound is TOTAL, unlike the address's, because this is the whole of what
@@ -300,7 +300,7 @@ export function printableWithin(text: string, most: number): string {
 /**
  * What a cut says about itself: how long the whole sentence was.
  *
- * The same shape `shortenAddress` prints for an address it shortened
+ * The same shape `boundedAddress` prints for an address it shortened
  * (`trust-line.ts`) — the length of the WHOLE, not of what was dropped, so
  * a curator reads one spelling wherever this package shortens something. It
  * is a function because there are two runtimes to say it in, and two copies

@@ -8,7 +8,7 @@ import {
 } from "./failure.js";
 import { ask, ENCODINGS_ASKED_FOR } from "./request.js";
 import {
-  judgeEntry, judgeRedirect, judgeResolution, type RedirectPolicy, shortenAddress,
+  boundedAddress, type RedirectPolicy, refusalOfEntryAddress, refusalOfRedirect, refusalOfResolvedAddresses,
 } from "./trust-line.js";
 
 /**
@@ -110,7 +110,7 @@ function judgedLookup(entryHost: string, resolver: Resolver): LookupFunction {
   return (hostname, options, done) => {
     resolver(hostname, { ...options, all: true }, (error, addresses) => {
       if (error) { done(error, []); return; }
-      const refusal = judgeResolution(hostname, addresses.map((one) => one.address), entryHost);
+      const refusal = refusalOfResolvedAddresses(hostname, addresses.map((one) => one.address), entryHost);
       // A decision, carrying its own class: the trust line declined the
       // request, which is never the source having a bad minute.
       if (refusal) { done(new ReadFailure(refusal, "refused-by-us"), []); return; }
@@ -212,7 +212,7 @@ export const fetchSource = (async (
    * watchlist too, where it is a curator's to fix; this holds for a url
    * arriving by any other road.
    */
-  const refused = judgeEntry(url);
+  const refused = refusalOfEntryAddress(url);
   // Refused by us, every one of them: the trust line declined the request,
   // and it will decline the same request three minutes later.
   if (refused) return { ok: false, error: refused, failure: "refused-by-us" };
@@ -304,17 +304,17 @@ export const fetchSource = (async (
            *
            * The status reported is the REDIRECT's own, because that is the
            * answer this source gave; the refused target was never asked. A
-           * place the watch may not go says the status first, and a target
-           * off the entry's origin says it after where it was sent.
+           * forbidden address says the status first, and a target off the
+           * entry's origin says it after where it was sent.
            */
-          const refusal = judgeRedirect(next, entry, redirects);
+          const refusal = refusalOfRedirect(next, entry, redirects);
           if (refusal)
             return {
               ok: false,
               status: res.status,
-              error: refusal.rule === "place"
-                ? `HTTP ${res.status} ${refusal.says}`
-                : `${refusal.says} (HTTP ${res.status}, not followed)`,
+              error: refusal.crossed === "forbidden-address"
+                ? `HTTP ${res.status} ${refusal.reason}`
+                : `${refusal.reason} (HTTP ${res.status}, not followed)`,
               // Ours: the source answered, and we declined to follow it.
               failure: "refused-by-us",
             };
@@ -324,7 +324,7 @@ export const fetchSource = (async (
               status: res.status,
               // Where it had got to, not where it started: under `anywhere` a
               // chain may have left the entry's origin long before the cap.
-              error: `redirected more than ${MOST_HOPS} times, last to ${shortenAddress(next.origin + next.pathname)}`,
+              error: `redirected more than ${MOST_HOPS} times, last to ${boundedAddress(next.origin + next.pathname)}`,
               failure: "refused-by-us",
             };
           target = next.href;
@@ -350,7 +350,7 @@ export const fetchSource = (async (
             // The challenge is over by the next read, so this is worth one.
             failure: "transient",
           };
-        return { ok: true, body, ...(target !== url ? { from: shortenAddress(target) } : {}) };
+        return { ok: true, body, ...(target !== url ? { from: boundedAddress(target) } : {}) };
       }
     } finally {
       pools["http:"].destroy();

@@ -1,6 +1,6 @@
 import type { WatchEntry, WatchStep } from "./core.js";
 import {
-  judgeLanding, MOST_OF_AN_ADDRESS, printAddress, type RedirectPolicy, shortenAddress,
+  ADDRESS_LENGTH_LIMIT, boundedAddress, readableAddressOf, type RedirectPolicy, refusalOfLandedPage,
 } from "./trust-line.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
 import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, ReadFailure } from "./failure.js";
@@ -97,7 +97,7 @@ export interface Session {
  * at all.
  */
 export function servedFailure(status: number, servedUrl: string | undefined, asked: string): ReadFailure {
-  const redirected = servedUrl && servedUrl !== asked ? ` (after redirect to ${printAddress(servedUrl)})` : "";
+  const redirected = servedUrl && servedUrl !== asked ? ` (after redirect to ${readableAddressOf(servedUrl)})` : "";
   return new ReadFailure(`HTTP ${status} in the browser${redirected}`, failureOfStatus(status));
 }
 
@@ -184,11 +184,11 @@ export function attach(socket: WebSocket, close: () => void): Session {
    * diagnosis. A parsed one is already printable — the URL parser
    * percent-encodes every byte and every steering character that would act on
    * a reader — so it needs the length half only, which is every printer of an
-   * address's own `MOST_OF_AN_ADDRESS`. The fallback needs both: nothing
+   * address's own `ADDRESS_LENGTH_LIMIT`. The fallback needs both: nothing
    * parsed there, and the page's raw string is all there is
    * (`failure.ts`; Security review, 2026-09-24).
    *
-   * Both halves are bounded at `MOST_OF_AN_ADDRESS`, because both are an
+   * Both halves are bounded at `ADDRESS_LENGTH_LIMIT`, because both are an
    * ADDRESS. The fallback was bounded at `MOST_OF_A_PAGE_WORD` while the line
    * above it said an address's bound is the address's own — two numbers for
    * one thing, and the smaller of them turns the one address a curator cannot
@@ -197,8 +197,8 @@ export function attach(socket: WebSocket, close: () => void): Session {
   const withoutQuery = (url: string) => {
     try {
       const parsed = new URL(url);
-      return parsed.protocol === "data:" ? "data:..." : shortenAddress(`${parsed.host}${parsed.pathname}`);
-    } catch { return printableWithin(url, MOST_OF_AN_ADDRESS); }
+      return parsed.protocol === "data:" ? "data:..." : boundedAddress(`${parsed.host}${parsed.pathname}`);
+    } catch { return printableWithin(url, ADDRESS_LENGTH_LIMIT); }
   };
   const askedSince = (sessionId: string, since: number): string[] =>
     [...trafficOf(sessionId).values()]
@@ -485,11 +485,11 @@ export function attach(socket: WebSocket, close: () => void): Session {
         const askedOrigin = new URL(entry.url).origin;
         const mustBeHome = async (when: string) => {
           const href = await evaluate("location.href") as string;
-          const refused = judgeLanding(askedOrigin, href, redirects);
+          const refused = refusalOfLandedPage(askedOrigin, href, redirects);
           // Ours: a third party's bytes must never be hashed as the
           // authority's, and that is a decision, not a bad minute.
           if (refused) throw new ReadFailure(`${when}: ${refused}`, "refused-by-us");
-          return shortenAddress(href);
+          return boundedAddress(href);
         };
         await mustBeHome("the page redirected to another site before it could be read");
         const inPage = (step: unknown, phase?: string) =>

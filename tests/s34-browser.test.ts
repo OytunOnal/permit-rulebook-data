@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { chromePath, openBrowserReader } from "../src/watch/browser.js";
 import { hasControl, hasSteering, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD, NOTE_AFTER } from "../src/watch/failure.js";
-import { MOST_OF_AN_ADDRESS } from "../src/watch/trust-line.js";
+import { ADDRESS_LENGTH_LIMIT } from "../src/watch/trust-line.js";
 import { runWatch, type BrowserReader, type Fetcher, type WatchEntry } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 
@@ -1274,7 +1274,7 @@ for (var i = 0; i < 12; i++) {
       expect(answer.ok, answer.ok ? "" : answer.error).toBe(true);
       if (!answer.ok) return;
       expect(answer.from!.length, "the address the page chose was reported whole")
-        .toBeLessThanOrEqual(MOST_OF_AN_ADDRESS + `… (${answer.from!.length} characters)`.length + 16);
+        .toBeLessThanOrEqual(ADDRESS_LENGTH_LIMIT + `… (${answer.from!.length} characters)`.length + 16);
       expect(answer.from, "the reading does not say it was shortened").toContain(NOTE_AFTER);
     } finally { await reader.close(); served = fixture(); }
   });

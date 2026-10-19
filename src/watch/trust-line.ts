@@ -61,7 +61,7 @@ export type RedirectPolicy = "same-origin" | "anywhere";
  * page likes. Both readers bound the same kind of string with it, and the
  * browser reader's in-page code is handed it too.
  */
-export const MOST_OF_AN_ADDRESS = 200;
+export const ADDRESS_LENGTH_LIMIT = 200;
 
 /**
  * An address-shaped field bounded, and what was cut said in the one spelling
@@ -86,10 +86,10 @@ export const MOST_OF_AN_ADDRESS = 200;
  * the whole sentence: that one bounds all a line says about a failure, this one
  * bounds one field inside a line that says more.
  */
-export function shortenAddress(address: string): string {
+export function boundedAddress(address: string): string {
   const characters = [...address];
-  return characters.length > MOST_OF_AN_ADDRESS
-    ? `${characters.slice(0, MOST_OF_AN_ADDRESS).join("")}${noteOfLength(characters.length)}`
+  return characters.length > ADDRESS_LENGTH_LIMIT
+    ? `${characters.slice(0, ADDRESS_LENGTH_LIMIT).join("")}${noteOfLength(characters.length)}`
     : address;
 }
 
@@ -118,8 +118,8 @@ export function stripCredentials(url: string): string {
  * For a log line, a flag or an issue. The credentials are removed for what is
  * safe; the bound is for what is readable.
  */
-export function printAddress(url: string): string {
-  return shortenAddress(stripCredentials(url));
+export function readableAddressOf(url: string): string {
+  return boundedAddress(stripCredentials(url));
 }
 
 type AddressKind = "loopback" | "link-local" | "private" | "public";
@@ -238,7 +238,7 @@ function isPage(url: URL): boolean {
  * because an entry or a `location` header chooses how long a scheme is.
  */
 function notAPage(url: URL): string {
-  return `a ${shortenAddress(url.protocol.replace(":", ""))} address, which is not a page this watch reads`;
+  return `a ${boundedAddress(url.protocol.replace(":", ""))} address, which is not a page this watch reads`;
 }
 
 /**
@@ -255,7 +255,7 @@ function notAPage(url: URL): string {
  * wrong without repeating the thing that is wrong: an address that fails to
  * parse may still carry a password.
  */
-export function judgeEntry(url: string): string | null {
+export function refusalOfEntryAddress(url: string): string | null {
   let parsed: URL;
   try { parsed = new URL(url); } catch { return "the entry address is not an address"; }
   if (parsed.username || parsed.password)
@@ -267,13 +267,13 @@ export function judgeEntry(url: string): string | null {
 }
 
 /**
- * Why a redirect is not followed, and which part of the trust line it crossed:
- * `place` when the target is somewhere the watch may not go under either
- * setting, `origin` when it leaves the entry's origin under `same-origin`. The
- * reader says the source's own answer beside it, and where that goes in the
- * sentence depends on which.
+ * Why a redirect is not followed (`reason`), and which part of the trust line
+ * it `crossed`: `forbidden-address` when the target is somewhere the watch may
+ * not go under either setting, `other-origin` when it leaves the entry's origin
+ * under `same-origin`. The reader says the source's own answer beside it, and
+ * where that goes in the sentence depends on which.
  */
-export interface RedirectRefusal { rule: "place" | "origin"; says: string }
+export interface RedirectRefusal { crossed: "forbidden-address" | "other-origin"; reason: string }
 
 /**
  * The redirect question: why the watch will not follow a redirect to
@@ -282,15 +282,16 @@ export interface RedirectRefusal { rule: "place" | "origin"; says: string }
  * `entry` is where the chain started: its host for the relative rule, its
  * origin for `same-origin`. A target carrying a name and password keeps its
  * origin, so it is refused on its own before the origin is asked about. The
- * target is printed no further than its origin for a place, and bounded.
+ * target is printed no further than its origin for a forbidden address, and
+ * bounded.
  */
-export function judgeRedirect(target: URL, entry: URL, setting: RedirectPolicy): RedirectRefusal | null {
+export function refusalOfRedirect(target: URL, entry: URL, setting: RedirectPolicy): RedirectRefusal | null {
   const place = refusedPlace(target, entry.hostname);
-  if (place) return { rule: "place", says: place };
+  if (place) return { crossed: "forbidden-address", reason: place };
   if (setting === "same-origin" && target.origin !== entry.origin)
     return {
-      rule: "origin",
-      says: `redirected off the site: asked ${entry.origin}, sent to ${shortenAddress(`${target.origin}${target.pathname}`)}`,
+      crossed: "other-origin",
+      reason: `redirected off the site: asked ${entry.origin}, sent to ${boundedAddress(`${target.origin}${target.pathname}`)}`,
     };
   return null;
 }
@@ -301,9 +302,9 @@ function refusedPlace(target: URL, entryHost: string): string | null {
     return "to an address carrying a name and password, which this watch will not send";
   const going = addressKind(target.hostname);
   if (going === "link-local")
-    return `to ${shortenAddress(target.origin)}, which is a link-local address and never a source`;
+    return `to ${boundedAddress(target.origin)}, which is a link-local address and never a source`;
   if (!allowedFrom(going, entryHost))
-    return `to ${shortenAddress(target.origin)}, which is on a ${going} address and not the open web`;
+    return `to ${boundedAddress(target.origin)}, which is on a ${going} address and not the open web`;
   return null;
 }
 
@@ -319,13 +320,13 @@ function refusedPlace(target: URL, entryHost: string): string | null {
  * the source's business and this watch's finding, and not something to write
  * where a failure's text ends up.
  */
-export function judgeResolution(name: string, addresses: readonly string[], entryHost: string): string | null {
+export function refusalOfResolvedAddresses(name: string, addresses: readonly string[], entryHost: string): string | null {
   for (const address of addresses) {
     const going = addressKind(address);
     if (going === "link-local")
-      return `${shortenAddress(name)} resolves to a link-local address, which is never a source`;
+      return `${boundedAddress(name)} resolves to a link-local address, which is never a source`;
     if (!allowedFrom(going, entryHost))
-      return `${shortenAddress(name)} resolves to a ${going} address and not the open web`;
+      return `${boundedAddress(name)} resolves to a ${going} address and not the open web`;
   }
   return null;
 }
@@ -345,10 +346,10 @@ export function judgeResolution(name: string, addresses: readonly string[], entr
  * Chrome reports `location.origin` as `"null"`, because its bytes still come
  * from the host that was asked.
  */
-export function judgeLanding(asked: string, landed: string, setting: RedirectPolicy): string | null {
+export function refusalOfLandedPage(asked: string, landed: string, setting: RedirectPolicy): string | null {
   if (setting !== "same-origin") return null;
   if (originOf(landed) === asked) return null;
-  return `the page was asked for at ${asked} and the browser is at ${shortenAddress(landed)}`;
+  return `the page was asked for at ${asked} and the browser is at ${boundedAddress(landed)}`;
 }
 
 function originOf(address: string): string | null {

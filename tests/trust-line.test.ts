@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  judgeEntry, judgeLanding, judgeRedirect, judgeResolution, MOST_OF_AN_ADDRESS, printAddress,
-  type RedirectPolicy, shortenAddress, stripCredentials,
+  ADDRESS_LENGTH_LIMIT, boundedAddress, readableAddressOf, type RedirectPolicy, refusalOfEntryAddress,
+  refusalOfLandedPage, refusalOfRedirect, refusalOfResolvedAddresses, stripCredentials,
 } from "../src/watch/trust-line.js";
 import { noteOfLength } from "../src/watch/failure.js";
 
@@ -29,7 +29,7 @@ const PAST_THE_ORIGIN = "/where-it-goes?key=value";
  * bound, the note that says what was cut, and the sentence around them, which
  * together stay under twice the bound.
  */
-const MOST_OF_A_REFUSAL = 2 * MOST_OF_AN_ADDRESS;
+const MOST_OF_A_REFUSAL = 2 * ADDRESS_LENGTH_LIMIT;
 
 /**
  * Whether the relative rule lets an entry of this kind go to an address of
@@ -101,12 +101,12 @@ describe("trust line — a redirect target is judged by the one address it means
       const goes = allowed(kind, entry);
       it(`${goes ? "follows" : "refuses"} a redirect to ${what} from ${from}`, () => {
         const target = new URL(`http://${hostOf(spelling)}${PAST_THE_ORIGIN}`);
-        const refusal = judgeRedirect(target, entry, "anywhere");
+        const refusal = refusalOfRedirect(target, entry, "anywhere");
         if (goes) { expect(refusal, `${what} was refused`).toBeNull(); return; }
         expect(refusal, `${what} was followed`).not.toBeNull();
-        expect(refusal!.rule, "a place the watch may not go was refused as something else").toBe("place");
-        expect(refusal!.says, "the refusal does not say what kind of address it is").toContain(kind);
-        expect(refusal!.says, "the refusal printed the address past its origin").not.toContain(PAST_THE_ORIGIN);
+        expect(refusal!.crossed, "a place the watch may not go was refused as something else").toBe("forbidden-address");
+        expect(refusal!.reason, "the refusal does not say what kind of address it is").toContain(kind);
+        expect(refusal!.reason, "the refusal printed the address past its origin").not.toContain(PAST_THE_ORIGIN);
       });
     }
   }
@@ -118,7 +118,7 @@ describe("trust line — a name is judged by every address it resolves to", () =
     for (const [from, entry] of ENTRIES) {
       const goes = allowed(kind, entry);
       it(`${goes ? "connects" : "refuses"} a name that resolves to ${what} from ${from}`, () => {
-        const refusal = judgeResolution("mirror.test", [spelling], entry.hostname);
+        const refusal = refusalOfResolvedAddresses("mirror.test", [spelling], entry.hostname);
         if (goes) { expect(refusal, `${what} was refused`).toBeNull(); return; }
         expect(refusal, `${what} was connected to`).not.toBeNull();
         expect(refusal, "the refusal does not say what kind of address it is").toContain(kind);
@@ -131,7 +131,7 @@ describe("trust line — a name is judged by every address it resolves to", () =
     // A reader that took the first allowed address out of a list would let
     // whoever wrote the list choose which answer mattered.
     for (const addresses of [["93.184.216.34", "10.0.0.5"], ["10.0.0.5", "93.184.216.34"]]) {
-      const refusal = judgeResolution("both.test", addresses, PUBLIC_ENTRY.hostname);
+      const refusal = refusalOfResolvedAddresses("both.test", addresses, PUBLIC_ENTRY.hostname);
       expect(refusal, `${addresses.join(", ")} was connected to`).not.toBeNull();
       expect(refusal).toContain("private");
       expect(refusal, "the address behind the name was printed").not.toContain("10.0.0.5");
@@ -139,7 +139,7 @@ describe("trust line — a name is judged by every address it resolves to", () =
   });
 
   it("connects a name whose addresses are all allowed", () => {
-    expect(judgeResolution("rules.example.org", ["93.184.216.34", "2001:4860:4860::8888"], PUBLIC_ENTRY.hostname))
+    expect(refusalOfResolvedAddresses("rules.example.org", ["93.184.216.34", "2001:4860:4860::8888"], PUBLIC_ENTRY.hostname))
       .toBeNull();
   });
 });
@@ -162,15 +162,15 @@ describe("the trust line reads the NAT64 local-use prefix as private", () => {
     for (const [from, entry] of ENTRIES) {
       it(`refuses a redirect to the metadata address ${where} from ${from}`, () => {
         const target = new URL(`http://[${address}]${PAST_THE_ORIGIN}`);
-        const refusal = judgeRedirect(target, entry, "anywhere");
+        const refusal = refusalOfRedirect(target, entry, "anywhere");
         expect(refusal, `[${address}] was followed`).not.toBeNull();
-        expect(refusal!.rule).toBe("place");
-        expect(refusal!.says, "the refusal does not say it is private").toContain("private");
-        expect(refusal!.says, "the refusal printed the address past its origin").not.toContain(PAST_THE_ORIGIN);
+        expect(refusal!.crossed).toBe("forbidden-address");
+        expect(refusal!.reason, "the refusal does not say it is private").toContain("private");
+        expect(refusal!.reason, "the refusal printed the address past its origin").not.toContain(PAST_THE_ORIGIN);
       });
 
       it(`refuses a name that resolves to the metadata address ${where} from ${from}`, () => {
-        const refusal = judgeResolution("mirror.test", [address], entry.hostname);
+        const refusal = refusalOfResolvedAddresses("mirror.test", [address], entry.hostname);
         expect(refusal, `${address} was connected to`).not.toBeNull();
         expect(refusal, "the refusal does not say it is private").toContain("private");
         expect(refusal, "the address behind the name was printed").not.toContain(address);
@@ -179,11 +179,11 @@ describe("the trust line reads the NAT64 local-use prefix as private", () => {
 
     it(`follows a redirect to the metadata address ${where} from a private entry`, () => {
       const target = new URL(`http://[${address}]${PAST_THE_ORIGIN}`);
-      expect(judgeRedirect(target, PRIVATE_ENTRY, "anywhere")).toBeNull();
+      expect(refusalOfRedirect(target, PRIVATE_ENTRY, "anywhere")).toBeNull();
     });
 
     it(`connects a name that resolves to the metadata address ${where} from a private entry`, () => {
-      expect(judgeResolution("mirror.test", [address], PRIVATE_ENTRY.hostname)).toBeNull();
+      expect(refusalOfResolvedAddresses("mirror.test", [address], PRIVATE_ENTRY.hostname)).toBeNull();
     });
   }
 });
@@ -205,7 +205,7 @@ describe("trust line — the entry address", () => {
     ["IPv6 link-local", "http://[fe80::1]/", "link-local"],
   ] as const) {
     it(`refuses ${what}`, () => {
-      const refusal = judgeEntry(url);
+      const refusal = refusalOfEntryAddress(url);
       expect(refusal, `${what} was allowed`).not.toBeNull();
       for (const secret of credentials)
         expect(refusal, "a credential was printed").not.toContain(secret);
@@ -218,7 +218,7 @@ describe("trust line — the entry address", () => {
   }
 
   it("bounds the scheme it names, however long an entry makes it", () => {
-    const refusal = judgeEntry(`${"a".repeat(5_000)}:x`);
+    const refusal = refusalOfEntryAddress(`${"a".repeat(5_000)}:x`);
     expect(refusal, "a 5,000-character scheme was allowed").not.toBeNull();
     expect(refusal!.length, "the refusal quotes the whole of an entry's scheme").toBeLessThan(MOST_OF_A_REFUSAL);
   });
@@ -231,7 +231,7 @@ describe("trust line — the entry address", () => {
     ["a page on the private network, where its own kind is", "http://10.0.0.1/"],
   ] as const) {
     it(`allows ${what}`, () => {
-      expect(judgeEntry(url)).toBeNull();
+      expect(refusalOfEntryAddress(url)).toBeNull();
     });
   }
 });
@@ -247,9 +247,9 @@ describe("trust line — a redirect's scheme and credentials, under both setting
     for (const [from, entry] of ENTRIES) {
       it(`refuses ${what} from ${from}, even for a link`, () => {
         for (const setting of settings) {
-          const refusal = judgeRedirect(new URL(address), entry, setting);
+          const refusal = refusalOfRedirect(new URL(address), entry, setting);
           expect(refusal, `${what} was followed under ${setting}`).not.toBeNull();
-          expect(refusal!.rule).toBe("place");
+          expect(refusal!.crossed).toBe("forbidden-address");
         }
       });
     }
@@ -260,11 +260,11 @@ describe("trust line — a redirect's scheme and credentials, under both setting
     for (const [from, entry] of ENTRIES) {
       const target = new URL(entry.href.replace("//", "//watcher:hunter2@"));
       for (const setting of settings) {
-        const refusal = judgeRedirect(target, entry, setting);
+        const refusal = refusalOfRedirect(target, entry, setting);
         expect(refusal, `credentials were sent from ${from} under ${setting}`).not.toBeNull();
-        expect(refusal!.rule).toBe("place");
-        expect(refusal!.says, "the password was printed").not.toContain("hunter2");
-        expect(refusal!.says, "the name was printed").not.toContain("watcher");
+        expect(refusal!.crossed).toBe("forbidden-address");
+        expect(refusal!.reason, "the password was printed").not.toContain("hunter2");
+        expect(refusal!.reason, "the name was printed").not.toContain("watcher");
       }
     }
   });
@@ -290,9 +290,9 @@ describe("trust line — the relative rule", () => {
       "http://10.0.0.1/away", "http://127.0.0.1/admin", false],
   ] as const) {
     it(what, () => {
-      const refusal = judgeRedirect(new URL(target), new URL(entry), "anywhere");
+      const refusal = refusalOfRedirect(new URL(target), new URL(entry), "anywhere");
       if (goes) expect(refusal).toBeNull();
-      else expect(refusal?.rule).toBe("place");
+      else expect(refusal?.crossed).toBe("forbidden-address");
     });
   }
 });
@@ -305,26 +305,26 @@ describe("trust line — a redirect stays on the entry's origin under same-origi
     ["another port on the same host", "https://rules.example.org:8443/notice"],
   ] as const) {
     it(`refuses ${what} under same-origin, and follows it under anywhere`, () => {
-      expect(judgeRedirect(new URL(target), entry, "same-origin")?.rule).toBe("origin");
-      expect(judgeRedirect(new URL(target), entry, "anywhere")).toBeNull();
+      expect(refusalOfRedirect(new URL(target), entry, "same-origin")?.crossed).toBe("other-origin");
+      expect(refusalOfRedirect(new URL(target), entry, "anywhere")).toBeNull();
     });
   }
 
   it("follows a redirect within the entry's own origin under both", () => {
     for (const setting of ["same-origin", "anywhere"] as const)
-      expect(judgeRedirect(new URL("https://rules.example.org/settled?lang=en"), entry, setting)).toBeNull();
+      expect(refusalOfRedirect(new URL("https://rules.example.org/settled?lang=en"), entry, setting)).toBeNull();
   });
 
   it("refuses a place the watch may not go before it asks about the origin", () => {
-    const refusal = judgeRedirect(new URL("http://10.0.0.1/admin"), entry, "same-origin");
-    expect(refusal?.rule, "a private target was refused only for leaving the site").toBe("place");
+    const refusal = refusalOfRedirect(new URL("http://10.0.0.1/admin"), entry, "same-origin");
+    expect(refusal?.crossed, "a private target was refused only for leaving the site").toBe("forbidden-address");
   });
 
   it("bounds where it says the redirect went, however long a page makes it", () => {
-    const refusal = judgeRedirect(new URL(`https://elsewhere.example.org/${"a".repeat(9_000)}`), entry, "same-origin");
-    expect(refusal?.rule).toBe("origin");
-    expect(refusal!.says.length, "the refusal quotes the whole of a page's address").toBeLessThan(MOST_OF_A_REFUSAL);
-    expect(refusal!.says, "the refusal does not name where it went").toContain("https://elsewhere.example.org");
+    const refusal = refusalOfRedirect(new URL(`https://elsewhere.example.org/${"a".repeat(9_000)}`), entry, "same-origin");
+    expect(refusal?.crossed).toBe("other-origin");
+    expect(refusal!.reason.length, "the refusal quotes the whole of a page's address").toBeLessThan(MOST_OF_A_REFUSAL);
+    expect(refusal!.reason, "the refusal does not name where it went").toContain("https://elsewhere.example.org");
   });
 });
 
@@ -338,19 +338,19 @@ describe("trust line — the page a reader ends on", () => {
     ["a blank page", "about:blank", false],
   ] as const) {
     it(`${goes ? "reads" : "refuses"} a page that ended on ${what} under same-origin`, () => {
-      const refusal = judgeLanding(asked, landed, "same-origin");
+      const refusal = refusalOfLandedPage(asked, landed, "same-origin");
       if (goes) expect(refusal).toBeNull();
       else expect(refusal, `a reading on ${what} was taken`).not.toBeNull();
     });
   }
 
   it("reads a page that ended anywhere under anywhere", () => {
-    expect(judgeLanding(asked, "https://elsewhere.example.org/x", "anywhere")).toBeNull();
+    expect(refusalOfLandedPage(asked, "https://elsewhere.example.org/x", "anywhere")).toBeNull();
   });
 
   it("bounds where it says the reader is, however long a page makes it", () => {
     const landed = `https://elsewhere.example.org/${"a".repeat(120_000)}`;
-    const refusal = judgeLanding(asked, landed, "same-origin");
+    const refusal = refusalOfLandedPage(asked, landed, "same-origin");
     expect(refusal).not.toBeNull();
     expect(refusal!.length, "the refusal quotes the whole of a page's address").toBeLessThan(MOST_OF_A_REFUSAL);
   });
@@ -366,11 +366,11 @@ describe("trust line — the printers", () => {
   });
 
   it("prints an address for a person without its credentials, and bounded", () => {
-    const printed = printAddress(`https://watcher:hunter2@rules.example.org/${"a".repeat(9_000)}`);
+    const printed = readableAddressOf(`https://watcher:hunter2@rules.example.org/${"a".repeat(9_000)}`);
     expect(printed, "the password was printed").not.toContain("hunter2");
     expect(printed, "the name was printed").not.toContain("watcher");
     expect([...printed].length, "the address was printed whole")
-      .toBe(MOST_OF_AN_ADDRESS + [...noteOfLength([...`https://rules.example.org/${"a".repeat(9_000)}`].length)].length);
+      .toBe(ADDRESS_LENGTH_LIMIT + [...noteOfLength([...`https://rules.example.org/${"a".repeat(9_000)}`].length)].length);
   });
 
   it("bounds an address before it is written down, however long a page makes it", () => {
@@ -380,13 +380,13 @@ describe("trust line — the printers", () => {
     const long = `https://rules.example.org/${"a".repeat(9_000)}`;
     // The note's wording is asked of its owner, not retyped.
     const suffix = noteOfLength([...long].length);
-    // The bound is `MOST_OF_AN_ADDRESS` and the suffix that says what was cut
+    // The bound is `ADDRESS_LENGTH_LIMIT` and the suffix that says what was cut
     // — asked of the constant, so moving it moves the test with it.
-    expect(shortenAddress(long)).toBe(long.slice(0, MOST_OF_AN_ADDRESS) + suffix);
+    expect(boundedAddress(long)).toBe(long.slice(0, ADDRESS_LENGTH_LIMIT) + suffix);
     // And an ordinary one is left exactly as it is.
     const ordinary = "https://anabin.kmk.org/anabin.html";
-    expect(ordinary.length).toBeLessThanOrEqual(MOST_OF_AN_ADDRESS);
-    expect(shortenAddress(ordinary)).toBe(ordinary);
+    expect(ordinary.length).toBeLessThanOrEqual(ADDRESS_LENGTH_LIMIT);
+    expect(boundedAddress(ordinary)).toBe(ordinary);
   });
 
   it("cuts an address on characters too, and counts it in the same unit", () => {
@@ -396,10 +396,10 @@ describe("trust line — the printers", () => {
     const wellFormed = (text: string) => (text as unknown as { isWellFormed(): boolean }).isWellFormed();
     const address = `https://rules.example.org/a${"\u{1f600}".repeat(300)}`;
     const note = noteOfLength([...address].length);
-    const short = shortenAddress(address);
+    const short = boundedAddress(address);
     expect(wellFormed(short), "the cut ended inside a character and printed half of one").toBe(true);
     expect([...short].length, "the cut fell somewhere other than the bound")
-      .toBe(MOST_OF_AN_ADDRESS + [...note].length);
+      .toBe(ADDRESS_LENGTH_LIMIT + [...note].length);
     expect(short, "the note counts in a unit nobody reading it counts in").toContain(note);
   });
 });

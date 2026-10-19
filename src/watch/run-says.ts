@@ -12,7 +12,7 @@ import {
   type Watchlist,
 } from "./core.js";
 import { makePrintable } from "./failure.js";
-import { printAddress } from "./trust-line.js";
+import { readableAddressOf } from "./trust-line.js";
 
 export type LogLevel = "info" | "warn" | "error";
 
@@ -92,7 +92,7 @@ export const EXCERPT_INTRODUCTION = "The page now reads, around the first differ
 function flagOf(report: WatchReport, today: string): FlagDocument {
   const header = [
     `# Watch flag: ${report.id} — ${report.outcome}`,
-    `- url: ${printAddress(report.url)}`,
+    `- url: ${readableAddressOf(report.url)}`,
     `- kind: ${report.kind}`,
     `- date: ${today}`,
     report.old_hash ? `- old: ${report.old_hash}` : "",
@@ -144,7 +144,7 @@ function reportEvent(r: WatchReport): LogEvent {
     level: LEVEL_OF[r.outcome],
     msg: `watch:${r.outcome}`,
     fields: {
-      id: r.id, url: printAddress(r.url), old: r.old_hash, new: r.new_hash, error: r.error,
+      id: r.id, url: readableAddressOf(r.url), old: r.old_hash, new: r.new_hash, error: r.error,
       // Which kind of failure it was, so a morning's log says why the run is
       // the colour it is without anybody reading the error back.
       failure: r.failure,
@@ -166,7 +166,7 @@ function noticeEvent(notice: UnreadNotice): LogEvent {
   return {
     level: notice.level,
     msg: `watch:${notice.event}`,
-    fields: { id: notice.id, url: printAddress(notice.url), days: notice.days, today: notice.today },
+    fields: { id: notice.id, url: readableAddressOf(notice.url), days: notice.days, today: notice.today },
   };
 }
 
@@ -287,7 +287,7 @@ export function settleState(settle: PassToSettle): SettledState {
 export function sayWhereItRead(entry: Pick<WatchEntry, "id" | "url">, result: FetchResult): LogEvent | undefined {
   const readAt = addressReadElsewhere(entry, result);
   if (!readAt) return undefined;
-  return { level: "info", msg: "watch:read_at", fields: { id: entry.id, asked: printAddress(entry.url), read_at: readAt } };
+  return { level: "info", msg: "watch:read_at", fields: { id: entry.id, asked: readableAddressOf(entry.url), read_at: readAt } };
 }
 
 /** The address an ok reading was taken at, when it is not the one asked for. */

@@ -6,7 +6,7 @@ import { noticeSources, provenancedValuesOf, routeStatements, statementSources, 
 import { countryVocabulary } from "../countries.js";
 import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type UnreadEntry, type WatchState } from "./state.js";
 import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, type FailureClass } from "./failure.js";
-import { judgeEntry, type RedirectPolicy, stripCredentials } from "./trust-line.js";
+import { refusalOfEntryAddress, type RedirectPolicy, stripCredentials } from "./trust-line.js";
 import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
 /**
@@ -427,7 +427,7 @@ export async function runWatch(
      * built from, which the site looks up against the dataset's own source
      * urls — so it must stay the entry's address exactly, minus the one thing
      * that may not be printed. Making it readable is the printer's job, and
-     * `printAddress` is where that happens.
+     * `readableAddressOf` is where that happens.
      */
     const base: Pick<WatchReport, "id" | "url" | "strategy" | "kind" | "note"> = {
       id: entry.id, url: stripCredentials(entry.url), strategy: entry.strategy, kind: entry.kind, note: entry.note,
@@ -1204,7 +1204,7 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
   // repeats the address, which may carry a name and password, and a curator
   // edits the watchlist by the entry id.
   const refusedEntries = watchlist.entries.flatMap((e) => {
-    const refusal = judgeEntry(e.url);
+    const refusal = refusalOfEntryAddress(e.url);
     return refusal === null ? [] : [`${e.id}: ${refusal}`];
   });
   // Keyed on what the DATASET cites, not on what the entry calls itself: an

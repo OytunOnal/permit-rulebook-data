@@ -1,7 +1,7 @@
 import { chromePath, launch } from "./chrome.js";
 import { BUDGET_MS } from "./fetch-source.js";
 import { classOfThrown, MOST_OF_A_FAILURE, printableWithin, ReadFailure, saidByThrown } from "./failure.js";
-import { judgeEntry } from "./trust-line.js";
+import { refusalOfEntryAddress } from "./trust-line.js";
 import type { Session } from "./cdp.js";
 import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 
@@ -111,7 +111,7 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
     lastCost = { paused: 0, pausedMs: 0 };
     // Before anything is opened: a browser sends credentials the moment it
     // navigates, on the page and on every request after it.
-    const refused = judgeEntry(entry.url);
+    const refused = refusalOfEntryAddress(entry.url);
     // Both are ours and neither is a minute: an address this watch will not
     // open stays one, and a machine with no Chrome will not grow one during
     // the pass.
