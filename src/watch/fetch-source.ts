@@ -12,16 +12,6 @@ import {
 } from "./trust-line.js";
 
 /**
- * The trust line's printers and entry question under the names the other
- * callers still import from here. Each of those callers asks `trust-line.ts`
- * directly once it moves, and this goes with the last of them.
- */
-export {
-  judgeEntry as refusedAddress, MOST_OF_AN_ADDRESS, printAddress as printableAddress,
-  shortenAddress as shortAddress, stripCredentials as addressWithoutCredentials,
-} from "./trust-line.js";
-
-/**
  * The watch's first reader: one HTTP request, no browser.
  *
  * Lifted out of `cli-watch.ts` on 2026-09-24 so that it can be tested. It was
