@@ -215,6 +215,12 @@ describe("trust line — the entry address", () => {
     });
   }
 
+  it("bounds the scheme it names, however long an entry makes it", () => {
+    const refusal = judgeEntry(`${"a".repeat(5_000)}:x`);
+    expect(refusal, "a 5,000-character scheme was allowed").not.toBeNull();
+    expect(refusal!.length, "the refusal quotes the whole of an entry's scheme").toBeLessThan(MOST_OF_A_REFUSAL);
+  });
+
   for (const [what, url] of [
     ["a public page", "https://rules.example.org/notice"],
     ["a public page on plain http", "http://anabin.kmk.org/anabin.html"],

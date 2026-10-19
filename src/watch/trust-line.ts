@@ -233,6 +233,14 @@ function isPage(url: URL): boolean {
 }
 
 /**
+ * A url that is not a page, as a refusal names it: by its scheme, bounded,
+ * because an entry or a `location` header chooses how long a scheme is.
+ */
+function notAPage(url: URL): string {
+  return `a ${shortenAddress(url.protocol.replace(":", ""))} address, which is not a page this watch reads`;
+}
+
+/**
  * The entry question: why the watch will not ask for this entry address at
  * all — malformed, carrying a name and password, on a scheme that is not a
  * page, or link-local — or `null`.
@@ -251,8 +259,7 @@ export function judgeEntry(url: string): string | null {
   try { parsed = new URL(url); } catch { return "the entry address is not an address"; }
   if (parsed.username || parsed.password)
     return "the entry address carries a name and password, which this watch will not send";
-  if (!isPage(parsed))
-    return `the entry address is a ${parsed.protocol.replace(":", "")} address, which this watch does not read`;
+  if (!isPage(parsed)) return `the entry address is ${notAPage(parsed)}`;
   if (addressKind(parsed.hostname) === "link-local")
     return "the entry address is a link-local address and never a source";
   return null;
@@ -288,8 +295,7 @@ export function judgeRedirect(target: URL, entry: URL, setting: RedirectPolicy):
 }
 
 function refusedPlace(target: URL, entryHost: string): string | null {
-  if (!isPage(target))
-    return `to a ${target.protocol.replace(":", "")} address, which is not a page this watch will read`;
+  if (!isPage(target)) return `to ${notAPage(target)}`;
   if (target.username || target.password)
     return "to an address carrying a name and password, which this watch will not send";
   const going = addressKind(target.hostname);
