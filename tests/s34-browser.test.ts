@@ -2,8 +2,8 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { chromePath, openBrowserReader } from "../src/watch/browser.js";
-import { MOST_OF_AN_ADDRESS } from "../src/watch/fetch-source.js";
 import { hasControl, hasSteering, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD, NOTE_AFTER } from "../src/watch/failure.js";
+import { MOST_OF_AN_ADDRESS } from "../src/watch/trust-line.js";
 import { runWatch, type BrowserReader, type Fetcher, type WatchEntry } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 

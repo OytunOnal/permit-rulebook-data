@@ -1,7 +1,8 @@
 import type { WatchEntry, WatchStep } from "./core.js";
-import type { RedirectPolicy } from "./trust-line.js";
+import {
+  judgeLanding, MOST_OF_AN_ADDRESS, printAddress, type RedirectPolicy, shortenAddress,
+} from "./trust-line.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
-import { MOST_OF_AN_ADDRESS, printableAddress, shortAddress } from "./fetch-source.js";
 import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, ReadFailure } from "./failure.js";
 
 /**
@@ -96,7 +97,7 @@ export interface Session {
  * at all.
  */
 export function servedFailure(status: number, servedUrl: string | undefined, asked: string): ReadFailure {
-  const redirected = servedUrl && servedUrl !== asked ? ` (after redirect to ${printableAddress(servedUrl)})` : "";
+  const redirected = servedUrl && servedUrl !== asked ? ` (after redirect to ${printAddress(servedUrl)})` : "";
   return new ReadFailure(`HTTP ${status} in the browser${redirected}`, failureOfStatus(status));
 }
 
@@ -196,7 +197,7 @@ export function attach(socket: WebSocket, close: () => void): Session {
   const withoutQuery = (url: string) => {
     try {
       const parsed = new URL(url);
-      return parsed.protocol === "data:" ? "data:..." : shortAddress(`${parsed.host}${parsed.pathname}`);
+      return parsed.protocol === "data:" ? "data:..." : shortenAddress(`${parsed.host}${parsed.pathname}`);
     } catch { return printableWithin(url, MOST_OF_AN_ADDRESS); }
   };
   const askedSince = (sessionId: string, since: number): string[] =>
@@ -473,48 +474,22 @@ export function attach(socket: WebSocket, close: () => void): Session {
         servedOk();
 
         /**
-         * Where the tab is allowed to be: the origin the watchlist named, and
-         * nothing else.
+         * Where the tab is allowed to be, asked of the trust line's landing
+         * question under the strategy table's redirect setting, the same one
+         * the fetcher is handed. The question is asked of the ENTRY's origin,
+         * never of wherever the navigation ended.
          *
-         * The baseline is the ENTRY's origin, not wherever the navigation
-         * happened to end. Reading it off the loaded page instead — which is
-         * what this did until 2026-09-24 — hands the decision to whoever the
-         * page redirects to: a source that 302s or meta-refreshes to a third
-         * party on load is read there, the far 200 satisfies the status gate,
-         * the far origin becomes the baseline, and the check after the steps
-         * compares it with itself and passes. Measured in both shapes, both
-         * `ok: true` with the other site's body as the reading.
-         *
-         * A redirect chain WITHIN the origin is fine and is not a special
-         * case: the Opportunity Card's notice goes to a cookie check and back
-         * to bmi.bund.de, and ends where it started, which is the whole of
-         * what is asked.
+         * The address it returns is the page's to choose, and a page can make
+         * it as long as it likes, so it is bounded under either setting.
          */
-        const allowedOrigin = new URL(entry.url).origin;
-        const whereAmI = async () => await evaluate("location.origin + String.fromCharCode(32) + location.href") as string;
-        /**
-         * The rule comes from the strategy table, like the fetcher's.
-         *
-         * Every browser entry is `same-origin` today and this changes nothing
-         * — but the row said one thing and this file did another, so the row
-         * was decoration: a change to it changed no behaviour. One owner for
-         * both readers (Standards review, 2026-09-25).
-         */
+        const askedOrigin = new URL(entry.url).origin;
         const mustBeHome = async (when: string) => {
-          if (redirects !== "same-origin") return shortAddress((await whereAmI()).split(" ")[1] as string);
-          const [origin, href] = (await whereAmI()).split(" ") as [string, string];
-          // The address is the page's to choose, and a page can make it as
-          // long as it likes: one `history.pushState` produced 120,032
-          // characters of it, which went into the error, the log line, and
-          // from there a flag and an issue (Security review, 2026-09-24). The
-          // bound is the fetcher's, because it met the same thing first.
-          const short = shortAddress(href);
-          if (origin !== allowedOrigin)
-            // Ours: a third party's bytes must never be hashed as the
-            // authority's, and that is a decision, not a bad minute.
-            throw new ReadFailure(
-              `${when}: the page was asked for at ${allowedOrigin} and the browser is at ${short}`, "refused-by-us");
-          return short;
+          const href = await evaluate("location.href") as string;
+          const refused = judgeLanding(askedOrigin, href, redirects);
+          // Ours: a third party's bytes must never be hashed as the
+          // authority's, and that is a decision, not a bad minute.
+          if (refused) throw new ReadFailure(`${when}: ${refused}`, "refused-by-us");
+          return shortenAddress(href);
         };
         await mustBeHome("the page redirected to another site before it could be read");
         const inPage = (step: unknown, phase?: string) =>
