@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { conditionOf, read, step, stepNames, workflowsDir } from "./workflow-text.js";
 
 /**
  * Two defects in the watch workflow, pinned together because one step carries
@@ -30,32 +31,11 @@ import { fileURLToPath } from "node:url";
  * the site listens for the event and reruns daily after this watch's hour.
  */
 
-const workflowsDir = fileURLToPath(new URL("../.github/workflows/", import.meta.url));
-
-/** CRLF is a checkout detail on Windows, not a fact about the file. */
-const read = (path: string): string => readFileSync(path, "utf8").split("\r\n").join("\n");
-
 const watch = read(join(workflowsDir, "watch.yml"));
 
 /** The canonical GitHub Actions bot, said once so the two repositories agree. */
 const BOT_NAME = "github-actions[bot]";
 const BOT_EMAIL = "41898282+github-actions[bot]@users.noreply.github.com";
-
-/**
- * The lines of one named step, from its `- name:` to the next step at the same
- * indentation. Reading the block rather than the whole file is what lets the
- * ordering inside it be asserted — a guard that runs after the request it is
- * meant to guard is not a guard.
- */
-function step(yaml: string, name: string): string {
-  const lines = yaml.split("\n");
-  const start = lines.findIndex((line) => line.trim() === `- name: ${name}`);
-  expect(start, `no step named "${name}"`).toBeGreaterThan(-1);
-  const indent = lines[start].indexOf("-");
-  let end = start + 1;
-  while (end < lines.length && !/^\s*- name: /.test(lines[end].slice(0, indent + 8))) end += 1;
-  return lines.slice(start, end).join("\n");
-}
 
 /**
  * The `workflow_dispatch` inputs and what each one defaults to.
@@ -82,14 +62,6 @@ function dispatchInputs(yaml: string): Record<string, string> {
     if (fallback && current) found[current] = fallback[1]!;
   }
   return found;
-}
-
-/** One step's `if:` expression, without the `${{ }}` a workflow may wrap it in. */
-function conditionOf(yaml: string, name: string): string {
-  const body = step(yaml, name);
-  const condition = /^\s*if:\s*(.+)$/m.exec(body);
-  expect(condition, `${name} has no condition`).not.toBeNull();
-  return condition![1]!.trim().replace(/^\$\{\{/, "").replace(/\}\}$/, "").trim();
 }
 
 /**
@@ -165,7 +137,7 @@ describe("a new dataset state wakes the site", () => {
    * by a step order (review 2026-09-08).
    */
   it("runs last, so nothing a flag depends on sits behind a step that can fail on the token", () => {
-    const names = [...watch.matchAll(/^\s*- name: (.+)$/gm)].map((m) => m[1]!.trim());
+    const names = stepNames(watch);
     // The dispatch is the last step that DOES anything; the only thing after it
     // is the notice that speaks when a step failed — including the dispatch
     // itself, when its token has expired (Standards review, 2026-09-08). Behind
@@ -313,7 +285,7 @@ describe("a red run is never silent", () => {
   });
 
   it("opens or updates one issue when the run itself fails, with the run's link", () => {
-    const names = [...watch.matchAll(/^\s*- name: (.+)$/gm)].map((m) => m[1]!.trim());
+    const names = stepNames(watch);
     const say = step(watch, "Say so when the run fails");
     expect(say).toContain("if: failure()");
     expect(say).toContain("actions/runs/${{ github.run_id }}");
