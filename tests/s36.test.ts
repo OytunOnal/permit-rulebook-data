@@ -486,7 +486,7 @@ describe("s36 — a body is unpacked under a bound and inside the budget", () =>
    * needs — and the whole case costs about a quarter of a second rather than
    * the 1,137 ms four rounds of 2,000,000 took.
    *
-   * A slower machine (CI is `ubuntu-24.04`, 2 vCPU) makes the pool work take
+   * A slower machine (CI is `ubuntu-26.04`, 2 vCPU) makes the pool work take
    * LONGER, which widens the window rather than closing it; what it risks is
    * duration, so the timeout is explicit — 10 s, about forty times the
    * measurement above — and a runner that slow fails here by saying so.

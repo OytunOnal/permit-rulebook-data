@@ -226,13 +226,16 @@ them by hand (Standards review, 2026-09-08):
 - **`source-change`** — a watched official source changed. The issue carries the
   flag file, and a person reads the diff before any value moves.
 - **`watch`** — the daily run itself: `watch run failed` says the check did not
-  finish, which is not the same as a source having changed; `overdue flags`
+  finish, or that `npm audit` found a known advisory at high or above in an
+  installed dependency, which is not the same as a source having changed; `overdue flags`
   says a flag has waited two days for a person (below).
 
 ## The daily watch and the site rebuild
 
 `.github/workflows/watch.yml` runs at 05:17 UTC, re-reads every watched source,
-and commits `watch/state.json` (plus any new flag) back to this repository. The
+and commits `watch/state.json` (plus any new flag) back to this repository. It
+also audits every installed dependency; a known advisory at high or above
+turns the run red without stopping any of the rest. The
 site is a separate repository ([permit-rulebook](https://github.com/OytunOnal/permit-rulebook)),
 it bakes "RULES READ <date>" into its pages and its social card promises
 "checked daily" — so a commit here has to reach a rebuild there, or the promise

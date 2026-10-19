@@ -44,7 +44,7 @@ permissions:
 
 jobs:
   watch:
-    runs-on: ubuntu-24.04 # pinned 2026-09-24; ubuntu-latest moves to Ubuntu 26 on 2026-10-19 and the move is a dated roadmap item
+    runs-on: ubuntu-26.04 # named, never -latest: moved from 24.04 on 2026-10-19, a day we picked (#24); the browser tier reads the image's own Chrome
     permissions:
       # Commits watch/state.json and the flag files.
       contents: write
@@ -56,6 +56,18 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 (node24)
         with: { node-version: 22 }
       - run: npm ci
+
+      # Every installed dependency, dev ones included: the test runner's two
+      # critical advisories sat here from the v1.2.0 release until a person
+      # ran this by hand (#83), and this job holds a write token. A known
+      # advisory at high or above turns the run red — at the end, through
+      # "Fail the run on a known advisory" — and stops nothing: the sources
+      # are still read and recorded (#47, decided in #24's grill).
+      - name: Audit the installed dependencies
+        id: audit
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
       - run: npm run build
       - name: Coverage gate (every dataset source is watched)
         run: node dist/src/watch/cli-coverage.js
@@ -225,6 +237,15 @@ jobs:
           echo "::error::watch reported unreachable sources — see the Watch sources step"
           exit 1
 
+      # Behind every step that does the watch's work, so a red audit skips
+      # none of it; `!cancelled()` so an unreachable source above does not
+      # hide it.
+      - name: Fail the run on a known advisory
+        if: ${{ !cancelled() && steps.audit.outcome == 'failure' }}
+        run: |
+          echo "::error::npm audit found a known advisory at high or above — see the Audit the installed dependencies step"
+          exit 1
+
       # The site bakes "RULES READ <date>" and promises "checked daily", but it
       # rebuilds only on its own pushes and its own cron. A new state committed
       # here is exactly the moment that promise needs honouring, so we tell the
@@ -296,7 +317,7 @@ jobs:
           title="watch run failed"
           body="The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           Commit: ${{ github.sha }}
-          Nothing here says a source changed — it says the check did not finish; the failed step in the run says which part went unread."
+          Nothing here says a source changed — it says the check did not finish; the failed step in the run says which part went unread, or which advisory the audit found."
           existing=$(gh issue list --label watch --state open --search "$title in:title" --json number --jq '.[0].number')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"
