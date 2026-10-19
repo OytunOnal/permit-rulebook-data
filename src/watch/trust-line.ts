@@ -15,8 +15,9 @@ import { noteOfLength } from "./failure.js";
  * literal IPv6 with `::` expanded, an embedded dotted quad taken as its last
  * two groups, an IPv4-mapped address judged by the IPv4 rule on the address it
  * embeds, and the prefixes that carry or stand for another address — NAT64
- * `64:ff9b::/96`, 6to4 `2002::/16`, the compat form `::/96` and site-local
- * `fec0::/10`; the two names that can only mean this machine; and every
+ * `64:ff9b::/96`, 6to4 `2002::/16` and the compat form `::/96`, and NAT64's
+ * local-use `64:ff9b:1::/48` and site-local `fec0::/10`, both read as
+ * private; the two names that can only mean this machine; and every
  * address a resolver returns for any other name. What it does not read: an
  * address the operating system substitutes below the fetcher's lookup hook (a
  * `hosts` file, a VPN's split DNS, NAT on the path); a name the browser
