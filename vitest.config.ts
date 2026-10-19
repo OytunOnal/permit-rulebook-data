@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 /**
  * Room for a slow machine.
@@ -28,5 +28,8 @@ export default defineConfig({
   test: {
     testTimeout: 60_000,
     hookTimeout: 60_000,
+    // `.run/` is run output and agents' scratch, not a test folder: a copy of a
+    // test left there would otherwise run as part of the green.
+    exclude: [...configDefaults.exclude, ".run/**"],
   },
 });
