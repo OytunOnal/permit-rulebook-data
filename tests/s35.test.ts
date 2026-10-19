@@ -97,8 +97,8 @@ describe("s35 — a failure has a class, and the reader names it", () => {
     expect(classOfThrown(new DOMException("The operation was aborted due to timeout", "TimeoutError")))
       .toBe("transient");
     // And a throw nobody anticipated is worth one more try rather than a red
-    // morning: the floor refusing an address is a decision we made, and this
-    // is not one.
+    // morning: the trust line refusing an address is a decision we made, and
+    // this is not one.
     expect(classOfThrown(new Error("something nobody wrote down"))).toBe("transient");
   });
 

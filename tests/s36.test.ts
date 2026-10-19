@@ -14,12 +14,12 @@ import { ask, MEASURED, MOST_OF_A_BODY, unpacked } from "../src/watch/request.js
 /**
  * s36 — the address the watch connects to.
  *
- * The floor read the address a source *spells*. Two classes sat outside it: a
- * name that resolves to a private or link-local address, and the transition
- * and legacy prefixes the classifier had never learnt. Both close the same
- * way — connect to the address you checked — and the mechanism is Node's own
- * `lookup` hook, which is handed the hostname and gives back the address the
- * socket will use.
+ * The trust line read the address a source *spells*. Two classes sat outside
+ * it: a name that resolves to a private or link-local address, and the
+ * transition and legacy prefixes the classifier had never learnt. Both close
+ * the same way — connect to the address you checked — and the mechanism is
+ * Node's own `lookup` hook, which is handed the hostname and gives back the
+ * address the socket will use.
  *
  * The hook is also the seam: the fetcher takes an optional resolver, so a test
  * can say what a name resolves to without owning a DNS server.
@@ -137,7 +137,7 @@ function answering(table: Record<string, string[][]>): Resolver {
   };
 }
 
-describe("s36 — the floor spells the prefixes that carry another address", () => {
+describe("s36 — the fetcher asks the trust line's entry question before it requests anything", () => {
   /**
    * The fetcher asks the trust line's entry question before anything is
    * requested. Which entries are refused is the trust line's table

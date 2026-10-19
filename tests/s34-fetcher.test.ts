@@ -128,7 +128,7 @@ describe("s34 — a link is followed the way a person's browser follows it", () 
   });
 });
 
-describe("s34 — there is a floor under following a link anywhere", () => {
+describe("s34 — the trust line holds under following a link anywhere", () => {
 
   /**
    * The fetcher asks the trust line's redirect question, and a refused target
@@ -315,7 +315,7 @@ describe("s35 — the fetcher says what kind of failure it met", () => {
     expect(busy.failure).toBe("transient");
   });
 
-  it("calls everything the floor declines our own refusal", async () => {
+  it("calls everything the trust line and the hop cap decline our own refusal", async () => {
     // None of these is the source having a bad minute: the request was never
     // made, and would not be made three minutes later either. Each is red the
     // same day.

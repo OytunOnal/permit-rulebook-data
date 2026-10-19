@@ -542,7 +542,7 @@ describe("s34 — no slice of the five can match the form the runner is served",
   });
 });
 
-describe("#107 — the coverage gate asks the trust line's entry question", () => {
+describe("the coverage gate asks the trust line's entry question", () => {
   /** The shipped watchlist with one entry added, so the gate has nothing else to say. */
   const withEntry = (url: string): Watchlist =>
     ({ entries: [...watchlist.entries, { ...htmlEntry, id: "added-entry", url, kind: "sentinel" }] });

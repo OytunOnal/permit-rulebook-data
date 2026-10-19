@@ -144,7 +144,7 @@ describe("trust line — a name is judged by every address it resolves to", () =
   });
 });
 
-describe("#108 — the NAT64 local-use prefix is private", () => {
+describe("the trust line reads the NAT64 local-use prefix as private", () => {
   const PRIVATE_ENTRY = new URL("http://10.0.0.1/notice");
   /**
    * 169.254.169.254 (`a9.fe.a9.fe`) placed inside `64:ff9b:1::/48` at each of
