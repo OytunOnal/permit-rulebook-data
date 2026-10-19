@@ -124,9 +124,9 @@ export function readableAddressOf(url: string): string {
 
 type AddressKind = "loopback" | "link-local" | "private" | "public";
 
-const NAMED_LOOPBACK = [/^localhost$/i, /\.localhost$/i];
+const LOOPBACK_NAMES = [/^localhost$/i, /\.localhost$/i];
 
-const IPV4_KINDS: [AddressKind, RegExp][] = [
+const IPV4_RANGES: [AddressKind, RegExp][] = [
   ["loopback", /^127\./], ["loopback", /^0\.0\.0\.0$/],
   // Link-local before the private ranges: 169.254.169.254 is where a cloud
   // runner keeps its credentials, and no source is ever there.
@@ -142,7 +142,7 @@ const IPV4_KINDS: [AddressKind, RegExp][] = [
  * those addresses. An address has many spellings and only one meaning; this
  * turns the spelling into the meaning.
  */
-function hextets(literal: string): number[] | null {
+function ipv6Groups(literal: string): number[] | null {
   let text = literal.replace(/^\[/, "").replace(/\]$/, "");
   if (!text.includes(":")) return null;
   // A trailing dotted quad — `::ffff:127.0.0.1` — is the last two groups.
@@ -167,25 +167,25 @@ function hextets(literal: string): number[] | null {
   return groups.length === 8 ? groups : null;
 }
 
-function ipv4Kind(address: string): AddressKind {
-  return IPV4_KINDS.find(([, shape]) => shape.test(address))?.[0] ?? "public";
+function kindOfIpv4(address: string): AddressKind {
+  return IPV4_RANGES.find(([, shape]) => shape.test(address))?.[0] ?? "public";
 }
 
 /** The IPv4 address two groups carry, dotted, so the IPv4 rule can read it. */
-function carried(high: number, low: number): string {
+function embeddedIpv4(high: number, low: number): string {
   return [high >> 8, high & 0xff, low >> 8, low & 0xff].join(".");
 }
 
-function addressKind(hostname: string): AddressKind {
-  if (NAMED_LOOPBACK.some((shape) => shape.test(hostname))) return "loopback";
-  const groups = hextets(hostname);
-  if (!groups) return ipv4Kind(hostname);
-  const leading = (upTo: number) => groups.slice(0, upTo).every((g) => g === 0);
+function kindOfAddress(hostname: string): AddressKind {
+  if (LOOPBACK_NAMES.some((shape) => shape.test(hostname))) return "loopback";
+  const groups = ipv6Groups(hostname);
+  if (!groups) return kindOfIpv4(hostname);
+  const firstGroupsAreZero = (upTo: number) => groups.slice(0, upTo).every((g) => g === 0);
   // An IPv4-mapped address is that IPv4 address, and takes its rule.
-  if (leading(5) && groups[5] === 0xffff) return ipv4Kind(carried(groups[6]!, groups[7]!));
+  if (firstGroupsAreZero(5) && groups[5] === 0xffff) return kindOfIpv4(embeddedIpv4(groups[6]!, groups[7]!));
   // `::` (unspecified) and `::1` both mean this machine.
   if (groups.every((g) => g === 0)) return "loopback";
-  if (leading(7) && groups[7] === 1) return "loopback";
+  if (firstGroupsAreZero(7) && groups[7] === 1) return "loopback";
   /**
    * The prefixes that carry another address.
    *
@@ -196,18 +196,18 @@ function addressKind(hostname: string): AddressKind {
    * rather than being refused by association.
    */
   // `64:ff9b`, which both NAT64 prefixes below start with.
-  const inNat64 = groups[0] === 0x0064 && groups[1] === 0xff9b;
+  const startsWithNat64Prefix = groups[0] === 0x0064 && groups[1] === 0xff9b;
   // The compat form `::/96`, and NAT64's `64:ff9b::/96`: the last two groups.
-  const nat64 = inNat64 && groups.slice(2, 6).every((g) => g === 0);
-  if (leading(6) || nat64) return ipv4Kind(carried(groups[6]!, groups[7]!));
+  const isNat64WellKnownPrefix = startsWithNat64Prefix && groups.slice(2, 6).every((g) => g === 0);
+  if (firstGroupsAreZero(6) || isNat64WellKnownPrefix) return kindOfIpv4(embeddedIpv4(groups[6]!, groups[7]!));
   // 6to4's `2002::/16`: the first two groups after the prefix.
-  if (groups[0] === 0x2002) return ipv4Kind(carried(groups[1]!, groups[2]!));
+  if (groups[0] === 0x2002) return kindOfIpv4(embeddedIpv4(groups[1]!, groups[2]!));
   // NAT64's local-use `64:ff9b:1::/48` carries an IPv4 address too, but its
   // operator chooses where inside the prefix it sits (RFC 8215, at any of RFC
   // 6052's prefix lengths), so no fixed position can be read: all of it is
   // private.
-  const nat64LocalUse = inNat64 && groups[2] === 0x0001;
-  if (nat64LocalUse) return "private";
+  const isNat64LocalUsePrefix = startsWithNat64Prefix && groups[2] === 0x0001;
+  if (isNat64LocalUsePrefix) return "private";
   if ((groups[0]! & 0xffc0) === 0xfe80) return "link-local";
   if ((groups[0]! & 0xfe00) === 0xfc00) return "private";
   // Site-local, deprecated and still routed on plenty of networks.
@@ -220,16 +220,16 @@ function addressKind(hostname: string): AddressKind {
  * chain started: one rule for a redirect target spelled as a literal and for
  * every address a name resolves to.
  */
-function allowedFrom(going: AddressKind, entryHost: string): boolean {
-  if (going === "link-local") return false;
+function isReachableFromEntry(targetKind: AddressKind, entryHost: string): boolean {
+  if (targetKind === "link-local") return false;
   // The relative rule. An entry on loopback may move within loopback; it may
   // not step sideways into the private network, and a public source may do
   // neither.
-  return going === "public" || going === addressKind(entryHost);
+  return targetKind === "public" || targetKind === kindOfAddress(entryHost);
 }
 
 /** Whether a url's scheme is a page this watch reads. */
-function isPage(url: URL): boolean {
+function isWebPageScheme(url: URL): boolean {
   return url.protocol === "http:" || url.protocol === "https:";
 }
 
@@ -237,7 +237,7 @@ function isPage(url: URL): boolean {
  * A url that is not a page, as a refusal names it: by its scheme, bounded,
  * because an entry or a `location` header chooses how long a scheme is.
  */
-function notAPage(url: URL): string {
+function nonPageSchemeReason(url: URL): string {
   return `a ${boundedAddress(url.protocol.replace(":", ""))} address, which is not a page this watch reads`;
 }
 
@@ -260,8 +260,8 @@ export function refusalOfEntryAddress(url: string): string | null {
   try { parsed = new URL(url); } catch { return "the entry address is not an address"; }
   if (parsed.username || parsed.password)
     return "the entry address carries a name and password, which this watch will not send";
-  if (!isPage(parsed)) return `the entry address is ${notAPage(parsed)}`;
-  if (addressKind(parsed.hostname) === "link-local")
+  if (!isWebPageScheme(parsed)) return `the entry address is ${nonPageSchemeReason(parsed)}`;
+  if (kindOfAddress(parsed.hostname) === "link-local")
     return "the entry address is a link-local address and never a source";
   return null;
 }
@@ -286,7 +286,7 @@ export interface RedirectRefusal { crossed: "forbidden-address" | "other-origin"
  * bounded.
  */
 export function refusalOfRedirect(target: URL, entry: URL, setting: RedirectPolicy): RedirectRefusal | null {
-  const place = refusedPlace(target, entry.hostname);
+  const place = refusalOfTargetAddress(target, entry.hostname);
   if (place) return { crossed: "forbidden-address", reason: place };
   if (setting === "same-origin" && target.origin !== entry.origin)
     return {
@@ -296,15 +296,15 @@ export function refusalOfRedirect(target: URL, entry: URL, setting: RedirectPoli
   return null;
 }
 
-function refusedPlace(target: URL, entryHost: string): string | null {
-  if (!isPage(target)) return `to ${notAPage(target)}`;
+function refusalOfTargetAddress(target: URL, entryHost: string): string | null {
+  if (!isWebPageScheme(target)) return `to ${nonPageSchemeReason(target)}`;
   if (target.username || target.password)
     return "to an address carrying a name and password, which this watch will not send";
-  const going = addressKind(target.hostname);
-  if (going === "link-local")
+  const targetKind = kindOfAddress(target.hostname);
+  if (targetKind === "link-local")
     return `to ${boundedAddress(target.origin)}, which is a link-local address and never a source`;
-  if (!allowedFrom(going, entryHost))
-    return `to ${boundedAddress(target.origin)}, which is on a ${going} address and not the open web`;
+  if (!isReachableFromEntry(targetKind, entryHost))
+    return `to ${boundedAddress(target.origin)}, which is on a ${targetKind} address and not the open web`;
   return null;
 }
 
@@ -322,11 +322,11 @@ function refusedPlace(target: URL, entryHost: string): string | null {
  */
 export function refusalOfResolvedAddresses(name: string, addresses: readonly string[], entryHost: string): string | null {
   for (const address of addresses) {
-    const going = addressKind(address);
-    if (going === "link-local")
+    const targetKind = kindOfAddress(address);
+    if (targetKind === "link-local")
       return `${boundedAddress(name)} resolves to a link-local address, which is never a source`;
-    if (!allowedFrom(going, entryHost))
-      return `${boundedAddress(name)} resolves to a ${going} address and not the open web`;
+    if (!isReachableFromEntry(targetKind, entryHost))
+      return `${boundedAddress(name)} resolves to a ${targetKind} address and not the open web`;
   }
   return null;
 }
