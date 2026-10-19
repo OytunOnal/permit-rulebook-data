@@ -547,6 +547,15 @@ describe("#107 — the coverage gate asks the trust line's entry question", () =
   const withEntry = (url: string): Watchlist =>
     ({ entries: [...watchlist.entries, { ...htmlEntry, id: "added-entry", url, kind: "sentinel" }] });
 
+  /** The gate over the shipped watchlist and one added entry, which it must refuse alone and by name. */
+  function refusedAlone(address: string): ReturnType<typeof checkCoverage> {
+    const gate = checkCoverage(dataset, withEntry(address));
+    expect(gate.ok, `${address} passed the gate`).toBe(false);
+    expect(gate.refused_entry_addresses.length, `${address} was not refused`).toBe(1);
+    expect(gate.refused_entry_addresses[0], "the entry is not named").toContain("added-entry");
+    return gate;
+  }
+
   it("refuses a link-local entry, and names the entry and not the address", () => {
     // Both readers refuse a link-local entry on the run; the gate refuses it at
     // the PR, so a curator does not learn of it as a red morning.
@@ -554,30 +563,18 @@ describe("#107 — the coverage gate asks the trust line's entry question", () =
       ["https://169.254.169.254/rules", "169.254"],
       ["https://[fe80::1]/rules", "fe80"],
     ] as const) {
-      const gate = checkCoverage(dataset, withEntry(address));
-      expect(gate.ok, `${address} passed the gate`).toBe(false);
-      expect(gate.refused_entry_addresses.length, `${address} was not refused`).toBe(1);
-      expect(gate.refused_entry_addresses[0], "the entry is not named").toContain("added-entry");
+      const gate = refusedAlone(address);
       expect(JSON.stringify(gate), `${address} was printed`).not.toContain(spelled);
     }
   });
 
   it("refuses an entry on a scheme that is not a page", () => {
-    for (const address of ["ftp://example.invalid/rules", "file:///etc/rules"]) {
-      const gate = checkCoverage(dataset, withEntry(address));
-      expect(gate.ok, `${address} passed the gate`).toBe(false);
-      expect(gate.refused_entry_addresses.length, `${address} was not refused`).toBe(1);
-      expect(gate.refused_entry_addresses[0], "the entry is not named").toContain("added-entry");
-    }
+    for (const address of ["ftp://example.invalid/rules", "file:///etc/rules"]) refusedAlone(address);
   });
 
   it("still refuses a malformed entry and a credentialled one, and prints no credential", () => {
     for (const address of ["://watcher:hunter2@example.invalid/rules", "https://watcher:hunter2@example.invalid/rules"]) {
-      const gate = checkCoverage(dataset, withEntry(address));
-      expect(gate.ok, `${address} passed the gate`).toBe(false);
-      expect(gate.refused_entry_addresses.length, `${address} was not refused`).toBe(1);
-      expect(gate.refused_entry_addresses[0], "the entry is not named").toContain("added-entry");
-      const said = JSON.stringify(gate);
+      const said = JSON.stringify(refusedAlone(address));
       expect(said, "the password was printed").not.toContain("hunter2");
       expect(said, "the name was printed").not.toContain("watcher");
     }
