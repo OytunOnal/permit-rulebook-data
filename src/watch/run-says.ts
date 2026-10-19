@@ -191,7 +191,7 @@ function stateEvent(state: StateOutcome): LogEvent {
  *
  * The exit code is the verdict's, not a count of failures: a source that has
  * been silent for one morning is a lapse and the run stays green, while an
- * outage — two mornings running — and anything the floor refused to request
+ * outage — two mornings running — and anything the watch refused to request
  * are red the same day. `.github/workflows/watch.yml` keys on the step's
  * outcome and counts nothing itself (s35 point 5).
  */

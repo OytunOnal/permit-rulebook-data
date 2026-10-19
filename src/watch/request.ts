@@ -72,7 +72,7 @@ function budgetSpent(): DOMException {
  * (ECONNRESET)` is the same sentence in `CONTRIBUTING.md`, in the state file
  * and in every flag written before this slice.
  *
- * A `ReadFailure` passes through untouched: it is the floor's own refusal,
+ * A `ReadFailure` passes through untouched: it is the trust line's refusal,
  * thrown inside the lookup hook, and it already knows what it is.
  */
 function thrownAs(e: unknown): unknown {

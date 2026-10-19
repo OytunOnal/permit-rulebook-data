@@ -46,9 +46,10 @@
  *   not the page. Any other 4xx, a bot wall, a page that moved; a browser step
  *   that finds no field, because the page changed. The same answer comes back
  *   in three minutes, so it is not asked again.
- * - **refused-by-us** — the floor declined to make the request at all: a
- *   credentialled or malformed address, an off-origin redirect or navigation,
- *   a private or loopback target, too many hops, no Chrome on this machine.
+ * - **refused-by-us** — the watch declined to make the request at all: the
+ *   trust line refused it (a credentialled or malformed address, an
+ *   off-origin redirect or navigation, a private, loopback or link-local
+ *   target), too many hops, no Chrome on this machine.
  *   Our environment, not the source's minute — so it is neither retried nor
  *   given a day of grace.
  */
