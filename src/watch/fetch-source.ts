@@ -106,7 +106,7 @@ export const systemResolver: Resolver = (hostname, options, done) => {
  * the URL parser could already read as an address; those are judged where
  * they are spelled, by the trust line's entry and redirect questions.
  */
-function judgedLookup(entryHost: string, resolver: Resolver): LookupFunction {
+function lookupThroughTrustLine(entryHost: string, resolver: Resolver): LookupFunction {
   return (hostname, options, done) => {
     resolver(hostname, { ...options, all: true }, (error, addresses) => {
       if (error) { done(error, []); return; }
@@ -243,7 +243,7 @@ export const fetchSource = (async (
     // moment and not a signal because each hop is its own request now, and
     // each is given what is left of it.
     const deadline = Date.now() + BUDGET_MS;
-    const lookup = judgedLookup(entry.hostname, resolver);
+    const lookup = lookupThroughTrustLine(entry.hostname, resolver);
     /**
      * One connection pool per source, and nothing that outlives it.
      *
