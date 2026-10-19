@@ -6,7 +6,7 @@ import { noticeSources, provenancedValuesOf, routeStatements, statementSources, 
 import { countryVocabulary } from "../countries.js";
 import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type UnreadEntry, type WatchState } from "./state.js";
 import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, type FailureClass } from "./failure.js";
-import { type RedirectPolicy, shortenAddress, stripCredentials } from "./trust-line.js";
+import { judgeEntry, type RedirectPolicy, stripCredentials } from "./trust-line.js";
 import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
 /**
@@ -1018,15 +1018,15 @@ export interface CoverageResult {
    * chose — so it fails the gate here, before a run can. */
   invalid_steps: string[];
   /**
-   * Watched addresses carrying a name and password.
+   * Watch entries whose address the trust line's entry question refuses:
+   * malformed, carrying a name and password, on a scheme that is not a page,
+   * or link-local.
    *
-   * No source this project reads needs one, and a watch that sends
-   * credentials is a watch that can leak them — into an error, a log, a flag
-   * and an issue. Both readers refuse such an address at run time; this
-   * refuses it in the watchlist, where it is curator data and where a person
-   * can fix it before a morning does (s34, 2026-09-24).
+   * Both readers ask the same question on the run and refuse the entry there;
+   * this asks it of the watchlist, where the address is curator data and a
+   * person can fix it at the PR rather than learn of it as a red morning.
    */
-  urls_with_credentials: string[];
+  refused_entry_addresses: string[];
   /**
    * Value sources on a strategy that never compares.
    *
@@ -1200,25 +1200,12 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
       return why === null ? [] : [`${e.id}: step ${i + 1} — ${why}`];
     });
   });
-  const credentialled = watchlist.entries.flatMap((e) => {
-    /**
-     * The entry is named; the address never is, beyond its origin.
-     *
-     * This is the one place in this file that handles a string chosen to be
-     * withheld, so it prints as little of it as it can. Both branches were
-     * wrong at first: the failure branch printed the raw url — the very
-     * string that may carry the name and password this field exists to keep
-     * out of the log — and `new URL("://watcher:hunter2@host/")` throws, so
-     * that was the likely path for one to arrive by; and the success branch
-     * printed the whole pathname, which is the page's to choose and so
-     * unbounded (Security review, 2026-09-24). A curator has the entry id,
-     * which is what they edit the watchlist by.
-     */
-    let parsed: URL;
-    try { parsed = new URL(e.url); } catch { return [`${e.id}: its url is not an address`]; }
-    return parsed.username || parsed.password
-      ? [`${e.id}: ${shortenAddress(parsed.origin)} carries a name and password`]
-      : [];
+  // The entry is named and the address is not: the trust line's refusal never
+  // repeats the address, which may carry a name and password, and a curator
+  // edits the watchlist by the entry id.
+  const refusedEntries = watchlist.entries.flatMap((e) => {
+    const refusal = judgeEntry(e.url);
+    return refusal === null ? [] : [`${e.id}: ${refusal}`];
   });
   // Keyed on what the DATASET cites, not on what the entry calls itself: an
   // entry flipped to `link` and `sentinel` in one edit would otherwise pass
@@ -1231,12 +1218,12 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
       + `, and the ${e.strategy} strategy fetches but never compares`);
   return {
     ok: missing.length === 0 && orphans.length === 0 && unbounded.length === 0
-      && steps.length === 0 && credentialled.length === 0 && unchecked.length === 0,
+      && steps.length === 0 && refusedEntries.length === 0 && unchecked.length === 0,
     missing_from_watchlist: missing,
     orphan_watch_entries: orphans,
     unbounded_substitutions: unbounded,
     invalid_steps: steps,
-    urls_with_credentials: credentialled,
+    refused_entry_addresses: refusedEntries,
     unchecked_value_sources: unchecked,
   };
 }
