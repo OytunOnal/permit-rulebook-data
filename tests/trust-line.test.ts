@@ -25,6 +25,13 @@ const ENTRIES = [["a public entry", PUBLIC_ENTRY], ["a loopback entry", LOOPBACK
 const PAST_THE_ORIGIN = "/where-it-goes?key=value";
 
 /**
+ * The longest a refusal that prints one bounded field may be: the field's
+ * bound, the note that says what was cut, and the sentence around them, which
+ * together stay under twice the bound.
+ */
+const MOST_OF_A_REFUSAL = 2 * MOST_OF_AN_ADDRESS;
+
+/**
  * Whether the relative rule lets an entry of this kind go to an address of
  * that kind: link-local never, public always, otherwise only its own kind.
  */
@@ -308,7 +315,7 @@ describe("trust line — a redirect stays on the entry's origin under same-origi
   it("bounds where it says the redirect went, however long a page makes it", () => {
     const refusal = judgeRedirect(new URL(`https://elsewhere.example.org/${"a".repeat(9_000)}`), entry, "same-origin");
     expect(refusal?.rule).toBe("origin");
-    expect(refusal!.says.length, "the refusal quotes the whole of a page's address").toBeLessThan(400);
+    expect(refusal!.says.length, "the refusal quotes the whole of a page's address").toBeLessThan(MOST_OF_A_REFUSAL);
     expect(refusal!.says, "the refusal does not name where it went").toContain("https://elsewhere.example.org");
   });
 });
@@ -337,7 +344,7 @@ describe("trust line — the page a reader ends on", () => {
     const landed = `https://elsewhere.example.org/${"a".repeat(120_000)}`;
     const refusal = judgeLanding(asked, landed, "same-origin");
     expect(refusal).not.toBeNull();
-    expect(refusal!.length, "the refusal quotes the whole of a page's address").toBeLessThan(400);
+    expect(refusal!.length, "the refusal quotes the whole of a page's address").toBeLessThan(MOST_OF_A_REFUSAL);
   });
 });
 
