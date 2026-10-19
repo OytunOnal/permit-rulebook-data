@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  judgeEntry, judgeRedirect, judgeResolution, MOST_OF_AN_ADDRESS, printAddress,
+  judgeEntry, judgeLanding, judgeRedirect, judgeResolution, MOST_OF_AN_ADDRESS, printAddress,
   type RedirectPolicy, shortenAddress, stripCredentials,
 } from "../src/watch/trust-line.js";
 import { noteOfLength } from "../src/watch/failure.js";
@@ -268,6 +268,34 @@ describe("trust line — a redirect stays on the entry's origin under same-origi
     expect(refusal?.rule).toBe("origin");
     expect(refusal!.says.length, "the refusal quotes the whole of a page's address").toBeLessThan(400);
     expect(refusal!.says, "the refusal does not name where it went").toContain("https://elsewhere.example.org");
+  });
+});
+
+describe("trust line — the page a reader ends on", () => {
+  const asked = "https://www.bmi.bund.de";
+  for (const [what, landed, goes] of [
+    ["the entry's own origin", "https://www.bmi.bund.de/SharedDocs/notice.html", true],
+    ["the entry's own origin after a chain that left and came back", "https://www.bmi.bund.de/", true],
+    ["another site", "https://elsewhere.example.org/x", false],
+    ["a downgrade to plain http", "http://www.bmi.bund.de/SharedDocs/notice.html", false],
+    ["a blank page", "about:blank", false],
+  ] as const) {
+    it(`${goes ? "reads" : "refuses"} a page that ended on ${what} under same-origin`, () => {
+      const refusal = judgeLanding(asked, landed, "same-origin");
+      if (goes) expect(refusal).toBeNull();
+      else expect(refusal, `a reading on ${what} was taken`).not.toBeNull();
+    });
+  }
+
+  it("reads a page that ended anywhere under anywhere", () => {
+    expect(judgeLanding(asked, "https://elsewhere.example.org/x", "anywhere")).toBeNull();
+  });
+
+  it("bounds where it says the reader is, however long a page makes it", () => {
+    const landed = `https://elsewhere.example.org/${"a".repeat(120_000)}`;
+    const refusal = judgeLanding(asked, landed, "same-origin");
+    expect(refusal).not.toBeNull();
+    expect(refusal!.length, "the refusal quotes the whole of a page's address").toBeLessThan(400);
   });
 });
 

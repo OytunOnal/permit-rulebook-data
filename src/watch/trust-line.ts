@@ -314,3 +314,23 @@ export function judgeResolution(name: string, addresses: readonly string[], entr
   }
   return null;
 }
+
+/**
+ * The landing question: why a reading may not be taken where the reader ended
+ * up, or `null`.
+ *
+ * `asked` is the ENTRY's origin, not wherever navigation happened to end: a
+ * baseline read off the loaded page hands the decision to whoever the page
+ * redirects to. A chain that leaves and comes back ends where it started, which
+ * is the whole of what is asked. The address the reader is at is the page's to
+ * choose, so it is bounded.
+ */
+export function judgeLanding(asked: string, landed: string, setting: RedirectPolicy): string | null {
+  if (setting !== "same-origin") return null;
+  if (originOf(landed) === asked) return null;
+  return `the page was asked for at ${asked} and the browser is at ${shortenAddress(landed)}`;
+}
+
+function originOf(address: string): string | null {
+  try { return new URL(address).origin; } catch { return null; }
+}
