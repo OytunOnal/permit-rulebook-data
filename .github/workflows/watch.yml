@@ -44,7 +44,7 @@ permissions:
 
 jobs:
   watch:
-    runs-on: ubuntu-26.04 # named, never -latest: moved from 24.04 on 2026-10-19, a day we picked (#24); the browser tier reads the image's own Chrome
+    runs-on: ubuntu-26.04 # named, never -latest: the image changes only when this file does, and the browser tier reads the image's own Chrome (#24)
     permissions:
       # Commits watch/state.json and the flag files.
       contents: write
@@ -57,12 +57,11 @@ jobs:
         with: { node-version: 22 }
       - run: npm ci
 
-      # Every installed dependency, dev ones included: the test runner's two
-      # critical advisories sat here from the v1.2.0 release until a person
-      # ran this by hand (#83), and this job holds a write token. A known
-      # advisory at high or above turns the run red — at the end, through
-      # "Fail the run on a known advisory" — and stops nothing: the sources
-      # are still read and recorded (#47, decided in #24's grill).
+      # Every installed dependency, dev ones included: the test runner runs in
+      # this job, which holds a write token. A known advisory at high or above
+      # turns the run red — at the end, through "Fail the run on a known
+      # advisory" — and stops nothing: the sources are still read and recorded
+      # (#47).
       - name: Audit the installed dependencies
         id: audit
         continue-on-error: true
@@ -317,7 +316,7 @@ jobs:
           title="watch run failed"
           body="The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           Commit: ${{ github.sha }}
-          Nothing here says a source changed — it says the check did not finish; the failed step in the run says which part went unread, or which advisory the audit found."
+          Nothing here says a source changed — it says the check did not finish, or the audit found a known advisory; the failed step in the run says which."
           existing=$(gh issue list --label watch --state open --search "$title in:title" --json number --jq '.[0].number')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"

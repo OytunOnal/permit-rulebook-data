@@ -3,13 +3,12 @@ import { join } from "node:path";
 import { readText, stepNamesOf, stepOf, watchYaml as watch, workflowFiles, workflowsDir } from "./workflow-text.js";
 
 /**
- * The toolchain the watch runs on, held to the decisions of #24's grill
- * (2026-10-19).
+ * The toolchain the watch runs on (#24).
  *
- * The dependencies are audited on every run (#47): the test runner's two
- * critical advisories (#83) sat in this repository from the v1.2.0 release
- * until a person ran `npm audit` by hand. And the runner image is named, never
- * `-latest`: `ubuntu-latest` moved to a new Ubuntu under a scheduled run, and
+ * The dependencies are audited on every run (#47), dev ones included: the test
+ * runner runs in the watch's job, and that job holds a write token. A red audit
+ * turns the run red without stopping the run's work. And the runner image is
+ * named, never `-latest`: the image changes only when the workflow does, and
  * the browser tier reads the image's own Chrome.
  */
 
