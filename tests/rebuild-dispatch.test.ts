@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { conditionOf, read, step, stepNames, workflowsDir } from "./workflow-text.js";
+import {
+  conditionOf, readText, stepNamesOf, stepOf, watchYaml as watch, workflowFiles, workflowsDir,
+} from "./workflow-text.js";
 
 /**
  * Two defects in the watch workflow, pinned together because one step carries
@@ -30,8 +31,6 @@ import { conditionOf, read, step, stepNames, workflowsDir } from "./workflow-tex
  * The site half of this pair is `tests/rebuild-trigger.test.ts` over there: that
  * the site listens for the event and reruns daily after this watch's hour.
  */
-
-const watch = read(join(workflowsDir, "watch.yml"));
 
 /** The canonical GitHub Actions bot, said once so the two repositories agree. */
 const BOT_NAME = "github-actions[bot]";
@@ -85,10 +84,10 @@ function fires(condition: string, facts: Record<string, string>): boolean {
 }
 
 describe("a new dataset state wakes the site", () => {
-  const dispatch = step(watch, "Tell the site to rebuild");
+  const dispatch = stepOf(watch,"Tell the site to rebuild");
 
   it("the persist step records whether it actually committed", () => {
-    const persist = step(watch, "Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)");
+    const persist = stepOf(watch,"Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)");
     expect(persist).toContain("id: persist");
     // A run that changed nothing must not claim the dataset moved.
     expect(persist).toContain('echo "committed=false" >> "$GITHUB_OUTPUT"');
@@ -137,7 +136,7 @@ describe("a new dataset state wakes the site", () => {
    * by a step order (review 2026-09-08).
    */
   it("runs last, so nothing a flag depends on sits behind a step that can fail on the token", () => {
-    const names = stepNames(watch);
+    const names = stepNamesOf(watch);
     // The dispatch is the last step that DOES anything; the only thing after it
     // is the notice that speaks when a step failed — including the dispatch
     // itself, when its token has expired (Standards review, 2026-09-08). Behind
@@ -155,7 +154,7 @@ describe("a new dataset state wakes the site", () => {
     expect(issues).toBeLessThan(at("Tell the site to rebuild"));
     for (const name of names) {
       if (name === "Tell the site to rebuild" || name === "Say so when the run fails") continue;
-      const body = step(watch, name);
+      const body = stepOf(watch,name);
       if (!body.includes("newflags") && !body.includes("flags/")) continue;
       expect(at(name), `${name} runs after a step that can fail on the token`)
         .toBeLessThan(at("Tell the site to rebuild"));
@@ -167,7 +166,7 @@ describe("a new dataset state wakes the site", () => {
     // secret. (The two assertions below read `not.toContain("dispatch")` until
     // 2026-09-23; the word is now a dispatch INPUT's name and appears in this
     // step's own condition, so the check names the two things it always meant.)
-    const issueStep = step(watch, "Open issues for new flags only");
+    const issueStep = stepOf(watch,"Open issues for new flags only");
     expect(issueStep).toContain("steps.newflags.outputs.files != ''");
     expect(issueStep).not.toContain("DISPATCH_TOKEN");
     expect(issueStep).not.toContain("steps.persist");
@@ -178,7 +177,7 @@ describe("a new dataset state wakes the site", () => {
   });
 
   it("and what the token needs is written down where a maintainer will look", () => {
-    const contributing = read(fileURLToPath(new URL("../CONTRIBUTING.md", import.meta.url)));
+    const contributing = readText(fileURLToPath(new URL("../CONTRIBUTING.md", import.meta.url)));
     expect(contributing).toContain("### The `DISPATCH_TOKEN` secret");
     expect(contributing).toContain("fine-grained personal access token");
     expect(contributing).toContain("`Contents: Read and write`");
@@ -191,11 +190,10 @@ describe("a new dataset state wakes the site", () => {
 
 describe("automated commits are attributed to the automation", () => {
   it("every workflow commits as the canonical bot, none as the account owning the login \"watch\"", () => {
-    const files = readdirSync(workflowsDir).filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
-    expect(files, "the workflow directory is empty — this case would pass vacuously").toContain("watch.yml");
+    expect(workflowFiles, "the workflow directory is empty — this case would pass vacuously").toContain("watch.yml");
     let configured = 0;
-    for (const file of files) {
-      const yaml = read(join(workflowsDir, file));
+    for (const file of workflowFiles) {
+      const yaml = readText(join(workflowsDir, file));
       // Every noreply address a workflow ACTS on is a git identity, and there
       // is exactly one this project is allowed to commit under. Comment lines
       // are prose — YAML's and the shell's alike — and the comment explaining
@@ -285,8 +283,8 @@ describe("a red run is never silent", () => {
   });
 
   it("opens or updates one issue when the run itself fails, with the run's link", () => {
-    const names = stepNames(watch);
-    const say = step(watch, "Say so when the run fails");
+    const names = stepNamesOf(watch);
+    const say = stepOf(watch,"Say so when the run fails");
     expect(say).toContain("if: failure()");
     expect(say).toContain("actions/runs/${{ github.run_id }}");
     expect(say).toContain("--label watch");
@@ -300,12 +298,12 @@ describe("a red run is never silent", () => {
     expect(names.indexOf("Say so when the run fails")).toBe(names.length - 2);
     expect(names.indexOf("Say so when the run fails"))
       .toBeGreaterThan(names.indexOf("Tell the site to rebuild"));
-    const gate = step(watch, "Fail the run on an overdue flag");
+    const gate = stepOf(watch,"Fail the run on an overdue flag");
     expect(gate).not.toContain("gh ");
   });
 
   it("and it says what a failure means, which is not that a source changed", () => {
-    const say = step(watch, "Say so when the run fails");
+    const say = stepOf(watch,"Say so when the run fails");
     expect(say).toContain("it says the check did not finish");
   });
 });
@@ -318,12 +316,12 @@ describe("a red run is never silent", () => {
  */
 describe("the dispatch names the state it just committed", () => {
   it("the persist step publishes the commit it made", () => {
-    const persist = step(watch, "Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)");
+    const persist = stepOf(watch,"Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)");
     expect(persist).toContain('echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"');
   });
 
   it("and the dispatch sends that, through the environment", () => {
-    const dispatch = step(watch, "Tell the site to rebuild");
+    const dispatch = stepOf(watch,"Tell the site to rebuild");
     expect(dispatch).toContain('STATE_SHA: "${{ steps.persist.outputs.sha }}"');
     expect(dispatch).toContain('"sha":"%s"');
     expect(dispatch).toContain('"$STATE_SHA"');
@@ -332,7 +330,7 @@ describe("the dispatch names the state it just committed", () => {
   });
 
   it("a flag file reaches the issue step as data, not as script", () => {
-    const issues = step(watch, "Open issues for new flags only");
+    const issues = stepOf(watch,"Open issues for new flags only");
     expect(issues).toContain('FLAGS: "${{ steps.newflags.outputs.files }}"');
     expect(issues).toContain('done <<< "$FLAGS"');
     // The old shape interpolated the list into the script body.

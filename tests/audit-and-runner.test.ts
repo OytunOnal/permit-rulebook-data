@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { read, step, stepNames, workflowsDir } from "./workflow-text.js";
+import { readText, stepNamesOf, stepOf, watchYaml as watch, workflowFiles, workflowsDir } from "./workflow-text.js";
 
 /**
  * The toolchain the watch runs on, held to the decisions of #24's grill
@@ -14,13 +13,11 @@ import { read, step, stepNames, workflowsDir } from "./workflow-text.js";
  * the browser tier reads the image's own Chrome.
  */
 
-const watch = read(join(workflowsDir, "watch.yml"));
-
 /** The one step that runs `npm audit`, by its name; a step that only says the words is not it. */
 function auditStep(): { name: string; body: string } {
-  const names = stepNames(watch).filter((name) => /^\s*run:\s*npm audit\b/m.test(step(watch, name)));
+  const names = stepNamesOf(watch).filter((name) => /^\s*run:\s*npm audit\b/m.test(stepOf(watch, name)));
   expect(names, "no step, or more than one, runs npm audit").toHaveLength(1);
-  return { name: names[0]!, body: step(watch, names[0]!) };
+  return { name: names[0]!, body: stepOf(watch, names[0]!) };
 }
 
 describe("the dependencies are audited on every run (#47)", () => {
@@ -36,7 +33,8 @@ describe("the dependencies are audited on every run (#47)", () => {
     const { name } = auditStep();
     expect(watch.indexOf("npm ci"), "the audit reads a tree not yet installed")
       .toBeLessThan(watch.indexOf(`- name: ${name}`));
-    expect(stepNames(watch).indexOf(name)).toBeLessThan(stepNames(watch).indexOf("Watch sources"));
+    const names = stepNamesOf(watch);
+    expect(names.indexOf(name)).toBeLessThan(names.indexOf("Watch sources"));
   });
 
   it("a red audit makes the run red and never stops its work", () => {
@@ -48,27 +46,26 @@ describe("the dependencies are audited on every run (#47)", () => {
     expect(id, `${name} has no id for a later step to read`).toBeDefined();
 
     // One later step re-raises it.
-    const names = stepNames(watch);
-    const gates = names.filter((n) => step(watch, n).includes(`steps.${id}.outcome == 'failure'`));
+    const names = stepNamesOf(watch);
+    const gates = names.filter((n) => stepOf(watch, n).includes(`steps.${id}.outcome == 'failure'`));
     expect(gates, "nothing turns a failed audit into a red run").toHaveLength(1);
     const gate = gates[0]!;
-    expect(step(watch, gate)).toContain("exit 1");
+    expect(stepOf(watch, gate)).toContain("exit 1");
 
     // And it stands where a failure skips no work: every step behind it runs
     // whatever failed before (`!cancelled()` or `failure()`), and the failure
     // notice is among them, so the red run opens its issue.
     for (const later of names.slice(names.indexOf(gate) + 1))
-      expect(step(watch, later), `${later} is skipped by a red audit`).toMatch(/!cancelled\(\)|failure\(\)/);
+      expect(stepOf(watch, later), `${later} is skipped by a red audit`).toMatch(/!cancelled\(\)|failure\(\)/);
     expect(names.indexOf("Say so when the run fails")).toBeGreaterThan(names.indexOf(gate));
   });
 });
 
 describe("the runner image is named, never -latest", () => {
   it("every job of every workflow runs on a pinned image", () => {
-    const files = readdirSync(workflowsDir).filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
     let jobs = 0;
-    for (const file of files)
-      for (const [, image] of read(join(workflowsDir, file)).matchAll(/^\s*runs-on:\s*(\S+)/gm)) {
+    for (const file of workflowFiles)
+      for (const [, image] of readText(join(workflowsDir, file)).matchAll(/^\s*runs-on:\s*(\S+)/gm)) {
         jobs += 1;
         expect(image, `${file} runs on an image that moves under it`).not.toMatch(/-latest$/);
       }
