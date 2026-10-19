@@ -159,21 +159,23 @@ describe("#108 — the NAT64 local-use prefix is private", () => {
   ] as const;
 
   for (const [where, address] of PLACEMENTS) {
-    it(`refuses a redirect to the metadata address ${where} from a public entry`, () => {
-      const target = new URL(`http://[${address}]${PAST_THE_ORIGIN}`);
-      const refusal = judgeRedirect(target, PUBLIC_ENTRY, "anywhere");
-      expect(refusal, `[${address}] was followed`).not.toBeNull();
-      expect(refusal!.rule).toBe("place");
-      expect(refusal!.says, "the refusal does not say it is private").toContain("private");
-      expect(refusal!.says, "the refusal printed the address past its origin").not.toContain(PAST_THE_ORIGIN);
-    });
+    for (const [from, entry] of ENTRIES) {
+      it(`refuses a redirect to the metadata address ${where} from ${from}`, () => {
+        const target = new URL(`http://[${address}]${PAST_THE_ORIGIN}`);
+        const refusal = judgeRedirect(target, entry, "anywhere");
+        expect(refusal, `[${address}] was followed`).not.toBeNull();
+        expect(refusal!.rule).toBe("place");
+        expect(refusal!.says, "the refusal does not say it is private").toContain("private");
+        expect(refusal!.says, "the refusal printed the address past its origin").not.toContain(PAST_THE_ORIGIN);
+      });
 
-    it(`refuses a name that resolves to the metadata address ${where} from a public entry`, () => {
-      const refusal = judgeResolution("mirror.test", [address], PUBLIC_ENTRY.hostname);
-      expect(refusal, `${address} was connected to`).not.toBeNull();
-      expect(refusal, "the refusal does not say it is private").toContain("private");
-      expect(refusal, "the address behind the name was printed").not.toContain(address);
-    });
+      it(`refuses a name that resolves to the metadata address ${where} from ${from}`, () => {
+        const refusal = judgeResolution("mirror.test", [address], entry.hostname);
+        expect(refusal, `${address} was connected to`).not.toBeNull();
+        expect(refusal, "the refusal does not say it is private").toContain("private");
+        expect(refusal, "the address behind the name was printed").not.toContain(address);
+      });
+    }
 
     it(`follows a redirect to the metadata address ${where} from a private entry`, () => {
       const target = new URL(`http://[${address}]${PAST_THE_ORIGIN}`);
