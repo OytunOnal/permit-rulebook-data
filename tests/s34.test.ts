@@ -218,16 +218,16 @@ describe("s34 — a watched address may not carry a name and password", () => {
       }],
     };
     const gate = checkCoverage(dataset, withCredentials);
-    expect(gate.urls_with_credentials.length, "the gate let credentials through").toBe(1);
+    expect(gate.refused_entry_addresses.length, "the gate let credentials through").toBe(1);
     expect(gate.ok).toBe(false);
-    const said = gate.urls_with_credentials.join(" ");
+    const said = gate.refused_entry_addresses.join(" ");
     expect(said, "the password was printed").not.toContain("hunter2");
     expect(said, "the name was printed").not.toContain("watcher");
     expect(said, "the entry is not named").toContain("fixture-html");
   });
 
   it("says nothing about the watchlist this repository ships", () => {
-    expect(checkCoverage(dataset, watchlist).urls_with_credentials).toEqual([]);
+    expect(checkCoverage(dataset, watchlist).refused_entry_addresses).toEqual([]);
   });
 
   it("names the entry and not the address when the url is malformed as well", () => {

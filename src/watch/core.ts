@@ -1027,7 +1027,7 @@ export interface CoverageResult {
    * refuses it in the watchlist, where it is curator data and where a person
    * can fix it before a morning does (s34, 2026-09-24).
    */
-  urls_with_credentials: string[];
+  refused_entry_addresses: string[];
   /**
    * Value sources on a strategy that never compares.
    *
@@ -1237,7 +1237,7 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
     orphan_watch_entries: orphans,
     unbounded_substitutions: unbounded,
     invalid_steps: steps,
-    urls_with_credentials: credentialled,
+    refused_entry_addresses: credentialled,
     unchecked_value_sources: unchecked,
   };
 }
