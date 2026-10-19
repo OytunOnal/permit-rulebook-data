@@ -5,3 +5,5 @@ dist/
 !.env.example
 # Run output and agents' scratch, never committed.
 .run/
+# What a vitest run leaves behind (the retro of #25, OytunOnal/permit-rulebook#97).
+.vitest/
