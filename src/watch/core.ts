@@ -7,6 +7,7 @@ import { countryVocabulary } from "../countries.js";
 import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type UnreadEntry, type WatchState } from "./state.js";
 import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, type FailureClass } from "./failure.js";
 import { addressWithoutCredentials, shortAddress } from "./fetch-source.js";
+import type { RedirectPolicy } from "./trust-line.js";
 import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
 /**
@@ -35,31 +36,10 @@ export type WatchStrategy = "html" | "browser" | "pdf" | "pdf-text" | "human" | 
  * 2026-09-07). One table now, and a strategy that forgets a row will not
  * compile.
  */
-/**
- * How far a redirect may be followed, and why that is not one answer.
- *
- * `same-origin` is the rule for anything whose bytes become a READING: what
- * a source redirects to is not the source, and an off-site landing — or a
- * downgrade to plain http, where anyone on the path may rewrite the page —
- * must not be hashed as the authority's words and checked against its quotes.
- *
- * `anywhere` is the rule for an entry that produces no reading. A learn link
- * backs no value and is never compared; what is watched is that a person who
- * clicks it arrives somewhere. Following it the way that person's browser
- * would is the only way to learn that, and refusing a redirect they would
- * happily take reports a working link as broken — which is what happened:
- * `anabin.kmk.org` answers https with a 301 to plain http on the same host,
- * and the guard written for readings turned a live government link red every
- * morning (runner run 35934301563, 2026-09-24).
- *
- * The hop cap applies to both, and neither will carry credentials.
- */
-export type RedirectPolicy = "same-origin" | "anywhere";
-
 export const STRATEGIES: Record<WatchStrategy, {
   /** Whether a pass fetches the source at all. */
   fetches: boolean;
-  /** How far a redirect may be followed on this strategy — the rule above. */
+  /** How far a redirect may be followed on this strategy (`trust-line.ts`, `RedirectPolicy`). */
   redirects: RedirectPolicy;
   /** Whether what came back is compared against the last snapshot. A learn
    * link is fetched and not compared: its wording may change freely, and only

@@ -3,9 +3,7 @@ import { Agent, createServer, type IncomingHttpHeaders, type Server } from "node
 import { pbkdf2 } from "node:crypto";
 import type { AddressInfo, LookupFunction } from "node:net";
 import { brotliCompressSync, deflateSync, gzipSync } from "node:zlib";
-import {
-  addressKind, afterAnswer, fetchSource, MOST_OF_AN_ADDRESS, type Resolver, shortAddress,
-} from "../src/watch/fetch-source.js";
+import { afterAnswer, fetchSource, type Resolver } from "../src/watch/fetch-source.js";
 import { processingFailure, runWatch, type Watchlist } from "../src/watch/core.js";
 import {
   hasControl, hasSteering, MOST_OF_A_CODE, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD,
@@ -48,11 +46,6 @@ const BIG_ZIPPED = gzipSync(A_BIG_PAGE);
 const fixture: Server = createServer((req, res) => {
   const path = (req.url ?? "/").split("?")[0]!;
   asked.push({ path, headers: req.headers });
-  // The four spellings s34's Security round probed and the floor let through.
-  if (path === "/to-nat64") { res.writeHead(302, { location: "http://[64:ff9b::a9fe:a9fe]/latest/" }); res.end(); return; }
-  if (path === "/to-6to4") { res.writeHead(302, { location: "http://[2002:a9fe:a9fe::1]/latest/" }); res.end(); return; }
-  if (path === "/to-compat") { res.writeHead(302, { location: "http://[::a9fe:a9fe]/latest/" }); res.end(); return; }
-  if (path === "/to-site-local") { res.writeHead(302, { location: "http://[fec0::1]/admin" }); res.end(); return; }
   // A hop to a NAME, which is the only way a resolver gets a word in: an entry
   // spelled as a literal never reaches the hook at all (Node skips a lookup
   // for an address it can already parse — probed 2026-09-24, v24.20.0).
@@ -146,80 +139,19 @@ function answering(table: Record<string, string[][]>): Resolver {
 
 describe("s36 — the floor spells the prefixes that carry another address", () => {
   /**
-   * Four literals the classifier read as public because it had never learnt
-   * them, each probed from a public entry in s34's Security round and each
-   * requested. Three of them are 169.254.169.254 — where a hosted runner keeps
-   * its credentials — wearing an IPv6 spelling.
+   * The fetcher asks the trust line's entry question before anything is
+   * requested. Which entries are refused is the trust line's table
+   * (`tests/trust-line.test.ts`); this is the wiring.
    */
-  for (const [what, literal, kind] of [
-    ["NAT64 carrying the metadata address", "64:ff9b::a9fe:a9fe", "link-local"],
-    ["6to4 carrying the metadata address", "2002:a9fe:a9fe::1", "link-local"],
-    ["the compat form of the metadata address", "::a9fe:a9fe", "link-local"],
-    ["NAT64 carrying a private address", "64:ff9b::a00:5", "private"],
-    ["6to4 carrying a private address", "2002:a00:5::1", "private"],
-    ["the compat form of a loopback address", "::7f00:1", "loopback"],
-    ["site-local", "fec0::1", "private"],
-    ["site-local at the top of its range", "feff::1", "private"],
-    // And the rule stays a rule about what an address IS: a prefix that
-    // carries a public address is public, not refused by association.
-    ["NAT64 carrying a public address", "64:ff9b::5db8:d822", "public"],
-    ["6to4 carrying a public address", "2002:5db8:d822::1", "public"],
-    ["an ordinary public IPv6 address", "2001:4860:4860::8888", "public"],
-  ] as const) {
-    it(`reads ${what} as ${kind}`, () => {
-      expect(addressKind(literal)).toBe(kind);
-    });
-  }
-
-  for (const [what, path, kind] of [
-    ["a NAT64 address", "/to-nat64", "link-local"],
-    ["a 6to4 address", "/to-6to4", "link-local"],
-    ["a compat address", "/to-compat", "link-local"],
-    ["a site-local address", "/to-site-local", "private"],
-  ] as const) {
-    it(`refuses a redirect to ${what}, before it is taken`, async () => {
-      const before = asked.length;
-      const answer = await fetchSource(`${fixtureOrigin}${path}`, "anywhere");
-      expect(answer.ok, `${what} was followed`).toBe(false);
-      if (answer.ok) return;
-      // The source's own answer, which is what a refusal made from the
-      // `location` header can report and a failed connection cannot.
-      expect(answer.status, "the refusal came from somewhere other than the header").toBe(302);
-      expect(answer.failure).toBe("refused-by-us");
-      expect(answer.error, "the refusal does not say what kind of address it is").toContain(kind);
-      // One request: the entry's. The refused address was never asked.
-      expect(asked.length - before, "more than the entry was requested").toBe(1);
-    });
-  }
-
-  /**
-   * The same rule where a chain STARTS. An entry is a url a curator typed and
-   * still an address (scenario point 4), and the one kind the relative rule
-   * can refuse about a starting point is a link-local one — an entry is by
-   * definition already on its own kind, which is what keeps the loopback
-   * fixture above readable.
-   */
-  for (const [what, host] of [
-    ["the metadata address", "169.254.169.254"],
-    ["a NAT64 address carrying it", "[64:ff9b::a9fe:a9fe]"],
-  ] as const) {
-    it(`refuses an ENTRY spelled as ${what}, and asks it for nothing`, async () => {
-      const before = asked.length;
-      const answer = await fetchSource(`http://${host}:${port}/`, "same-origin");
-      expect(answer.ok, "a link-local entry was read").toBe(false);
-      if (answer.ok) return;
-      expect(answer.failure).toBe("refused-by-us");
-      expect(answer.error, "the refusal does not say what kind of address it is").toContain("link-local");
-      expect(answer.error, "the address was printed").not.toContain("a9fe");
-      expect(asked.length - before, "something was requested").toBe(0);
-    });
-  }
-
-  it("still reads an entry that IS on loopback, which is the relative rule", async () => {
-    // The refusal above is not a wider rule than the floor's: an entry on its
-    // own kind stays readable, and the fixture is the case that says so.
-    const answer = await fetchSource(`${fixtureOrigin}/`, "same-origin");
-    expect(answer.ok, answer.ok ? "" : answer.error).toBe(true);
+  it("refuses an ENTRY spelled as the metadata address, and asks it for nothing", async () => {
+    const before = asked.length;
+    const answer = await fetchSource(`http://169.254.169.254:${port}/`, "same-origin");
+    expect(answer.ok, "a link-local entry was read").toBe(false);
+    if (answer.ok) return;
+    expect(answer.failure).toBe("refused-by-us");
+    expect(answer.error, "the refusal does not say what kind of address it is").toContain("link-local");
+    expect(answer.error, "the address was printed").not.toContain("169.254");
+    expect(asked.length - before, "something was requested").toBe(0);
   });
 });
 
@@ -241,20 +173,6 @@ describe("s36 — a name is refused by what it resolves to", () => {
     // Nothing answered, so there is nothing of the source's to report.
     expect(answer.status, "a source that never answered was given a status").toBeUndefined();
     expect(asked.length - before, "something was requested").toBe(0);
-  });
-
-  it("refuses an entry whose name resolves to the metadata address", async () => {
-    const before = asked.length;
-    const answer = await fetchSource(
-      `http://runner.test:${port}/`, "same-origin",
-      answering({ "runner.test": [["169.254.169.254"]] }),
-    );
-    expect(answer.ok).toBe(false);
-    if (answer.ok) return;
-    expect(answer.failure).toBe("refused-by-us");
-    expect(answer.error, "the refusal does not say what kind of address it is").toContain("link-local");
-    expect(answer.error).not.toContain("169.254.169.254");
-    expect(asked.length - before).toBe(0);
   });
 
   it("refuses a name when ANY of its addresses is refused", async () => {
@@ -827,21 +745,6 @@ describe("s36 — the sanitiser is the whole set, and it cuts on characters", ()
       expect([...said].length, `a bound of ${most} printed more than it allows`)
         .toBeLessThanOrEqual(most);
     }
-  });
-
-  it("cuts an address on characters too, and counts it in the same unit", () => {
-    // `shortAddress` is the other place this package shortens something a
-    // person reads, and the browser tier's request list reaches it
-    // (`cdp.ts`). It cut UTF-16 units, so an address of astral characters
-    // could end in half of one — a lone surrogate in the log line, the flag
-    // file and the issue (Security review, 2026-09-25).
-    const address = `https://rules.example.org/a${"\u{1f600}".repeat(300)}`;
-    const note = noteOfLength([...address].length);
-    const short = shortAddress(address);
-    expect(wellFormed(short), "the cut ended inside a character and printed half of one").toBe(true);
-    expect([...short].length, "the cut fell somewhere other than the bound")
-      .toBe(MOST_OF_AN_ADDRESS + [...note].length);
-    expect(short, "the note counts in a unit nobody reading it counts in").toContain(note);
   });
 
   it("cuts a page's astral words on characters, and counts them in the same unit", () => {

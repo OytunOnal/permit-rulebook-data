@@ -2,11 +2,24 @@ import { lookup as systemLookup } from "node:dns";
 import { Agent as HttpAgent } from "node:http";
 import { Agent as HttpsAgent } from "node:https";
 import type { LookupFunction } from "node:net";
-import type { Fetcher, FetchResult, RedirectPolicy } from "./core.js";
+import type { Fetcher, FetchResult } from "./core.js";
 import {
-  causeCode, classOfThrown, failureOfStatus, MOST_OF_A_FAILURE, noteOfLength, printableWithin, ReadFailure,
+  causeCode, classOfThrown, failureOfStatus, MOST_OF_A_FAILURE, printableWithin, ReadFailure,
 } from "./failure.js";
 import { ask, ENCODINGS_ASKED_FOR } from "./request.js";
+import {
+  judgeEntry, judgeRedirect, judgeResolution, type RedirectPolicy, shortenAddress,
+} from "./trust-line.js";
+
+/**
+ * The trust line's printers and entry question under the names the other
+ * callers still import from here. Each of those callers asks `trust-line.ts`
+ * directly once it moves, and this goes with the last of them.
+ */
+export {
+  judgeEntry as refusedAddress, MOST_OF_AN_ADDRESS, printAddress as printableAddress,
+  shortenAddress as shortAddress, stripCredentials as addressWithoutCredentials,
+} from "./trust-line.js";
 
 /**
  * The watch's first reader: one HTTP request, no browser.
@@ -63,250 +76,6 @@ export const BUDGET_MS = 30_000;
  */
 const MOST_HOPS = 5;
 
-/**
- * As much of an address as belongs in a message a person reads.
- *
- * Everything past this is a page's choice, not a fact about the source: a
- * `location` header of 9,000 characters made a 9,111-character error, and a
- * redirect chain made a 12,023-character `read_at` (Security review,
- * 2026-09-24). The same bound the browser tier puts on the same kind of
- * string.
- */
-export const MOST_OF_AN_ADDRESS = 200;
-
-/**
- * That bound applied, and what was cut said in the one spelling for it.
- *
- * **Characters, not the UTF-16 units a runtime stores them in.** The same two
- * faults `printableWithin` had in the same line, and for the same reason —
- * the count was retyped here and the cut was made on units: an address whose
- * path is astral could end in half a character, and a lone surrogate is a
- * string that is not valid UTF-8 at all, which the log line escapes as a bare
- * `\udXXX` and the issue renders as a replacement character. The browser
- * tier's request list reaches this function with a page's own address
- * (`cdp.ts`), so a page chose those characters (Security review, 2026-09-25).
- *
- * **A bound is all this one applies, and that is the caller's invariant, not
- * this function's luck.** Every caller hands it URL-serialised text — a
- * parsed `origin`, `host + pathname`, a `location.href`, a punycoded name —
- * and the URL serializer percent-encodes every code point above U+007E in a
- * path, so a character that prints nothing cannot arrive here spelled as
- * itself. A caller that ever passes a page's words unserialised asks
- * `printableWithin` first: the rule is `failure.ts`'s, and this function
- * bounds a field rather than sanitising a sentence (Security review,
- * 2026-09-25).
- *
- * The note is asked of `failure.ts`, which owns the wording: a curator reads
- * one spelling wherever this package shortens something, and this was the
- * second copy of it (Standards review, 2026-09-25).
- *
- * The bound is on the ADDRESS and the note is added after it, where
- * `printableWithin`'s bound is on the whole sentence it returns. Two
- * arithmetics on purpose: what that one bounds is all a line says about a
- * failure, and what this one bounds is one field inside a line that says more.
- */
-export function shortAddress(address: string): string {
-  const characters = [...address];
-  return characters.length > MOST_OF_AN_ADDRESS
-    ? `${characters.slice(0, MOST_OF_AN_ADDRESS).join("")}${noteOfLength(characters.length)}`
-    : address;
-}
-
-/**
- * Addresses a source may not send this watch to, however it asks.
- *
- * The floor under `anywhere`. Following a redirect the way a person's browser
- * follows one turned out to be WIDER than a browser: measured 2026-09-25, a
- * `data:` target was followed and its inline bytes read back as a reading, a
- * browser refuses that outright; and `169.254.169.254` — the address a cloud
- * runner keeps its credentials behind — was attempted, which on a hosted
- * runner is a request that reaches something. The policy permits a plaintext
- * hop on purpose, which means the next `Location` is chosen by whoever is on
- * the path and not only by the source, so the REQUEST is the harm even where
- * the bytes are never hashed.
- *
- * What it reads is worth stating. A literal address is judged, in every
- * spelling that means the same address; so are the two names that can only
- * mean this machine — `localhost` and anything under it; and since s36 so is
- * every address the system resolver gives for any other name, judged inside
- * the `lookup` hook that hands the socket the address it will use. A name is
- * no longer taken at face value, and there is no second answer to hope about:
- * the resolution that is checked is the resolution that connects.
- *
- * **The boundary, redrawn — s36, 2026-09-24; drawn first as sınır, s34.**
- * What these rules read: a literal IPv4 in any spelling the URL parser
- * normalises; a literal IPv6 with `::` expanded, an embedded dotted quad
- * taken as its last two groups, an IPv4-mapped address judged by the IPv4
- * rule on the address it embeds, and the four prefixes that carry or stand
- * for another address — NAT64 `64:ff9b::/96`, 6to4 `2002::/16`, the compat
- * form `::/96` and site-local `fec0::/10`; the two names that can only mean
- * this machine; and every address a resolver returns for any other name.
- * What they do not read: an address the OPERATING SYSTEM substitutes below
- * the hook — a `hosts` file, a VPN's split DNS, NAT on the path; the browser
- * tier, where Chrome resolves for itself and says so in its own header; and a
- * source that is genuinely reachable on the open web and merely hostile in
- * what it says, which is what the readings and the slice markers are for.
- * Inside that boundary a corner is a lie told by an address, not a finding
- * against this code.
- *
- * The rule is relative, not absolute: a source may not send the watch
- * somewhere it could not have gone itself. A public source redirecting into
- * the private network is refused; an entry that IS on such an address — a
- * test fixture, a mirror on a machine's own loopback — may redirect within
- * its own kind.
- */
-export type AddressKind = "loopback" | "link-local" | "private" | "public";
-
-const NAMED_LOOPBACK = [/^localhost$/i, /\.localhost$/i];
-
-const IPV4_KINDS: [AddressKind, RegExp][] = [
-  ["loopback", /^127\./], ["loopback", /^0\.0\.0\.0$/],
-  // Link-local before the private ranges: 169.254.169.254 is where a cloud
-  // runner keeps its credentials, and no source is ever there.
-  ["link-local", /^169\.254\./],
-  ["private", /^10\./], ["private", /^192\.168\./], ["private", /^172\.(1[6-9]|2\d|3[01])\./],
-];
-
-/**
- * An IPv6 literal as its eight groups, or `null` if it is not one.
- *
- * Written out rather than matched, because matching missed the spellings
- * that matter: `[::ffff:7f00:1]` IS 127.0.0.1 and `[::ffff:a9fe:a9fe]` IS
- * 169.254.169.254, and a pattern looking for `127.` or `169.254.` sees
- * neither (Security review, 2026-09-25). An address has many spellings and
- * only one meaning; this turns the spelling into the meaning.
- */
-function hextets(literal: string): number[] | null {
-  let text = literal.replace(/^\[/, "").replace(/\]$/, "");
-  if (!text.includes(":")) return null;
-  // A trailing dotted quad — `::ffff:127.0.0.1` — is the last two groups.
-  let tail: number[] = [];
-  const dotted = /:((?:\d{1,3}\.){3}\d{1,3})$/.exec(text);
-  if (dotted) {
-    const octets = dotted[1]!.split(".").map(Number);
-    if (octets.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return null;
-    tail = [(octets[0]! << 8) | octets[1]!, (octets[2]! << 8) | octets[3]!];
-    text = text.slice(0, dotted.index + 1);
-  }
-  const halves = text.split("::");
-  if (halves.length > 2) return null;
-  const parse = (part: string) => part.split(":").filter(Boolean).map((group) => parseInt(group, 16));
-  const left = parse(halves[0] ?? "");
-  const right = halves.length === 2 ? parse(halves[1]!) : [];
-  if ([...left, ...right].some((group) => !Number.isInteger(group) || group < 0 || group > 0xffff)) return null;
-  const named = left.length + right.length + tail.length;
-  const groups = halves.length === 2
-    ? [...left, ...new Array(Math.max(0, 8 - named)).fill(0), ...right, ...tail]
-    : [...left, ...tail];
-  return groups.length === 8 ? groups : null;
-}
-
-function ipv4Kind(address: string): AddressKind {
-  return IPV4_KINDS.find(([, shape]) => shape.test(address))?.[0] ?? "public";
-}
-
-/** The IPv4 address two groups carry, dotted, so the IPv4 rule can read it. */
-function carried(high: number, low: number): string {
-  return [high >> 8, high & 0xff, low >> 8, low & 0xff].join(".");
-}
-
-export function addressKind(hostname: string): AddressKind {
-  if (NAMED_LOOPBACK.some((shape) => shape.test(hostname))) return "loopback";
-  const groups = hextets(hostname);
-  if (!groups) return ipv4Kind(hostname);
-  const leading = (upTo: number) => groups.slice(0, upTo).every((g) => g === 0);
-  // An IPv4-mapped address is that IPv4 address, and takes its rule.
-  if (leading(5) && groups[5] === 0xffff) return ipv4Kind(carried(groups[6]!, groups[7]!));
-  // `::` (unspecified) and `::1` both mean this machine.
-  if (groups.every((g) => g === 0)) return "loopback";
-  if (leading(7) && groups[7] === 1) return "loopback";
-  /**
-   * The prefixes that carry another address, learnt in s36.
-   *
-   * Each of these is an IPv4 address wearing an IPv6 spelling, and the floor
-   * read all three as public because it had never met them: `64:ff9b::a9fe:a9fe`
-   * (NAT64), `2002:a9fe:a9fe::1` (6to4) and `::a9fe:a9fe` (the deprecated
-   * compat form) are all 169.254.169.254, where a hosted runner keeps its
-   * credentials, and s34's Security round requested each of them from a public
-   * entry. An address has many spellings and one meaning; each takes the rule
-   * of the address it carries, which is why a prefix carrying a public address
-   * stays public rather than being refused by association.
-   */
-  // The compat form `::/96`, and NAT64's `64:ff9b::/96`: the last two groups.
-  const nat64 = groups[0] === 0x0064 && groups[1] === 0xff9b && groups.slice(2, 6).every((g) => g === 0);
-  if (leading(6) || nat64) return ipv4Kind(carried(groups[6]!, groups[7]!));
-  // 6to4's `2002::/16`: the first two groups after the prefix.
-  if (groups[0] === 0x2002) return ipv4Kind(carried(groups[1]!, groups[2]!));
-  if ((groups[0]! & 0xffc0) === 0xfe80) return "link-local";
-  if ((groups[0]! & 0xfe00) === 0xfc00) return "private";
-  // Site-local, deprecated in 2004 and still routed on plenty of networks.
-  if ((groups[0]! & 0xffc0) === 0xfec0) return "private";
-  return "public";
-}
-
-/**
- * Whether an address of this kind may be connected to at all, given where the
- * chain started.
- *
- * One rule, two callers, because there is one rule: a redirect target
- * spelled as a literal, and every address a name resolves to. Two copies of
- * it would be two rules as soon as one of them changed.
- */
-export function allowedAddress(going: AddressKind, entryHost: string): boolean {
-  // Never, for anybody: a link-local address is not a place a source lives,
-  // and it is where a hosted runner's credentials answer.
-  if (going === "link-local") return false;
-  // Otherwise the relative rule: a source may not send this watch somewhere
-  // it could not have gone itself. An entry on loopback — a fixture, a mirror
-  // on this machine — may move within loopback; it may not step sideways into
-  // the private network, and a public source may do neither.
-  return going === "public" || going === addressKind(entryHost);
-}
-
-/**
- * Why this redirect target is refused, or `null` to follow it.
- *
- * `entryHost` is where the chain started, so the relative rule above can be
- * applied. The address is never printed beyond its origin.
- */
-export function refusedTarget(next: URL, entryHost: string): string | null {
-  if (next.protocol !== "http:" && next.protocol !== "https:")
-    return `to a ${next.protocol.replace(":", "")} address, which is not a page this watch will read`;
-  if (next.username || next.password)
-    return "to an address carrying a name and password, which this watch will not send";
-  const going = addressKind(next.hostname);
-  if (going === "link-local")
-    return `to ${shortAddress(next.origin)}, which is a link-local address and never a source`;
-  if (!allowedAddress(going, entryHost))
-    return `to ${shortAddress(next.origin)}, which is on a ${going} address and not the open web`;
-  return null;
-}
-
-/**
- * Why a name may not be connected to, or `null` — the same rule, asked of
- * what the resolver answered instead of what the source spelled.
- *
- * ALL of a name's addresses are judged and one refusal refuses the name. A
- * reader that took the first allowed address out of a list would be letting
- * whoever wrote the list choose which answer mattered, and a resolver that
- * answers differently on a second call is the whole reason this check happens
- * at the connection (scenario point 2).
- *
- * The refusal names the KIND and not the address. What a name stands for is
- * the source's business and this watch's finding, and not something to write
- * where a failure's text ends up (`failure.ts`'s opening sentence).
- */
-export function refusedResolution(name: string, addresses: string[], entryHost: string): string | null {
-  for (const address of addresses) {
-    const going = addressKind(address);
-    if (going === "link-local")
-      return `${shortAddress(name)} resolves to a link-local address, which is never a source`;
-    if (!allowedAddress(going, entryHost))
-      return `${shortAddress(name)} resolves to a ${going} address and not the open web`;
-  }
-  return null;
-}
-
 /** One answer from a resolver: an address, and which family it belongs to. */
 export interface ResolvedAddress { address: string; family: number }
 
@@ -345,14 +114,14 @@ export const systemResolver: Resolver = (hostname, options, done) => {
  * hostname and an error given back to it ends the request with no socket at
  * all (probed 2026-09-24 on Node v24.20.0). It is never called for an address
  * the URL parser could already read as an address; those are judged where
- * they are spelled, by `refusedTarget` and by the entry's own check.
+ * they are spelled, by the trust line's entry and redirect questions.
  */
-function floorLookup(entryHost: string, resolver: Resolver): LookupFunction {
+function judgedLookup(entryHost: string, resolver: Resolver): LookupFunction {
   return (hostname, options, done) => {
     resolver(hostname, { ...options, all: true }, (error, addresses) => {
       if (error) { done(error, []); return; }
-      const refusal = refusedResolution(hostname, addresses.map((one) => one.address), entryHost);
-      // A decision, carrying its own class: the floor declined to make the
+      const refusal = judgeResolution(hostname, addresses.map((one) => one.address), entryHost);
+      // A decision, carrying its own class: the trust line declined the
       // request, which is never the source having a bad minute.
       if (refusal) { done(new ReadFailure(refusal, "refused-by-us"), []); return; }
       // What was judged is what the socket gets, in the shape Node asked for.
@@ -362,69 +131,6 @@ function floorLookup(entryHost: string, resolver: Resolver): LookupFunction {
       done(null, first.address, first.family);
     });
   };
-}
-
-/**
- * The refusal both readers give an entry address before anything is asked of
- * it — not an address, carrying a name and password, on a scheme that is not
- * a page, or on a link-local address — or `null` when there is nothing to
- * refuse.
- *
- * One owner for all four, because each is a question about the entry address
- * alone, asked before either reader opens anything, and a reader that spelled
- * its own copy would be the reader whose copy drifts. Each is a door a reader
- * must not open: credentials a reader sends are credentials it can leak, a
- * scheme that is not a page is not a source, and a link-local address is
- * where a hosted runner's credentials answer. The fetcher and the browser
- * reader both ask here, so an entry one refuses the other refuses too.
- */
-export function refusedAddress(url: string): string | null {
-  let parsed: URL;
-  // Malformed is refused HERE too, rather than left to each reader. The
-  // browser's gate used to miss a malformed-and-credentialled address
-  // entirely, which was safe only because Node's parse error happens not to
-  // quote its input — safety by somebody else's wording is not safety
-  // (Security review, 2026-09-25). And like every refusal in this file, it
-  // says what is wrong without repeating the thing that is wrong.
-  try { parsed = new URL(url); } catch { return "the entry address is not an address"; }
-  if (parsed.username || parsed.password)
-    return "the entry address carries a name and password, which this watch will not send";
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
-    return `the entry address is a ${parsed.protocol.replace(":", "")} address, which this watch does not read`;
-  if (addressKind(parsed.hostname) === "link-local")
-    return "the entry address is a link-local address and never a source";
-  return null;
-}
-
-/**
- * The same address with its credentials taken out, and nothing else changed.
- *
- * This is what a REPORT carries, and a report's url is not only read by
- * people: the unread list is keyed by it and the site looks that key up
- * against the dataset's own source urls. So it is stripped and not shortened,
- * and not normalised in any other way — a truncated or re-spelled url would
- * match nothing there, and the source would drop silently out of the site's
- * freshness sentence (Standards review, 2026-09-25). The path and query stay
- * for the same reason: EUR-Lex's entry IS its query string.
- */
-export function addressWithoutCredentials(url: string): string {
-  let parsed: URL;
-  try { parsed = new URL(url); } catch { return "(not an address)"; }
-  parsed.username = "";
-  parsed.password = "";
-  return parsed.href;
-}
-
-/**
- * The same address as a person should see it: credentials out, and bounded.
- *
- * Printers use this, and what a printer may print is `failure.ts`'s opening
- * sentence. The credentials are removed once, where the report is made; the
- * shortening belongs here, because it is about what is readable and not about
- * what is safe.
- */
-export function printableAddress(url: string): string {
-  return shortAddress(addressWithoutCredentials(url));
 }
 
 /**
@@ -508,20 +214,17 @@ export const fetchSource = (async (
   resolver: Resolver = systemResolver,
 ): Promise<FetchResult> => {
   /**
-   * What this watch will not ask for at all: a malformed address, one
-   * carrying a name and password, one on a scheme that is not a page, one on
-   * a link-local address.
+   * The trust line's entry question, asked before anything is requested.
    *
-   * Refused before anything is requested and without repeating what is
-   * wrong: `String(e)` on a credentialled address puts the password into the
-   * error, and from there into the log, a flag and an issue. The coverage
-   * gate refuses a credentialled entry in the watchlist too, where it is a
-   * curator's to fix, and this is the floor under that for a url arriving by
-   * any other road.
+   * Its refusal does not repeat what is wrong: `String(e)` on a credentialled
+   * address puts the password into the error, and from there into the log, a
+   * flag and an issue. The coverage gate refuses a credentialled entry in the
+   * watchlist too, where it is a curator's to fix; this holds for a url
+   * arriving by any other road.
    */
-  const refused = refusedAddress(url);
-  // Refused by us, every one of them: the floor declined to make the request
-  // at all, and it will decline the same request three minutes later.
+  const refused = judgeEntry(url);
+  // Refused by us, every one of them: the trust line declined the request,
+  // and it will decline the same request three minutes later.
   if (refused) return { ok: false, error: refused, failure: "refused-by-us" };
   /**
    * The last thing this source actually said, kept for a refusal made after it.
@@ -543,15 +246,14 @@ export const fetchSource = (async (
   // `unreachable` (Standards review, 2026-09-24).
   try {
     const entry = new URL(url);
-    const asked = entry.origin;
-    // The entry's own address was judged above, by `refusedAddress`; a NAME
-    // in it is judged at the connection, by the hook below.
+    // The entry's own address was judged above; a NAME in it is judged at the
+    // connection, by the hook below.
     let target = url;
     // One deadline for the source, shared by every hop it makes. It is a
     // moment and not a signal because each hop is its own request now, and
     // each is given what is left of it.
     const deadline = Date.now() + BUDGET_MS;
-    const lookup = floorLookup(entry.hostname, resolver);
+    const lookup = judgedLookup(entry.hostname, resolver);
     /**
      * One connection pool per source, and nothing that outlives it.
      *
@@ -608,29 +310,21 @@ export const fetchSource = (async (
             };
           }
           /**
-           * A target carrying a name and password is refused before it is
-           * asked for, and the credentials are never printed.
+           * The trust line's redirect question, asked before the target is.
            *
-           * `user:pass@host` keeps the origin, so the check below would pass
-           * it; undici then refuses it at request time and the thrown string —
-           * credentials and all — became the error, with no status to say what
-           * the source had actually answered (Security review, 2026-09-24).
+           * The status reported is the REDIRECT's own, because that is the
+           * answer this source gave; the refused target was never asked. A
+           * place the watch may not go says the status first, and a target
+           * off the entry's origin says it after where it was sent.
            */
-          const forbidden = refusedTarget(next, entry.hostname);
-          if (forbidden)
-            return { ok: false, status: res.status, error: `HTTP ${res.status} ${forbidden}`, failure: "refused-by-us" };
-          // Where a reading is at stake, what the source redirects to is not
-          // the source. The status reported is the REDIRECT's own, because that
-          // is the answer this source gave; the far server was never asked.
-          //
-          // An entry that produces no reading is followed the way a person's
-          // browser follows — the policy comes from the strategy table, and the
-          // reason is written there.
-          if (redirects === "same-origin" && next.origin !== asked)
+          const refusal = judgeRedirect(next, entry, redirects);
+          if (refusal)
             return {
               ok: false,
               status: res.status,
-              error: `redirected off the site: asked ${asked}, sent to ${shortAddress(`${next.origin}${next.pathname}`)} (HTTP ${res.status}, not followed)`,
+              error: refusal.rule === "place"
+                ? `HTTP ${res.status} ${refusal.says}`
+                : `${refusal.says} (HTTP ${res.status}, not followed)`,
               // Ours: the source answered, and we declined to follow it.
               failure: "refused-by-us",
             };
@@ -640,7 +334,7 @@ export const fetchSource = (async (
               status: res.status,
               // Where it had got to, not where it started: under `anywhere` a
               // chain may have left the entry's origin long before the cap.
-              error: `redirected more than ${MOST_HOPS} times, last to ${shortAddress(next.origin + next.pathname)}`,
+              error: `redirected more than ${MOST_HOPS} times, last to ${shortenAddress(next.origin + next.pathname)}`,
               failure: "refused-by-us",
             };
           target = next.href;
@@ -666,7 +360,7 @@ export const fetchSource = (async (
             // The challenge is over by the next read, so this is worth one.
             failure: "transient",
           };
-        return { ok: true, body, ...(target !== url ? { from: shortAddress(target) } : {}) };
+        return { ok: true, body, ...(target !== url ? { from: shortenAddress(target) } : {}) };
       }
     } finally {
       pools["http:"].destroy();
@@ -674,7 +368,7 @@ export const fetchSource = (async (
     }
   } catch (e) {
     /**
-     * A refusal the floor made inside the connection says its own sentence.
+     * A refusal the trust line made inside the connection says its own sentence.
      *
      * The lookup hook is several layers down — it is Node that calls it, and
      * what comes back up is a socket that never opened — so the decision
@@ -683,7 +377,7 @@ export const fetchSource = (async (
      * happen: we declined it.
      *
      * Not bounded, and that is the same rule rather than a second one: a
-     * `ReadFailure` here is OURS — the floor's refusal, or the bound's own —
+     * `ReadFailure` here is OURS — the trust line's refusal, or the bound's own —
      * and the bound belongs where a SOURCE's string arrives, which is the
      * throw below (`failure.ts`, `MOST_OF_A_FAILURE`).
      */

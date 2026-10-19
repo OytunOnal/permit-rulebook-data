@@ -1,4 +1,5 @@
-import type { RedirectPolicy, WatchEntry, WatchStep } from "./core.js";
+import type { WatchEntry, WatchStep } from "./core.js";
+import type { RedirectPolicy } from "./trust-line.js";
 import { PERFORM_STEP, selectInto } from "./steps.js";
 import { MOST_OF_AN_ADDRESS, printableAddress, shortAddress } from "./fetch-source.js";
 import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, ReadFailure } from "./failure.js";
