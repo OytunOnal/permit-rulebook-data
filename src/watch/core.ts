@@ -6,8 +6,7 @@ import { noticeSources, provenancedValuesOf, routeStatements, statementSources, 
 import { countryVocabulary } from "../countries.js";
 import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type UnreadEntry, type WatchState } from "./state.js";
 import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, type FailureClass } from "./failure.js";
-import { addressWithoutCredentials, shortAddress } from "./fetch-source.js";
-import type { RedirectPolicy } from "./trust-line.js";
+import { type RedirectPolicy, shortenAddress, stripCredentials } from "./trust-line.js";
 import type { Dataset, UnsourcedReasonWord } from "../types.js";
 
 /**
@@ -428,10 +427,10 @@ export async function runWatch(
      * built from, which the site looks up against the dataset's own source
      * urls — so it must stay the entry's address exactly, minus the one thing
      * that may not be printed. Making it readable is the printer's job, and
-     * `printableAddress` is where that happens.
+     * `printAddress` is where that happens.
      */
     const base: Pick<WatchReport, "id" | "url" | "strategy" | "kind" | "note"> = {
-      id: entry.id, url: addressWithoutCredentials(entry.url), strategy: entry.strategy, kind: entry.kind, note: entry.note,
+      id: entry.id, url: stripCredentials(entry.url), strategy: entry.strategy, kind: entry.kind, note: entry.note,
     };
 
     if (!STRATEGIES[entry.strategy].fetches) {
@@ -1218,7 +1217,7 @@ export function checkCoverage(dataset: Dataset, watchlist: Watchlist): CoverageR
     let parsed: URL;
     try { parsed = new URL(e.url); } catch { return [`${e.id}: its url is not an address`]; }
     return parsed.username || parsed.password
-      ? [`${e.id}: ${shortAddress(parsed.origin)} carries a name and password`]
+      ? [`${e.id}: ${shortenAddress(parsed.origin)} carries a name and password`]
       : [];
   });
   // Keyed on what the DATASET cites, not on what the entry calls itself: an
