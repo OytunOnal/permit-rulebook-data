@@ -194,8 +194,10 @@ function addressKind(hostname: string): AddressKind {
    * carries, which is why a prefix carrying a public address stays public
    * rather than being refused by association.
    */
+  // `64:ff9b`, which both NAT64 prefixes below start with.
+  const inNat64 = groups[0] === 0x0064 && groups[1] === 0xff9b;
   // The compat form `::/96`, and NAT64's `64:ff9b::/96`: the last two groups.
-  const nat64 = groups[0] === 0x0064 && groups[1] === 0xff9b && groups.slice(2, 6).every((g) => g === 0);
+  const nat64 = inNat64 && groups.slice(2, 6).every((g) => g === 0);
   if (leading(6) || nat64) return ipv4Kind(carried(groups[6]!, groups[7]!));
   // 6to4's `2002::/16`: the first two groups after the prefix.
   if (groups[0] === 0x2002) return ipv4Kind(carried(groups[1]!, groups[2]!));
@@ -203,7 +205,8 @@ function addressKind(hostname: string): AddressKind {
   // operator chooses where inside the prefix it sits (RFC 8215, at any of RFC
   // 6052's prefix lengths), so no fixed position can be read: all of it is
   // private.
-  if (groups[0] === 0x0064 && groups[1] === 0xff9b && groups[2] === 0x0001) return "private";
+  const nat64LocalUse = inNat64 && groups[2] === 0x0001;
+  if (nat64LocalUse) return "private";
   if ((groups[0]! & 0xffc0) === 0xfe80) return "link-local";
   if ((groups[0]! & 0xfe00) === 0xfc00) return "private";
   // Site-local, deprecated and still routed on plenty of networks.
