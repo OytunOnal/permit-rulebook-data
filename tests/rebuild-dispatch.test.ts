@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  conditionOf, readText, stepNamesOf, stepOf, watchYaml as watch, workflowFiles, workflowsDir,
+  conditionOf, KEPT_ISSUE_CLI_COPY, oneLineCommandsOf, readText, stepNamesOf, stepOf, watchYaml as watch, workflowFiles,
+  workflowsDir,
 } from "./workflow-text.js";
 
 /**
@@ -67,20 +68,50 @@ function dispatchInputs(yaml: string): Record<string, string> {
  * Would that condition fire, given these facts?
  *
  * Enough of GitHub's expression language for the conditions this workflow
- * writes: `&&` of terms, each either `!cancelled()` or a path compared with
- * `==`/`!=` to a literal. A fact nobody supplies is absent — which is what
+ * writes: `&&` of terms, each `!cancelled()`, `failure()`, `success()`, or a
+ * path compared with `==`/`!=` to a literal. `failure()` and `success()` read
+ * the fact `job.status`. A fact nobody supplies is absent — which is what
  * `github.event.inputs.x` IS on a schedule, and the reason every guard in this
  * file is written `!= 'false'`.
  */
 function fires(condition: string, facts: Record<string, string>): boolean {
   return condition.split("&&").map((t) => t.trim()).every((term) => {
     if (term === "!cancelled()") return true;
+    if (term === "failure()") return facts["job.status"] === "failure";
+    if (term === "success()") return facts["job.status"] === "success";
     const compared = /^([\w.]+)\s*(==|!=)\s*'([^']*)'$/.exec(term);
     expect(compared, `this test cannot read the term ${term}`).not.toBeNull();
     const [, path, operator, value] = compared!;
     const actual = facts[path!];
     return operator === "==" ? actual === value : actual !== value;
   });
+}
+
+/**
+ * The finding a step hands the kept-issue CLI, given the job's status when the
+ * step runs. Enough of the expression language for the one shape it is
+ * written in: `job.status == '<status>' && '<finding>' || '<otherwise>'`.
+ */
+function findingOn(step: string, jobStatus: string): string {
+  const written = /^\s*FINDING:\s*"\$\{\{\s*job\.status\s*==\s*'(\w+)'\s*&&\s*'(\w+)'\s*\|\|\s*'(\w+)'\s*\}\}"\s*$/m.exec(step);
+  expect(written, "the step hands the CLI no finding read from the job's status").not.toBeNull();
+  const [, status, finding, otherwise] = written!;
+  return jobStatus === status ? finding! : otherwise!;
+}
+
+/** The value a step's one-line `run:` command gives an argument, as written; undefined when it gives none. */
+function argumentOf(step: string, name: string): string | undefined {
+  const command = /^\s*run:\s*(.+)$/m.exec(step)?.[1] ?? "";
+  return new RegExp(`(?:^|\\s)${name}\\s+("[^"]*"|\\S+)`).exec(command)?.[1];
+}
+
+/** The lines of the job's own `env:`, trimmed, comments dropped. */
+function linesUnderJobEnv(yaml: string): string[] {
+  const lines = yaml.split("\n").filter((line) => line.trim() !== "" && !/^\s*#/.test(line));
+  const start = lines.findIndex((line) => /^ {4}env:\s*$/.test(line));
+  expect(start, "the job has no env").toBeGreaterThan(-1);
+  const end = lines.findIndex((line, i) => i > start && line.search(/\S/) <= 4);
+  return lines.slice(start + 1, end < 0 ? undefined : end).map((line) => line.trim());
 }
 
 describe("a new dataset state wakes the site", () => {
@@ -138,7 +169,7 @@ describe("a new dataset state wakes the site", () => {
   it("runs last, so nothing a flag depends on sits behind a step that can fail on the token", () => {
     const names = stepNamesOf(watch);
     // The dispatch is the last step that DOES anything; the only thing after it
-    // is the notice that speaks when a step failed — including the dispatch
+    // is the notice that says whether a step failed — including the dispatch
     // itself, when its token has expired (Standards review, 2026-09-08). Behind
     // the notice stands only the overdue gate, which acts on nothing (#62).
     expect(names[names.length - 1], "the overdue gate is not last").toBe("Fail the run on an overdue flag");
@@ -146,8 +177,8 @@ describe("a new dataset state wakes the site", () => {
     expect(names[names.length - 3], "the dispatch is not the last acting step").toBe("Tell the site to rebuild");
 
     // Every step that acts on the flags comes before it — by position, not by
-    // reputation: any step whose condition or body reads the flag collection.
-    // The failure notice is exempt: it runs after everything, on failure.
+    // reputation: any step whose condition or body names the flags folder.
+    // The failure notice is exempt: it runs after everything.
     const at = (name: string) => names.indexOf(name);
     const issues = at("Open issues for new flags only");
     expect(issues, "no step opens issues for the flags").toBeGreaterThan(-1);
@@ -155,19 +186,18 @@ describe("a new dataset state wakes the site", () => {
     for (const name of names) {
       if (name === "Tell the site to rebuild" || name === "Say so when the run fails") continue;
       const body = stepOf(watch,name);
-      if (!body.includes("newflags") && !body.includes("flags/")) continue;
+      if (!body.includes("watch/flags")) continue;
       expect(at(name), `${name} runs after a step that can fail on the token`)
         .toBeLessThan(at("Tell the site to rebuild"));
     }
 
     // And the issues step asks nothing of the step that can fail on the token:
-    // it is conditioned on the flags, and since s34 also on the switch that
-    // says this run records nothing at all — never on the dispatch or its
-    // secret. (The two assertions below read `not.toContain("dispatch")` until
-    // 2026-09-23; the word is now a dispatch INPUT's name and appears in this
-    // step's own condition, so the check names the two things it always meant.)
+    // it is conditioned on the switch that says this run records nothing at
+    // all — never on the dispatch or its secret. (The two assertions below
+    // read `not.toContain("dispatch")` until 2026-09-23; the word is now a
+    // dispatch INPUT's name and appears in this step's own condition, so the
+    // check names the two things it always meant.)
     const issueStep = stepOf(watch,"Open issues for new flags only");
-    expect(issueStep).toContain("steps.newflags.outputs.files != ''");
     expect(issueStep).not.toContain("DISPATCH_TOKEN");
     expect(issueStep).not.toContain("steps.persist");
 
@@ -221,14 +251,6 @@ describe("automated commits are attributed to the automation", () => {
  * repository unread (devils-advocate, 2026-09-08).
  */
 describe("a red run is never silent", () => {
-  it("collects flags as files, whatever git says about the directory", () => {
-    const step = watch.slice(watch.indexOf("- name: Collect NEW flags"));
-    expect(step).toContain("git status --porcelain -- 'watch/flags/*.md'");
-    // The old shape, which broke on an untracked directory and on a rename.
-    expect(step).not.toContain("git status --porcelain watch/flags");
-    expect(step).not.toContain("awk '{print $2}'");
-  });
-
   it("leaves the schedule's path exactly as it was when the dispatch switches were added", () => {
     // s34 gave `workflow_dispatch` two booleans — `commit` and `dispatch` — so
     // the watch could be run once to be timed and once to write baselines on a
@@ -282,15 +304,17 @@ describe("a red run is never silent", () => {
       "a run that committed nothing still dispatches").toBe(false);
   });
 
-  it("opens or updates one issue when the run itself fails, with the run's link", () => {
+  it("keeps watch run failed through the kept-issue CLI: red on a red run, green on a green one, with the run's link", () => {
     const names = stepNamesOf(watch);
     const say = stepOf(watch,"Say so when the run fails");
-    expect(say).toContain("if: failure()");
+    // One command, so what it does to the issue is decided in the kept-issue
+    // module (#117) and nowhere in this file's shell.
+    const command = /^\s*run:\s*(.+)$/m.exec(say);
+    expect(command, "the step runs no single command").not.toBeNull();
+    expect(command![1]).toMatch(/^node \S+\/cli-kept-issue\.js --title "watch run failed" --label "\$WATCH_LABEL" .*--finding "\$FINDING"/);
+    expect(findingOn(say, "failure"), "a red run does not say so").toBe("red");
+    expect(findingOn(say, "success"), "a green run does not close the issue").toBe("green");
     expect(say).toContain("actions/runs/${{ github.run_id }}");
-    expect(say).toContain("--label watch");
-    // One issue, not one per run: an existing open one is commented on.
-    expect(say).toContain("gh issue list --label watch --state open");
-    expect(say).toContain("gh issue comment");
     // It sits after everything that can fail, or it cannot see the failure.
     // After everything, the dispatch included — everything but the overdue
     // gate, which stands behind it so that it is NOT seen (#62): an overdue
@@ -300,6 +324,112 @@ describe("a red run is never silent", () => {
       .toBeGreaterThan(names.indexOf("Tell the site to rebuild"));
     const gate = stepOf(watch,"Fail the run on an overdue flag");
     expect(gate).not.toContain("gh ");
+  });
+
+  /**
+   * A green morning closes `watch run failed` as a red one keeps it (#117,
+   * decision 10), so the step runs on both; a measurement run leaves nothing
+   * behind, so it neither opens nor closes it.
+   */
+  it("keeps watch run failed on a red and on a green morning, never on a measurement run", () => {
+    const when = conditionOf(watch, "Say so when the run fails");
+    const onMaster = { "github.ref": "refs/heads/master" };
+    for (const status of ["failure", "success"]) {
+      expect(fires(when, { "job.status": status, ...onMaster }), `a ${status} morning leaves the issue alone`).toBe(true);
+      expect(fires(when, { "job.status": status, "github.event.inputs.commit": "false", ...onMaster }),
+        `a ${status} measurement run keeps the issue`).toBe(false);
+    }
+  });
+
+  /**
+   * Only a run on the default branch keeps `watch run failed` (the ruling on
+   * PR #36's review): a branch run's green would say the morning's run had
+   * recovered, and its red would raise the alarm for a run nobody waits on.
+   */
+  it("never keeps watch run failed from a run on another branch", () => {
+    const when = conditionOf(watch, "Say so when the run fails");
+    for (const status of ["failure", "success"])
+      expect(fires(when, { "job.status": status, "github.ref": "refs/heads/s34-browser-strategy" }),
+        `a ${status} branch run keeps the issue`).toBe(false);
+  });
+
+  /**
+   * An overdue flag is `overdue flags`'s to say (#117, user story 24). The
+   * clock's own step stays green on overdue (#118), and the gate that reddens
+   * the run on it stands behind this step, so on a morning where only the clock
+   * is red the job is still green here, and the finding with it.
+   */
+  it("does not let an overdue flag alone make watch run failed's finding red", () => {
+    const names = stepNamesOf(watch);
+    const say = stepOf(watch, "Say so when the run fails");
+    const gates = names.filter((name) => {
+      const step = stepOf(watch, name);
+      return step.includes("steps.clock.outputs.reading == 'overdue'") && step.includes("exit 1");
+    });
+    expect(gates, "no step reddens the run on an overdue flag").toEqual(["Fail the run on an overdue flag"]);
+    expect(names.indexOf(gates[0]!), "the overdue gate runs before the finding is read")
+      .toBeGreaterThan(names.indexOf("Say so when the run fails"));
+    expect(findingOn(say, "success"), "a morning red only on the clock is not green here").toBe("green");
+  });
+
+  /**
+   * The clock (#62), kept through the kept-issue CLI (#117): it reads after the
+   * state is pushed, and not on a measurement run; `overdue flags` is spoken to
+   * only on a reading the clock could make, so an unread clock leaves it as it
+   * was; and the overdue gate stands behind `watch run failed`, so an overdue
+   * flag alone never files it.
+   */
+  it("reads the clock after the push, keeps overdue flags on a reading, and gates last", () => {
+    const names = stepNamesOf(watch);
+    const at = (name: string) => names.indexOf(name);
+    const order = [
+      "Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)",
+      "Read the clock on open flags",
+      "Say which flags are overdue",
+      "Say so when the run fails",
+      "Fail the run on an overdue flag",
+    ];
+    for (const name of order) expect(at(name), `no step named "${name}"`).toBeGreaterThan(-1);
+    expect(order.map(at)).toEqual([...order.map(at)].sort((a, b) => a - b));
+    expect(conditionOf(watch, "Read the clock on open flags")).toBe("!cancelled() && github.event.inputs.commit != 'false'");
+    expect(conditionOf(watch, "Say which flags are overdue"))
+      .toBe("!cancelled() && (steps.clock.outputs.reading == 'overdue' || steps.clock.outputs.reading == 'clear')");
+    expect(conditionOf(watch, "Fail the run on an overdue flag")).toBe("!cancelled() && steps.clock.outputs.reading == 'overdue'");
+    expect(stepOf(watch, "Read the clock on open flags")).toContain("id: clock");
+  });
+
+  /** The clock writes the finding `overdue flags` is kept with; a drifted path would keep it never. */
+  it("keeps overdue flags with the finding the clock wrote, at one path outside the repository", () => {
+    const written = argumentOf(stepOf(watch, "Read the clock on open flags"), "--finding-file");
+    expect(written).toMatch(/^"\$RUNNER_TEMP\//);
+    expect(argumentOf(stepOf(watch, "Say which flags are overdue"), "--finding-file")).toBe(written);
+  });
+
+  /**
+   * A label's look is written once in the job and read by every step that
+   * keeps or files under it, so `label create --force` paints it the same
+   * whichever step runs last, and the clock reads the flags under the label
+   * they are filed under.
+   */
+  it("writes each label's look once, and every step under a label reads it from there", () => {
+    const underALabel = stepNamesOf(watch).filter((name) => /\s--label\s/.test(stepOf(watch, name)));
+    expect(underALabel.length, "no step keeps or files under a label").toBeGreaterThan(0);
+    for (const name of underALabel) {
+      const step = stepOf(watch, name);
+      const label = /^"\$(\w+)_LABEL"$/.exec(argumentOf(step, "--label") ?? "");
+      expect(label, `${name} names its label in place`).not.toBeNull();
+      for (const [argument, suffix] of [["--label-color", "_COLOR"], ["--label-description", "_DESCRIPTION"]] as const) {
+        const value = argumentOf(step, argument);
+        if (value !== undefined) expect(value, `${name}'s ${argument}`).toBe(`"$${label![1]}_LABEL${suffix}"`);
+      }
+    }
+    const env = linesUnderJobEnv(watch);
+    for (const variable of new Set([...watch.matchAll(/"\$(\w+_LABEL(?:_COLOR|_DESCRIPTION)?)"/g)].map((m) => m[1]!)))
+      expect(env.filter((line) => line.startsWith(`${variable}:`)), `${variable} is not written once in the job's env`).toHaveLength(1);
+    expect(argumentOf(stepOf(watch, "Read the clock on open flags"), "--label"), "the clock reads another label than the flags'")
+      .toBe(argumentOf(stepOf(watch, "Open issues for new flags only"), "--label"));
+    expect(argumentOf(stepOf(watch, "Say which flags are overdue"), "--label"))
+      .toBe(argumentOf(stepOf(watch, "Say so when the run fails"), "--label"));
   });
 
   it("and it says what a failure means, which is not that a source changed", () => {
@@ -329,13 +459,79 @@ describe("the dispatch names the state it just committed", () => {
     expect(dispatch).not.toContain("$GITHUB_SHA");
   });
 
-  it("a flag file reaches the issue step as data, not as script", () => {
-    const issues = stepOf(watch,"Open issues for new flags only");
-    expect(issues).toContain('FLAGS: "${{ steps.newflags.outputs.files }}"');
-    expect(issues).toContain('done <<< "$FLAGS"');
-    // The old shape interpolated the list into the script body.
-    expect(issues).not.toContain('<<< "${{ steps.newflags');
-    // And only a flag file this repository writes is ever opened.
-    expect(issues).toContain("case \"$f\" in watch/flags/*.md)");
+});
+
+/**
+ * Flag issues (#117 decision 14). Which issues are filed is decided in the
+ * CLIs, where a test reaches it, and in no step's shell: the watch's CLI writes
+ * this run's new flags to a list outside the repository, and after the push
+ * one CLI files an issue per flag on it, the title from the list.
+ */
+describe("flag issues are filed after the push, from the list the watch writes", () => {
+  const PERSIST = "Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)";
+  const FILING = "Open issues for new flags only";
+  const commandOf = (name: string): string => {
+    const command = /^\s*run:\s*(.+)$/m.exec(stepOf(watch, name));
+    expect(command, `${name} runs no single command`).not.toBeNull();
+    return command![1]!;
+  };
+
+  it("files them after the state is pushed, with one command, from the list the watch's CLI wrote", () => {
+    const names = stepNamesOf(watch);
+    const order = ["Watch sources", PERSIST, FILING].map((name) => names.indexOf(name));
+    expect(order.every((at) => at > -1), "a step is missing").toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    const filing = commandOf(FILING);
+    expect(filing).toMatch(/^node dist\/src\/watch\/cli-flag-issues\.js /);
+    const list = /--list "([^"]+)"/.exec(filing)?.[1];
+    expect(list, "the filing step names no list").toBeDefined();
+    // In the runner's temporary folder: outside the repository, so the push never carries it.
+    expect(list).toMatch(/^\$RUNNER_TEMP\//);
+    expect(commandOf("Watch sources"), "the watch writes its list somewhere else").toContain(`--new-flags="${list}"`);
+  });
+
+  it("files them on a morning whose push went through, never on a measurement run", () => {
+    const when = conditionOf(watch, FILING);
+    expect(fires(when, { "job.status": "success" }), "the daily run files no flag issue").toBe(true);
+    expect(fires(when, { "job.status": "success", "github.event.inputs.commit": "false" }),
+      "a measurement run files flag issues").toBe(false);
+    expect(fires(when, { "job.status": "failure" }), "a run whose push failed files flag issues").toBe(false);
+  });
+
+  it("leaves no step collecting the flags in bash", () => {
+    expect(stepNamesOf(watch).filter((name) => name.startsWith("Collect NEW flags"))).toEqual([]);
+    expect(watch).not.toContain("steps.newflags");
+  });
+});
+
+/**
+ * A master whose build breaks must not silence `watch run failed` (the ruling
+ * on #117, (a)): the kept-issue CLI is built on its own, from its own files,
+ * before anything else can fail, and the steps that keep an issue run that copy.
+ */
+describe("a broken build elsewhere cannot silence a kept issue", () => {
+  it("builds the kept-issue CLI on its own, right after the install, before the repository's build", () => {
+    const commands = oneLineCommandsOf(watch);
+    expect(commands.slice(0, 2)).toEqual(["npm ci", "npm run build:kept-issue"]);
+    expect(commands.indexOf("npm run build"), "the repository's build runs before the CLI's own")
+      .toBeGreaterThan(commands.indexOf("npm run build:kept-issue"));
+  });
+
+  it("keeps both of the watch's issues with that copy", () => {
+    for (const name of ["Say so when the run fails", "Say which flags are overdue"]) {
+      const command = /^\s*run:\s*(.+)$/m.exec(stepOf(watch, name))?.[1] ?? "";
+      expect(command.startsWith(`node ${KEPT_ISSUE_CLI_COPY} `), `${name} runs ${command}`).toBe(true);
+    }
+  });
+
+  it("builds that copy from a config of its own, at the path the steps run", () => {
+    const packageJson = JSON.parse(readText(fileURLToPath(new URL("../package.json", import.meta.url))));
+    const config = /^tsc -p (\S+)$/.exec(packageJson.scripts["build:kept-issue"] ?? "");
+    expect(config, "build:kept-issue is not one tsc build").not.toBeNull();
+    const tsconfig = JSON.parse(readText(fileURLToPath(new URL(`../${config![1]}`, import.meta.url))));
+    // Its own files only: nothing the repository's other sources hold is swept in.
+    expect(tsconfig.include).toEqual([]);
+    expect(tsconfig.files).toContain("src/watch/cli-kept-issue.ts");
+    expect(`${tsconfig.compilerOptions.outDir}/src/watch/cli-kept-issue.js`).toBe(KEPT_ISSUE_CLI_COPY);
   });
 });

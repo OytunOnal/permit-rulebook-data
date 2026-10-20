@@ -1,41 +1,33 @@
-import { readFileSync } from "node:fs";
-import { readClock, type ClockReading } from "./overdue.js";
+import { ghRunnerFromPath } from "./cli-io.js";
+import { readClockOnFlags } from "./overdue-command.js";
+import { print } from "./print.js";
 
 /**
  * The clock on a flag, read once a morning (#62).
  *
- * Given the tracker's open `source-change` flags on standard input — the JSON
- * of `gh issue list --json number,title,createdAt` — it writes the body of the
- * `overdue flags` issue to standard output when there is one to write, its own
- * log line to standard error, and exits with the code below. Everything it
- * decides is in `overdue.ts`; this file only reads, prints and exits.
+ *   node dist/src/watch/cli-overdue.js
+ *     --label <name>          the label the flags are filed under
+ *     --finding-file <path>   where the finding for `overdue flags` goes (a JSON RunFinding)
+ *     --run-url <url>         the run the finding links
+ *     --step-output <path>    the step's $GITHUB_OUTPUT, given `reading=clear|overdue|unread`
+ *
+ * It reads the tracker's open flags under that label through `gh`, reads the
+ * clock, logs one line, and writes the finding the kept-issue CLI keeps
+ * `overdue flags` with. Everything it decides is in `overdue-command.ts` and
+ * `overdue.ts`.
+ *
+ * Exit 0 when it read the clock, clear or overdue: an overdue flag reddens the
+ * run at the workflow's last step, behind `watch run failed`, because it is
+ * not the check failing. Exit 1 when it did not: `gh` was not found, or the
+ * tracker, its answer or the arguments could not be read, and that is the
+ * check not finishing.
  */
 
-/**
- * The one place a reading becomes an exit code, and the three codes
- * `watch.yml` tells apart: clear closes an open `overdue flags` issue, overdue
- * turns the run red and names the flags there, unread is the check not
- * finishing — `watch run failed` — and leaves `overdue flags` as it was.
- */
-const EXIT: Record<ClockReading["kind"], number> = { clear: 0, overdue: 1, unread: 2 };
-
-const today = new Date().toISOString().slice(0, 10);
-let reading: ClockReading;
-try {
-  reading = readClock(readFileSync(0, "utf8"), today);
-} catch {
-  reading = { kind: "unread", reason: "standard input could not be read" };
+const runGh = ghRunnerFromPath();
+if (typeof runGh === "string") {
+  print({ level: "error", msg: `overdue clock: ${runGh}`, fields: {} });
+  process.exit(1);
 }
-
-const line = reading.kind === "unread"
-  ? { level: "error", msg: "overdue clock: the tracker could not be read", reason: reading.reason }
-  : {
-    level: reading.kind === "overdue" ? "error" : "info",
-    msg: "overdue clock",
-    today,
-    open: reading.open,
-    overdue: reading.kind === "overdue" ? reading.overdue.map((f) => ({ number: f.number, raised: f.raised, days: f.days })) : [],
-  };
-console.error(JSON.stringify({ ts: new Date().toISOString(), ...line }));
-if (reading.kind === "overdue") process.stdout.write(reading.body + "\n");
-process.exit(EXIT[reading.kind]);
+const run = await readClockOnFlags(process.argv.slice(2), runGh, new Date().toISOString().slice(0, 10));
+for (const event of run.events) print(event);
+process.exit(run.exitCode);

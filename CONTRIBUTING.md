@@ -219,16 +219,29 @@ are triage, not severity:
 - **`new-need`** — a route, a country, a fact or an export that does not exist
   yet.
 
-Two more are the watch's own, created by the workflow and applied by it. They
-say where an issue came from, not what kind of thing it is, and nobody picks
-them by hand (Standards review, 2026-09-08):
+Three more are the workflows' own, created and applied by them. They say where
+an issue came from, not what kind of thing it is, and nobody picks them by hand
+(Standards review, 2026-09-08):
 
 - **`source-change`** — a watched official source changed. The issue carries the
   flag file, and a person reads the diff before any value moves.
-- **`watch`** — the daily run itself: `watch run failed` says the check did not
-  finish, or that `npm audit` found a known advisory at high or above in an
-  installed dependency, which is not the same as a source having changed;
-  `overdue flags` says a flag has waited two days for a person (below).
+- **`watch`** — the daily run itself (`.github/workflows/watch.yml`):
+  `watch run failed` says the check did not finish, or that `npm audit` found a
+  known advisory at high or above in an installed dependency, which is not the
+  same as a source having changed, and it closes itself on the next morning on
+  which every step but the overdue clock passed; `overdue flags` says a flag
+  has waited two days for a person (below). Only a run on master keeps
+  `watch run failed`.
+- **`check`** — the data repository's own suite, run by the check workflow
+  (`.github/workflows/check.yml`) after every watch run on master: it keeps
+  `check failed on master`, opened by a red check and closed by the next green
+  one. A push or a pull request checked by the same workflow files nothing; a
+  person is watching those.
+
+Every one of these issues is a kept issue: the run opens, comments on, reopens
+and closes it itself, through the kept-issue CLI. That CLI is built on its own,
+from its own files, before anything else in the job (`npm run
+build:kept-issue`), so a master whose build breaks elsewhere still says so.
 
 ## The daily watch and the site rebuild
 
@@ -312,8 +325,8 @@ fortnight has not broken the claim this watch makes. The run's
 last line, `watch complete`, carries `lapsed`, `outages` and `refused` beside
 `unreachable`, so a green day on which something still went unread is visible
 in the log and not only in the state. The workflow does not count any of this:
-the CLI's exit code is the one signal it reads, and `watch.yml` was not
-touched.
+the CLI's exit code is the one signal it reads, and nothing in `watch.yml`
+counts a lapse or an outage.
 
 **An overdue flag is the other red** (#62). The site says a flag is read
 within two days, so a `source-change` issue still open on the second morning
@@ -326,8 +339,11 @@ red morning, and closes it itself on the first morning nothing is overdue. A
 person walks the flags; the issue follows. If the tracker cannot be read, that
 is the check not finishing — `watch run failed`, and `overdue flags` is left as
 it was. A measurement run reads no clock. The decision is
-`src/watch/overdue.ts`; `cli-overdue.ts` reads `gh issue list` on standard input
-and is the one place its exit codes are written down.
+`src/watch/overdue.ts`; `src/watch/overdue-command.ts` reads the open flags
+under the label it is given through `gh`, and `cli-overdue.ts` is the one place
+its arguments and exit codes are written down. The issue
+itself is kept by the kept-issue CLI, `cli-kept-issue.ts`, which decides
+through `src/watch/kept-issue.ts`, the one table every kept issue goes through.
 
 ### Moving a slice re-reads its baseline, in the same commit
 

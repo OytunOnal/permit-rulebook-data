@@ -12,20 +12,13 @@ import {
   type Watchlist,
 } from "./core.js";
 import { makePrintable } from "./failure.js";
+import type { LogEvent, LogLevel } from "./print.js";
 import { readableAddressOf } from "./trust-line.js";
 
-export type LogLevel = "info" | "warn" | "error";
-
-/** One log line before it is printed: the CLI stamps `ts` on it. */
-export interface LogEvent {
-  level: LogLevel;
-  msg: string;
-  fields: Record<string, unknown>;
-}
-
-/** One flag file: its name under `watch/flags/` and its whole text. */
+/** One flag file: its name under `watch/flags/`, the title its issue is filed under, and its whole text. */
 export interface FlagDocument {
   name: string;
+  title: string;
   body: string;
 }
 
@@ -35,11 +28,17 @@ export interface FinishedRun {
   verdict: RunVerdict;
   today: string;
   state: StateOutcome;
+  /** The text of the flag file of that name as it is before this run writes, or undefined when there is none. */
+  flagTextOnDisk: (name: string) => string | undefined;
 }
 
 /**
  * What a finished run says: the flags it files, the lines it logs around
  * writing them, the code it exits with.
+ *
+ * A flag is filed when this run creates its file or changes its text. One the
+ * run would write again as it is already on disk is not: a second committing
+ * run on the same day files no second issue for a due reminder.
  *
  * The lines come in two groups, printed on either side of the writes, so a
  * run whose flags or state cannot be written has still printed what it read.
@@ -58,7 +57,8 @@ export function sayRun(run: FinishedRun): RunSays {
   return {
     flags: reports
       .filter((r) => r.outcome === "changed" || r.outcome === "reminder-due")
-      .map((r) => flagOf(r, today)),
+      .map((r) => flagOf(r, today))
+      .filter((flag) => run.flagTextOnDisk(flag.name) !== flag.body),
     beforeWrites: [...reports.map(reportEvent), ...unreadNotices(verdict, today).map(noticeEvent)],
     afterWrites: [stateEvent(run.state), completeEvent(reports, verdict)],
     exitCode: verdict.red ? 1 : 0,
@@ -90,8 +90,9 @@ export const EXCERPT_INTRODUCTION = "The page now reads, around the first differ
  * advice never renders as part of the page's words.
  */
 function flagOf(report: WatchReport, today: string): FlagDocument {
+  const title = `Watch flag: ${report.id} — ${report.outcome}`;
   const header = [
-    `# Watch flag: ${report.id} — ${report.outcome}`,
+    `# ${title}`,
     `- url: ${readableAddressOf(report.url)}`,
     `- kind: ${report.kind}`,
     `- date: ${today}`,
@@ -107,7 +108,7 @@ function flagOf(report: WatchReport, today: string): FlagDocument {
   // Reminders use a stable name (self-overwriting, no daily pile-up);
   // content changes keep the date so history stays visible.
   const name = report.outcome === "reminder-due" ? `${report.id}-reminder.md` : `${report.id}-${today}.md`;
-  return { name, body: sections.join("\n\n") + "\n" };
+  return { name, title, body: sections.join("\n\n") + "\n" };
 }
 
 /**
@@ -205,13 +206,16 @@ export interface RunArgs {
   only?: string;
   /** `--commit` writes the state; without it the run is a dry run. */
   persist: "commit" | "dry-run";
+  /** `--new-flags=<path>`: where the list of this run's new flags goes, for the step that files their issues. */
+  newFlagsList?: string;
 }
 
 export function readRunArgs(argv: readonly string[]): RunArgs {
-  const onlyArg = argv.find((a) => a.startsWith("--only="));
+  const valueOf = (name: string) => argv.find((a) => a.startsWith(name))?.slice(name.length);
   return {
-    only: onlyArg?.slice("--only=".length),
+    only: valueOf("--only="),
     persist: argv.includes("--commit") ? "commit" : "dry-run",
+    newFlagsList: valueOf("--new-flags="),
   };
 }
 

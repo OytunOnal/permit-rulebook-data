@@ -48,14 +48,32 @@ jobs:
     permissions:
       # Commits watch/state.json and the flag files.
       contents: write
-      # Opens one issue per new flag, one when the run itself fails, and one
-      # naming the flags no person has walked in two days.
+      # Opens one issue per new flag, and keeps two: one saying whether the run
+      # itself failed, and one naming the flags no person has walked in two
+      # days.
       issues: write
+    # Each label's look, written once: every step that keeps or files under a
+    # label reads it here, so `label create --force` paints it the same
+    # whichever step runs last, and the clock reads the flags under the label
+    # they are filed under.
+    env:
+      FLAG_LABEL: source-change
+      FLAG_LABEL_COLOR: e4a11b
+      FLAG_LABEL_DESCRIPTION: "A watched official source changed"
+      WATCH_LABEL: watch
+      WATCH_LABEL_COLOR: b60205
+      WATCH_LABEL_DESCRIPTION: "The daily source watch itself"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (node24)
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 (node24)
         with: { node-version: 22 }
       - run: npm ci
+
+      # The kept-issue CLI, built on its own from its own files before anything
+      # else can fail: the two steps that keep an issue run this copy, so a
+      # master whose build breaks elsewhere still says so in `watch run failed`
+      # (the ruling on #117, (a)).
+      - run: npm run build:kept-issue
 
       # Every installed dependency, dev ones included: the test runner runs in
       # this job, which holds a write token. A known advisory at high or above
@@ -81,6 +99,11 @@ jobs:
 
       # continue-on-error so detected changes/flags/state are NEVER discarded
       # because one source was unreachable; the final gate re-raises the red.
+      #
+      # `--new-flags` is where the watch writes the list of this run's new
+      # flags (each one's file and issue title) for the step that files them.
+      # It sits in the runner's temporary folder, outside the repository, so
+      # the push below never carries it (#117 decision 14).
       - name: Watch sources
         id: watch
         continue-on-error: true
@@ -89,28 +112,12 @@ jobs:
           # nothing — never to the input itself, so what reaches the command
           # line is this file's own word and not the dispatcher's.
           COMMIT_FLAG: ${{ github.event.inputs.commit != 'false' && '--commit' || '' }}
-        run: node dist/src/watch/cli-watch.js $COMMIT_FLAG
+        run: node dist/src/watch/cli-watch.js $COMMIT_FLAG --new-flags="$RUNNER_TEMP/new-flags.json"
 
-      # Files, and only files. `git status --porcelain watch/flags` printed the
-      # DIRECTORY when it was untracked, `head -n1` was handed a directory, and
-      # the step died — twice, on 09-03 and 09-05, with no issue filed for the
-      # flags those runs had just written (devils-advocate, 2026-09-08). The
-      # pathspec below can only match a markdown file, and the field is taken
-      # with `cut` rather than `awk '{print $2}'`, which loses a renamed path.
-      # The three steps that WRITE — to disk, to the remote, to the issue
-      # tracker — are the three a measurement run must not take. Guarded one by
-      # one rather than by a single early exit, so a reader of the log sees
-      # each of them skipped and knows the run left nothing behind.
-      - name: Collect NEW flags (only files this run created)
-        id: newflags
-        if: github.event.inputs.commit != 'false'
-        run: |
-          {
-            echo "files<<EOF"
-            git status --porcelain -- 'watch/flags/*.md' | cut -c4- | sed 's/^.* -> //'
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
+      # The two steps that WRITE — to the remote, to the issue tracker — are
+      # the two a measurement run must not take. Guarded one by one rather
+      # than by a single early exit, so a reader of the log sees each of them
+      # skipped and knows the run left nothing behind.
       - name: Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)
         id: persist
         if: github.event.inputs.commit != 'false'
@@ -139,96 +146,52 @@ jobs:
           fi
           git push
 
+      # One `source-change` issue per flag on the watch's list, through the
+      # flag-filing CLI (src/watch/cli-flag-issues.ts): the title is the one
+      # the watch gave the flag, the body the flag's file, and `gh` runs with
+      # no shell. A list with no flag files nothing. A list the CLI cannot
+      # read, or a flag it cannot file, fails the step, and `watch run failed`
+      # says so; every other flag on the list is still filed.
       - name: Open issues for new flags only
-        # Both halves: the flag list is empty on a day nothing moved, and the
-        # step that produces it did not run at all on a measurement dispatch.
-        if: github.event.inputs.commit != 'false' && steps.newflags.outputs.files != ''
-        env:
-          GH_TOKEN: "${{ github.token }}"
-          # Through the environment, never interpolated into the script body: a
-          # file name is data, and data in a shell is a command waiting to
-          # happen (Security review, 2026-09-08).
-          FLAGS: "${{ steps.newflags.outputs.files }}"
-        run: |
-          gh label create source-change --color e4a11b --description "A watched official source changed" --force
-          failed=0
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            # Only a flag file this repository wrote, and only one that exists.
-            case "$f" in watch/flags/*.md) ;; *) echo "::error::refusing $f"; failed=1; continue ;; esac
-            [ -f "$f" ] || { echo "::error::$f is not a file"; failed=1; continue; }
-            title=$(head -n1 "$f" | sed 's/^# //')
-            gh issue create --title "$title" --body-file "$f" --label source-change || failed=1
-          done <<< "$FLAGS"
-          exit $failed
+        # Only once the state is pushed (`success()`: every step before this
+        # passed, the push included), so nothing the watch read depends on the
+        # tracker answering; and never on a measurement dispatch.
+        if: ${{ success() && github.event.inputs.commit != 'false' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: node dist/src/watch/cli-flag-issues.js --list "$RUNNER_TEMP/new-flags.json" --flags-dir watch/flags --label "$FLAG_LABEL" --label-color "$FLAG_LABEL_COLOR" --label-description "$FLAG_LABEL_DESCRIPTION"
 
       # The clock on a flag (#62). A flag no person has walked by the second
       # morning after the day it was raised turns the morning red, as a refusal
       # by us does, and is named in one issue, `overdue flags`; every open
       # `source-change` flag counts, a due reminder as much as a detected change.
       #
-      # The clock's exit codes are its own (src/watch/cli-overdue.ts). Anything
-      # but clear or overdue is this step failing — the check did not finish,
-      # so `watch run failed` says so and `overdue flags` is left as it was —
-      # and the error names which half did not: the tracker, or the clock.
-      # Exit 1 counts as overdue only with a body to file: a clock that never
-      # ran (a failed build ends here) exits 1 too.
+      # The clock reads the open flags through gh itself, and says what it
+      # read as `reading` (src/watch/cli-overdue.ts). A clock that could not
+      # read the tracker, or never ran (a failed build ends here), fails this
+      # step: the check did not finish, so `watch run failed` says so and
+      # `overdue flags` is left as it was. Its log line says which half failed.
       #
       # A measurement run reads no clock. It leaves nothing behind, and an open
       # flag says nothing about what it was dispatched to measure.
       - name: Read the clock on open flags
         id: clock
         if: ${{ !cancelled() && github.event.inputs.commit != 'false' }}
-        env: { GH_TOKEN: "${{ github.token }}" }
-        run: |
-          if ! gh issue list --label source-change --state open --json number,title,createdAt --limit 1000 > "$RUNNER_TEMP/open-flags.json"; then
-            echo "::error::the tracker's open flags could not be read, so this morning nobody knows whether a flag is overdue"
-            exit 1
-          fi
-          status=0
-          node dist/src/watch/cli-overdue.js < "$RUNNER_TEMP/open-flags.json" > "$RUNNER_TEMP/overdue.md" || status=$?
-          if [ "$status" = 0 ]; then
-            echo "reading=clear" >> "$GITHUB_OUTPUT"
-          elif [ "$status" = 1 ] && [ -s "$RUNNER_TEMP/overdue.md" ]; then
-            echo "reading=overdue" >> "$GITHUB_OUTPUT"
-          elif [ "$status" = 2 ]; then
-            echo "::error::the tracker answered, and the clock could not read its answer — its log line says what was wrong with it"
-            exit 1
-          else
-            echo "::error::the clock did not run to its end (exit $status), so this morning nobody knows whether a flag is overdue"
-            exit 1
-          fi
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: node dist/src/watch/cli-overdue.js --label "$FLAG_LABEL" --finding-file "$RUNNER_TEMP/overdue-finding.json" --run-url "$RUN_URL" --step-output "$GITHUB_OUTPUT"
 
       # One issue for the clock, never `source-change` (metric 1 counts that
-      # label, and this issue would count itself). It is the run's to keep: a
-      # red morning comments on it, reopening it if it was closed, and the first
-      # morning with nothing overdue says so and closes it — what it says is the
+      # label, and this issue would count itself). It is the run's to keep,
+      # through the kept-issue CLI (src/watch/cli-kept-issue.ts): a red morning
+      # comments on it, reopening it if it was closed, and the first morning
+      # with nothing overdue says so and closes it — what it says is the
       # tracker's own state, so leaving it to a person to close would be one
       # more thing for nobody to read.
       - name: Say which flags are overdue
         if: ${{ !cancelled() && (steps.clock.outputs.reading == 'overdue' || steps.clock.outputs.reading == 'clear') }}
-        env:
-          GH_TOKEN: "${{ github.token }}"
-          READING: "${{ steps.clock.outputs.reading }}"
-          TITLE: overdue flags
-          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        run: |
-          # The exact title, open or closed: a search matches words, not titles.
-          found=$(gh issue list --label watch --state all --search "$TITLE in:title" --json number,state,title --jq 'map(select(.title == env.TITLE)) | first // empty | "\(.number) \(.state)"')
-          number=${found%% *}
-          state=${found#* }
-          if [ "$READING" = overdue ]; then
-            gh label create watch --color b60205 --description "The daily source watch itself" --force
-            printf '\nRun: %s\n' "$RUN_URL" >> "$RUNNER_TEMP/overdue.md"
-            if [ -z "$found" ]; then
-              gh issue create --title "$TITLE" --body-file "$RUNNER_TEMP/overdue.md" --label watch
-            else
-              if [ "$state" = CLOSED ]; then gh issue reopen "$number"; fi
-              gh issue comment "$number" --body-file "$RUNNER_TEMP/overdue.md"
-            fi
-          elif [ -n "$found" ] && [ "$state" = OPEN ]; then
-            gh issue close "$number" --comment "No overdue flag this morning. Run: $RUN_URL"
-          fi
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: node dist/kept-issue-cli/src/watch/cli-kept-issue.js --title "overdue flags" --label "$WATCH_LABEL" --label-color "$WATCH_LABEL_COLOR" --label-description "$WATCH_LABEL_DESCRIPTION" --finding-file "$RUNNER_TEMP/overdue-finding.json"
 
       - name: Fail the run if any source was unreachable
         if: steps.watch.outcome == 'failure'
@@ -296,38 +259,46 @@ jobs:
 
       # A red run that nobody sees is a watch that has stopped. One issue,
       # reopened and updated rather than duplicated, with the link to the run
-      # (devils-advocate, 2026-09-08: three failed runs went unnoticed).
+      # (devils-advocate, 2026-09-08: three failed runs went unnoticed). It is
+      # the run's to keep, through the kept-issue CLI: a red morning comments
+      # on it, reopening it if it was closed, and the first morning on which
+      # every step but the overdue clock passed closes it with a line linking
+      # that run (#117), so an open issue always means the watch is still red.
       - name: Say so when the run fails
         # Last, and after the dispatch: an expired DISPATCH_TOKEN fails that
         # step, and the run that noticed it must still say so (Standards
         # review, 2026-09-08).
         #
-        # The fourth thing a measurement run must not do is file this. Nobody
-        # is waiting on a hand-dispatched measurement the way they wait on the
-        # morning's run, and "watch run failed" in the tracker reads as the
-        # daily watch having stopped — which is exactly the alarm this issue
-        # exists to raise, spent on a run that was never going to record
-        # anything (s34, 2026-09-23). The person who dispatched it is looking
-        # at the run.
-        if: failure() && github.event.inputs.commit != 'false'
-        env: { GH_TOKEN: "${{ github.token }}" }
-        run: |
-          gh label create watch --color b60205 --description "The daily source watch itself" --force
-          title="watch run failed"
-          body="The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          Commit: ${{ github.sha }}
-          Nothing here says a source changed — it says the check did not finish, or the audit found a known advisory; the failed step in the run says which."
-          existing=$(gh issue list --label watch --state open --search "$title in:title" --json number --jq '.[0].number')
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "$body"
-          else
-            gh issue create --title "$title" --body "$body" --label watch
-          fi
+        # The fourth thing a measurement run must not do is keep this, opening
+        # or closing it. Nobody is waiting on a hand-dispatched measurement the
+        # way they wait on the morning's run, and "watch run failed" in the
+        # tracker reads as the daily watch having stopped — which is exactly
+        # the alarm this issue exists to raise, spent on a run that was never
+        # going to record anything (s34, 2026-09-23); a green measurement
+        # closing it would say the morning's run had recovered. The person who
+        # dispatched it is looking at the run.
+        #
+        # And only a run on master, the default branch, keeps it: a baseline
+        # run on a branch has a person at the other end too, and its green
+        # would say the morning's run had recovered.
+        if: ${{ !cancelled() && github.ref == 'refs/heads/master' && github.event.inputs.commit != 'false' }}
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          # The job's status here is every step's but the overdue gate's, which
+          # stands behind this one; the clock's own step stays green on overdue.
+          FINDING: "${{ job.status == 'success' && 'green' || 'red' }}"
+          BODY: |-
+            The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Commit: ${{ github.sha }}
+            Nothing here says a source changed — it says the check did not finish, or the audit found a known advisory; the failed step in the run says which.
+          CLOSING: "Closed by a morning on which every step but the overdue clock passed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: node dist/kept-issue-cli/src/watch/cli-kept-issue.js --title "watch run failed" --label "$WATCH_LABEL" --label-color "$WATCH_LABEL_COLOR" --label-description "$WATCH_LABEL_DESCRIPTION" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
 
-      # Last, after `watch run failed` has decided whether to speak. An overdue
-      # flag turns the run red, but it is not the check failing, and
-      # `failure()` cannot tell one red step from another; behind it, this step
-      # reddens the run without filing anything `overdue flags` did not say.
+      # Last, after `watch run failed` has been kept. An overdue flag turns the
+      # run red, but it is not the check failing, and the job's status cannot
+      # tell one red step from another; behind it, this step reddens the run
+      # without filing anything `overdue flags` did not say, and without
+      # keeping `watch run failed` open on a morning that otherwise passed.
       - name: Fail the run on an overdue flag
         if: ${{ !cancelled() && steps.clock.outputs.reading == 'overdue' }}
         run: |

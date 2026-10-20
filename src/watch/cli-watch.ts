@@ -1,27 +1,26 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   runWatch, type BrowserReader, type Fetcher, type FetchResult, type WatchEntry, type WatchState, type Watchlist,
 } from "./core.js";
 import { openBrowserReader } from "./browser.js";
 import { fetchSource } from "./fetch-source.js";
 import {
-  chooseEntries, parseJsonText, readRunArgs, sayRun, sayWhereItRead, settleState, type LogEvent,
+  chooseEntries, parseJsonText, readRunArgs, sayRun, sayWhereItRead, settleState,
 } from "./run-says.js";
+import { readBoundedFile } from "./cli-io.js";
+import { FLAG_FILE_LIMIT_BYTES, newFlagsListOf } from "./flag-issues.js";
+import { print } from "./print.js";
 
 /**
  * The daily watch, from the command line.
  *
  * It reads the watchlist and the state, runs the watch with a fetcher and a
- * browser, prints what it read, writes the flag files and the state, prints
- * what became of them and exits. Everything it decides about what a run says is in `run-says.ts`;
+ * browser, prints what it read, writes the flag files, the state and (given
+ * `--new-flags=<path>`) the list of this run's new flags for the step that
+ * files their issues, prints what became of them and exits. Everything it decides about what a run says is in `run-says.ts`;
  * this file only reads, runs, writes and exits.
  */
-
-function print(event: LogEvent) {
-  const line = JSON.stringify({ ts: new Date().toISOString(), level: event.level, msg: event.msg, ...event.fields });
-  if (event.level === "error") console.error(line);
-  else console.log(line);
-}
 
 const readJson = (url: URL) => parseJsonText(readFileSync(url, "utf8"));
 
@@ -83,13 +82,25 @@ const today = new Date().toISOString().slice(0, 10);
 const { reports, nextState, verdict } = await runWatch(watchlist, state, readSourceOverHttp, today, openInBrowser);
 await browser.close();
 
+const flagsDir = new URL("../../../watch/flags/", import.meta.url);
+const flagTextOnDisk = (name: string): string | undefined => {
+  const read = readBoundedFile(fileURLToPath(new URL(name, flagsDir)), FLAG_FILE_LIMIT_BYTES);
+  if (read.kind === "read") return read.text;
+  // No such file: this run creates the flag. A link, a folder or a file too
+  // large to be a flag is an error to see.
+  if (read.missing) return undefined;
+  throw new Error(read.reason);
+};
+
 const settled = settleState({ args, previous: state, pass: nextState, fetched: watchlist, today });
-const says = sayRun({ reports, verdict, today, state: settled.outcome });
+const says = sayRun({ reports, verdict, today, state: settled.outcome, flagTextOnDisk });
 
 for (const event of says.beforeWrites) print(event);
-const flagsDir = new URL("../../../watch/flags/", import.meta.url);
 if (says.flags.length) mkdirSync(flagsDir, { recursive: true });
 for (const flag of says.flags) writeFileSync(new URL(flag.name, flagsDir), flag.body);
 if (settled.text !== null) writeFileSync(statePath, settled.text);
+// After the state, so a list that cannot be written costs the run its flag
+// issues (the filing step then fails on the missing list), never its state.
+if (args.newFlagsList) writeFileSync(args.newFlagsList, newFlagsListOf(says.flags));
 for (const event of says.afterWrites) print(event);
 process.exit(says.exitCode);

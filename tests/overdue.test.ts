@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { overdueFlags, readClock, type OpenFlag } from "../src/watch/overdue.js";
+import { findingOfClock, OPEN_FLAGS_READ_LIMIT, overdueFlags, readClock, type OpenFlag } from "../src/watch/overdue.js";
 
 /**
  * #62 — an overdue flag turns the morning red.
@@ -101,7 +101,38 @@ describe("readClock — what the morning's run is told", () => {
     ["a flag without a number", asJson([{ title: "Watch flag", createdAt: "2026-10-16T09:56:49Z" }])],
     ["a flag without a title", asJson([{ number: 27, createdAt: "2026-10-16T09:56:49Z" }])],
     ["a flag whose day cannot be read", asJson([flag(27, "yesterday")])],
+    // The list stops at the read's limit, so a flag past it would go uncounted.
+    ["as long as the read's limit", asJson(Array.from({ length: OPEN_FLAGS_READ_LIMIT }, (_, i) => flag(i + 1, "2026-10-18T09:00:00Z")))],
   ])("is unread when the tracker's answer is %s", (_, text) => {
     expect(readClock(text, "2026-10-18")).toMatchObject({ kind: "unread" });
+  });
+});
+
+/**
+ * What the clock tells `overdue flags`: overdue comments on it, clear closes
+ * it, and a clock that could not read the tracker leaves it as it was (#62,
+ * kept through #117's one table).
+ */
+describe("findingOfClock — what the reading tells the issue", () => {
+  const run = "https://github.com/OytunOnal/permit-rulebook-data/actions/runs/123";
+
+  it("is green on a clear morning, closing with a line that links the run", () => {
+    const finding = findingOfClock({ kind: "clear", open: 1 }, run);
+    expect(finding).toEqual({ kind: "green", closing: expect.stringContaining(run) });
+  });
+
+  it("is red on an overdue morning, its body the reading's and the run linked", () => {
+    const reading = readClock(JSON.stringify([flag(23, "2026-10-07T11:51:53Z")]), "2026-10-18");
+    expect(reading.kind).toBe("overdue");
+    if (reading.kind !== "overdue") return;
+    const finding = findingOfClock(reading, run);
+    expect(finding.kind).toBe("red");
+    if (finding.kind !== "red") return;
+    expect(finding.body.startsWith(reading.body)).toBe(true);
+    expect(finding.body).toContain(run);
+  });
+
+  it("says nothing when the tracker could not be read", () => {
+    expect(findingOfClock({ kind: "unread", reason: "the tracker's answer is not JSON" }, run)).toEqual({ kind: "unsaid" });
   });
 });

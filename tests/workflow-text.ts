@@ -16,6 +16,17 @@ export const workflowFiles: string[] = readdirSync(workflowsDir).filter((f) => f
 export const watchYaml = readText(join(workflowsDir, "watch.yml"));
 
 /**
+ * The kept-issue CLI as its own build leaves it: the copy the steps that keep
+ * an issue run, so a broken file elsewhere in the repository cannot silence
+ * them (the ruling on #117, (a)).
+ */
+export const KEPT_ISSUE_CLI_COPY = "dist/kept-issue-cli/src/watch/cli-kept-issue.js";
+
+/** Every one-line `run:` command in a text, in order. */
+export const oneLineCommandsOf = (yaml: string): string[] =>
+  [...yaml.matchAll(/^\s*-?\s*run:\s*([^|>\s].*)$/gm)].map((m) => m[1]!.replace(/\s+#.*$/, "").trim());
+
+/**
  * The lines of one named step, from its `- name:` to the next step at the same
  * indentation. Reading the block rather than the whole file is what lets the
  * ordering inside it be asserted — a guard that runs after the request it is
