@@ -83,6 +83,18 @@ function fires(condition: string, facts: Record<string, string>): boolean {
   });
 }
 
+/**
+ * The finding a step hands the kept-issue CLI, given the job's status when the
+ * step runs. Enough of the expression language for the one shape it is
+ * written in: `job.status == '<status>' && '<finding>' || '<otherwise>'`.
+ */
+function findingOn(step: string, jobStatus: string): string {
+  const written = /^\s*FINDING:\s*"\$\{\{\s*job\.status\s*==\s*'(\w+)'\s*&&\s*'(\w+)'\s*\|\|\s*'(\w+)'\s*\}\}"\s*$/m.exec(step);
+  expect(written, "the step hands the CLI no finding read from the job's status").not.toBeNull();
+  const [, status, finding, otherwise] = written!;
+  return jobStatus === status ? finding! : otherwise!;
+}
+
 describe("a new dataset state wakes the site", () => {
   const dispatch = stepOf(watch,"Tell the site to rebuild");
 
@@ -282,15 +294,17 @@ describe("a red run is never silent", () => {
       "a run that committed nothing still dispatches").toBe(false);
   });
 
-  it("opens or updates one issue when the run itself fails, with the run's link", () => {
+  it("keeps watch run failed through the kept-issue CLI: red on a red run, green on a green one, with the run's link", () => {
     const names = stepNamesOf(watch);
     const say = stepOf(watch,"Say so when the run fails");
-    expect(say).toContain("if: failure()");
+    // One command, so what it does to the issue is decided in the kept-issue
+    // module (#117) and nowhere in this file's shell.
+    const command = /^\s*run:\s*(.+)$/m.exec(say);
+    expect(command, "the step runs no single command").not.toBeNull();
+    expect(command![1]).toMatch(/^node dist\/src\/watch\/cli-kept-issue\.js --title "watch run failed" --label watch .*--finding "\$FINDING"/);
+    expect(findingOn(say, "failure"), "a red run does not say so").toBe("red");
+    expect(findingOn(say, "success"), "a green run does not close the issue").toBe("green");
     expect(say).toContain("actions/runs/${{ github.run_id }}");
-    expect(say).toContain("--label watch");
-    // One issue, not one per run: an existing open one is commented on.
-    expect(say).toContain("gh issue list --label watch --state open");
-    expect(say).toContain("gh issue comment");
     // It sits after everything that can fail, or it cannot see the failure.
     // After everything, the dispatch included — everything but the overdue
     // gate, which stands behind it so that it is NOT seen (#62): an overdue

@@ -275,19 +275,17 @@ jobs:
         # anything (s34, 2026-09-23). The person who dispatched it is looking
         # at the run.
         if: failure() && github.event.inputs.commit != 'false'
-        env: { GH_TOKEN: "${{ github.token }}" }
-        run: |
-          gh label create watch --color b60205 --description "The daily source watch itself" --force
-          title="watch run failed"
-          body="The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          Commit: ${{ github.sha }}
-          Nothing here says a source changed — it says the check did not finish, or the audit found a known advisory; the failed step in the run says which."
-          existing=$(gh issue list --label watch --state open --search "$title in:title" --json number --jq '.[0].number')
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "$body"
-          else
-            gh issue create --title "$title" --body "$body" --label watch
-          fi
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          # The job's status here is every step's but the overdue gate's, which
+          # stands behind this one; the clock's own step stays green on overdue.
+          FINDING: "${{ job.status == 'success' && 'green' || 'red' }}"
+          BODY: |-
+            The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Commit: ${{ github.sha }}
+            Nothing here says a source changed — it says the check did not finish, or the audit found a known advisory; the failed step in the run says which.
+          CLOSING: "Closed by a morning on which every step but the overdue clock passed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: node dist/src/watch/cli-kept-issue.js --title "watch run failed" --label watch --label-color b60205 --label-description "The daily source watch itself" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
 
       # Last, after `watch run failed` has decided whether to speak. An overdue
       # flag turns the run red, but it is not the check failing, and
