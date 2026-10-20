@@ -118,6 +118,17 @@ describe("the check job reads, and only reads", () => {
   });
 });
 
+describe("the check workflow is one GitHub can read", () => {
+  it("writes no one-line run: that YAML would read as a mapping", () => {
+    // These tests read the file as text, so a file GitHub refuses passed them
+    // all: a plain scalar holding ": " is a YAML error, and GitHub then runs
+    // no job at all. Words with a colon go through a quoted `env:` value.
+    const runs = [...checkYaml().matchAll(/^\s*-?\s*run:\s*([^|>\s].*)$/gm)].map((m) => m[1]!);
+    expect(runs.length, "no one-line run: — this case would pass vacuously").toBeGreaterThan(0);
+    for (const run of runs) expect(run, run).not.toMatch(/:\s/);
+  });
+});
+
 /** A job's `if:`, without the `${{ }}` a workflow may wrap it in. */
 const jobConditionOf = (yaml: string, job: string): string =>
   scalarAt(yaml, ["jobs", job, "if"]).replace(/^\$\{\{/, "").replace(/\}\}$/, "").trim();
