@@ -8,6 +8,7 @@
   "exports": {
     ".": { "types": "./dist/src/index.d.ts", "default": "./dist/src/index.js" },
     "./validate": { "types": "./dist/src/validate.d.ts", "default": "./dist/src/validate.js" },
+    "./kept-issue": { "types": "./dist/src/watch/kept-issue.d.ts", "default": "./dist/src/watch/kept-issue.js" },
     "./data/dataset.json": "./data/dataset.json",
     "./schema/ruleset.schema.json": "./schema/ruleset.schema.json",
     "./watch/state.json": "./watch/state.json"
