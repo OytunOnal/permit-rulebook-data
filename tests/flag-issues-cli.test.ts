@@ -13,7 +13,7 @@ import type { FlagDocument } from "../src/watch/run-says.js";
  * flag-filing CLI as a function handed a runner, so each case records exactly
  * what reaches `gh`. The watch writes this run's flags and the list of them;
  * after the push, this CLI files one `source-change` issue per flag on it.
- * Part 2, where `gh` is found, is the adapter's, held in kept-issue-cli.test.ts.
+ * Part 2, where `gh` is found, is the adapter's, held in kept-issue-command.test.ts.
  */
 
 const temps: string[] = [];
@@ -43,7 +43,7 @@ const LABEL_CREATE = ["label", "create", "source-change", "--color", "e4a11b", "
  * CLI leaves them. The folder sits inside the case's own, beside a file that
  * is not a flag, so a list can point out of it.
  */
-function handedOver(flags: FlagDocument[], list = newFlagsListOf(flags)): string[] {
+function filingArgsOf(flags: FlagDocument[], list = newFlagsListOf(flags)): string[] {
   const root = tempFolder();
   const flagsDir = join(root, "flags");
   mkdirSync(flagsDir);
@@ -71,7 +71,7 @@ const issueCreate = (flag: FlagDocument) =>
 describe("the flag-filing CLI — what reaches gh", () => {
   it("files one issue per listed flag, with its title and its file's body, the label first", async () => {
     const gh = tracker();
-    const run = await fileFlagIssues(handedOver([change, reminder]), gh.runGh);
+    const run = await fileFlagIssues(filingArgsOf([change, reminder]), gh.runGh);
     expect(gh.calls).toEqual([LABEL_CREATE, issueCreate(change), LABEL_CREATE, issueCreate(reminder)]);
     expect(run.exitCode).toBe(0);
   });
@@ -79,13 +79,13 @@ describe("the flag-filing CLI — what reaches gh", () => {
   it("hands gh a hostile title intact, as one argument", async () => {
     const hostile = { ...change, title: "Watch flag: $(touch pwned) `id` \"quoted\" 'single'; rm -rf ~ — changed" };
     const gh = tracker();
-    await fileFlagIssues(handedOver([hostile]), gh.runGh);
+    await fileFlagIssues(filingArgsOf([hostile]), gh.runGh);
     expect(gh.issues()).toEqual([issueCreate(hostile)]);
   });
 
   it("files nothing, and passes, on a morning with no new flag", async () => {
     const gh = tracker();
-    const run = await fileFlagIssues(handedOver([]), gh.runGh);
+    const run = await fileFlagIssues(filingArgsOf([]), gh.runGh);
     expect(gh.calls).toEqual([]);
     expect(run.exitCode).toBe(0);
   });
@@ -94,7 +94,7 @@ describe("the flag-filing CLI — what reaches gh", () => {
   it("refuses a list over its bound, filing none of it", async () => {
     const many = Array.from({ length: NEW_FLAGS_LIMIT + 1 }, (_, i) => ({ ...change, name: `entry-${i}-2026-10-20.md`, title: `Watch flag: entry-${i} — changed` }));
     const gh = tracker();
-    const run = await fileFlagIssues(handedOver(many), gh.runGh);
+    const run = await fileFlagIssues(filingArgsOf(many), gh.runGh);
     expect(gh.calls).toEqual([]);
     expect(run.exitCode).toBe(1);
     expect(run.events).toContainEqual(expect.objectContaining({ level: "error" }));
@@ -109,7 +109,7 @@ describe("the flag-filing CLI — what reaches gh", () => {
     ["a flag with no title", JSON.stringify([{ file: change.name, title: "" }])],
   ])("refuses a list holding %s, filing none of it", async (_, list) => {
     const gh = tracker();
-    const run = await fileFlagIssues(handedOver([change], list), gh.runGh);
+    const run = await fileFlagIssues(filingArgsOf([change], list), gh.runGh);
     expect(gh.calls).toEqual([]);
     expect(run.exitCode).toBe(1);
   });
@@ -119,7 +119,7 @@ describe("the flag-filing CLI — what reaches gh", () => {
     ["is a folder", (path: string) => { rmSync(path); mkdirSync(path); }],
     ["is larger than an issue's body can be", (path: string) => writeFileSync(path, "x".repeat(65_537))],
   ])("files every other flag, and fails, when one flag's file %s", async (_, spoil) => {
-    const args = handedOver([change, reminder]);
+    const args = filingArgsOf([change, reminder]);
     spoil(join(args[3]!, change.name));
     const gh = tracker();
     const run = await fileFlagIssues(args, gh.runGh);
@@ -130,7 +130,7 @@ describe("the flag-filing CLI — what reaches gh", () => {
 
   it("files every other flag, and fails, when gh refuses one", async () => {
     const gh = tracker(change.title);
-    const run = await fileFlagIssues(handedOver([change, reminder]), gh.runGh);
+    const run = await fileFlagIssues(filingArgsOf([change, reminder]), gh.runGh);
     expect(gh.issues()).toEqual([issueCreate(change), issueCreate(reminder)]);
     expect(run.exitCode).toBe(1);
     expect(run.events).toContainEqual(expect.objectContaining({ level: "error", fields: expect.objectContaining({ file: change.name }) }));
@@ -143,7 +143,7 @@ describe("the flag-filing CLI — what reaches gh", () => {
     ["an argument with no value", (args: string[]) => [...args, "--list"]],
   ])("refuses to run, asking gh nothing, given %s", async (_, argsGiven) => {
     const gh = tracker();
-    const run = await fileFlagIssues(argsGiven(handedOver([reminder])), gh.runGh);
+    const run = await fileFlagIssues(argsGiven(filingArgsOf([reminder])), gh.runGh);
     expect(gh.calls).toEqual([]);
     expect(run.exitCode).toBe(1);
   });
@@ -151,7 +151,7 @@ describe("the flag-filing CLI — what reaches gh", () => {
   it("files a list at its bound whole", async () => {
     const most = Array.from({ length: NEW_FLAGS_LIMIT }, (_, i) => ({ ...change, name: `entry-${i}-2026-10-20.md`, title: `Watch flag: entry-${i} — changed` }));
     const gh = tracker();
-    const run = await fileFlagIssues(handedOver(most), gh.runGh);
+    const run = await fileFlagIssues(filingArgsOf(most), gh.runGh);
     expect(gh.issues()).toHaveLength(NEW_FLAGS_LIMIT);
     expect(run.exitCode).toBe(0);
   });
@@ -212,7 +212,7 @@ describe.skipIf(cannotRunStub && !CI)("the flag-filing CLI as a child process", 
 
   it("runs gh with no shell: one issue per flag, a hostile title intact, the body its file's", () => {
     const hostile = { ...change, title: "Watch flag: $(touch pwned) `touch pwned` \"quoted\" 'single'; touch pwned — changed" };
-    const run = runCli(handedOver([hostile, reminder]));
+    const run = runCli(filingArgsOf([hostile, reminder]));
     expect(run.status, run.stderr).toBe(0);
     expect(run.calls).toEqual([LABEL_CREATE, issueCreate(hostile), LABEL_CREATE, issueCreate(reminder)]);
     expect(existsSync(join(run.underCheck, "pwned")), "a title or body was run as a command").toBe(false);
@@ -220,7 +220,7 @@ describe.skipIf(cannotRunStub && !CI)("the flag-filing CLI as a child process", 
 
   it("refuses a list over its bound, asking gh nothing", () => {
     const many = Array.from({ length: NEW_FLAGS_LIMIT + 1 }, (_, i) => ({ ...change, name: `entry-${i}-2026-10-20.md`, title: `Watch flag: entry-${i} — changed` }));
-    const run = runCli(handedOver(many));
+    const run = runCli(filingArgsOf(many));
     expect(run.status).toBe(1);
     expect(run.calls).toEqual([]);
   });

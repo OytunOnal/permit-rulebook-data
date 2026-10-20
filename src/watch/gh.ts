@@ -12,7 +12,7 @@ import { delimiter, isAbsolute, join, resolve, sep } from "node:path";
 export type GhRunner = (args: readonly string[]) => Promise<string>;
 
 /** Windows compares folder names without case. */
-const comparable = (folder: string) => (process.platform === "win32" ? resolve(folder).toLowerCase() : resolve(folder));
+const comparablePathOf = (folder: string) => (process.platform === "win32" ? resolve(folder).toLowerCase() : resolve(folder));
 
 const isExecutableFile = (path: string): boolean => {
   try {
@@ -31,10 +31,10 @@ const isExecutableFile = (path: string): boolean => {
  */
 export function ghExecutableOf(pathValue: string, folderUnderCheck: string): string | undefined {
   const name = process.platform === "win32" ? "gh.exe" : "gh";
-  const checked = comparable(folderUnderCheck);
+  const checked = comparablePathOf(folderUnderCheck);
   for (const folder of pathValue.split(delimiter)) {
     if (!isAbsolute(folder)) continue;
-    const at = comparable(folder);
+    const at = comparablePathOf(folder);
     if (at === checked || at.startsWith(checked.endsWith(sep) ? checked : checked + sep)) continue;
     if (isExecutableFile(join(folder, name))) return join(folder, name);
   }

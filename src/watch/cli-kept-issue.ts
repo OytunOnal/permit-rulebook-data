@@ -1,12 +1,12 @@
 import { ghExecutableOf, ghRunnerAt } from "./gh.js";
-import { keepIssue } from "./keep-issue.js";
+import { keepIssue } from "./kept-issue-command.js";
 import { print } from "./print.js";
 
 /**
  * The kept-issue CLI (#117): one command a workflow step runs to keep its
  * issue. It reads the tracker through `gh`, decides through
  * `actionOnKeptIssue`, and runs the argument lists `ghArgumentsOf` gives, with
- * no shell. Everything it decides is in `keep-issue.ts` and `kept-issue.ts`.
+ * no shell. Everything it decides is in `kept-issue-command.ts` and `kept-issue.ts`.
  *
  *   node dist/src/watch/cli-kept-issue.js
  *     --title <text>               the issue's exact title

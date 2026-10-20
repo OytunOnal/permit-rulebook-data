@@ -71,7 +71,7 @@ export type ClockReading =
 /** The most open flags one read of the tracker asks for. */
 export const OPEN_FLAGS_READ_LIMIT = 1000;
 
-const isOpenFlag =(f: unknown): f is OpenFlag => {
+const isOpenFlag = (f: unknown): f is OpenFlag => {
   if (typeof f !== "object" || f === null) return false;
   const { number, title, createdAt } = f as Record<string, unknown>;
   return Number.isInteger(number) && typeof title === "string"

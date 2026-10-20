@@ -80,7 +80,7 @@ export function ghArgumentsOf(action: KeptIssueAction, labelLook: LabelLook): st
   }
 }
 
-type ListedRead ={ kind: "read"; issues: ListedIssue[] } | { kind: "unread"; reason: string };
+type ListedRead = { kind: "read"; issues: ListedIssue[] } | { kind: "unread"; reason: string };
 
 const isListedIssue = (l: unknown): l is ListedIssue => {
   if (typeof l !== "object" || l === null) return false;

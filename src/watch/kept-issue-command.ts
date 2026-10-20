@@ -24,26 +24,26 @@ const FLAGS = ["--title", "--label", "--label-color", "--label-description", "--
 /** Above any body the tracker takes (65,536 characters), so a finding file larger is not one. */
 const FINDING_FILE_LIMIT_BYTES = 262_144;
 
-const failed = (msg: string, fields: Record<string, unknown>): KeepIssueRun =>
+const failedRun = (msg: string, fields: Record<string, unknown>): KeepIssueRun =>
   ({ events: [{ level: "error", msg, fields }], exitCode: 1 });
 
 export async function keepIssue(argv: readonly string[], runGh: GhRunner): Promise<KeepIssueRun> {
   const request = readRequest(argv);
-  if (typeof request === "string") return failed("kept issue: the arguments were refused", { reason: request });
+  if (typeof request === "string") return failedRun("kept issue: the arguments were refused", { reason: request });
   const { issue, labelLook, finding } = request;
   let listed: string;
   try {
     listed = await runGh(ghListArgumentsOf(issue));
   } catch (e) {
-    return failed("kept issue: the tracker could not be read", { title: issue.title, reason: messageOf(e) });
+    return failedRun("kept issue: the tracker could not be read", { title: issue.title, reason: messageOf(e) });
   }
   const action = actionOnKeptIssue(issue, finding, listed);
-  if (action.kind === "unread") return failed("kept issue: the tracker could not be read", { title: issue.title, reason: action.reason });
+  if (action.kind === "unread") return failedRun("kept issue: the tracker could not be read", { title: issue.title, reason: action.reason });
   for (const args of ghArgumentsOf(action, labelLook)) {
     try {
       await runGh(args);
     } catch (e) {
-      return failed("kept issue: gh failed", { title: issue.title, action: action.kind, command: args.slice(0, 2).join(" "), reason: messageOf(e) });
+      return failedRun("kept issue: gh failed", { title: issue.title, action: action.kind, command: args.slice(0, 2).join(" "), reason: messageOf(e) });
     }
   }
   const number = "number" in action ? action.number : undefined;
