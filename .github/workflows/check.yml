@@ -35,3 +35,44 @@ jobs:
         with: { node-version: 22 }
       - run: npm ci
       - run: npm run check
+
+  # After a watch run nobody is watching the check, so its red keeps one issue,
+  # `check failed on master`, and its first green closes it, through the
+  # kept-issue CLI (src/watch/cli-kept-issue.ts). A push and a pull request
+  # have a person at the other end: their reds file nothing (decision 9).
+  #
+  # `always()`, because a red or unfinished check is what it is here to say.
+  # It builds the CLI from master's head, the commit the check read, so a
+  # master that does not compile cannot keep the issue: this job then fails,
+  # and the run's red is GitHub's own notice.
+  report:
+    needs: check
+    if: ${{ always() && github.event_name == 'workflow_run' }}
+    runs-on: ubuntu-26.04 # named, never -latest, as the check job
+    permissions:
+      contents: read
+      # Opens, comments on, reopens and closes `check failed on master`.
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (node24)
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 (node24)
+        with: { node-version: 22 }
+      # Only the compiler is needed, and this job holds a write token: no
+      # dependency's install script runs here.
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+
+      - name: Keep check failed on master
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          GH_REPO: "${{ github.repository }}"
+          # One of two literals: green only on a check that passed.
+          FINDING: "${{ needs.check.result == 'success' && 'green' || 'red' }}"
+          CHECK_RESULT: "${{ needs.check.result }}"
+          # The commit the check job checked out: master's head when the
+          # watch run completed.
+          CHECKED_SHA: "${{ github.sha }}"
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: node dist/src/watch/cli-kept-issue.js --title "check failed on master" --label check --label-color b60205 --label-description "The data repository's own suite" --finding "$FINDING" --body "The data check on master went red after the watch: the check job ended $CHECK_RESULT on commit $CHECKED_SHA. Run: $RUN_URL" --closing "The data check on master is green again on commit $CHECKED_SHA. Run: $RUN_URL"

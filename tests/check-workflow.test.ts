@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
-import { readText, workflowFiles, workflowsDir } from "./workflow-text.js";
+import { readText, stepOf, workflowFiles, workflowsDir } from "./workflow-text.js";
 
 /**
  * The data repository checks itself (#117, decisions 8, 9 and 16).
@@ -115,5 +115,43 @@ describe("the check job reads, and only reads", () => {
 
   it("installs from the lockfile and runs the whole check", () => {
     expect(commandsOf(checkYaml(), "check")).toEqual(["npm ci", "npm run check"]);
+  });
+});
+
+/** A job's `if:`, without the `${{ }}` a workflow may wrap it in. */
+const jobConditionOf = (yaml: string, job: string): string =>
+  scalarAt(yaml, ["jobs", job, "if"]).replace(/^\$\{\{/, "").replace(/\}\}$/, "").trim();
+
+describe("after a watch run, and only then, the check keeps `check failed on master`", () => {
+  it("reports after the check job whatever its result, on workflow_run only", () => {
+    const yaml = checkYaml();
+    expect(scalarAt(yaml, ["jobs", "report", "needs"])).toBe("check");
+    // `always()`: a red or unfinished check is exactly what it reports. The
+    // event: a push and a pull request have a person at the other end, so
+    // their reds file nothing (decision 9).
+    expect(jobConditionOf(yaml, "report")).toBe("always() && github.event_name == 'workflow_run'");
+  });
+
+  it("holds issues: write, and is the only job that does", () => {
+    const yaml = checkYaml();
+    expect(linesAt(yaml, ["jobs", "report", "permissions"])?.map((line) => line.trim()))
+      .toEqual(["contents: read", "issues: write"]);
+    for (const job of keysAt(yaml, ["jobs"]).filter((name) => name !== "report"))
+      expect(linesAt(yaml, ["jobs", job, "permissions"])?.join("\n"), `job ${job} can write`).not.toMatch(/: write/);
+    expect(scalarAt(yaml, ["jobs", "report", "runs-on"])).toBe("ubuntu-26.04");
+    for (const action of actionsOf(linesAt(yaml, ["jobs", "report"])!.join("\n")))
+      expect(actionsOf(watchYaml()), `${action} is not the watch's`).toContain(action);
+  });
+
+  it("keeps the issue through the kept-issue CLI, with the check job's result as the finding", () => {
+    const step = stepOf(checkYaml(), "Keep check failed on master");
+    expect(step).toMatch(/run: node dist\/src\/watch\/cli-kept-issue\.js /);
+    expect(step).toContain('--title "check failed on master"');
+    expect(step).toContain("--label check ");
+    // Green only on a check that passed; anything else, an unfinished check
+    // included, is red. The value reaches the command through the
+    // environment, one of two literals.
+    expect(step).toContain("FINDING: \"${{ needs.check.result == 'success' && 'green' || 'red' }}\"");
+    expect(step).toContain('--finding "$FINDING"');
   });
 });
