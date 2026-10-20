@@ -1,24 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
-import { readText, stepOf, workflowFiles, workflowsDir } from "./workflow-text.js";
+import { readText, stepOf, watchYaml, workflowFiles, workflowsDir } from "./workflow-text.js";
 
 /**
- * The data repository checks itself (#117, decisions 8, 9 and 16).
- *
- * The only place a red data master showed was the site's deploy, one
- * repository away: the watch turned `s8` red on 10-09 and nothing here ran a
- * test. The watch pushes with the workflow token, which cannot start a
- * workflow from its own push, so the check also runs after every watch run,
- * on master's head. After a watch run, and only then, a red check keeps
- * `check failed on master` and the first green one closes it: a push and a
- * pull request have a person at the other end.
+ * The data repository checks itself (#117, decisions 8, 9 and 16), so a red
+ * master is red here, where it broke, and not first in the site's deploy. The
+ * watch pushes with the workflow token, which cannot start a workflow from its
+ * own push, so the check also runs after every watch run, on master's head.
+ * After a watch run, and only then, a red check keeps `check failed on master`
+ * and the first green one closes it: a push and a pull request have a person
+ * at the other end.
  *
  * Read as text, the way the watch's tests read it (`workflow-text.ts`): which
  * runs trigger it, what each job may write, and which run keeps the issue.
  */
 
 const checkYaml = (): string => readText(join(workflowsDir, "check.yml"));
-const watchYaml = (): string => readText(join(workflowsDir, "watch.yml"));
 
 const indentOf = (line: string): number => line.search(/\S/);
 const withoutComment = (text: string): string => text.replace(/\s+#.*$/, "").trim();
@@ -110,7 +107,7 @@ describe("the check job reads, and only reads", () => {
     expect(scalarAt(yaml, ["jobs", "check", "runs-on"])).toBe("ubuntu-26.04");
     const used = actionsOf(linesAt(yaml, ["jobs", "check"])!.join("\n"));
     expect(used.length, "the check job uses no action").toBeGreaterThan(0);
-    for (const action of used) expect(actionsOf(watchYaml()), `${action} is not the watch's`).toContain(action);
+    for (const action of used) expect(actionsOf(watchYaml), `${action} is not the watch's`).toContain(action);
   });
 
   it("installs from the lockfile and runs the whole check", () => {
@@ -120,8 +117,8 @@ describe("the check job reads, and only reads", () => {
 
 describe("the check workflow is one GitHub can read", () => {
   it("writes no one-line run: that YAML would read as a mapping", () => {
-    // These tests read the file as text, so a file GitHub refuses passed them
-    // all: a plain scalar holding ": " is a YAML error, and GitHub then runs
+    // These tests read the file as text, and a file GitHub refuses would pass
+    // them: a plain scalar holding ": " is a YAML error, on which GitHub runs
     // no job at all. Words with a colon go through a quoted `env:` value.
     const runs = [...checkYaml().matchAll(/^\s*-?\s*run:\s*([^|>\s].*)$/gm)].map((m) => m[1]!);
     expect(runs.length, "no one-line run: — this case would pass vacuously").toBeGreaterThan(0);
@@ -151,7 +148,7 @@ describe("after a watch run, and only then, the check keeps `check failed on mas
       expect(linesAt(yaml, ["jobs", job, "permissions"])?.join("\n"), `job ${job} can write`).not.toMatch(/: write/);
     expect(scalarAt(yaml, ["jobs", "report", "runs-on"])).toBe("ubuntu-26.04");
     for (const action of actionsOf(linesAt(yaml, ["jobs", "report"])!.join("\n")))
-      expect(actionsOf(watchYaml()), `${action} is not the watch's`).toContain(action);
+      expect(actionsOf(watchYaml), `${action} is not the watch's`).toContain(action);
   });
 
   it("keeps the issue through the kept-issue CLI, with the check job's result as the finding", () => {

@@ -399,11 +399,10 @@ describe("the dispatch names the state it just committed", () => {
 });
 
 /**
- * Flag issues (#117 decision 14). Three runs died collecting the flags in bash
- * (`git status` handed `head` a directory, 09-03 and 09-05), and which issues
- * were filed was decided there, where no test reached it. Now the watch's CLI
- * writes this run's new flags to a list outside the repository, and after the
- * push one CLI files an issue per flag on it, the title from the list.
+ * Flag issues (#117 decision 14). Which issues are filed is decided in the
+ * CLIs, where a test reaches it, and in no step's shell: the watch's CLI writes
+ * this run's new flags to a list outside the repository, and after the push
+ * one CLI files an issue per flag on it, the title from the list.
  */
 describe("flag issues are filed after the push, from the list the watch writes", () => {
   const PERSIST = "Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)";
