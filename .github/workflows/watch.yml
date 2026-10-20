@@ -271,7 +271,11 @@ jobs:
         # going to record anything (s34, 2026-09-23); a green measurement
         # closing it would say the morning's run had recovered. The person who
         # dispatched it is looking at the run.
-        if: ${{ !cancelled() && github.event.inputs.commit != 'false' }}
+        #
+        # And only a run on master, the default branch, keeps it: a baseline
+        # run on a branch has a person at the other end too, and its green
+        # would say the morning's run had recovered.
+        if: ${{ !cancelled() && github.ref == 'refs/heads/master' && github.event.inputs.commit != 'false' }}
         env:
           GH_TOKEN: "${{ github.token }}"
           # The job's status here is every step's but the overdue gate's, which

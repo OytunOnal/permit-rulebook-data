@@ -334,11 +334,24 @@ describe("a red run is never silent", () => {
    */
   it("keeps watch run failed on a red and on a green morning, never on a measurement run", () => {
     const when = conditionOf(watch, "Say so when the run fails");
+    const onMaster = { "github.ref": "refs/heads/master" };
     for (const status of ["failure", "success"]) {
-      expect(fires(when, { "job.status": status }), `a ${status} morning leaves the issue alone`).toBe(true);
-      expect(fires(when, { "job.status": status, "github.event.inputs.commit": "false" }),
+      expect(fires(when, { "job.status": status, ...onMaster }), `a ${status} morning leaves the issue alone`).toBe(true);
+      expect(fires(when, { "job.status": status, "github.event.inputs.commit": "false", ...onMaster }),
         `a ${status} measurement run keeps the issue`).toBe(false);
     }
+  });
+
+  /**
+   * Only a run on the default branch keeps `watch run failed` (the ruling on
+   * PR #36's review): a branch run's green would say the morning's run had
+   * recovered, and its red would raise the alarm for a run nobody waits on.
+   */
+  it("never keeps watch run failed from a run on another branch", () => {
+    const when = conditionOf(watch, "Say so when the run fails");
+    for (const status of ["failure", "success"])
+      expect(fires(when, { "job.status": status, "github.ref": "refs/heads/s34-browser-strategy" }),
+        `a ${status} branch run keeps the issue`).toBe(false);
   });
 
   /**
