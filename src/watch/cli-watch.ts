@@ -5,8 +5,9 @@ import {
 import { openBrowserReader } from "./browser.js";
 import { fetchSource } from "./fetch-source.js";
 import {
-  chooseEntries, parseJsonText, readRunArgs, sayRun, sayWhereItRead, settleState, type LogEvent,
+  chooseEntries, parseJsonText, readRunArgs, sayRun, sayWhereItRead, settleState,
 } from "./run-says.js";
+import { print } from "./print.js";
 
 /**
  * The daily watch, from the command line.
@@ -16,12 +17,6 @@ import {
  * what became of them and exits. Everything it decides about what a run says is in `run-says.ts`;
  * this file only reads, runs, writes and exits.
  */
-
-function print(event: LogEvent) {
-  const line = JSON.stringify({ ts: new Date().toISOString(), level: event.level, msg: event.msg, ...event.fields });
-  if (event.level === "error") console.error(line);
-  else console.log(line);
-}
 
 const readJson = (url: URL) => parseJsonText(readFileSync(url, "utf8"));
 
