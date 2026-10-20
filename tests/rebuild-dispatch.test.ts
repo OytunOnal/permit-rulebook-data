@@ -67,14 +67,17 @@ function dispatchInputs(yaml: string): Record<string, string> {
  * Would that condition fire, given these facts?
  *
  * Enough of GitHub's expression language for the conditions this workflow
- * writes: `&&` of terms, each either `!cancelled()` or a path compared with
- * `==`/`!=` to a literal. A fact nobody supplies is absent — which is what
+ * writes: `&&` of terms, each `!cancelled()`, `failure()`, `success()`, or a
+ * path compared with `==`/`!=` to a literal. `failure()` and `success()` read
+ * the fact `job.status`. A fact nobody supplies is absent — which is what
  * `github.event.inputs.x` IS on a schedule, and the reason every guard in this
  * file is written `!= 'false'`.
  */
 function fires(condition: string, facts: Record<string, string>): boolean {
   return condition.split("&&").map((t) => t.trim()).every((term) => {
     if (term === "!cancelled()") return true;
+    if (term === "failure()") return facts["job.status"] === "failure";
+    if (term === "success()") return facts["job.status"] === "success";
     const compared = /^([\w.]+)\s*(==|!=)\s*'([^']*)'$/.exec(term);
     expect(compared, `this test cannot read the term ${term}`).not.toBeNull();
     const [, path, operator, value] = compared!;
@@ -150,7 +153,7 @@ describe("a new dataset state wakes the site", () => {
   it("runs last, so nothing a flag depends on sits behind a step that can fail on the token", () => {
     const names = stepNamesOf(watch);
     // The dispatch is the last step that DOES anything; the only thing after it
-    // is the notice that speaks when a step failed — including the dispatch
+    // is the notice that says whether a step failed — including the dispatch
     // itself, when its token has expired (Standards review, 2026-09-08). Behind
     // the notice stands only the overdue gate, which acts on nothing (#62).
     expect(names[names.length - 1], "the overdue gate is not last").toBe("Fail the run on an overdue flag");
@@ -159,7 +162,7 @@ describe("a new dataset state wakes the site", () => {
 
     // Every step that acts on the flags comes before it — by position, not by
     // reputation: any step whose condition or body reads the flag collection.
-    // The failure notice is exempt: it runs after everything, on failure.
+    // The failure notice is exempt: it runs after everything.
     const at = (name: string) => names.indexOf(name);
     const issues = at("Open issues for new flags only");
     expect(issues, "no step opens issues for the flags").toBeGreaterThan(-1);
@@ -314,6 +317,39 @@ describe("a red run is never silent", () => {
       .toBeGreaterThan(names.indexOf("Tell the site to rebuild"));
     const gate = stepOf(watch,"Fail the run on an overdue flag");
     expect(gate).not.toContain("gh ");
+  });
+
+  /**
+   * A green morning closes `watch run failed` as a red one keeps it (#117,
+   * decision 10), so the step runs on both; a measurement run leaves nothing
+   * behind, so it neither opens nor closes it.
+   */
+  it("keeps watch run failed on a red and on a green morning, never on a measurement run", () => {
+    const when = conditionOf(watch, "Say so when the run fails");
+    for (const status of ["failure", "success"]) {
+      expect(fires(when, { "job.status": status }), `a ${status} morning leaves the issue alone`).toBe(true);
+      expect(fires(when, { "job.status": status, "github.event.inputs.commit": "false" }),
+        `a ${status} measurement run keeps the issue`).toBe(false);
+    }
+  });
+
+  /**
+   * An overdue flag is `overdue flags`'s to say (#117, user story 24). The
+   * clock's own step stays green on overdue (#118), and the gate that reddens
+   * the run on it stands behind this step, so on a morning where only the clock
+   * is red the job is still green here, and the finding with it.
+   */
+  it("does not let an overdue flag alone make watch run failed's finding red", () => {
+    const names = stepNamesOf(watch);
+    const say = stepOf(watch, "Say so when the run fails");
+    const gates = names.filter((name) => {
+      const step = stepOf(watch, name);
+      return step.includes("steps.clock.outputs.reading == 'overdue'") && step.includes("exit 1");
+    });
+    expect(gates, "no step reddens the run on an overdue flag").toEqual(["Fail the run on an overdue flag"]);
+    expect(names.indexOf(gates[0]!), "the overdue gate runs before the finding is read")
+      .toBeGreaterThan(names.indexOf("Say so when the run fails"));
+    expect(findingOn(say, "success"), "a morning red only on the clock is not green here").toBe("green");
   });
 
   /**
