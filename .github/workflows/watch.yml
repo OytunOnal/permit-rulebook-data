@@ -48,8 +48,9 @@ jobs:
     permissions:
       # Commits watch/state.json and the flag files.
       contents: write
-      # Opens one issue per new flag, one when the run itself fails, and one
-      # naming the flags no person has walked in two days.
+      # Opens one issue per new flag, and keeps two: one saying whether the run
+      # itself failed, and one naming the flags no person has walked in two
+      # days.
       issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (node24)
@@ -261,38 +262,42 @@ jobs:
 
       # A red run that nobody sees is a watch that has stopped. One issue,
       # reopened and updated rather than duplicated, with the link to the run
-      # (devils-advocate, 2026-09-08: three failed runs went unnoticed).
+      # (devils-advocate, 2026-09-08: three failed runs went unnoticed). It is
+      # the run's to keep, through the kept-issue CLI: a red morning comments
+      # on it, reopening it if it was closed, and the first morning on which
+      # every step but the overdue clock passed closes it with a line linking
+      # that run (#117), so an open issue always means the watch is still red.
       - name: Say so when the run fails
         # Last, and after the dispatch: an expired DISPATCH_TOKEN fails that
         # step, and the run that noticed it must still say so (Standards
         # review, 2026-09-08).
         #
-        # The fourth thing a measurement run must not do is file this. Nobody
-        # is waiting on a hand-dispatched measurement the way they wait on the
-        # morning's run, and "watch run failed" in the tracker reads as the
-        # daily watch having stopped — which is exactly the alarm this issue
-        # exists to raise, spent on a run that was never going to record
-        # anything (s34, 2026-09-23). The person who dispatched it is looking
-        # at the run.
-        if: failure() && github.event.inputs.commit != 'false'
-        env: { GH_TOKEN: "${{ github.token }}" }
-        run: |
-          gh label create watch --color b60205 --description "The daily source watch itself" --force
-          title="watch run failed"
-          body="The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          Commit: ${{ github.sha }}
-          Nothing here says a source changed — it says the check did not finish, or the audit found a known advisory; the failed step in the run says which."
-          existing=$(gh issue list --label watch --state open --search "$title in:title" --json number --jq '.[0].number')
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "$body"
-          else
-            gh issue create --title "$title" --body "$body" --label watch
-          fi
+        # The fourth thing a measurement run must not do is keep this, opening
+        # or closing it. Nobody is waiting on a hand-dispatched measurement the
+        # way they wait on the morning's run, and "watch run failed" in the
+        # tracker reads as the daily watch having stopped — which is exactly
+        # the alarm this issue exists to raise, spent on a run that was never
+        # going to record anything (s34, 2026-09-23); a green measurement
+        # closing it would say the morning's run had recovered. The person who
+        # dispatched it is looking at the run.
+        if: ${{ !cancelled() && github.event.inputs.commit != 'false' }}
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          # The job's status here is every step's but the overdue gate's, which
+          # stands behind this one; the clock's own step stays green on overdue.
+          FINDING: "${{ job.status == 'success' && 'green' || 'red' }}"
+          BODY: |-
+            The daily watch failed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Commit: ${{ github.sha }}
+            Nothing here says a source changed — it says the check did not finish, or the audit found a known advisory; the failed step in the run says which.
+          CLOSING: "Closed by a morning on which every step but the overdue clock passed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: node dist/src/watch/cli-kept-issue.js --title "watch run failed" --label watch --label-color b60205 --label-description "The daily source watch itself" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
 
-      # Last, after `watch run failed` has decided whether to speak. An overdue
-      # flag turns the run red, but it is not the check failing, and
-      # `failure()` cannot tell one red step from another; behind it, this step
-      # reddens the run without filing anything `overdue flags` did not say.
+      # Last, after `watch run failed` has been kept. An overdue flag turns the
+      # run red, but it is not the check failing, and the job's status cannot
+      # tell one red step from another; behind it, this step reddens the run
+      # without filing anything `overdue flags` did not say, and without
+      # keeping `watch run failed` open on a morning that otherwise passed.
       - name: Fail the run on an overdue flag
         if: ${{ !cancelled() && steps.clock.outputs.reading == 'overdue' }}
         run: |
