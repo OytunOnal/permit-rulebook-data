@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, isAbsolute, join, relative as relativePath } from "node:path";
 import { keepIssue } from "../src/watch/keep-issue.js";
-import type { GhRunner } from "../src/watch/gh.js";
+import { ghExecutableOf, type GhRunner } from "../src/watch/gh.js";
 
 /**
  * #117, seam 5 as the ruling of 2026-10-20 builds it: the kept-issue CLI as a
@@ -145,5 +145,48 @@ describe("the kept-issue CLI — what reaches gh for each action", () => {
     const run = await keepIssue([...keptAs(), "--finding-file", file], tracker.runGh);
     expect(tracker.calls).toEqual([]);
     expect(run.exitCode).toBe(1);
+  });
+});
+
+/**
+ * Part 2: `gh` is found from PATH's absolute folders only, never from a
+ * relative one and never from the folder under check, where anything the
+ * checked-out code planted would sit (Security: an outside program).
+ */
+describe("ghExecutableOf — where gh is found", () => {
+  const GH = process.platform === "win32" ? "gh.exe" : "gh";
+  const withGh = (folder: string) => {
+    writeFileSync(join(folder, GH), "#!/bin/sh\n");
+    chmodSync(join(folder, GH), 0o755);
+    return folder;
+  };
+  const pathOf = (...folders: string[]) => folders.join(delimiter);
+
+  it("finds it in the first absolute folder on PATH that holds it", () => {
+    const empty = tempFolder();
+    const first = withGh(tempFolder());
+    const second = withGh(tempFolder());
+    expect(ghExecutableOf(pathOf(empty, first, second), tempFolder())).toBe(join(first, GH));
+  });
+
+  it("never in a relative folder, even one that holds it", () => {
+    const relative = relativePath(process.cwd(), withGh(tempFolder()));
+    expect(isAbsolute(relative), "the case needs a relative way to the folder").toBe(false);
+    const absolute = withGh(tempFolder());
+    expect(ghExecutableOf(pathOf("", ".", relative, absolute), tempFolder())).toBe(join(absolute, GH));
+  });
+
+  it("never in the folder under check, nor in a folder inside it", () => {
+    const underCheck = withGh(tempFolder());
+    const inside = join(underCheck, "node_modules", ".bin");
+    mkdirSync(inside, { recursive: true });
+    withGh(inside);
+    const outside = withGh(tempFolder());
+    expect(ghExecutableOf(pathOf(underCheck, inside, outside), underCheck)).toBe(join(outside, GH));
+  });
+
+  it("finds none when no absolute folder outside the one under check holds it", () => {
+    const underCheck = withGh(tempFolder());
+    expect(ghExecutableOf(pathOf(tempFolder(), underCheck), underCheck)).toBeUndefined();
   });
 });
