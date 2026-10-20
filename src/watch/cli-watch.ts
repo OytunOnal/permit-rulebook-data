@@ -80,11 +80,21 @@ const today = new Date().toISOString().slice(0, 10);
 const { reports, nextState, verdict } = await runWatch(watchlist, state, readSourceOverHttp, today, openInBrowser);
 await browser.close();
 
+const flagsDir = new URL("../../../watch/flags/", import.meta.url);
+const flagTextOnDisk = (name: string): string | undefined => {
+  try {
+    return readFileSync(new URL(name, flagsDir), "utf8");
+  } catch (e) {
+    // No such file: this run creates the flag. Anything else is an error to see.
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw e;
+  }
+};
+
 const settled = settleState({ args, previous: state, pass: nextState, fetched: watchlist, today });
-const says = sayRun({ reports, verdict, today, state: settled.outcome });
+const says = sayRun({ reports, verdict, today, state: settled.outcome, flagTextOnDisk });
 
 for (const event of says.beforeWrites) print(event);
-const flagsDir = new URL("../../../watch/flags/", import.meta.url);
 if (says.flags.length) mkdirSync(flagsDir, { recursive: true });
 for (const flag of says.flags) writeFileSync(new URL(flag.name, flagsDir), flag.body);
 if (settled.text !== null) writeFileSync(statePath, settled.text);

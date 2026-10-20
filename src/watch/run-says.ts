@@ -36,11 +36,17 @@ export interface FinishedRun {
   verdict: RunVerdict;
   today: string;
   state: StateOutcome;
+  /** The text of the flag file of that name as it is before this run writes, or undefined when there is none. */
+  flagTextOnDisk: (name: string) => string | undefined;
 }
 
 /**
  * What a finished run says: the flags it files, the lines it logs around
  * writing them, the code it exits with.
+ *
+ * A flag is filed when this run creates its file or changes its text. One the
+ * run would write again as it is already on disk is not: a second committing
+ * run on the same day files no second issue for a due reminder.
  *
  * The lines come in two groups, printed on either side of the writes, so a
  * run whose flags or state cannot be written has still printed what it read.
@@ -59,7 +65,8 @@ export function sayRun(run: FinishedRun): RunSays {
   return {
     flags: reports
       .filter((r) => r.outcome === "changed" || r.outcome === "reminder-due")
-      .map((r) => flagOf(r, today)),
+      .map((r) => flagOf(r, today))
+      .filter((flag) => run.flagTextOnDisk(flag.name) !== flag.body),
     beforeWrites: [...reports.map(reportEvent), ...unreadNotices(verdict, today).map(noticeEvent)],
     afterWrites: [stateEvent(run.state), completeEvent(reports, verdict)],
     exitCode: verdict.red ? 1 : 0,
