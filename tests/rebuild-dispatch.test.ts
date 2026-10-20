@@ -98,6 +98,23 @@ function findingOn(step: string, jobStatus: string): string {
   return jobStatus === status ? finding! : otherwise!;
 }
 
+/** The value a step's one-line `run:` command gives an argument, as written; undefined when it gives none. */
+function argumentOf(step: string, name: string): string | undefined {
+  const command = /^\s*run:\s*(.+)$/m.exec(step)?.[1] ?? "";
+  return new RegExp(`(?:^|\\s)${name}\\s+("[^"]*"|\\S+)`).exec(command)?.[1];
+}
+
+/** The lines of the job's own `env:`, trimmed, comments dropped. */
+function linesUnderJobEnv(yaml: string): string[] {
+  const lines = yaml.split("\n");
+  const start = lines.findIndex((line) => /^ {4}env:\s*$/.test(line));
+  expect(start, "the job has no env").toBeGreaterThan(-1);
+  const end = lines.findIndex((line, i) => i > start && line.trim() !== "" && !/^\s*#/.test(line) && line.search(/\S/) <= 4);
+  return lines.slice(start + 1, end < 0 ? undefined : end)
+    .filter((line) => line.trim() !== "" && !/^\s*#/.test(line))
+    .map((line) => line.trim());
+}
+
 describe("a new dataset state wakes the site", () => {
   const dispatch = stepOf(watch,"Tell the site to rebuild");
 
@@ -295,7 +312,7 @@ describe("a red run is never silent", () => {
     // module (#117) and nowhere in this file's shell.
     const command = /^\s*run:\s*(.+)$/m.exec(say);
     expect(command, "the step runs no single command").not.toBeNull();
-    expect(command![1]).toMatch(/^node dist\/src\/watch\/cli-kept-issue\.js --title "watch run failed" --label watch .*--finding "\$FINDING"/);
+    expect(command![1]).toMatch(/^node dist\/src\/watch\/cli-kept-issue\.js --title "watch run failed" --label "\$WATCH_LABEL" .*--finding "\$FINDING"/);
     expect(findingOn(say, "failure"), "a red run does not say so").toBe("red");
     expect(findingOn(say, "success"), "a green run does not close the issue").toBe("green");
     expect(say).toContain("actions/runs/${{ github.run_id }}");
@@ -367,6 +384,40 @@ describe("a red run is never silent", () => {
       .toBe("!cancelled() && (steps.clock.outputs.reading == 'overdue' || steps.clock.outputs.reading == 'clear')");
     expect(conditionOf(watch, "Fail the run on an overdue flag")).toBe("!cancelled() && steps.clock.outputs.reading == 'overdue'");
     expect(stepOf(watch, "Read the clock on open flags")).toContain("id: clock");
+  });
+
+  /** The clock writes the finding `overdue flags` is kept with; a drifted path would keep it never. */
+  it("keeps overdue flags with the finding the clock wrote, at one path outside the repository", () => {
+    const written = argumentOf(stepOf(watch, "Read the clock on open flags"), "--finding-file");
+    expect(written).toMatch(/^"\$RUNNER_TEMP\//);
+    expect(argumentOf(stepOf(watch, "Say which flags are overdue"), "--finding-file")).toBe(written);
+  });
+
+  /**
+   * A label's look is written once in the job and read by every step that
+   * keeps or files under it, so `label create --force` paints it the same
+   * whichever step runs last, and the clock reads the flags under the label
+   * they are filed under.
+   */
+  it("writes each label's look once, and every step under a label reads it from there", () => {
+    const underALabel = stepNamesOf(watch).filter((name) => /\s--label\s/.test(stepOf(watch, name)));
+    expect(underALabel.length, "no step keeps or files under a label").toBeGreaterThan(0);
+    for (const name of underALabel) {
+      const step = stepOf(watch, name);
+      const label = /^"\$(\w+)_LABEL"$/.exec(argumentOf(step, "--label") ?? "");
+      expect(label, `${name} names its label in place`).not.toBeNull();
+      for (const [argument, suffix] of [["--label-color", "_COLOR"], ["--label-description", "_DESCRIPTION"]] as const) {
+        const value = argumentOf(step, argument);
+        if (value !== undefined) expect(value, `${name}'s ${argument}`).toBe(`"$${label![1]}_LABEL${suffix}"`);
+      }
+    }
+    const env = linesUnderJobEnv(watch);
+    for (const variable of new Set([...watch.matchAll(/"\$(\w+_LABEL(?:_COLOR|_DESCRIPTION)?)"/g)].map((m) => m[1]!)))
+      expect(env.filter((line) => line.startsWith(`${variable}:`)), `${variable} is not written once in the job's env`).toHaveLength(1);
+    expect(argumentOf(stepOf(watch, "Read the clock on open flags"), "--label"), "the clock reads another label than the flags'")
+      .toBe(argumentOf(stepOf(watch, "Open issues for new flags only"), "--label"));
+    expect(argumentOf(stepOf(watch, "Say which flags are overdue"), "--label"))
+      .toBe(argumentOf(stepOf(watch, "Say so when the run fails"), "--label"));
   });
 
   it("and it says what a failure means, which is not that a source changed", () => {

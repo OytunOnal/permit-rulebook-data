@@ -15,14 +15,14 @@ import type { LogEvent } from "./print.js";
 /** What one run of the clock's CLI did: the lines it logs and the code it exits with. */
 export interface ClockRun { events: LogEvent[]; exitCode: 0 | 1 }
 
-const ARGUMENTS = { required: ["--finding-file", "--run-url", "--step-output"] };
+const ARGUMENTS = { required: ["--label", "--finding-file", "--run-url", "--step-output"] };
 
 export async function readClockOnFlags(argv: readonly string[], runGh: GhRunner, today: string): Promise<ClockRun> {
   const args = readArguments(argv, ARGUMENTS);
   if (typeof args === "string") {
     return { events: [{ level: "error", msg: "overdue clock: the arguments were refused", fields: { reason: args } }], exitCode: 1 };
   }
-  const reading = await readOpenFlags(runGh, today);
+  const reading = await readOpenFlags(args.get("--label")!, runGh, today);
   const read = clockEvent(reading, today);
   try {
     writeFileSync(args.get("--finding-file")!, JSON.stringify(findingOfClock(reading, args.get("--run-url")!)) + "\n");
@@ -33,10 +33,11 @@ export async function readClockOnFlags(argv: readonly string[], runGh: GhRunner,
   return { events: [read], exitCode: reading.kind === "unread" ? 1 : 0 };
 }
 
-async function readOpenFlags(runGh: GhRunner, today: string): Promise<ClockReading> {
+/** The clock on the open issues under `label`, the flags' own. */
+async function readOpenFlags(label: string, runGh: GhRunner, today: string): Promise<ClockReading> {
   try {
     const listed = await runGh([
-      "issue", "list", "--label", "source-change", "--state", "open",
+      "issue", "list", "--label", label, "--state", "open",
       "--json", "number,title,createdAt", "--limit", String(OPEN_FLAGS_READ_LIMIT),
     ]);
     return readClock(listed, today);

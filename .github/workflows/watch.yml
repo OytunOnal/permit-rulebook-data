@@ -52,6 +52,17 @@ jobs:
       # itself failed, and one naming the flags no person has walked in two
       # days.
       issues: write
+    # Each label's look, written once: every step that keeps or files under a
+    # label reads it here, so `label create --force` paints it the same
+    # whichever step runs last, and the clock reads the flags under the label
+    # they are filed under.
+    env:
+      FLAG_LABEL: source-change
+      FLAG_LABEL_COLOR: e4a11b
+      FLAG_LABEL_DESCRIPTION: "A watched official source changed"
+      WATCH_LABEL: watch
+      WATCH_LABEL_COLOR: b60205
+      WATCH_LABEL_DESCRIPTION: "The daily source watch itself"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 (node24)
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 (node24)
@@ -141,7 +152,7 @@ jobs:
         # tracker answering; and never on a measurement dispatch.
         if: ${{ success() && github.event.inputs.commit != 'false' }}
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: node dist/src/watch/cli-flag-issues.js --list "$RUNNER_TEMP/new-flags.json" --flags-dir watch/flags --label source-change --label-color e4a11b --label-description "A watched official source changed"
+        run: node dist/src/watch/cli-flag-issues.js --list "$RUNNER_TEMP/new-flags.json" --flags-dir watch/flags --label "$FLAG_LABEL" --label-color "$FLAG_LABEL_COLOR" --label-description "$FLAG_LABEL_DESCRIPTION"
 
       # The clock on a flag (#62). A flag no person has walked by the second
       # morning after the day it was raised turns the morning red, as a refusal
@@ -162,7 +173,7 @@ jobs:
         env:
           GH_TOKEN: "${{ github.token }}"
           RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        run: node dist/src/watch/cli-overdue.js --finding-file "$RUNNER_TEMP/overdue-finding.json" --run-url "$RUN_URL" --step-output "$GITHUB_OUTPUT"
+        run: node dist/src/watch/cli-overdue.js --label "$FLAG_LABEL" --finding-file "$RUNNER_TEMP/overdue-finding.json" --run-url "$RUN_URL" --step-output "$GITHUB_OUTPUT"
 
       # One issue for the clock, never `source-change` (metric 1 counts that
       # label, and this issue would count itself). It is the run's to keep,
@@ -174,7 +185,7 @@ jobs:
       - name: Say which flags are overdue
         if: ${{ !cancelled() && (steps.clock.outputs.reading == 'overdue' || steps.clock.outputs.reading == 'clear') }}
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: node dist/src/watch/cli-kept-issue.js --title "overdue flags" --label watch --label-color b60205 --label-description "The daily source watch itself" --finding-file "$RUNNER_TEMP/overdue-finding.json"
+        run: node dist/src/watch/cli-kept-issue.js --title "overdue flags" --label "$WATCH_LABEL" --label-color "$WATCH_LABEL_COLOR" --label-description "$WATCH_LABEL_DESCRIPTION" --finding-file "$RUNNER_TEMP/overdue-finding.json"
 
       - name: Fail the run if any source was unreachable
         if: steps.watch.outcome == 'failure'
@@ -271,7 +282,7 @@ jobs:
             Commit: ${{ github.sha }}
             Nothing here says a source changed — it says the check did not finish, or the audit found a known advisory; the failed step in the run says which.
           CLOSING: "Closed by a morning on which every step but the overdue clock passed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        run: node dist/src/watch/cli-kept-issue.js --title "watch run failed" --label watch --label-color b60205 --label-description "The daily source watch itself" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
+        run: node dist/src/watch/cli-kept-issue.js --title "watch run failed" --label "$WATCH_LABEL" --label-color "$WATCH_LABEL_COLOR" --label-description "$WATCH_LABEL_DESCRIPTION" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
 
       # Last, after `watch run failed` has been kept. An overdue flag turns the
       # run red, but it is not the check failing, and the job's status cannot

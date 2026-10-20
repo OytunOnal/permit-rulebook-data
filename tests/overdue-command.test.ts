@@ -31,13 +31,24 @@ function clockArgs() {
   const folder = tempFolder();
   const findingFile = join(folder, "overdue-finding.json");
   const stepOutput = join(folder, "github-output");
-  const argv = ["--finding-file", findingFile, "--run-url", RUN, "--step-output", stepOutput];
+  const argv = ["--finding-file", findingFile, "--run-url", RUN, "--step-output", stepOutput, "--label", FLAG_LABEL];
   return { argv, findingFile, stepOutput };
 }
+
+/** Not the label the workflow passes, so a label written into the CLI cannot pass for it. */
+const FLAG_LABEL = "a-label-for-this-test";
 
 const flag = (number: number, createdAt: string) => ({ number, title: `Watch flag: entry-${number} — changed`, createdAt });
 
 describe("the clock's CLI — what it hands the run", () => {
+  it("reads the tracker once: the open flags under the label it is given, bounded", async () => {
+    const tracker = trackerAnswering("[]");
+    await readClockOnFlags(clockArgs().argv, tracker.runGh, TODAY);
+    expect(tracker.calls).toEqual([
+      ["issue", "list", "--label", FLAG_LABEL, "--state", "open", "--json", "number,title,createdAt", "--limit", "1000"],
+    ]);
+  });
+
   it("gives the step reading=clear, and a green finding linking the run, on a morning nothing is overdue", async () => {
     const { argv, findingFile, stepOutput } = clockArgs();
     const run = await readClockOnFlags(argv, trackerAnswering(JSON.stringify([flag(30, "2026-10-17T09:00:00Z")])).runGh, TODAY);

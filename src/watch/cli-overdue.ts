@@ -6,11 +6,12 @@ import { print } from "./print.js";
  * The clock on a flag, read once a morning (#62).
  *
  *   node dist/src/watch/cli-overdue.js
+ *     --label <name>          the label the flags are filed under
  *     --finding-file <path>   where the finding for `overdue flags` goes (a JSON RunFinding)
  *     --run-url <url>         the run the finding links
  *     --step-output <path>    the step's $GITHUB_OUTPUT, given `reading=clear|overdue|unread`
  *
- * It reads the tracker's open `source-change` flags through `gh`, reads the
+ * It reads the tracker's open flags under that label through `gh`, reads the
  * clock, logs one line, and writes the finding the kept-issue CLI keeps
  * `overdue flags` with. Everything it decides is in `overdue-command.ts` and
  * `overdue.ts`.
