@@ -55,6 +55,11 @@ export function actionOnKeptIssue(issue: KeptIssue, finding: RunFinding, listed:
  */
 export interface LabelLook { color: string; description: string }
 
+/** The `gh` argument list that reads every issue under the label, open or closed, up to the read's limit. */
+export function ghListArgumentsOf(issue: KeptIssue): string[] {
+  return ["issue", "list", "--label", issue.label, "--state", "all", "--json", "number,state,title", "--limit", String(TRACKER_READ_LIMIT)];
+}
+
 /** The exact `gh` argument lists that carry an action out, in order. */
 export function ghArgumentsOf(action: KeptIssueAction, labelLook: LabelLook): string[][] {
   switch (action.kind) {
