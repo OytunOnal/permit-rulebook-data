@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { keepIssue } from "../src/watch/kept-issue-command.js";
 import { ghExecutableOf, type GhRunner } from "../src/watch/gh.js";
 import { childProcessCasesSkipped, stubGhRunner, tempFoldersRemovedAfterEach } from "./stub-gh.js";
+import { KEPT_ISSUE_CLI_COPY } from "./workflow-text.js";
 
 /**
  * The kept-issue CLI as a function handed a runner (#117, seam 5's first
@@ -187,9 +188,12 @@ describe("ghExecutableOf — where gh is found", () => {
   });
 });
 
-/** Part 3: the real CLI, as a child process, with a stub `gh` first on PATH. */
+/**
+ * Part 3: the real CLI, as a child process, with a stub `gh` first on PATH:
+ * the copy built on its own, which the workflows' kept-issue steps run.
+ */
 describe.skipIf(childProcessCasesSkipped("kept-issue CLI"))("the kept-issue CLI as a child process", () => {
-  const entry = fileURLToPath(new URL("../dist/src/watch/cli-kept-issue.js", import.meta.url));
+  const entry = fileURLToPath(new URL(`../${KEPT_ISSUE_CLI_COPY}`, import.meta.url));
   const runCli = stubGhRunner(tempFolder);
 
   it("runs gh with no shell: a hostile title reaches the stub intact, after the read and the label", () => {

@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  conditionOf, readText, stepNamesOf, stepOf, watchYaml as watch, workflowFiles, workflowsDir,
+  conditionOf, KEPT_ISSUE_CLI_COPY, oneLineCommandsOf, readText, stepNamesOf, stepOf, watchYaml as watch, workflowFiles,
+  workflowsDir,
 } from "./workflow-text.js";
 
 /**
@@ -312,7 +313,7 @@ describe("a red run is never silent", () => {
     // module (#117) and nowhere in this file's shell.
     const command = /^\s*run:\s*(.+)$/m.exec(say);
     expect(command, "the step runs no single command").not.toBeNull();
-    expect(command![1]).toMatch(/^node dist\/src\/watch\/cli-kept-issue\.js --title "watch run failed" --label "\$WATCH_LABEL" .*--finding "\$FINDING"/);
+    expect(command![1]).toMatch(/^node \S+\/cli-kept-issue\.js --title "watch run failed" --label "\$WATCH_LABEL" .*--finding "\$FINDING"/);
     expect(findingOn(say, "failure"), "a red run does not say so").toBe("red");
     expect(findingOn(say, "success"), "a green run does not close the issue").toBe("green");
     expect(say).toContain("actions/runs/${{ github.run_id }}");
@@ -502,5 +503,37 @@ describe("flag issues are filed after the push, from the list the watch writes",
   it("leaves no step collecting the flags in bash", () => {
     expect(stepNamesOf(watch).filter((name) => name.startsWith("Collect NEW flags"))).toEqual([]);
     expect(watch).not.toContain("steps.newflags");
+  });
+});
+
+/**
+ * A master whose build breaks must not silence `watch run failed` (the ruling
+ * on #117, (a)): the kept-issue CLI is built on its own, from its own files,
+ * before anything else can fail, and the steps that keep an issue run that copy.
+ */
+describe("a broken build elsewhere cannot silence a kept issue", () => {
+  it("builds the kept-issue CLI on its own, right after the install, before the repository's build", () => {
+    const commands = oneLineCommandsOf(watch);
+    expect(commands.slice(0, 2)).toEqual(["npm ci", "npm run build:kept-issue"]);
+    expect(commands.indexOf("npm run build"), "the repository's build runs before the CLI's own")
+      .toBeGreaterThan(commands.indexOf("npm run build:kept-issue"));
+  });
+
+  it("keeps both of the watch's issues with that copy", () => {
+    for (const name of ["Say so when the run fails", "Say which flags are overdue"]) {
+      const command = /^\s*run:\s*(.+)$/m.exec(stepOf(watch, name))?.[1] ?? "";
+      expect(command.startsWith(`node ${KEPT_ISSUE_CLI_COPY} `), `${name} runs ${command}`).toBe(true);
+    }
+  });
+
+  it("builds that copy from a config of its own, at the path the steps run", () => {
+    const packageJson = JSON.parse(readText(fileURLToPath(new URL("../package.json", import.meta.url))));
+    const config = /^tsc -p (\S+)$/.exec(packageJson.scripts["build:kept-issue"] ?? "");
+    expect(config, "build:kept-issue is not one tsc build").not.toBeNull();
+    const tsconfig = JSON.parse(readText(fileURLToPath(new URL(`../${config![1]}`, import.meta.url))));
+    // Its own files only: nothing the repository's other sources hold is swept in.
+    expect(tsconfig.include).toEqual([]);
+    expect(tsconfig.files).toContain("src/watch/cli-kept-issue.ts");
+    expect(`${tsconfig.compilerOptions.outDir}/src/watch/cli-kept-issue.js`).toBe(KEPT_ISSUE_CLI_COPY);
   });
 });

@@ -42,9 +42,9 @@ jobs:
   # have a person at the other end: their reds file nothing (decision 9).
   #
   # `always()`, because a red or unfinished check is what it is here to say.
-  # It builds the CLI from master's head, the commit the check read, so a
-  # master that does not compile cannot keep the issue: this job then fails,
-  # and the run's red is GitHub's own notice.
+  # It builds the kept-issue CLI alone, from its own files at master's head,
+  # never the repository's whole build: a master that does not compile is
+  # exactly what this job may have to say (the ruling on #117, (a)).
   report:
     needs: check
     if: ${{ always() && github.event_name == 'workflow_run' }}
@@ -62,7 +62,7 @@ jobs:
       # Only the compiler is needed, and this job holds a write token: no
       # dependency's install script runs here.
       - run: npm ci --ignore-scripts
-      - run: npm run build
+      - run: npm run build:kept-issue
 
       - name: Keep check failed on master
         env:
@@ -74,4 +74,4 @@ jobs:
           # head when the watch run completed.
           BODY: "The data check on master went red after the watch: the check job ended ${{ needs.check.result }} on commit ${{ github.sha }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           CLOSING: "The data check on master is green again on commit ${{ github.sha }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        run: node dist/src/watch/cli-kept-issue.js --title "check failed on master" --label check --label-color b60205 --label-description "The data repository's own suite" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
+        run: node dist/kept-issue-cli/src/watch/cli-kept-issue.js --title "check failed on master" --label check --label-color b60205 --label-description "The data repository's own suite" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"

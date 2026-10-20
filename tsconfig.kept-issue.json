@@ -1,0 +1,17 @@
+{
+  "//": "The kept-issue CLI alone, built into its own folder before the repository's build: the steps that keep `watch run failed` and `check failed on master` run this copy, so a file that breaks elsewhere cannot silence them (the ruling on #117, (a)). It names the CLI's entry and every file it imports, and nothing else; a break in one of these is caught by every pull request's check, which builds this too.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist/kept-issue-cli",
+    "declaration": false
+  },
+  "files": [
+    "src/watch/cli-kept-issue.ts",
+    "src/watch/kept-issue-command.ts",
+    "src/watch/kept-issue.ts",
+    "src/watch/cli-shared.ts",
+    "src/watch/gh.ts",
+    "src/watch/print.ts"
+  ],
+  "include": []
+}

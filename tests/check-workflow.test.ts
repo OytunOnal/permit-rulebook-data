@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
-import { readText, stepOf, watchYaml, workflowFiles, workflowsDir } from "./workflow-text.js";
+import { KEPT_ISSUE_CLI_COPY, readText, stepOf, watchYaml, workflowFiles, workflowsDir } from "./workflow-text.js";
 
 /**
  * The data repository checks itself (#117, decisions 8, 9 and 16), so a red
@@ -151,9 +151,21 @@ describe("after a watch run, and only then, the check keeps `check failed on mas
       expect(actionsOf(watchYaml), `${action} is not the watch's`).toContain(action);
   });
 
+  /**
+   * A master whose build breaks must not silence the issue (the ruling on
+   * #117, (a)): the job builds the kept-issue CLI alone, from its own files,
+   * and never the repository's whole build.
+   */
+  it("builds the kept-issue CLI alone, and keeps the issue with that copy", () => {
+    const commands = commandsOf(checkYaml(), "report");
+    expect(commands.slice(0, 2)).toEqual(["npm ci --ignore-scripts", "npm run build:kept-issue"]);
+    expect(commands, "the report job runs the repository's whole build").not.toContain("npm run build");
+    expect(commands[2]?.startsWith(`node ${KEPT_ISSUE_CLI_COPY} `), commands[2]).toBe(true);
+  });
+
   it("keeps the issue through the kept-issue CLI, with the check job's result as the finding", () => {
     const step = stepOf(checkYaml(), "Keep check failed on master");
-    expect(step).toMatch(/run: node dist\/src\/watch\/cli-kept-issue\.js /);
+    expect(step).toContain(`run: node ${KEPT_ISSUE_CLI_COPY} `);
     expect(step).toContain('--title "check failed on master"');
     expect(step).toContain("--label check ");
     // Green only on a check that passed; anything else, an unfinished check

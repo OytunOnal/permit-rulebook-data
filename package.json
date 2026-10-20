@@ -21,12 +21,13 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:kept-issue": "tsc -p tsconfig.kept-issue.json",
     "test": "vitest run",
     "validate": "node dist/src/cli-validate.js data/dataset.json",
     "watch:sources": "node dist/src/watch/cli-watch.js",
     "watch:coverage": "node dist/src/watch/cli-coverage.js",
     "typecheck:tests": "tsc -p tsconfig.test.json",
-    "check": "npm run build && npm run typecheck:tests && npm run validate && npm run watch:coverage && npm test"
+    "check": "npm run build && npm run build:kept-issue && npm run typecheck:tests && npm run validate && npm run watch:coverage && npm test"
   },
   "license": "MIT",
   "dependencies": {
