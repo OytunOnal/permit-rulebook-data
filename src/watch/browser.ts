@@ -1,6 +1,7 @@
 import { chromePath, launch } from "./chrome.js";
-import { BUDGET_MS, refusedAddress } from "./fetch-source.js";
+import { BUDGET_MS } from "./fetch-source.js";
 import { classOfThrown, MOST_OF_A_FAILURE, printableWithin, ReadFailure, saidByThrown } from "./failure.js";
+import { refusalOfEntryAddress } from "./trust-line.js";
 import type { Session } from "./cdp.js";
 import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 
@@ -23,27 +24,23 @@ import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
  * the profile handling were learned, and this is a port of them: the data
  * package cannot import the site.
  *
- * **The address behind a browser entry's name is Chrome's to resolve.** The
- * fetch tier resolves a name itself, judges every address the resolver
- * answers with, and hands the connection back the whole judged list — so
- * nothing unjudged can be connected to (s36, `fetch-source.ts`). This tier
- * cannot: Chrome does its own DNS, inside its own process, and takes no
+ * **A name Chrome resolves for itself is not judged.** The fetch tier resolves
+ * a name itself and asks the trust line (`trust-line.ts`) about every address
+ * the resolver answers with, so nothing unjudged can be connected to. This
+ * tier cannot: Chrome does its own DNS, inside its own process, and takes no
  * lookup hook.
  *
- * So what this reader gates is what it can gate, and it is the same two
- * gates it has always had, stated for what they are:
+ * So this reader asks the trust line the two questions it can answer here:
  *
- * - the entry ADDRESS is refused before Chrome is asked when it is not an
+ * - the entry question, before Chrome is asked: an address that is not an
  *   address at all, carries a name and password, is on a scheme that is not
- *   a page, or is a link-local address (`refusedAddress`, the fetch tier's
- *   own entry check, so both tiers refuse an entry by one rule);
- * - a navigation that leaves the entry's origin is refused when it happens
+ *   a page, or is link-local is refused, by the same rule the fetch tier asks;
+ * - the landing question, when a navigation leaves the entry's origin
  *   (`cdp.ts`).
  *
- * The browser entries — seven of the watchlist's 46, counted 2026-09-24 as
- * those with `strategy: "browser"` — are fixed pages on public hosts a
- * curator chose, and that, not a check in this file, is what stands between
- * this tier and a NAME that resolves somewhere nobody meant to visit (#50).
+ * The browser entries are fixed pages on public hosts a curator chose, and
+ * that, not a check in this file, is what stands between this tier and a NAME
+ * that resolves somewhere nobody meant to visit.
  *
  * **Where things are.** This was one file until 2026-09-24, by then five jobs
  * deep, so it is four — split along what each part answers to:
@@ -112,14 +109,9 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
     // `watch:browser-read` line reported one entry's cost against another's
     // name (Standards review, 2026-09-25).
     lastCost = { paused: 0, pausedMs: 0 };
-    // Before anything is opened. A browser sends credentials the moment it
-    // navigates and keeps sending them: measured 2026-09-24, a credentialled
-    // entry read `ok: true` and the host saw `Authorization: Basic …` on the
-    // page AND on the favicon, with the page behind the password hashed and
-    // ready to commit. The rule — credentials, a malformed address, a scheme
-    // this watch does not read, a link-local address — is the fetcher's,
-    // asked here rather than spelled again.
-    const refused = refusedAddress(entry.url);
+    // Before anything is opened: a browser sends credentials the moment it
+    // navigates, on the page and on every request after it.
+    const refused = refusalOfEntryAddress(entry.url);
     // Both are ours and neither is a minute: an address this watch will not
     // open stays one, and a machine with no Chrome will not grow one during
     // the pass.

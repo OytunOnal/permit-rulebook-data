@@ -218,16 +218,16 @@ describe("s34 — a watched address may not carry a name and password", () => {
       }],
     };
     const gate = checkCoverage(dataset, withCredentials);
-    expect(gate.urls_with_credentials.length, "the gate let credentials through").toBe(1);
+    expect(gate.refused_entry_addresses.length, "the gate let credentials through").toBe(1);
     expect(gate.ok).toBe(false);
-    const said = gate.urls_with_credentials.join(" ");
+    const said = gate.refused_entry_addresses.join(" ");
     expect(said, "the password was printed").not.toContain("hunter2");
     expect(said, "the name was printed").not.toContain("watcher");
     expect(said, "the entry is not named").toContain("fixture-html");
   });
 
   it("says nothing about the watchlist this repository ships", () => {
-    expect(checkCoverage(dataset, watchlist).urls_with_credentials).toEqual([]);
+    expect(checkCoverage(dataset, watchlist).refused_entry_addresses).toEqual([]);
   });
 
   it("names the entry and not the address when the url is malformed as well", () => {
@@ -539,5 +539,50 @@ describe("s34 — no slice of the five can match the form the runner is served",
     expect(reports.map((r) => r.outcome)).toEqual(FORM_WALLED.map(() => "unreachable"));
     for (const r of reports) expect(r.error, r.id).toMatch(/slice marker missing: from/);
     for (const id of FORM_WALLED) expect(nextState.entries[id], id).toBeUndefined();
+  });
+});
+
+describe("the coverage gate asks the trust line's entry question", () => {
+  /** The shipped watchlist with one entry added, so the gate has nothing else to say. */
+  const watchlistWithAddedEntry = (url: string): Watchlist =>
+    ({ entries: [...watchlist.entries, { ...htmlEntry, id: "added-entry", url, kind: "sentinel" }] });
+
+  /** The gate over the shipped watchlist and one added entry, which it must refuse alone and by name. */
+  function expectGateRefusesOnlyThis(address: string): ReturnType<typeof checkCoverage> {
+    const gate = checkCoverage(dataset, watchlistWithAddedEntry(address));
+    expect(gate.ok, `${address} passed the gate`).toBe(false);
+    expect(gate.refused_entry_addresses.length, `${address} was not refused`).toBe(1);
+    expect(gate.refused_entry_addresses[0], "the entry is not named").toContain("added-entry");
+    return gate;
+  }
+
+  it("refuses a link-local entry, and names the entry and not the address", () => {
+    // Both readers refuse a link-local entry on the run; the gate refuses it at
+    // the PR, so a curator does not learn of it as a red morning.
+    for (const [address, spelled] of [
+      ["https://169.254.169.254/rules", "169.254"],
+      ["https://[fe80::1]/rules", "fe80"],
+    ] as const) {
+      const gate = expectGateRefusesOnlyThis(address);
+      expect(JSON.stringify(gate), `${address} was printed`).not.toContain(spelled);
+    }
+  });
+
+  it("refuses an entry on a scheme that is not a page", () => {
+    for (const address of ["ftp://example.invalid/rules", "file:///etc/rules"]) expectGateRefusesOnlyThis(address);
+  });
+
+  it("still refuses a malformed entry and a credentialled one, and prints no credential", () => {
+    for (const address of ["://watcher:hunter2@example.invalid/rules", "https://watcher:hunter2@example.invalid/rules"]) {
+      const said = JSON.stringify(expectGateRefusesOnlyThis(address));
+      expect(said, "the password was printed").not.toContain("hunter2");
+      expect(said, "the name was printed").not.toContain("watcher");
+    }
+  });
+
+  it("passes the watchlist this repository ships", () => {
+    const gate = checkCoverage(dataset, watchlist);
+    expect(gate.refused_entry_addresses).toEqual([]);
+    expect(gate.ok).toBe(true);
   });
 });

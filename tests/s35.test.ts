@@ -9,8 +9,8 @@ import {
   type FailureClass,
 } from "../src/watch/failure.js";
 import { servedFailure } from "../src/watch/cdp.js";
-import { printableAddress } from "../src/watch/fetch-source.js";
 import { unreadSources, type WatchState } from "../src/watch/state.js";
+import { readableAddressOf } from "../src/watch/trust-line.js";
 import type { Dataset } from "../src/types.js";
 
 /**
@@ -97,8 +97,8 @@ describe("s35 — a failure has a class, and the reader names it", () => {
     expect(classOfThrown(new DOMException("The operation was aborted due to timeout", "TimeoutError")))
       .toBe("transient");
     // And a throw nobody anticipated is worth one more try rather than a red
-    // morning: the floor refusing an address is a decision we made, and this
-    // is not one.
+    // morning: the trust line refusing an address is a decision we made, and
+    // this is not one.
     expect(classOfThrown(new Error("something nobody wrote down"))).toBe("transient");
   });
 
@@ -172,7 +172,7 @@ describe("s35 — a failure has a class, and the reader names it", () => {
     const failure = servedFailure(403, sent, addressOf("rendered"));
     expect(failure.message, "the password the source put in the address was printed")
       .not.toContain("hunter2");
-    expect(failure.message, "the address was printed as the source wrote it").toContain(printableAddress(sent));
+    expect(failure.message, "the address was printed as the source wrote it").toContain(readableAddressOf(sent));
     expect(failure.message.length, "the whole of the address was printed").toBeLessThan(sent.length);
     // And it is a failure like any other: the status says whose it is.
     expect(failure.failure).toBe("refused-by-source");

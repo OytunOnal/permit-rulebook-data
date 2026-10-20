@@ -1,10 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import {
-  addressKind, fetchSource, MOST_OF_AN_ADDRESS, refusedTarget, shortAddress,
-} from "../src/watch/fetch-source.js";
-import { classOfThrown, noteOfLength } from "../src/watch/failure.js";
+import { fetchSource } from "../src/watch/fetch-source.js";
+import { classOfThrown } from "../src/watch/failure.js";
 
 /**
  * s34 — the fetch tier follows a redirect around a site, and not off it.
@@ -130,109 +128,34 @@ describe("s34 — a link is followed the way a person's browser follows it", () 
   });
 });
 
-describe("s34 — there is a floor under following a link anywhere", () => {
+describe("s34 — the trust line holds under following a link anywhere", () => {
 
   /**
-   * "Anywhere a person's browser would" turned out to be wider than a
-   * browser. Measured 2026-09-25: a `data:` target was followed and its
-   * inline bytes came back as a reading, which a real browser refuses
-   * outright; and `169.254.169.254` — where a cloud runner keeps its
-   * credentials — was attempted, which on a hosted runner is a request that
-   * reaches something. The policy allows a plaintext hop on purpose, so the
-   * next `Location` is chosen by whoever is on the path and not only by the
-   * source: the REQUEST is the harm, even where the bytes are never hashed.
+   * The fetcher asks the trust line's redirect question, and a refused target
+   * costs nothing: the refusal is made from the `Location` header, before
+   * anything is requested, and reports the source's own answer as ours to
+   * have declined. Which targets are refused is the trust line's table
+   * (`tests/trust-line.test.ts`); this is the wiring, one target of each
+   * kind of refusal.
    */
-  for (const [what, path] of [
-    ["a data: address", "/to-data"],
-    ["a file: address", "/to-file"],
-    ["the cloud metadata address", "/to-metadata"],
-    ["a private network address", "/to-private"],
-  ] as const) {
-    it(`refuses ${what}, even for a link`, async () => {
+  it("asks the refused address for nothing at all", async () => {
+    for (const [path, kind] of [
+      ["/to-data", "data"],
+      ["/to-file", "file"],
+      ["/to-metadata", "link-local"],
+      ["/to-private", "private"],
+    ] as const) {
+      const sourceBefore = sourceAsked;
+      const elsewhereBefore = elsewhereAsked;
       const answer = await fetchSource(`${sourceOrigin}${path}`, "anywhere");
-      expect(answer.ok, `${what} was followed`).toBe(false);
+      expect(answer.ok, `${path} was followed`).toBe(false);
       if (answer.ok) return;
       expect(answer.status, "the source's own answer is not reported").toBe(302);
-    });
-  }
-
-  /**
-   * The same places, spelled the other way, asked as a PUBLIC source asks.
-   *
-   * `[::ffff:7f00:1]` IS 127.0.0.1 and `[::ffff:a9fe:a9fe]` IS
-   * 169.254.169.254 — an address has many spellings and one meaning, and the
-   * floor was matching spellings (Security review, 2026-09-25).
-   *
-   * Asked of `refusedTarget` rather than through the fixtures, because the
-   * fixtures live on loopback and the rule is relative: a loopback entry may
-   * move within loopback, so a loopback fixture cannot pose the question a
-   * public source poses. The end-to-end half is the case below, which proves
-   * a refusal reaches the fetcher and costs the refused address nothing.
-   */
-  for (const [what, address, kind] of [
-    ["an IPv4-mapped loopback address", "http://[::ffff:7f00:1]/admin", "loopback"],
-    ["an IPv4-mapped metadata address", "http://[::ffff:a9fe:a9fe]/latest/", "link-local"],
-    ["the unspecified address", "http://[::]/admin", "loopback"],
-    ["loopback written out in full", "http://[0:0:0:0:0:0:0:1]/admin", "loopback"],
-    ["IPv6 link-local", "http://[fe80::1]/admin", "link-local"],
-    ["IPv6 private", "http://[fd00::1]/admin", "private"],
-    ["plain 127.0.0.1", "http://127.0.0.1/admin", "loopback"],
-    ["plain 169.254.169.254", "http://169.254.169.254/latest/", "link-local"],
-    ["plain 10.0.0.1", "http://10.0.0.1/admin", "private"],
-  ] as const) {
-    it(`refuses ${what} when the source is on the open web`, () => {
-      const target = new URL(address);
-      // The classifier is the decision; the refusal has to name what IT says
-      // this address is, not a word this test chose.
-      expect(addressKind(target.hostname), `${what} is not classed as ${kind}`).toBe(kind);
-      const why = refusedTarget(target, "rules.example.org");
-      expect(why, `${what} was allowed`).not.toBeNull();
-      expect(why, "the refusal does not say what kind of address it is")
-        .toContain(addressKind(target.hostname));
-    });
-  }
-
-  it("bounds an address before it is written down, however long a page makes it", () => {
-    // The one bound, used by both readers and by every printer. Where the
-    // browser's `anywhere` branch applies it is pinned in
-    // `tests/s34-browser.test.ts`, at the call site.
-    const long = `https://rules.example.org/${"a".repeat(9_000)}`;
-    // The note's wording is asked of its owner, not retyped: a test that
-    // spells a rule out passes while the rule is wrong (Standards review,
-    // 2026-09-25).
-    const suffix = noteOfLength([...long].length);
-    // The bound is `MOST_OF_AN_ADDRESS` and the suffix that says what was cut
-    // — asked of the constant, so moving it moves the test with it.
-    expect(shortAddress(long)).toBe(long.slice(0, MOST_OF_AN_ADDRESS) + suffix);
-    // And an ordinary one is left exactly as it is.
-    const ordinary = "https://anabin.kmk.org/anabin.html";
-    expect(ordinary.length).toBeLessThanOrEqual(MOST_OF_AN_ADDRESS);
-    expect(shortAddress(ordinary)).toBe(ordinary);
-  });
-
-  it("still lets an ordinary public address through", () => {
-    expect(refusedTarget(new URL("https://anabin.kmk.org/cms/public/startseite"), "rules.example.org")).toBeNull();
-    // And the downgrade the whole rule exists for: same host, plain http.
-    expect(refusedTarget(new URL("http://anabin.kmk.org/anabin.html"), "anabin.kmk.org")).toBeNull();
-  });
-
-  it("asks the refused address for nothing at all", async () => {
-    // The refusal is made from the `Location` header, before anything is
-    // requested — which is the difference between a rule and a regret.
-    const before = elsewhereAsked;
-    await fetchSource(`${sourceOrigin}/to-metadata`, "anywhere");
-    await fetchSource(`${sourceOrigin}/to-private`, "anywhere");
-    expect(elsewhereAsked - before).toBe(0);
-  });
-
-  it("still lets a link move within the kind of address its entry is on", async () => {
-    // The rule is relative: a source may not send the watch somewhere it
-    // could not have gone itself. These fixtures live on loopback, so a
-    // loopback hop between them is exactly the ordinary case and must work —
-    // it is a public source redirecting INTO the private network that is
-    // refused.
-    const answer = await fetchSource(`${sourceOrigin}/away`, "anywhere");
-    expect(answer.ok, answer.ok ? "" : answer.error).toBe(true);
+      expect(answer.failure).toBe("refused-by-us");
+      expect(answer.error, "the trust line's refusal did not reach the answer").toContain(kind);
+      expect(sourceAsked - sourceBefore, "more than the entry was requested").toBe(1);
+      expect(elsewhereAsked - elsewhereBefore).toBe(0);
+    }
   });
 
   it("says where the chain had got to when the cap stopped it", async () => {
@@ -392,7 +315,7 @@ describe("s35 — the fetcher says what kind of failure it met", () => {
     expect(busy.failure).toBe("transient");
   });
 
-  it("calls everything the floor declines our own refusal", async () => {
+  it("calls everything the trust line and the hop cap decline our own refusal", async () => {
     // None of these is the source having a bad minute: the request was never
     // made, and would not be made three minutes later either. Each is red the
     // same day.

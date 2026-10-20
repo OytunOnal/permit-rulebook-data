@@ -46,9 +46,10 @@
  *   not the page. Any other 4xx, a bot wall, a page that moved; a browser step
  *   that finds no field, because the page changed. The same answer comes back
  *   in three minutes, so it is not asked again.
- * - **refused-by-us** — the floor declined to make the request at all: a
- *   credentialled or malformed address, an off-origin redirect or navigation,
- *   a private or loopback target, too many hops, no Chrome on this machine.
+ * - **refused-by-us** — the watch declined to make the request at all: the
+ *   trust line refused it (a credentialled or malformed address, an
+ *   off-origin redirect or navigation, a private, loopback or link-local
+ *   target), too many hops, no Chrome on this machine.
  *   Our environment, not the source's minute — so it is neither retried nor
  *   given a day of grace.
  */
@@ -202,12 +203,10 @@ export function makePrintable(text: string): string {
  *
  * The browser tier throws a page's own exception `description` — the page's
  * string, its stack included, and the stack names the page — and that becomes
- * the failure a run logs. A page can make it as long as it likes: measured
- * 2026-09-24 at 10,104 characters carrying the page's origin. The fetcher
- * already binds every address it prints at 200 for the same reason
- * (`MOST_OF_AN_ADDRESS`). This was one of the two printed strings the slice
- * left with no bound at all; the other is a cause's `code`, bound by
- * `A_CODE` below (Security review, 2026-09-24).
+ * the failure a run logs. A page can make it as long as it likes, and the
+ * stack carries the page's origin. Every printed address is bound at 200 for
+ * the same reason (`ADDRESS_LENGTH_LIMIT`, `trust-line.ts`), and a cause's
+ * `code` by `A_CODE` below.
  *
  * The bound is TOTAL, unlike the address's, because this is the whole of what
  * a line says about a failure rather than one field inside it.
@@ -301,18 +300,15 @@ export function printableWithin(text: string, most: number): string {
 /**
  * What a cut says about itself: how long the whole sentence was.
  *
- * The same shape `shortAddress` prints for an address it shortened
- * (`fetch-source.ts`) — the length of the WHOLE, not of what was dropped, so
+ * The same shape `boundedAddress` prints for an address it shortened
+ * (`trust-line.ts`) — the length of the WHOLE, not of what was dropped, so
  * a curator reads one spelling wherever this package shortens something. It
- * is a function because there are two runtimes to say it in and it was hand
- * copied into both, which is how two copies start disagreeing about what a
- * cut sentence claims (Standards review, 2026-09-24).
+ * is a function because there are two runtimes to say it in, and two copies
+ * would start disagreeing about what a cut sentence claims.
  *
- * Exported for the reason `hasSteering` is: the wording had a second copy in
- * `shortAddress` and two more in the tests that assert what a cut sentence
- * claims, and a test that retypes a rule passes while the rule is wrong. The
- * callers and the tests name this; nobody retypes the words or the unit
- * (Standards review, 2026-09-25).
+ * Exported for the reason `hasSteering` is: a test that retypes a rule passes
+ * while the rule is wrong. The callers and the tests name this; nobody
+ * retypes the words or the unit.
  */
 export function noteOfLength(characters: number): string {
   return `… (${characters} characters)`;
