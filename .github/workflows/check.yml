@@ -70,9 +70,8 @@ jobs:
           GH_REPO: "${{ github.repository }}"
           # One of two literals: green only on a check that passed.
           FINDING: "${{ needs.check.result == 'success' && 'green' || 'red' }}"
-          CHECK_RESULT: "${{ needs.check.result }}"
-          # The commit the check job checked out: master's head when the
-          # watch run completed.
-          CHECKED_SHA: "${{ github.sha }}"
-          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        run: node dist/src/watch/cli-kept-issue.js --title "check failed on master" --label check --label-color b60205 --label-description "The data repository's own suite" --finding "$FINDING" --body "The data check on master went red after the watch: the check job ended $CHECK_RESULT on commit $CHECKED_SHA. Run: $RUN_URL" --closing "The data check on master is green again on commit $CHECKED_SHA. Run: $RUN_URL"
+          # `github.sha` is the commit the check job checked out: master's
+          # head when the watch run completed.
+          BODY: "The data check on master went red after the watch: the check job ended ${{ needs.check.result }} on commit ${{ github.sha }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          CLOSING: "The data check on master is green again on commit ${{ github.sha }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: node dist/src/watch/cli-kept-issue.js --title "check failed on master" --label check --label-color b60205 --label-description "The data repository's own suite" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
