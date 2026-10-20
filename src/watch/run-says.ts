@@ -207,13 +207,16 @@ export interface RunArgs {
   only?: string;
   /** `--commit` writes the state; without it the run is a dry run. */
   persist: "commit" | "dry-run";
+  /** `--new-flags=<path>`: where the list of this run's new flags goes, for the step that files their issues. */
+  newFlagsList?: string;
 }
 
 export function readRunArgs(argv: readonly string[]): RunArgs {
-  const onlyArg = argv.find((a) => a.startsWith("--only="));
+  const valueOf = (name: string) => argv.find((a) => a.startsWith(name))?.slice(name.length);
   return {
-    only: onlyArg?.slice("--only=".length),
+    only: valueOf("--only="),
     persist: argv.includes("--commit") ? "commit" : "dry-run",
+    newFlagsList: valueOf("--new-flags="),
   };
 }
 

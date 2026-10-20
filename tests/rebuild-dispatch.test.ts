@@ -161,7 +161,7 @@ describe("a new dataset state wakes the site", () => {
     expect(names[names.length - 3], "the dispatch is not the last acting step").toBe("Tell the site to rebuild");
 
     // Every step that acts on the flags comes before it — by position, not by
-    // reputation: any step whose condition or body reads the flag collection.
+    // reputation: any step whose condition or body names the flags folder.
     // The failure notice is exempt: it runs after everything.
     const at = (name: string) => names.indexOf(name);
     const issues = at("Open issues for new flags only");
@@ -170,19 +170,18 @@ describe("a new dataset state wakes the site", () => {
     for (const name of names) {
       if (name === "Tell the site to rebuild" || name === "Say so when the run fails") continue;
       const body = stepOf(watch,name);
-      if (!body.includes("newflags") && !body.includes("flags/")) continue;
+      if (!body.includes("watch/flags")) continue;
       expect(at(name), `${name} runs after a step that can fail on the token`)
         .toBeLessThan(at("Tell the site to rebuild"));
     }
 
     // And the issues step asks nothing of the step that can fail on the token:
-    // it is conditioned on the flags, and since s34 also on the switch that
-    // says this run records nothing at all — never on the dispatch or its
-    // secret. (The two assertions below read `not.toContain("dispatch")` until
-    // 2026-09-23; the word is now a dispatch INPUT's name and appears in this
-    // step's own condition, so the check names the two things it always meant.)
+    // it is conditioned on the switch that says this run records nothing at
+    // all — never on the dispatch or its secret. (The two assertions below
+    // read `not.toContain("dispatch")` until 2026-09-23; the word is now a
+    // dispatch INPUT's name and appears in this step's own condition, so the
+    // check names the two things it always meant.)
     const issueStep = stepOf(watch,"Open issues for new flags only");
-    expect(issueStep).toContain("steps.newflags.outputs.files != ''");
     expect(issueStep).not.toContain("DISPATCH_TOKEN");
     expect(issueStep).not.toContain("steps.persist");
 
@@ -236,14 +235,6 @@ describe("automated commits are attributed to the automation", () => {
  * repository unread (devils-advocate, 2026-09-08).
  */
 describe("a red run is never silent", () => {
-  it("collects flags as files, whatever git says about the directory", () => {
-    const step = watch.slice(watch.indexOf("- name: Collect NEW flags"));
-    expect(step).toContain("git status --porcelain -- 'watch/flags/*.md'");
-    // The old shape, which broke on an untracked directory and on a rename.
-    expect(step).not.toContain("git status --porcelain watch/flags");
-    expect(step).not.toContain("awk '{print $2}'");
-  });
-
   it("leaves the schedule's path exactly as it was when the dispatch switches were added", () => {
     // s34 gave `workflow_dispatch` two booleans — `commit` and `dispatch` — so
     // the watch could be run once to be timed and once to write baselines on a
@@ -405,13 +396,48 @@ describe("the dispatch names the state it just committed", () => {
     expect(dispatch).not.toContain("$GITHUB_SHA");
   });
 
-  it("a flag file reaches the issue step as data, not as script", () => {
-    const issues = stepOf(watch,"Open issues for new flags only");
-    expect(issues).toContain('FLAGS: "${{ steps.newflags.outputs.files }}"');
-    expect(issues).toContain('done <<< "$FLAGS"');
-    // The old shape interpolated the list into the script body.
-    expect(issues).not.toContain('<<< "${{ steps.newflags');
-    // And only a flag file this repository writes is ever opened.
-    expect(issues).toContain("case \"$f\" in watch/flags/*.md)");
+});
+
+/**
+ * Flag issues (#117 decision 14). Three runs died collecting the flags in bash
+ * (`git status` handed `head` a directory, 09-03 and 09-05), and which issues
+ * were filed was decided there, where no test reached it. Now the watch's CLI
+ * writes this run's new flags to a list outside the repository, and after the
+ * push one CLI files an issue per flag on it, the title from the list.
+ */
+describe("flag issues are filed after the push, from the list the watch writes", () => {
+  const PERSIST = "Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)";
+  const FILING = "Open issues for new flags only";
+  const commandOf = (name: string): string => {
+    const command = /^\s*run:\s*(.+)$/m.exec(stepOf(watch, name));
+    expect(command, `${name} runs no single command`).not.toBeNull();
+    return command![1]!;
+  };
+
+  it("files them after the state is pushed, with one command, from the list the watch's CLI wrote", () => {
+    const names = stepNamesOf(watch);
+    const order = ["Watch sources", PERSIST, FILING].map((name) => names.indexOf(name));
+    expect(order.every((at) => at > -1), "a step is missing").toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    const filing = commandOf(FILING);
+    expect(filing).toMatch(/^node dist\/src\/watch\/cli-flag-issues\.js /);
+    const list = /--list "([^"]+)"/.exec(filing)?.[1];
+    expect(list, "the filing step names no list").toBeDefined();
+    // In the runner's temporary folder: outside the repository, so the push never carries it.
+    expect(list).toMatch(/^\$RUNNER_TEMP\//);
+    expect(commandOf("Watch sources"), "the watch writes its list somewhere else").toContain(`--new-flags="${list}"`);
+  });
+
+  it("files them on a morning whose push went through, never on a measurement run", () => {
+    const when = conditionOf(watch, FILING);
+    expect(fires(when, { "job.status": "success" }), "the daily run files no flag issue").toBe(true);
+    expect(fires(when, { "job.status": "success", "github.event.inputs.commit": "false" }),
+      "a measurement run files flag issues").toBe(false);
+    expect(fires(when, { "job.status": "failure" }), "a run whose push failed files flag issues").toBe(false);
+  });
+
+  it("leaves no step collecting the flags in bash", () => {
+    expect(stepNamesOf(watch).filter((name) => name.startsWith("Collect NEW flags"))).toEqual([]);
+    expect(watch).not.toContain("steps.newflags");
   });
 });

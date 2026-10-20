@@ -7,14 +7,16 @@ import { fetchSource } from "./fetch-source.js";
 import {
   chooseEntries, parseJsonText, readRunArgs, sayRun, sayWhereItRead, settleState,
 } from "./run-says.js";
+import { newFlagsListOf } from "./flag-issues.js";
 import { print } from "./print.js";
 
 /**
  * The daily watch, from the command line.
  *
  * It reads the watchlist and the state, runs the watch with a fetcher and a
- * browser, prints what it read, writes the flag files and the state, prints
- * what became of them and exits. Everything it decides about what a run says is in `run-says.ts`;
+ * browser, prints what it read, writes the flag files, the state and (given
+ * `--new-flags=<path>`) the list of this run's new flags for the step that
+ * files their issues, prints what became of them and exits. Everything it decides about what a run says is in `run-says.ts`;
  * this file only reads, runs, writes and exits.
  */
 
@@ -86,5 +88,8 @@ const flagsDir = new URL("../../../watch/flags/", import.meta.url);
 if (says.flags.length) mkdirSync(flagsDir, { recursive: true });
 for (const flag of says.flags) writeFileSync(new URL(flag.name, flagsDir), flag.body);
 if (settled.text !== null) writeFileSync(statePath, settled.text);
+// After the state, so a list that cannot be written costs the run its flag
+// issues (the filing step then fails on the missing list), never its state.
+if (args.newFlagsList) writeFileSync(args.newFlagsList, newFlagsListOf(says.flags));
 for (const event of says.afterWrites) print(event);
 process.exit(says.exitCode);

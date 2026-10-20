@@ -82,6 +82,11 @@ jobs:
 
       # continue-on-error so detected changes/flags/state are NEVER discarded
       # because one source was unreachable; the final gate re-raises the red.
+      #
+      # `--new-flags` is where the watch writes the list of this run's new
+      # flags (each one's file and issue title) for the step that files them.
+      # It sits in the runner's temporary folder, outside the repository, so
+      # the push below never carries it (#117 decision 14).
       - name: Watch sources
         id: watch
         continue-on-error: true
@@ -90,28 +95,12 @@ jobs:
           # nothing — never to the input itself, so what reaches the command
           # line is this file's own word and not the dispatcher's.
           COMMIT_FLAG: ${{ github.event.inputs.commit != 'false' && '--commit' || '' }}
-        run: node dist/src/watch/cli-watch.js $COMMIT_FLAG
+        run: node dist/src/watch/cli-watch.js $COMMIT_FLAG --new-flags="$RUNNER_TEMP/new-flags.json"
 
-      # Files, and only files. `git status --porcelain watch/flags` printed the
-      # DIRECTORY when it was untracked, `head -n1` was handed a directory, and
-      # the step died — twice, on 09-03 and 09-05, with no issue filed for the
-      # flags those runs had just written (devils-advocate, 2026-09-08). The
-      # pathspec below can only match a markdown file, and the field is taken
-      # with `cut` rather than `awk '{print $2}'`, which loses a renamed path.
-      # The three steps that WRITE — to disk, to the remote, to the issue
-      # tracker — are the three a measurement run must not take. Guarded one by
-      # one rather than by a single early exit, so a reader of the log sees
-      # each of them skipped and knows the run left nothing behind.
-      - name: Collect NEW flags (only files this run created)
-        id: newflags
-        if: github.event.inputs.commit != 'false'
-        run: |
-          {
-            echo "files<<EOF"
-            git status --porcelain -- 'watch/flags/*.md' | cut -c4- | sed 's/^.* -> //'
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
+      # The two steps that WRITE — to the remote, to the issue tracker — are
+      # the two a measurement run must not take. Guarded one by one rather
+      # than by a single early exit, so a reader of the log sees each of them
+      # skipped and knows the run left nothing behind.
       - name: Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)
         id: persist
         if: github.event.inputs.commit != 'false'
@@ -140,28 +129,19 @@ jobs:
           fi
           git push
 
+      # One `source-change` issue per flag on the watch's list, through the
+      # flag-filing CLI (src/watch/cli-flag-issues.ts): the title is the one
+      # the watch gave the flag, the body the flag's file, and `gh` runs with
+      # no shell. A list with no flag files nothing. A list the CLI cannot
+      # read, or a flag it cannot file, fails the step, and `watch run failed`
+      # says so; every other flag on the list is still filed.
       - name: Open issues for new flags only
-        # Both halves: the flag list is empty on a day nothing moved, and the
-        # step that produces it did not run at all on a measurement dispatch.
-        if: github.event.inputs.commit != 'false' && steps.newflags.outputs.files != ''
-        env:
-          GH_TOKEN: "${{ github.token }}"
-          # Through the environment, never interpolated into the script body: a
-          # file name is data, and data in a shell is a command waiting to
-          # happen (Security review, 2026-09-08).
-          FLAGS: "${{ steps.newflags.outputs.files }}"
-        run: |
-          gh label create source-change --color e4a11b --description "A watched official source changed" --force
-          failed=0
-          while IFS= read -r f; do
-            [ -z "$f" ] && continue
-            # Only a flag file this repository wrote, and only one that exists.
-            case "$f" in watch/flags/*.md) ;; *) echo "::error::refusing $f"; failed=1; continue ;; esac
-            [ -f "$f" ] || { echo "::error::$f is not a file"; failed=1; continue; }
-            title=$(head -n1 "$f" | sed 's/^# //')
-            gh issue create --title "$title" --body-file "$f" --label source-change || failed=1
-          done <<< "$FLAGS"
-          exit $failed
+        # Only once the state is pushed (`success()`: every step before this
+        # passed, the push included), so nothing the watch read depends on the
+        # tracker answering; and never on a measurement dispatch.
+        if: ${{ success() && github.event.inputs.commit != 'false' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: node dist/src/watch/cli-flag-issues.js --list "$RUNNER_TEMP/new-flags.json" --flags-dir watch/flags --label source-change --label-color e4a11b --label-description "A watched official source changed"
 
       # The clock on a flag (#62). A flag no person has walked by the second
       # morning after the day it was raised turns the morning red, as a refusal
