@@ -302,6 +302,32 @@ describe("a red run is never silent", () => {
     expect(gate).not.toContain("gh ");
   });
 
+  /**
+   * The clock (#62), kept through the kept-issue CLI (#117): it reads after the
+   * state is pushed, and not on a measurement run; `overdue flags` is spoken to
+   * only on a reading the clock could make, so an unread clock leaves it as it
+   * was; and the overdue gate stands behind `watch run failed`, so an overdue
+   * flag alone never files it.
+   */
+  it("reads the clock after the push, keeps overdue flags on a reading, and gates last", () => {
+    const names = stepNamesOf(watch);
+    const at = (name: string) => names.indexOf(name);
+    const order = [
+      "Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)",
+      "Read the clock on open flags",
+      "Say which flags are overdue",
+      "Say so when the run fails",
+      "Fail the run on an overdue flag",
+    ];
+    for (const name of order) expect(at(name), `no step named "${name}"`).toBeGreaterThan(-1);
+    expect(order.map(at)).toEqual([...order.map(at)].sort((a, b) => a - b));
+    expect(conditionOf(watch, "Read the clock on open flags")).toBe("!cancelled() && github.event.inputs.commit != 'false'");
+    expect(conditionOf(watch, "Say which flags are overdue"))
+      .toBe("!cancelled() && (steps.clock.outputs.reading == 'overdue' || steps.clock.outputs.reading == 'clear')");
+    expect(conditionOf(watch, "Fail the run on an overdue flag")).toBe("!cancelled() && steps.clock.outputs.reading == 'overdue'");
+    expect(stepOf(watch, "Read the clock on open flags")).toContain("id: clock");
+  });
+
   it("and it says what a failure means, which is not that a source changed", () => {
     const say = stepOf(watch,"Say so when the run fails");
     expect(say).toContain("it says the check did not finish");
