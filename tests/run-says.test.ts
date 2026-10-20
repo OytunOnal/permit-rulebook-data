@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { STRATEGIES, type RunVerdict, type WatchEntry, type WatchReport, type WatchState } from "../src/watch/core.js";
 import {
   chooseEntries, EXCERPT_INTRODUCTION, parseJsonText, readRunArgs, sayRun, sayWhereItRead, SENTINEL_REMEDIATION, settleState,
-  type StateOutcome,
+  type FinishedRun, type StateOutcome,
 } from "../src/watch/run-says.js";
 
 /**
@@ -20,6 +20,9 @@ const GREEN: RunVerdict = { lapsed: [], outages: [], refused: [], red: false };
 const DRY: StateOutcome = { kind: "dry-run" };
 /** A flags folder that holds none of the flags a run writes. */
 const NONE_ON_DISK = () => undefined;
+/** A green dry run of today, with no flag on disk, and what the case names in its place. */
+const finishedRun = (run: Partial<FinishedRun>): FinishedRun =>
+  ({ reports: [], verdict: GREEN, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK, ...run });
 
 const report = (r: Partial<WatchReport> & Pick<WatchReport, "id" | "outcome">): WatchReport =>
   ({ url: `https://example.org/${r.id}`, strategy: "html", kind: "value-source", ...r }) as WatchReport;
@@ -52,7 +55,7 @@ const BLUE_CARD_HEADER = [
 ];
 
 const flagsOf = (...reports: WatchReport[]) =>
-  sayRun({ reports, verdict: GREEN, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK }).flags;
+  sayRun(finishedRun({ reports })).flags;
 
 describe("sayRun — the flags a run files, in today's format", () => {
   it("writes a change under its dated name, header first, then the intent, the excerpt and the remediation", () => {
@@ -124,13 +127,13 @@ describe("sayRun — the flags a run files, in today's format", () => {
   it("does not file a flag written again with the text already on disk", () => {
     const [reminderFlag] = flagsOf(sentinelReminder);
     const flagTextOnDisk = (name: string) => (name === reminderFlag!.name ? reminderFlag!.body : undefined);
-    const says = sayRun({ reports: [sentinelReminder, htmlChange], verdict: GREEN, today: TODAY, state: DRY, flagTextOnDisk });
+    const says = sayRun(finishedRun({ reports: [sentinelReminder, htmlChange], flagTextOnDisk }));
     expect(says.flags.map((f) => f.name)).toEqual(["nl-ind-blue-card-2026-10-18.md"]);
   });
 
   it("files a flag whose file on disk says something else", () => {
     const flagTextOnDisk = (name: string) => (name === "gesetze-official-recheck-reminder.md" ? "# Yesterday's reminder\n" : undefined);
-    const says = sayRun({ reports: [sentinelReminder], verdict: GREEN, today: TODAY, state: DRY, flagTextOnDisk });
+    const says = sayRun(finishedRun({ reports: [sentinelReminder], flagTextOnDisk }));
     expect(says.flags.map((f) => f.name)).toEqual(["gesetze-official-recheck-reminder.md"]);
   });
 
@@ -251,7 +254,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   it("logs each report at its outcome's level", () => {
     const outcomes = ["unreachable", "unchanged", "ok", "changed", "baseline", "reminder-due"] as const;
     const reports = outcomes.map((outcome) => outcome === "unreachable" ? unreachable : report({ id: outcome, outcome }));
-    const { beforeWrites } = sayRun({ reports, verdict: GREEN, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK });
+    const { beforeWrites } = sayRun(finishedRun({ reports }));
     expect(beforeWrites.map((e) => [e.msg, e.level])).toEqual([
       ["watch:unreachable", "error"],
       ["watch:unchanged", "info"],
@@ -263,12 +266,12 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   });
 
   it("carries the report's address, hashes, error and failure class on its line", () => {
-    const { beforeWrites } = sayRun({ reports: [unreachable], verdict: GREEN, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK });
+    const { beforeWrites } = sayRun(finishedRun({ reports: [unreachable] }));
     expect(beforeWrites[0]).toEqual({
       level: "error", msg: "watch:unreachable",
       fields: { id: "c", url: "https://example.org/c", error: "HTTP 503", failure: "transient" },
     });
-    const changed = sayRun({ reports: [htmlChange], verdict: GREEN, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK }).beforeWrites[0];
+    const changed = sayRun(finishedRun({ reports: [htmlChange] })).beforeWrites[0];
     expect(changed).toEqual({
       level: "warn", msg: "watch:changed",
       fields: { id: "nl-ind-blue-card", url: "https://ind.nl/en/blue-card", old: OLD, new: NEW },
@@ -282,7 +285,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
       refused: [{ id: "local", url: "http://10.0.0.5/c", days: ["2026-10-18"] }],
       red: true,
     };
-    const { beforeWrites } = sayRun({ reports: [], verdict, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK });
+    const { beforeWrites } = sayRun(finishedRun({ reports: [], verdict }));
     expect(beforeWrites).toEqual([
       { level: "warn", msg: "watch:lapse", fields: { id: "es-boe", url: "https://www.boe.es/a", days: ["2026-10-18"], today: TODAY } },
       { level: "error", msg: "watch:outage", fields: { id: "fr-anef", url: "https://anef.example/b", days: ["2026-10-15", "2026-10-18"], today: TODAY } },
@@ -291,7 +294,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   });
 
   it("says the state was committed, with its count, its targeted id and its last run", () => {
-    const say = (state: StateOutcome) => sayRun({ reports: [], verdict: GREEN, today: TODAY, state, flagTextOnDisk: NONE_ON_DISK }).afterWrites[0];
+    const say = (state: StateOutcome) => sayRun(finishedRun({ reports: [], state })).afterWrites[0];
     expect(say({ kind: "committed", entries: 30, only: "nl-ind-blue-card", last_run: "2026-10-16" })).toEqual({
       level: "info", msg: "state committed", fields: { entries: 30, only: "nl-ind-blue-card", last_run: "2026-10-16" },
     });
@@ -301,7 +304,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   });
 
   it("says a dry run left the state untouched", () => {
-    expect(sayRun({ reports: [], verdict: GREEN, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK }).afterWrites[0]).toEqual({
+    expect(sayRun(finishedRun({ reports: [] })).afterWrites[0]).toEqual({
       level: "info", msg: "dry run — state untouched (use --commit to persist)", fields: {},
     });
   });
@@ -309,7 +312,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   it("ends on watch complete with the run summary, and a green run exits 0", () => {
     const reports = [htmlChange, report({ id: "b", outcome: "ok" }), unreachable];
     const verdict: RunVerdict = { ...GREEN, lapsed: [{ id: "c", url: "https://example.org/c", days: [TODAY] }] };
-    const says = sayRun({ reports, verdict, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK });
+    const says = sayRun(finishedRun({ reports, verdict }));
     expect(says.afterWrites.at(-1)).toEqual({
       level: "info", msg: "watch complete",
       fields: { total: 3, changed: 1, unreachable: 1, lapsed: 1, outages: 0, refused: 0 },
@@ -320,7 +323,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   it("ends a red run on an error-level watch complete, and exits 1", () => {
     const reports = [unreachable];
     const verdict: RunVerdict = { ...GREEN, outages: [{ id: "c", url: "https://example.org/c", days: ["2026-10-15", TODAY] }], red: true };
-    const says = sayRun({ reports, verdict, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK });
+    const says = sayRun(finishedRun({ reports, verdict }));
     expect(says.afterWrites.at(-1)).toEqual({
       level: "error", msg: "watch complete",
       fields: { total: 1, changed: 0, unreachable: 1, lapsed: 0, outages: 1, refused: 0 },
@@ -331,7 +334,7 @@ describe("sayRun — what the run logs, and the code it exits with", () => {
   it("says what it read before the flags and the state are written, and what became of them after", () => {
     const verdict: RunVerdict = { ...GREEN, lapsed: [{ id: "c", url: "https://example.org/c", days: [TODAY] }] };
     const reports = [htmlChange, unreachable];
-    const { beforeWrites, afterWrites } = sayRun({ reports, verdict, today: TODAY, state: DRY, flagTextOnDisk: NONE_ON_DISK });
+    const { beforeWrites, afterWrites } = sayRun(finishedRun({ reports, verdict }));
     expect(beforeWrites.map((e) => e.msg)).toEqual(["watch:changed", "watch:unreachable", "watch:lapse"]);
     expect(afterWrites.map((e) => e.msg)).toEqual(["dry run — state untouched (use --commit to persist)", "watch complete"]);
   });
