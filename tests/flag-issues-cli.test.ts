@@ -1,28 +1,21 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { delimiter, join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fileFlagIssues, NEW_FLAGS_LIMIT, newFlagsListOf } from "../src/watch/flag-issues.js";
 import type { GhRunner } from "../src/watch/gh.js";
 import type { FlagDocument } from "../src/watch/run-says.js";
+import { childProcessCasesSkipped, stubGhRunner, tempFoldersRemovedAfterEach } from "./stub-gh.js";
 
 /**
- * #117 decision 14, seam 5 as the ruling of 2026-10-20 builds it: the
- * flag-filing CLI as a function handed a runner, so each case records exactly
- * what reaches `gh`. The watch writes this run's flags and the list of them;
- * after the push, this CLI files one `source-change` issue per flag on it.
- * Part 2, where `gh` is found, is the adapter's, held in kept-issue-command.test.ts.
+ * The flag-filing CLI as a function handed a runner (#117 decision 14, seam
+ * 5's first part), so each case records exactly what reaches `gh`. The watch
+ * writes this run's flags and the list of them; after the push, this CLI files
+ * one `source-change` issue per flag on it. Part 2, where `gh` is found, is the
+ * adapter's, held in kept-issue-command.test.ts.
  */
 
-const temps: string[] = [];
-const tempFolder = () => {
-  const folder = mkdtempSync(join(tmpdir(), "flag-issues-"));
-  temps.push(folder);
-  return folder;
-};
-afterEach(() => { for (const folder of temps.splice(0)) rmSync(folder, { recursive: true, force: true }); });
+const tempFolder = tempFoldersRemovedAfterEach("flag-issues-");
 
 /** A tracker that records every argument list, failing the issue create whose title is `failingTitle`. */
 function tracker(failingTitle?: string) {
@@ -68,6 +61,12 @@ const reminder: FlagDocument = {
 const issueCreate = (flag: FlagDocument) =>
   ["issue", "create", "--title", flag.title, "--label", "source-change", "--body", flag.body];
 
+/** `count` flags, each on an entry of its own. */
+const flagsOnEntries = (count: number): FlagDocument[] =>
+  Array.from({ length: count }, (_, i) => ({ ...change, name: `entry-${i}-2026-10-20.md`, title: `Watch flag: entry-${i} — changed` }));
+/** One flag more than a list may hold. */
+const many = flagsOnEntries(NEW_FLAGS_LIMIT + 1);
+
 describe("the flag-filing CLI — what reaches gh", () => {
   it("files one issue per listed flag, with its title and its file's body, the label first", async () => {
     const gh = tracker();
@@ -92,7 +91,6 @@ describe("the flag-filing CLI — what reaches gh", () => {
 
   /** Every loop over outside input is bounded (#117 decision 12): a list over the bound is refused whole, never cut. */
   it("refuses a list over its bound, filing none of it", async () => {
-    const many = Array.from({ length: NEW_FLAGS_LIMIT + 1 }, (_, i) => ({ ...change, name: `entry-${i}-2026-10-20.md`, title: `Watch flag: entry-${i} — changed` }));
     const gh = tracker();
     const run = await fileFlagIssues(filingArgsOf(many), gh.runGh);
     expect(gh.calls).toEqual([]);
@@ -149,7 +147,7 @@ describe("the flag-filing CLI — what reaches gh", () => {
   });
 
   it("files a list at its bound whole", async () => {
-    const most = Array.from({ length: NEW_FLAGS_LIMIT }, (_, i) => ({ ...change, name: `entry-${i}-2026-10-20.md`, title: `Watch flag: entry-${i} — changed` }));
+    const most = flagsOnEntries(NEW_FLAGS_LIMIT);
     const gh = tracker();
     const run = await fileFlagIssues(filingArgsOf(most), gh.runGh);
     expect(gh.issues()).toHaveLength(NEW_FLAGS_LIMIT);
@@ -157,58 +155,10 @@ describe("the flag-filing CLI — what reaches gh", () => {
   });
 });
 
-/**
- * Part 3: the real CLI, as a child process, with a stub `gh` first on PATH.
- * The stub is a shell script, which Windows runs only through a shell, and the
- * CLI runs `gh` with none: so these cases run on Linux, where CI runs them, and
- * a local Windows run skips them out loud. Under CI they never skip.
- */
-const CI = Boolean(process.env["CI"]);
-const cannotRunStub = process.platform === "win32";
-if (cannotRunStub && !CI) console.log("flag-filing CLI: the child-process cases are SKIPPED — a stub gh needs Linux");
-
-describe.skipIf(cannotRunStub && !CI)("the flag-filing CLI as a child process", () => {
+/** Part 3: the real CLI, as a child process, with a stub `gh` first on PATH. */
+describe.skipIf(childProcessCasesSkipped("flag-filing CLI"))("the flag-filing CLI as a child process", () => {
   const entry = fileURLToPath(new URL("../dist/src/watch/cli-flag-issues.js", import.meta.url));
-
-  /** Records each call's arguments NUL-separated, a call ended by \x01. */
-  const STUB = [
-    // bash, whose printf writes a NUL where dash's may not.
-    "#!/bin/bash",
-    "printf '%s\\0' \"$@\" >> \"$GH_RECORD\"",
-    "printf '\\001\\0' >> \"$GH_RECORD\"",
-  ].join("\n") + "\n";
-
-  const callsIn = (record: string): string[][] => {
-    if (!existsSync(record)) return [];
-    return readFileSync(record, "utf8").split("\0").slice(0, -1).reduce<string[][]>((calls, arg) => {
-      if (arg === "\x01") calls.push([]);
-      else calls[calls.length - 1]!.push(arg);
-      return calls;
-    }, [[]]).slice(0, -1);
-  };
-
-  /** The CLI run in a folder of its own, the stub first on PATH; what it exited with, and what reached the stub. */
-  function runCli(args: string[]) {
-    expect(existsSync(entry), "the CLI is not built: npm run build").toBe(true);
-    const stubFolder = tempFolder();
-    writeFileSync(join(stubFolder, "gh"), STUB);
-    chmodSync(join(stubFolder, "gh"), 0o755);
-    const underCheck = tempFolder();
-    const record = join(tempFolder(), "calls");
-    const run = spawnSync(process.execPath, [entry, ...args], {
-      cwd: underCheck,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        PATH: `${stubFolder}${delimiter}${process.env["PATH"] ?? ""}`,
-        GH_RECORD: record,
-        // Should a real gh ever answer in the stub's place, it can write nowhere.
-        GH_TOKEN: "not-a-token",
-        GH_REPO: "no-such-owner-for-a-test/no-such-repository",
-      },
-    });
-    return { status: run.status, stderr: run.stderr, calls: callsIn(record), underCheck };
-  }
+  const runCli = (args: string[]) => stubGhRunner(tempFolder)(entry, args);
 
   it("runs gh with no shell: one issue per flag, a hostile title intact, the body its file's", () => {
     const hostile = { ...change, title: "Watch flag: $(touch pwned) `touch pwned` \"quoted\" 'single'; touch pwned — changed" };
@@ -219,7 +169,6 @@ describe.skipIf(cannotRunStub && !CI)("the flag-filing CLI as a child process", 
   });
 
   it("refuses a list over its bound, asking gh nothing", () => {
-    const many = Array.from({ length: NEW_FLAGS_LIMIT + 1 }, (_, i) => ({ ...change, name: `entry-${i}-2026-10-20.md`, title: `Watch flag: entry-${i} — changed` }));
     const run = runCli(filingArgsOf(many));
     expect(run.status).toBe(1);
     expect(run.calls).toEqual([]);

@@ -1,24 +1,17 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { describe, expect, it } from "vitest";
+import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { delimiter, isAbsolute, join, relative as relativePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { keepIssue } from "../src/watch/kept-issue-command.js";
 import { ghExecutableOf, type GhRunner } from "../src/watch/gh.js";
+import { childProcessCasesSkipped, stubGhRunner, tempFoldersRemovedAfterEach } from "./stub-gh.js";
 
 /**
- * #117, seam 5 as the ruling of 2026-10-20 builds it: the kept-issue CLI as a
- * function handed a runner, so each case records exactly what reaches `gh`.
+ * The kept-issue CLI as a function handed a runner (#117, seam 5's first
+ * part), so each case records exactly what reaches `gh`.
  */
 
-const temps: string[] = [];
-const tempFolder = () => {
-  const folder = mkdtempSync(join(tmpdir(), "kept-issue-"));
-  temps.push(folder);
-  return folder;
-};
-afterEach(() => { for (const folder of temps.splice(0)) rmSync(folder, { recursive: true, force: true }); });
+const tempFolder = tempFoldersRemovedAfterEach("kept-issue-");
 
 /** A tracker that answers the read with `listed`, and records every argument list. */
 function trackerAnswering(listed: string, failing?: string) {
@@ -193,66 +186,23 @@ describe("ghExecutableOf — where gh is found", () => {
   });
 });
 
-/**
- * Part 3: the real CLI, as a child process, with a stub `gh` first on PATH.
- * The stub is a shell script, which Windows runs only through a shell, and the
- * CLI runs `gh` with none: so this case runs on Linux, where CI runs it, and a
- * local Windows run skips it out loud. Under CI it never skips.
- */
-const CI = Boolean(process.env["CI"]);
-const cannotRunStub = process.platform === "win32";
-if (cannotRunStub && !CI) console.log("kept-issue CLI: the child-process case is SKIPPED — a stub gh needs Linux");
-
-describe.skipIf(cannotRunStub && !CI)("the kept-issue CLI as a child process", () => {
+/** Part 3: the real CLI, as a child process, with a stub `gh` first on PATH. */
+describe.skipIf(childProcessCasesSkipped("kept-issue CLI"))("the kept-issue CLI as a child process", () => {
   const entry = fileURLToPath(new URL("../dist/src/watch/cli-kept-issue.js", import.meta.url));
-
-  /** Records each call's arguments NUL-separated, a call ended by \x01; answers the read with no issues. */
-  const STUB = [
-    // bash, whose printf writes a NUL where dash's may not.
-    "#!/bin/bash",
-    "printf '%s\\0' \"$@\" >> \"$GH_RECORD\"",
-    "printf '\\001\\0' >> \"$GH_RECORD\"",
-    "if [ \"$1 $2\" = \"issue list\" ]; then printf '[]'; fi",
-  ].join("\n") + "\n";
-
-  const callsIn = (record: string): string[][] =>
-    readFileSync(record, "utf8").split("\0").slice(0, -1).reduce<string[][]>((calls, arg) => {
-      if (arg === "\x01") calls.push([]);
-      else calls[calls.length - 1]!.push(arg);
-      return calls;
-    }, [[]]).slice(0, -1);
+  const runCli = stubGhRunner(tempFolder);
 
   it("runs gh with no shell: a hostile title reaches the stub intact, after the read and the label", () => {
-    expect(existsSync(entry), "the CLI is not built: npm run build").toBe(true);
-    const stubFolder = tempFolder();
-    writeFileSync(join(stubFolder, "gh"), STUB);
-    chmodSync(join(stubFolder, "gh"), 0o755);
-    const underCheck = tempFolder();
-    const record = join(tempFolder(), "calls");
     const title = "flags $(touch pwned) `touch pwned` \"quoted\" 'single'; touch pwned";
-
-    const run = spawnSync(process.execPath, [
-      entry, "--title", title, "--label", "watch", "--label-color", "b60205",
+    const run = runCli(entry, [
+      "--title", title, "--label", "watch", "--label-color", "b60205",
       "--label-description", "The daily source watch itself", "--finding", "red", "--body", "Body; $(touch pwned)",
-    ], {
-      cwd: underCheck,
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        PATH: `${stubFolder}${delimiter}${process.env["PATH"] ?? ""}`,
-        GH_RECORD: record,
-        // Should a real gh ever answer in the stub's place, it can write nowhere.
-        GH_TOKEN: "not-a-token",
-        GH_REPO: "no-such-owner-for-a-test/no-such-repository",
-      },
-    });
-
+    ]);
     expect(run.status, run.stderr).toBe(0);
-    expect(callsIn(record)).toEqual([
+    expect(run.calls).toEqual([
       ["issue", "list", "--label", "watch", "--state", "all", "--json", "number,state,title", "--limit", "100"],
       ["label", "create", "watch", "--color", "b60205", "--description", "The daily source watch itself", "--force"],
       ["issue", "create", "--title", title, "--label", "watch", "--body", "Body; $(touch pwned)"],
     ]);
-    expect(existsSync(join(underCheck, "pwned")), "a title or body was run as a command").toBe(false);
+    expect(existsSync(join(run.underCheck, "pwned")), "a title or body was run as a command").toBe(false);
   });
 });
