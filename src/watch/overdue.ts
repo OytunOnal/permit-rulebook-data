@@ -101,10 +101,23 @@ export function readClock(listed: string, today: string): ClockReading {
 
   const overdue = overdueFlags(open, today);
   if (!overdue.length) return { kind: "clear", open: open.length };
-  const body = [
+  return { kind: "overdue", open: open.length, overdue, body: overdueBodyOf(overdue, today) };
+}
+
+/**
+ * The most overdue flags the body names, oldest first. The body reaches `gh`
+ * as one argument, and Linux refuses one past 128 KiB; this many lines of a
+ * title the tracker allows stay far under it.
+ */
+const NAMED_OVERDUE_LIMIT = 50;
+
+/** The body of `overdue flags`: the oldest flags by name, and how many more there are. */
+function overdueBodyOf(overdue: readonly OverdueFlag[], today: string): string {
+  const unnamed = overdue.length - NAMED_OVERDUE_LIMIT;
+  return [
     `Flags no person has walked by the second morning after the day they were raised (${today}):`,
     "",
-    ...overdue.map((f) => `- #${f.number} ${f.title} — raised ${f.raised}, ${f.days} days`),
+    ...overdue.slice(0, NAMED_OVERDUE_LIMIT).map((f) => `- #${f.number} ${f.title} — raised ${f.raised}, ${f.days} days`),
+    ...(unnamed > 0 ? ["", `And ${unnamed} more overdue flags, none older than these.`] : []),
   ].join("\n");
-  return { kind: "overdue", open: open.length, overdue, body };
 }

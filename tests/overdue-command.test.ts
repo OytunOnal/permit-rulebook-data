@@ -70,6 +70,21 @@ describe("the clock's CLI — what it hands the run", () => {
     expect(run.events).toContainEqual(expect.objectContaining({ level: "error", msg: "overdue clock" }));
   });
 
+  /**
+   * The body reaches `gh` as one argument, and Linux refuses one past 128 KiB:
+   * so it names a bounded number of flags and says how many more there are.
+   */
+  it("names a bounded number of overdue flags in the finding, and says how many more there are", async () => {
+    const { argv, findingFile } = clockArgs();
+    const overdue = Array.from({ length: 120 }, (_, i) => flag(1000 + i, "2026-10-07T11:51:53Z"));
+    await readClockOnFlags(argv, trackerAnswering(JSON.stringify(overdue)).runGh, TODAY);
+    const body: string = JSON.parse(readFileSync(findingFile, "utf8")).body;
+    const named = body.split("\n").filter((line) => line.startsWith("- #"));
+    expect(named.length).toBeGreaterThan(0);
+    expect(named.length, "every overdue flag is named").toBeLessThan(overdue.length);
+    expect(body, "the body does not say how many more there are").toMatch(new RegExp(`\\b${overdue.length - named.length}\\b`));
+  });
+
   it("gives the step reading=unread, says nothing to the issue, and fails, when the tracker cannot be asked", async () => {
     const { argv, findingFile, stepOutput } = clockArgs();
     const run = await readClockOnFlags(argv, trackerAnswering(new Error("gh: HTTP 502")).runGh, TODAY);
