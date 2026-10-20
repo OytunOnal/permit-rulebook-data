@@ -349,6 +349,11 @@ describe("readRunArgs — what the command line asks", () => {
       .toEqual({ only: "nl-ind-blue-card", persist: "commit" });
   });
 
+  it("reads where the list of this run's new flags goes", () => {
+    expect(readRunArgs(["node", "cli-watch.js", "--commit", "--new-flags=/runner/temp/new-flags.json"]).newFlagsList)
+      .toBe("/runner/temp/new-flags.json");
+  });
+
   it("is a dry run over every entry when given nothing", () => {
     expect(readRunArgs(["node", "cli-watch.js"])).toEqual({ only: undefined, persist: "dry-run" });
   });
