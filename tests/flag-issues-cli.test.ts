@@ -89,6 +89,11 @@ describe("the flag-filing CLI — what reaches gh", () => {
     expect(run.exitCode).toBe(0);
   });
 
+  it("logs one line on a morning with no new flag, so the step's log says it ran", async () => {
+    const run = await fileFlagIssues(filingArgsOf([]), tracker().runGh);
+    expect(run.events).toEqual([expect.objectContaining({ level: "info" })]);
+  });
+
   /** Every loop over outside input is bounded (#117 decision 12): a list over the bound is refused whole, never cut. */
   it("refuses a list over its bound, filing none of it", async () => {
     const gh = tracker();

@@ -41,6 +41,7 @@ export async function fileFlagIssues(argv: readonly string[], runGh: GhRunner): 
   if (typeof request === "string") return { events: [{ level: "error", msg: "flag issues: the arguments were refused", fields: { reason: request } }], exitCode: 1 };
   const flags = readList(request.list);
   if (typeof flags === "string") return { events: [{ level: "error", msg: "flag issues: the list was refused", fields: { reason: flags } }], exitCode: 1 };
+  if (!flags.length) return { events: [{ level: "info", msg: "flag issues: no new flag to file", fields: {} }], exitCode: 0 };
   const events: LogEvent[] = [];
   for (const flag of flags) events.push(await fileOne(flag, request, runGh));
   return { events, exitCode: events.some((e) => e.level === "error") ? 1 : 0 };
