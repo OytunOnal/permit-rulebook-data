@@ -48,7 +48,34 @@ export function actionOnKeptIssue(issue: KeptIssue, finding: RunFinding, listed:
   return { kind: "nothing" };
 }
 
-type ListedRead = { kind: "read"; issues: ListedIssue[] } | { kind: "unread"; reason: string };
+/**
+ * How the issue's label looks, as the run that keeps it writes it: a run that
+ * creates its issue creates the label first, and `gh label create --force`
+ * without a colour would repaint an existing label at random.
+ */
+export interface LabelLook { color: string; description: string }
+
+/** The exact `gh` argument lists that carry an action out, in order. */
+export function ghArgumentsOf(action: KeptIssueAction, labelLook: LabelLook): string[][] {
+  switch (action.kind) {
+    case "create":
+      return [
+        ["label", "create", action.label, "--color", labelLook.color, "--description", labelLook.description, "--force"],
+        ["issue", "create", "--title", action.title, "--label", action.label, "--body", action.body],
+      ];
+    case "comment": {
+      const comment = ["issue", "comment", String(action.number), "--body", action.body];
+      return action.reopen ? [["issue", "reopen", String(action.number)], comment] : [comment];
+    }
+    case "close":
+      return [["issue", "close", String(action.number), "--comment", action.comment]];
+    case "nothing":
+    case "unread":
+      return [];
+  }
+}
+
+type ListedRead ={ kind: "read"; issues: ListedIssue[] } | { kind: "unread"; reason: string };
 
 const isListedIssue = (l: unknown): l is ListedIssue => {
   if (typeof l !== "object" || l === null) return false;

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { actionOnKeptIssue, TRACKER_READ_LIMIT, type KeptIssue, type RunFinding } from "../src/watch/kept-issue.js";
+import {
+  actionOnKeptIssue, ghArgumentsOf, TRACKER_READ_LIMIT, type KeptIssue, type LabelLook, type RunFinding,
+} from "../src/watch/kept-issue.js";
 
 /**
  * #117 — one table decides what a run does to the issue it keeps: what the run
@@ -92,5 +94,48 @@ describe("actionOnKeptIssue — two issues under one title", () => {
     const both = answer({ number: 12, state: "CLOSED", title: "overdue flags" }, { number: 40, state: "OPEN", title: "overdue flags" });
     expect(actionOnKeptIssue(issue, red, both)).toEqual({ kind: "comment", number: 40, reopen: false, body: red.body });
     expect(actionOnKeptIssue(issue, green, both)).toEqual({ kind: "close", number: 40, comment: green.closing });
+  });
+});
+
+/** The commands a run sends, pinned: no shell between them and `gh`. */
+describe("ghArgumentsOf — the gh commands for an action", () => {
+  const look: LabelLook = { color: "b60205", description: "The daily source watch itself" };
+
+  it("creates the label before it creates an issue under it", () => {
+    expect(ghArgumentsOf({ kind: "create", title: "overdue flags", label: "watch", body: "B" }, look)).toEqual([
+      ["label", "create", "watch", "--color", "b60205", "--description", "The daily source watch itself", "--force"],
+      ["issue", "create", "--title", "overdue flags", "--label", "watch", "--body", "B"],
+    ]);
+  });
+
+  it("reopens a closed issue before it comments on it", () => {
+    expect(ghArgumentsOf({ kind: "comment", number: 40, reopen: true, body: "B" }, look)).toEqual([
+      ["issue", "reopen", "40"],
+      ["issue", "comment", "40", "--body", "B"],
+    ]);
+  });
+
+  it("only comments on an open one", () => {
+    expect(ghArgumentsOf({ kind: "comment", number: 40, reopen: false, body: "B" }, look)).toEqual([
+      ["issue", "comment", "40", "--body", "B"],
+    ]);
+  });
+
+  it("closes with the closing line as its comment", () => {
+    expect(ghArgumentsOf({ kind: "close", number: 40, comment: "C" }, look)).toEqual([
+      ["issue", "close", "40", "--comment", "C"],
+    ]);
+  });
+
+  it.each([["nothing", { kind: "nothing" }], ["unread", { kind: "unread", reason: "R" }]] as const)(
+    "sends nothing for %s",
+    (_, action) => { expect(ghArgumentsOf(action, look)).toEqual([]); },
+  );
+
+  it("passes a title and a body each as one argument, whatever they hold", () => {
+    const title = "flags $(touch pwned) `id` \"quoted\" 'single'; rm -rf ~";
+    const body = "line one\n$(touch pwned)\n`id` \"q\" 'q' && echo done\n--repo someone/else";
+    const lists = ghArgumentsOf({ kind: "create", title, label: "watch", body }, look);
+    expect(lists[1]).toEqual(["issue", "create", "--title", title, "--label", "watch", "--body", body]);
   });
 });
