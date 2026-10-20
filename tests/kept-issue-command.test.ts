@@ -210,4 +210,20 @@ describe.skipIf(childProcessCasesSkipped("kept-issue CLI"))("the kept-issue CLI 
     ]);
     expect(existsSync(join(run.underCheck, "pwned")), "a title or body was run as a command").toBe(false);
   });
+
+  /** The check workflow's report job keeps its issue with these arguments (#121). */
+  it("keeps check failed on master under the check label: the label, then the issue, on a red check", () => {
+    const body = "The data check on master went red after the watch: the check job ended failure on commit 0123abc. Run: https://example.test/runs/1";
+    const run = runCli(entry, [
+      "--title", "check failed on master", "--label", "check", "--label-color", "b60205",
+      "--label-description", "The data repository's own suite", "--finding", "red", "--body", body,
+      "--closing", "The data check on master is green again on commit 0123abc. Run: https://example.test/runs/1",
+    ]);
+    expect(run.status, run.stderr).toBe(0);
+    expect(run.calls).toEqual([
+      ["issue", "list", "--label", "check", "--state", "all", "--json", "number,state,title", "--limit", "100"],
+      ["label", "create", "check", "--color", "b60205", "--description", "The data repository's own suite", "--force"],
+      ["issue", "create", "--title", "check failed on master", "--label", "check", "--body", body],
+    ]);
+  });
 });
