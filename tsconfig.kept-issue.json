@@ -9,7 +9,7 @@
     "src/watch/cli-kept-issue.ts",
     "src/watch/kept-issue-command.ts",
     "src/watch/kept-issue.ts",
-    "src/watch/cli-shared.ts",
+    "src/watch/cli-io.ts",
     "src/watch/gh.ts",
     "src/watch/print.ts"
   ],

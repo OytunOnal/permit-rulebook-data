@@ -1,4 +1,4 @@
-import { ghRunnerFromPath } from "./cli-shared.js";
+import { ghRunnerFromPath } from "./cli-io.js";
 import { readClockOnFlags } from "./overdue-command.js";
 import { print } from "./print.js";
 

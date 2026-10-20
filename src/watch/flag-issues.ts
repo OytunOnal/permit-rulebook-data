@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { messageOf, readArguments, readBoundedFile } from "./cli-shared.js";
+import { messageOf, readArguments, readBoundedFile } from "./cli-io.js";
 import type { GhRunner } from "./gh.js";
 import { ghArgumentsOf, type LabelLook } from "./kept-issue.js";
 import type { LogEvent } from "./print.js";

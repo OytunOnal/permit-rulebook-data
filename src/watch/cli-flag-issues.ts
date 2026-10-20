@@ -1,5 +1,5 @@
 import { fileFlagIssues } from "./flag-issues.js";
-import { ghRunnerFromPath } from "./cli-shared.js";
+import { ghRunnerFromPath } from "./cli-io.js";
 import { print } from "./print.js";
 
 /**

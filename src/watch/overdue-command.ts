@@ -1,5 +1,5 @@
 import { appendFileSync, writeFileSync } from "node:fs";
-import { messageOf, readArguments } from "./cli-shared.js";
+import { messageOf, readArguments } from "./cli-io.js";
 import type { GhRunner } from "./gh.js";
 import { findingOfClock, OPEN_FLAGS_READ_LIMIT, readClock, type ClockReading } from "./overdue.js";
 import type { LogEvent } from "./print.js";

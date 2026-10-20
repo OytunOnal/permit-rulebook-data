@@ -8,7 +8,7 @@ import { fetchSource } from "./fetch-source.js";
 import {
   chooseEntries, parseJsonText, readRunArgs, sayRun, sayWhereItRead, settleState,
 } from "./run-says.js";
-import { readBoundedFile } from "./cli-shared.js";
+import { readBoundedFile } from "./cli-io.js";
 import { FLAG_FILE_LIMIT_BYTES, newFlagsListOf } from "./flag-issues.js";
 import { print } from "./print.js";
 

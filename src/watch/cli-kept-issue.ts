@@ -1,4 +1,4 @@
-import { ghRunnerFromPath } from "./cli-shared.js";
+import { ghRunnerFromPath } from "./cli-io.js";
 import { keepIssue } from "./kept-issue-command.js";
 import { print } from "./print.js";
 

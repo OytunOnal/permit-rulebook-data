@@ -1,4 +1,4 @@
-import { messageOf, readArguments, readBoundedFile } from "./cli-shared.js";
+import { messageOf, readArguments, readBoundedFile } from "./cli-io.js";
 import type { GhRunner } from "./gh.js";
 import {
   actionOnKeptIssue, ghArgumentsOf, ghListArgumentsOf, type KeptIssue, type LabelLook, type RunFinding,
