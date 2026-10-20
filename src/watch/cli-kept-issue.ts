@@ -1,4 +1,4 @@
-import { ghExecutableOf, ghRunnerAt } from "./gh.js";
+import { ghRunnerFromPath } from "./cli-shared.js";
 import { keepIssue } from "./kept-issue-command.js";
 import { print } from "./print.js";
 
@@ -29,11 +29,11 @@ import { print } from "./print.js";
  * read, or a `gh` command failed. Its log line says which.
  */
 
-const gh = ghExecutableOf(process.env["PATH"] ?? "", process.cwd());
-if (!gh) {
-  print({ level: "error", msg: "kept issue: gh is not in an absolute PATH folder outside the working directory", fields: {} });
+const runGh = ghRunnerFromPath();
+if (typeof runGh === "string") {
+  print({ level: "error", msg: `kept issue: ${runGh}`, fields: {} });
   process.exit(1);
 }
-const run = await keepIssue(process.argv.slice(2), ghRunnerAt(gh));
+const run = await keepIssue(process.argv.slice(2), runGh);
 for (const event of run.events) print(event);
 process.exit(run.exitCode);

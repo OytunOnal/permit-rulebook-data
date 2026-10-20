@@ -1,4 +1,5 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   runWatch, type BrowserReader, type Fetcher, type FetchResult, type WatchEntry, type WatchState, type Watchlist,
 } from "./core.js";
@@ -7,7 +8,8 @@ import { fetchSource } from "./fetch-source.js";
 import {
   chooseEntries, parseJsonText, readRunArgs, sayRun, sayWhereItRead, settleState,
 } from "./run-says.js";
-import { newFlagsListOf } from "./flag-issues.js";
+import { readBoundedFile } from "./cli-shared.js";
+import { FLAG_FILE_LIMIT_BYTES, newFlagsListOf } from "./flag-issues.js";
 import { print } from "./print.js";
 
 /**
@@ -82,13 +84,12 @@ await browser.close();
 
 const flagsDir = new URL("../../../watch/flags/", import.meta.url);
 const flagTextOnDisk = (name: string): string | undefined => {
-  try {
-    return readFileSync(new URL(name, flagsDir), "utf8");
-  } catch (e) {
-    // No such file: this run creates the flag. Anything else is an error to see.
-    if ((e as NodeJS.ErrnoException).code === "ENOENT") return undefined;
-    throw e;
-  }
+  const read = readBoundedFile(fileURLToPath(new URL(name, flagsDir)), FLAG_FILE_LIMIT_BYTES);
+  if (read.kind === "read") return read.text;
+  // No such file: this run creates the flag. A link, a folder or a file too
+  // large to be a flag is an error to see.
+  if (read.missing) return undefined;
+  throw new Error(read.reason);
 };
 
 const settled = settleState({ args, previous: state, pass: nextState, fetched: watchlist, today });

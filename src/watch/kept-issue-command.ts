@@ -1,4 +1,4 @@
-import { lstatSync, readFileSync } from "node:fs";
+import { messageOf, readArguments, readBoundedFile } from "./cli-shared.js";
 import type { GhRunner } from "./gh.js";
 import {
   actionOnKeptIssue, ghArgumentsOf, ghListArgumentsOf, type KeptIssue, type LabelLook, type RunFinding,
@@ -19,7 +19,10 @@ export interface KeepIssueRun { events: LogEvent[]; exitCode: 0 | 1 }
 /** What the command line asks: the issue, its label's look, and the run's finding. */
 interface KeepRequest { issue: KeptIssue; labelLook: LabelLook; finding: RunFinding }
 
-const FLAGS = ["--title", "--label", "--label-color", "--label-description", "--finding", "--body", "--closing", "--finding-file"];
+const ARGUMENTS = {
+  required: ["--title", "--label", "--label-color", "--label-description"],
+  optional: ["--finding", "--body", "--closing", "--finding-file"],
+};
 
 /** Above any body the tracker takes (65,536 characters), so a finding file larger is not one. */
 const FINDING_FILE_LIMIT_BYTES = 262_144;
@@ -50,23 +53,18 @@ export async function keepIssue(argv: readonly string[], runGh: GhRunner): Promi
   return { events: [{ level: "info", msg: "kept issue", fields: { title: issue.title, action: action.kind, number } }], exitCode: 0 };
 }
 
-const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
-
 /** The request, or why the command line was refused. */
 function readRequest(argv: readonly string[]): KeepRequest | string {
-  const given = new Map<string, string>();
-  for (let i = 0; i < argv.length; i += 2) {
-    const flag = argv[i]!;
-    const value = argv[i + 1];
-    if (!FLAGS.includes(flag)) return `${flag} is not an argument this CLI takes`;
-    if (value === undefined) return `${flag} has no value`;
-    given.set(flag, value);
-  }
-  const [title, label, color, description] = ["--title", "--label", "--label-color", "--label-description"].map((f) => given.get(f));
-  if (!title || !label || !color || !description) return "--title, --label, --label-color and --label-description are each needed";
-  const finding = given.has("--finding-file") ? readFindingFile(given.get("--finding-file")!) : findingOfFlags(given);
+  const given = readArguments(argv, ARGUMENTS);
+  if (typeof given === "string") return given;
+  const value = (name: string) => given.get(name)!;
+  const finding = given.has("--finding-file") ? readFindingFile(value("--finding-file")) : findingOfFlags(given);
   if (typeof finding === "string") return finding;
-  return { issue: { title, label }, labelLook: { color, description }, finding };
+  return {
+    issue: { title: value("--title"), label: value("--label") },
+    labelLook: { color: value("--label-color"), description: value("--label-description") },
+    finding,
+  };
 }
 
 /** `--finding red --body <text>`, `--finding green --closing <text>` or `--finding unsaid`. */
@@ -77,18 +75,11 @@ function findingOfFlags(given: ReadonlyMap<string, string>): RunFinding | string
 
 /** A JSON `RunFinding`, written by the run before this step; never a link, never larger than a body can be. */
 function readFindingFile(path: string): RunFinding | string {
-  let text: string;
-  try {
-    const stat = lstatSync(path);
-    if (!stat.isFile()) return `${path} is not a file`;
-    if (stat.size > FINDING_FILE_LIMIT_BYTES) return `${path} is larger than a finding can be`;
-    text = readFileSync(path, "utf8");
-  } catch (e) {
-    return `${path} could not be read: ${messageOf(e)}`;
-  }
+  const read = readBoundedFile(path, FINDING_FILE_LIMIT_BYTES);
+  if (read.kind === "refused") return read.reason;
   let finding: unknown;
   try {
-    finding = JSON.parse(text);
+    finding = JSON.parse(read.text);
   } catch {
     return `${path} is not JSON`;
   }

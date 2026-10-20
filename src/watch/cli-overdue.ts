@@ -1,5 +1,5 @@
 import { appendFileSync, writeFileSync } from "node:fs";
-import { ghExecutableOf, ghRunnerAt } from "./gh.js";
+import { ghRunnerFromPath, messageOf, readArguments } from "./cli-shared.js";
 import { findingOfClock, OPEN_FLAGS_READ_LIMIT, readClock, type ClockReading } from "./overdue.js";
 import { print, type LogEvent } from "./print.js";
 
@@ -21,20 +21,6 @@ import { print, type LogEvent } from "./print.js";
  * arguments could not be read, and that is the check not finishing.
  */
 
-const FLAGS = ["--finding-file", "--run-url", "--step-output"] as const;
-type Flag = typeof FLAGS[number];
-
-/** The three paths and the url, or why the command line was refused. */
-function readArgs(argv: readonly string[]): Record<Flag, string> | string {
-  const given: Partial<Record<Flag, string>> = {};
-  for (let i = 0; i < argv.length; i += 2) {
-    const flag = FLAGS.find((f) => f === argv[i]);
-    if (!flag || !argv[i + 1]) return `${argv[i]} is not an argument this CLI takes, or has no value`;
-    given[flag] = argv[i + 1];
-  }
-  const missing = FLAGS.filter((f) => !given[f]);
-  return missing.length ? `${missing.join(", ")} needed` : (given as Record<Flag, string>);
-}
 
 function clockEvent(reading: ClockReading, today: string): LogEvent {
   if (reading.kind === "unread") return { level: "error", msg: "overdue clock: the tracker could not be read", fields: { reason: reading.reason } };
@@ -50,20 +36,20 @@ function clockEvent(reading: ClockReading, today: string): LogEvent {
 }
 
 async function readOpenFlags(today: string): Promise<ClockReading> {
-  const gh = ghExecutableOf(process.env["PATH"] ?? "", process.cwd());
-  if (!gh) return { kind: "unread", reason: "gh is not in an absolute PATH folder outside the working directory" };
+  const runGh = ghRunnerFromPath();
+  if (typeof runGh === "string") return { kind: "unread", reason: runGh };
   try {
-    const listed = await ghRunnerAt(gh)([
+    const listed = await runGh([
       "issue", "list", "--label", "source-change", "--state", "open",
       "--json", "number,title,createdAt", "--limit", String(OPEN_FLAGS_READ_LIMIT),
     ]);
     return readClock(listed, today);
   } catch (e) {
-    return { kind: "unread", reason: `the tracker's open flags could not be read: ${e instanceof Error ? e.message : String(e)}` };
+    return { kind: "unread", reason: `the tracker's open flags could not be read: ${messageOf(e)}` };
   }
 }
 
-const args = readArgs(process.argv.slice(2));
+const args = readArguments(process.argv.slice(2), { required: ["--finding-file", "--run-url", "--step-output"] });
 if (typeof args === "string") {
   print({ level: "error", msg: "overdue clock: the arguments were refused", fields: { reason: args } });
   process.exit(1);
@@ -71,6 +57,6 @@ if (typeof args === "string") {
 const today = new Date().toISOString().slice(0, 10);
 const reading = await readOpenFlags(today);
 print(clockEvent(reading, today));
-writeFileSync(args["--finding-file"], JSON.stringify(findingOfClock(reading, args["--run-url"])) + "\n");
-appendFileSync(args["--step-output"], `reading=${reading.kind}\n`);
+writeFileSync(args.get("--finding-file")!, JSON.stringify(findingOfClock(reading, args.get("--run-url")!)) + "\n");
+appendFileSync(args.get("--step-output")!, `reading=${reading.kind}\n`);
 process.exit(reading.kind === "unread" ? 1 : 0);

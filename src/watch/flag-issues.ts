@@ -1,5 +1,5 @@
-import { lstatSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { messageOf, readArguments, readBoundedFile } from "./cli-shared.js";
 import type { GhRunner } from "./gh.js";
 import { ghArgumentsOf, type LabelLook } from "./kept-issue.js";
 import type { LogEvent } from "./print.js";
@@ -34,7 +34,7 @@ export interface FlagIssuesRun { events: LogEvent[]; exitCode: 0 | 1 }
 /** What the command line asks: the list, the folder its files are in, and the label they are filed under. */
 interface FilingRequest { list: string; flagsDir: string; label: string; labelLook: LabelLook }
 
-const ARGUMENTS = ["--list", "--flags-dir", "--label", "--label-color", "--label-description"];
+const ARGUMENTS = { required: ["--list", "--flags-dir", "--label", "--label-color", "--label-description"] };
 
 export async function fileFlagIssues(argv: readonly string[], runGh: GhRunner): Promise<FlagIssuesRun> {
   const request = readRequest(argv);
@@ -47,7 +47,7 @@ export async function fileFlagIssues(argv: readonly string[], runGh: GhRunner): 
 }
 
 /** The tracker's limit on an issue's body is 65,536 characters; a flag file of more bytes may not fit whole. */
-const FLAG_FILE_LIMIT_BYTES = 65_536;
+export const FLAG_FILE_LIMIT_BYTES = 65_536;
 
 /** One flag filed, or why it was not: one flag that cannot be filed does not stop the others. */
 async function fileOne(flag: NewFlag, request: FilingRequest, runGh: GhRunner): Promise<LogEvent> {
@@ -63,8 +63,6 @@ async function fileOne(flag: NewFlag, request: FilingRequest, runGh: GhRunner): 
   }
   return { level: "info", msg: "flag issue filed", fields: { file: flag.file, title: flag.title } };
 }
-
-const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /** Far above a list at its bound, so a list file larger is not one. */
 const LIST_FILE_LIMIT_BYTES = 262_144;
@@ -95,32 +93,10 @@ function isNewFlag(value: unknown): value is NewFlag {
     && typeof title === "string" && title !== "" && !/[\r\n]/.test(title);
 }
 
-type BoundedRead = { kind: "read"; text: string } | { kind: "refused"; reason: string };
-
-/** A regular file's text, read only when it is no larger than `limitBytes`. */
-function readBoundedFile(path: string, limitBytes: number): BoundedRead {
-  try {
-    const stat = lstatSync(path);
-    if (!stat.isFile()) return { kind: "refused", reason: `${path} is not a file` };
-    if (stat.size > limitBytes) return { kind: "refused", reason: `${path} is larger than ${limitBytes} bytes` };
-    return { kind: "read", text: readFileSync(path, "utf8") };
-  } catch (e) {
-    return { kind: "refused", reason: `${path} could not be read: ${messageOf(e)}` };
-  }
-}
-
 /** The request, or why the command line was refused. */
 function readRequest(argv: readonly string[]): FilingRequest | string {
-  const given = new Map<string, string>();
-  for (let i = 0; i < argv.length; i += 2) {
-    const name = argv[i]!;
-    const value = argv[i + 1];
-    if (!ARGUMENTS.includes(name)) return `${name} is not an argument this CLI takes`;
-    if (value === undefined) return `${name} has no value`;
-    given.set(name, value);
-  }
-  const missing = ARGUMENTS.filter((a) => !given.get(a));
-  if (missing.length) return `${missing.join(", ")} needed`;
+  const given = readArguments(argv, ARGUMENTS);
+  if (typeof given === "string") return given;
   const value = (name: string) => given.get(name)!;
   return {
     list: value("--list"), flagsDir: value("--flags-dir"), label: value("--label"),

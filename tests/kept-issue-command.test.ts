@@ -126,6 +126,7 @@ describe("the kept-issue CLI — what reaches gh for each action", () => {
     ["a finding it does not know", [...keptIssueArgs(), "--finding", "amber"]],
     ["a red finding with no body", [...keptIssueArgs(), "--finding", "red"]],
     ["an argument it does not know", [...keptIssueArgs(), ...red, "--repo", "someone/else"]],
+    ["an argument with an empty value", [...keptIssueArgs(), ...green, "--body", ""]],
   ])("refuses to run, asking gh nothing, given %s", async (_, argv) => {
     const tracker = trackerAnswering(openIssue);
     const run = await keepIssue(argv, tracker.runGh);

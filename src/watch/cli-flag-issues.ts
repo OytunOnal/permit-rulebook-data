@@ -1,5 +1,5 @@
 import { fileFlagIssues } from "./flag-issues.js";
-import { ghExecutableOf, ghRunnerAt } from "./gh.js";
+import { ghRunnerFromPath } from "./cli-shared.js";
 import { print } from "./print.js";
 
 /**
@@ -24,11 +24,11 @@ import { print } from "./print.js";
  * Its log lines say which.
  */
 
-const gh = ghExecutableOf(process.env["PATH"] ?? "", process.cwd());
-if (!gh) {
-  print({ level: "error", msg: "flag issues: gh is not in an absolute PATH folder outside the working directory", fields: {} });
+const runGh = ghRunnerFromPath();
+if (typeof runGh === "string") {
+  print({ level: "error", msg: `flag issues: ${runGh}`, fields: {} });
   process.exit(1);
 }
-const run = await fileFlagIssues(process.argv.slice(2), ghRunnerAt(gh));
+const run = await fileFlagIssues(process.argv.slice(2), runGh);
 for (const event of run.events) print(event);
 process.exit(run.exitCode);
