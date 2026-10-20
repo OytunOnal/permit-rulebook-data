@@ -56,6 +56,7 @@ describe("sayRun — the flags a run files, in today's format", () => {
   it("writes a change under its dated name, header first, then the intent, the excerpt and the remediation", () => {
     expect(flagsOf(htmlChange)).toEqual([{
       name: "nl-ind-blue-card-2026-10-18.md",
+      title: "Watch flag: nl-ind-blue-card — changed",
       body: [
         ...BLUE_CARD_HEADER,
         "",
@@ -75,6 +76,7 @@ describe("sayRun — the flags a run files, in today's format", () => {
   it("writes a due reminder under its stable name, with no hashes", () => {
     expect(flagsOf(sentinelReminder)).toEqual([{
       name: "gesetze-official-recheck-reminder.md",
+      title: "Watch flag: gesetze-official-recheck — reminder-due",
       body: [
         "# Watch flag: gesetze-official-recheck — reminder-due",
         "- url: https://www.gesetze-im-internet.de/aufenthg_2004/anlage.html",
@@ -96,6 +98,20 @@ describe("sayRun — the flags a run files, in today's format", () => {
       unreachable,
       report({ id: "d", outcome: "baseline", new_hash: NEW }),
     )).toEqual([]);
+  });
+
+  /**
+   * The issue a flag is filed as takes this title (#117 decision 14), so
+   * nothing reads it back out of the markdown; the body's first line says the
+   * same, as the flag's heading.
+   */
+  it("gives every flag the title its issue is filed under", () => {
+    const flags = flagsOf(htmlChange, sentinelChange, sentinelReminder);
+    expect(flags.map((f) => f.title)).toEqual([
+      "Watch flag: nl-ind-blue-card — changed",
+      "Watch flag: buzer-index — changed",
+      "Watch flag: gesetze-official-recheck — reminder-due",
+    ]);
   });
 
   it("files one flag per change or reminder, in the reports' order", () => {

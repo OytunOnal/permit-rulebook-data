@@ -23,9 +23,10 @@ export interface LogEvent {
   fields: Record<string, unknown>;
 }
 
-/** One flag file: its name under `watch/flags/` and its whole text. */
+/** One flag file: its name under `watch/flags/`, the title its issue is filed under, and its whole text. */
 export interface FlagDocument {
   name: string;
+  title: string;
   body: string;
 }
 
@@ -90,8 +91,9 @@ export const EXCERPT_INTRODUCTION = "The page now reads, around the first differ
  * advice never renders as part of the page's words.
  */
 function flagOf(report: WatchReport, today: string): FlagDocument {
+  const title = `Watch flag: ${report.id} — ${report.outcome}`;
   const header = [
-    `# Watch flag: ${report.id} — ${report.outcome}`,
+    `# ${title}`,
     `- url: ${readableAddressOf(report.url)}`,
     `- kind: ${report.kind}`,
     `- date: ${today}`,
@@ -107,7 +109,7 @@ function flagOf(report: WatchReport, today: string): FlagDocument {
   // Reminders use a stable name (self-overwriting, no daily pile-up);
   // content changes keep the date so history stays visible.
   const name = report.outcome === "reminder-due" ? `${report.id}-reminder.md` : `${report.id}-${today}.md`;
-  return { name, body: sections.join("\n\n") + "\n" };
+  return { name, title, body: sections.join("\n\n") + "\n" };
 }
 
 /**
