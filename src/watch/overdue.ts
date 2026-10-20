@@ -13,6 +13,7 @@
  * keep the promise of two days on some mornings and three on others, chosen by
  * how late GitHub started the run.
  */
+import type { RunFinding } from "./kept-issue.js";
 
 /** One open flag, as the tracker lists it. */
 export interface OpenFlag {
@@ -67,12 +68,22 @@ export type ClockReading =
   | { kind: "overdue"; open: number; overdue: OverdueFlag[]; body: string }
   | { kind: "unread"; reason: string };
 
-const isOpenFlag = (f: unknown): f is OpenFlag => {
+/** The most open flags one read of the tracker asks for. */
+export const OPEN_FLAGS_READ_LIMIT = 1000;
+
+const isOpenFlag =(f: unknown): f is OpenFlag => {
   if (typeof f !== "object" || f === null) return false;
   const { number, title, createdAt } = f as Record<string, unknown>;
   return Number.isInteger(number) && typeof title === "string"
     && typeof createdAt === "string" && !Number.isNaN(Date.parse(createdAt));
 };
+
+/** What a reading tells `overdue flags`, linking the run at `runUrl`. */
+export function findingOfClock(reading: ClockReading, runUrl: string): RunFinding {
+  if (reading.kind === "clear") return { kind: "green", closing: `No overdue flag this morning. Run: ${runUrl}` };
+  if (reading.kind === "overdue") return { kind: "red", body: `${reading.body}\n\nRun: ${runUrl}\n` };
+  return { kind: "unsaid" };
+}
 
 /** `listed` is the tracker's answer as text; `today` a UTC day, `YYYY-MM-DD`. */
 export function readClock(listed: string, today: string): ClockReading {
@@ -83,6 +94,9 @@ export function readClock(listed: string, today: string): ClockReading {
     return { kind: "unread", reason: "the tracker's answer is not JSON" };
   }
   if (!Array.isArray(open)) return { kind: "unread", reason: "the tracker's answer is not a list" };
+  if (open.length >= OPEN_FLAGS_READ_LIMIT) {
+    return { kind: "unread", reason: `the tracker listed ${open.length} open flags, the read's limit, so a flag may be past it` };
+  }
   if (!open.every(isOpenFlag)) return { kind: "unread", reason: "a flag in the tracker's answer has no number, title or day" };
 
   const overdue = overdueFlags(open, today);
