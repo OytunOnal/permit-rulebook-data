@@ -1,0 +1,82 @@
+import { describe, expect, it } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import type { GhRunner } from "../src/watch/gh.js";
+import { readClockOnFlags } from "../src/watch/overdue-command.js";
+import { tempFoldersRemovedAfterEach } from "./stub-gh.js";
+
+/**
+ * The clock's CLI as a function handed a runner (#117, seam 5's first part):
+ * what it asks `gh`, the finding it writes for `overdue flags`, and the
+ * `reading=` it gives the step.
+ */
+
+const tempFolder = tempFoldersRemovedAfterEach("overdue-clock-");
+const TODAY = "2026-10-18";
+const RUN = "https://github.com/OytunOnal/permit-rulebook-data/actions/runs/123";
+
+/** A tracker that answers the read with `listed` (or fails it), and records every argument list. */
+function trackerAnswering(listed: string | Error) {
+  const calls: string[][] = [];
+  const runGh: GhRunner = async (args) => {
+    calls.push([...args]);
+    if (listed instanceof Error) throw listed;
+    return listed;
+  };
+  return { calls, runGh };
+}
+
+/** The clock's arguments, its two outputs in a folder of the case's own. */
+function clockArgs() {
+  const folder = tempFolder();
+  const findingFile = join(folder, "overdue-finding.json");
+  const stepOutput = join(folder, "github-output");
+  const argv = ["--finding-file", findingFile, "--run-url", RUN, "--step-output", stepOutput];
+  return { argv, findingFile, stepOutput };
+}
+
+const flag = (number: number, createdAt: string) => ({ number, title: `Watch flag: entry-${number} — changed`, createdAt });
+
+describe("the clock's CLI — what it hands the run", () => {
+  it("gives the step reading=clear, and a green finding linking the run, on a morning nothing is overdue", async () => {
+    const { argv, findingFile, stepOutput } = clockArgs();
+    const run = await readClockOnFlags(argv, trackerAnswering(JSON.stringify([flag(30, "2026-10-17T09:00:00Z")])).runGh, TODAY);
+    expect(readFileSync(stepOutput, "utf8")).toBe("reading=clear\n");
+    expect(JSON.parse(readFileSync(findingFile, "utf8"))).toEqual({ kind: "green", closing: expect.stringContaining(RUN) });
+    expect(run.exitCode).toBe(0);
+  });
+
+  it("gives the step reading=overdue, and a red finding, and still passes, on a morning a flag is overdue", async () => {
+    const { argv, findingFile, stepOutput } = clockArgs();
+    const run = await readClockOnFlags(argv, trackerAnswering(JSON.stringify([flag(23, "2026-10-07T11:51:53Z")])).runGh, TODAY);
+    expect(readFileSync(stepOutput, "utf8")).toBe("reading=overdue\n");
+    const finding = JSON.parse(readFileSync(findingFile, "utf8"));
+    expect(finding.kind).toBe("red");
+    expect(finding.body).toContain("#23");
+    expect(finding.body).toContain(RUN);
+    // An overdue flag reddens the run at the workflow's last step, not here.
+    expect(run.exitCode).toBe(0);
+    expect(run.events).toContainEqual(expect.objectContaining({ level: "error", msg: "overdue clock" }));
+  });
+
+  it("gives the step reading=unread, says nothing to the issue, and fails, when the tracker cannot be asked", async () => {
+    const { argv, findingFile, stepOutput } = clockArgs();
+    const run = await readClockOnFlags(argv, trackerAnswering(new Error("gh: HTTP 502")).runGh, TODAY);
+    expect(readFileSync(stepOutput, "utf8")).toBe("reading=unread\n");
+    expect(JSON.parse(readFileSync(findingFile, "utf8"))).toEqual({ kind: "unsaid" });
+    expect(run.exitCode).toBe(1);
+  });
+
+  it.each([
+    ["no run url", (argv: string[]) => argv.filter((_, i) => i !== 2 && i !== 3)],
+    ["an argument it does not know", (argv: string[]) => [...argv, "--repo", "someone/else"]],
+    ["an argument with an empty value", (argv: string[]) => [...argv.slice(0, -1), ""]],
+  ])("refuses to run, asking gh nothing and writing nothing, given %s", async (_, argsGiven) => {
+    const { argv, findingFile, stepOutput } = clockArgs();
+    const tracker = trackerAnswering("[]");
+    const run = await readClockOnFlags(argsGiven(argv), tracker.runGh, TODAY);
+    expect(tracker.calls).toEqual([]);
+    expect(existsSync(findingFile) || existsSync(stepOutput), "it wrote an output").toBe(false);
+    expect(run.exitCode).toBe(1);
+  });
+});
