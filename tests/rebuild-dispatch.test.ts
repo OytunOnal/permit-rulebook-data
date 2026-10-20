@@ -107,13 +107,11 @@ function argumentOf(step: string, name: string): string | undefined {
 
 /** The lines of the job's own `env:`, trimmed, comments dropped. */
 function linesUnderJobEnv(yaml: string): string[] {
-  const lines = yaml.split("\n");
+  const lines = yaml.split("\n").filter((line) => line.trim() !== "" && !/^\s*#/.test(line));
   const start = lines.findIndex((line) => /^ {4}env:\s*$/.test(line));
   expect(start, "the job has no env").toBeGreaterThan(-1);
-  const end = lines.findIndex((line, i) => i > start && line.trim() !== "" && !/^\s*#/.test(line) && line.search(/\S/) <= 4);
-  return lines.slice(start + 1, end < 0 ? undefined : end)
-    .filter((line) => line.trim() !== "" && !/^\s*#/.test(line))
-    .map((line) => line.trim());
+  const end = lines.findIndex((line, i) => i > start && line.search(/\S/) <= 4);
+  return lines.slice(start + 1, end < 0 ? undefined : end).map((line) => line.trim());
 }
 
 describe("a new dataset state wakes the site", () => {
