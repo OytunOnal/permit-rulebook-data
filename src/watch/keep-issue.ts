@@ -3,7 +3,7 @@ import type { GhRunner } from "./gh.js";
 import {
   actionOnKeptIssue, ghArgumentsOf, ghListArgumentsOf, type KeptIssue, type LabelLook, type RunFinding,
 } from "./kept-issue.js";
-import type { LogEvent } from "./run-says.js";
+import type { LogEvent } from "./print.js";
 
 /**
  * The kept-issue CLI as a function (#117 decision 12): it reads the tracker

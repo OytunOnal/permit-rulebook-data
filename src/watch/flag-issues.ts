@@ -2,7 +2,8 @@ import { lstatSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { GhRunner } from "./gh.js";
 import { ghArgumentsOf, type LabelLook } from "./kept-issue.js";
-import type { FlagDocument, LogEvent } from "./run-says.js";
+import type { LogEvent } from "./print.js";
+import type { FlagDocument } from "./run-says.js";
 
 /**
  * The flag-filing CLI as a function (#117 decision 14): after the state is

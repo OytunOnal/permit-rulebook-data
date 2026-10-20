@@ -12,16 +12,8 @@ import {
   type Watchlist,
 } from "./core.js";
 import { makePrintable } from "./failure.js";
+import type { LogEvent, LogLevel } from "./print.js";
 import { readableAddressOf } from "./trust-line.js";
-
-export type LogLevel = "info" | "warn" | "error";
-
-/** One log line before it is printed: the CLI stamps `ts` on it. */
-export interface LogEvent {
-  level: LogLevel;
-  msg: string;
-  fields: Record<string, unknown>;
-}
 
 /** One flag file: its name under `watch/flags/`, the title its issue is filed under, and its whole text. */
 export interface FlagDocument {

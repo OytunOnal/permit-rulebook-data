@@ -1,4 +1,11 @@
-import type { LogEvent } from "./run-says.js";
+export type LogLevel = "info" | "warn" | "error";
+
+/** One log line before it is printed: `print` stamps `ts` on it. */
+export interface LogEvent {
+  level: LogLevel;
+  msg: string;
+  fields: Record<string, unknown>;
+}
 
 /**
  * The one shape of a log line: one JSON object per line, stamped with `ts`.

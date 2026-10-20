@@ -1,8 +1,7 @@
 import { appendFileSync, writeFileSync } from "node:fs";
 import { ghExecutableOf, ghRunnerAt } from "./gh.js";
 import { findingOfClock, OPEN_FLAGS_READ_LIMIT, readClock, type ClockReading } from "./overdue.js";
-import { print } from "./print.js";
-import type { LogEvent } from "./run-says.js";
+import { print, type LogEvent } from "./print.js";
 
 /**
  * The clock on a flag, read once a morning (#62).
