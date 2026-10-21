@@ -23,6 +23,18 @@ export function findTerritory(typed: string, vocab: CountryVocabulary = countryV
   return territory && country ? { territory, country } : undefined;
 }
 
+/** A territory's name as it reads inside a sentence: "Puerto Rico", "the
+ * Faroe Islands" — its article is data beside the name, as a country's is. */
+export function territoryPhrase(territory: Territory): string {
+  return territory.article ? `${territory.article} ${territory.name}` : territory.name;
+}
+
+/** The same phrase where it opens a sentence: "The Faroe Islands". */
+export function territoryPhraseAtStart(territory: Territory): string {
+  const phrase = territoryPhrase(territory);
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+}
+
 const hasProvenance = (t: Territory): boolean =>
   Boolean(t.source?.source_url && t.source.quote && t.source.retrieved_at);
 

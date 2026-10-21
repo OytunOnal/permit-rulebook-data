@@ -44,6 +44,9 @@ export interface Territory {
   /** ISO 3166-1 alpha-2. */
   code: string;
   name: string;
+  /** The word the name takes inside a sentence ("the" Faroe Islands), as a
+   * country's `article` is. */
+  article?: string;
   aliases?: string[];
   /** The code of the passport its people hold — a country on the list. */
   passport: string;

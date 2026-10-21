@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { countryVocabulary, type CountryVocabulary } from "../src/countries.js";
-import { findTerritory, territoryErrors } from "../src/territories.js";
+import { findTerritory, territoryErrors, territoryPhrase, territoryPhraseAtStart } from "../src/territories.js";
 import { validateDataset } from "../src/validate.js";
 import { datasetQuotes, datasetSourceUrls } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
@@ -55,6 +55,17 @@ describe("the territory a reader typed, and whose passport its people hold", () 
   it("finds nothing for a country's own name, a part of a name, or anything else", () => {
     for (const typed of ["Finland", "Puerto", "Narnia", "", "   "])
       expect(findTerritory(typed, written()), typed).toBeUndefined();
+  });
+
+  it("says a territory's name in a sentence with its article, and with a capital where it opens one", () => {
+    const vocab = written();
+    const ax = vocab.territories![0];
+    ax.article = "the";
+    expect(territoryPhrase(ax)).toBe("the Åland Islands");
+    expect(territoryPhraseAtStart(ax)).toBe("The Åland Islands");
+    const pr = vocab.territories![1];
+    expect(territoryPhrase(pr)).toBe("Puerto Rico");
+    expect(territoryPhraseAtStart(pr)).toBe("Puerto Rico");
   });
 
   it("finds every shipped territory by its name and each alias, with its own passport", () => {
