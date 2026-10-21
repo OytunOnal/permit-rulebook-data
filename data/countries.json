@@ -1110,6 +1110,138 @@
         "quote": "Unlike citizens of other U.S. territories who are U.S. citizens, American Samoans are U.S. nationals.",
         "retrieved_at": "2026-10-21"
       }
+    },
+    {
+      "code": "AW",
+      "name": "Aruba",
+      "passport": "NL",
+      "source": {
+        "source_url": "https://www.netherlandsworldwide.nl/passport-id-card/abroad",
+        "quote": "If you live in Aruba, Curaçao, St Maarten, Bonaire, St Eustatius or Saba, find out below where you can apply for a passport or ID card:",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "CW",
+      "name": "Curaçao",
+      "passport": "NL",
+      "source": {
+        "source_url": "https://www.netherlandsworldwide.nl/passport-id-card/abroad",
+        "quote": "If you live in Aruba, Curaçao, St Maarten, Bonaire, St Eustatius or Saba, find out below where you can apply for a passport or ID card:",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "SX",
+      "name": "Sint Maarten",
+      "aliases": [
+        "St Maarten",
+        "Saint Maarten"
+      ],
+      "passport": "NL",
+      "source": {
+        "source_url": "https://www.netherlandsworldwide.nl/passport-id-card/abroad",
+        "quote": "If you live in Aruba, Curaçao, St Maarten, Bonaire, St Eustatius or Saba, find out below where you can apply for a passport or ID card:",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "BQ",
+      "name": "Caribbean Netherlands",
+      "article": "the",
+      "aliases": [
+        "Bonaire",
+        "Sint Eustatius",
+        "St Eustatius",
+        "Saba",
+        "BES islands"
+      ],
+      "passport": "NL",
+      "source": {
+        "source_url": "https://www.netherlandsworldwide.nl/passport-id-card/abroad",
+        "quote": "If you live in Aruba, Curaçao, St Maarten, Bonaire, St Eustatius or Saba, find out below where you can apply for a passport or ID card:",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "JE",
+      "name": "Jersey",
+      "aliases": [
+        "Bailiwick of Jersey"
+      ],
+      "passport": "GB",
+      "source": {
+        "source_url": "https://www.gov.uk/government/publications/jersey-knowledge-base-profile/jersey-knowledge-base-profile",
+        "quote": "Customers living in the Bailiwick of Jersey will hold a Crown Dependency variant British passport if they applied for their passport in the place they live.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "GG",
+      "name": "Guernsey",
+      "aliases": [
+        "Bailiwick of Guernsey",
+        "Alderney",
+        "Sark"
+      ],
+      "passport": "GB",
+      "source": {
+        "source_url": "https://www.gov.uk/government/publications/guernsey-alderney-and-sark-knowledge-base-profile/guernsey-alderney-and-sark-knowledge-base-profile",
+        "quote": "Customers living in the Bailiwick of Guernsey will hold a Crown Dependency variant British passport if they applied for their passport in the place they live.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "IM",
+      "name": "Isle of Man",
+      "article": "the",
+      "passport": "GB",
+      "source": {
+        "source_url": "https://www.gov.uk/government/publications/isle-of-man-knowledge-base-profile/isle-of-man-knowledge-base-profile",
+        "quote": "Customers living in the Isle of Man will hold a Crown Dependency variant British passport if they applied for their passport in the place they live.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "GI",
+      "name": "Gibraltar",
+      "passport": "GB",
+      "source": {
+        "source_url": "https://www.gibraltar.gov.gi/press-releases/applications-for-id-cards-and-passports-4222020-5990",
+        "quote": "Application Forms for UK Issued Passports, available to Gibraltar residents only, may be obtained by contacting the Passport and Nationality Section.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "GL",
+      "name": "Greenland",
+      "aliases": [
+        "Kalaallit Nunaat",
+        "Grønland"
+      ],
+      "passport": "DK",
+      "source": {
+        "source_url": "https://politi.gl/da/bestil-pas",
+        "quote": "I Grønland kan man både få udstedt et grønlandsk og dansk pas.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "FO",
+      "name": "Faroe Islands",
+      "article": "the",
+      "aliases": [
+        "Faroes",
+        "Faeroe Islands",
+        "Føroyar"
+      ],
+      "passport": "DK",
+      "source": {
+        "source_url": "https://www.government.fo/en/foreign-relations/constitutional-status/the-home-rule-act",
+        "quote": "In a passport or a certificate of nationality issued in the Faroes for a Faroese the words “Føroyingur” and “Førovar” shall be inserted after the words “Dansk” and “Danmark”.",
+        "retrieved_at": "2026-10-21",
+        "legal_basis": "Home Rule Act of the Faroe Islands, section 10"
+      }
     }
   ],
   "note": "The question asks which passport the person will apply with, so this list is passport issuers: sovereign states plus the widely-held non-UN documents (HK, MO, TW, XK, PS). Dependent territories are deliberately absent from it — a resident of Åland holds a Finnish passport and of Guadeloupe a French one, and listing the territory made the tool answer 'third country' for people who have EU free movement (s5c review). A territory a reader may type is listed under `territories` instead, never as a row: its name and aliases, the passport its people hold, and that claim's source (an official page, its quote, the day it was read), so the search can answer it with the passport's country (#160). A territory nobody has sourced is not listed, and the search says what it says for any name it does not know. Labels are hand-written English usage, not CLDR's localisation, which abbreviates (\"St. Kitts & Nevis\") and disambiguates in ways no passport does (\"Congo - Kinshasa\", \"Hong Kong SAR China\"). Some entries carry `aliases`: names people still type (Turkey, Holland, Czech Republic). They are search keys only — the label the tool prints is always the official name."

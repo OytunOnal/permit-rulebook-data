@@ -746,6 +746,83 @@
         "to": "Was this page helpful?"
       },
       "note": "Backs the passport American Samoa's people hold (countries.json territories, #160): the Department of the Interior's Office of Insular Affairs on American Samoa, whose people are U.S. nationals. Sliced to the page's own text, between its menus and its feedback form. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "nl-passport-caribbean-parts",
+      "url": "https://www.netherlandsworldwide.nl/passport-id-card/abroad",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Caribbean parts of the Kingdom",
+        "to": "Also useful"
+      },
+      "note": "Backs the passport Aruba's, Curaçao's, Sint Maarten's and the Caribbean Netherlands' people hold (countries.json territories, #160): the Dutch government's page on applying for a Dutch passport, and where on each island. Sliced to its Caribbean section. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "hmpo-jersey-profile",
+      "url": "https://www.gov.uk/government/publications/jersey-knowledge-base-profile/jersey-knowledge-base-profile",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Identity documents",
+        "to": "Back to top"
+      },
+      "note": "Backs the passport Jersey's people hold (countries.json territories, #160): HM Passport Office's Knowledge Base profile of Jersey. Sliced to its identity-documents section. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "hmpo-guernsey-profile",
+      "url": "https://www.gov.uk/government/publications/guernsey-alderney-and-sark-knowledge-base-profile/guernsey-alderney-and-sark-knowledge-base-profile",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Identity documents",
+        "to": "Back to top"
+      },
+      "note": "Backs the passport Guernsey's people hold (countries.json territories, #160): HM Passport Office's Knowledge Base profile of Guernsey, Alderney and Sark. Sliced to its identity-documents section. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "hmpo-isle-of-man-profile",
+      "url": "https://www.gov.uk/government/publications/isle-of-man-knowledge-base-profile/isle-of-man-knowledge-base-profile",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Identity documents",
+        "to": "Back to top"
+      },
+      "note": "Backs the passport the Isle of Man's people hold (countries.json territories, #160): HM Passport Office's Knowledge Base profile of the Isle of Man. Sliced to its identity-documents section. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "gibraltar-passport-applications",
+      "url": "https://www.gibraltar.gov.gi/press-releases/applications-for-id-cards-and-passports-4222020-5990",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Members of the public are reminded",
+        "to": "contacting the Passport and Nationality Section."
+      },
+      "note": "Backs the passport Gibraltar's people hold (countries.json territories, #160): HM Government of Gibraltar's notice 422/2020 on applying for identity cards and passports. Sliced to the notice's own text. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "politi-gl-passport",
+      "url": "https://politi.gl/da/bestil-pas",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Grønlandsk eller dansk pas",
+        "to": "grønlandsk eller dansk pas."
+      },
+      "note": "Backs the passport Greenland's people hold (countries.json territories, #160): Greenland Police's page on ordering a passport, in Danish. Sliced from its section on the Greenlandic or Danish passport to the condition that the holder is a Danish citizen. The page writes its Danish letters as entities, which the watch decodes. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "faroe-home-rule-act",
+      "url": "https://www.government.fo/en/foreign-relations/constitutional-status/the-home-rule-act",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Section 10.",
+        "to": "shall be deemed a Faroese."
+      },
+      "note": "Backs the passport the Faroe Islands' people hold (countries.json territories, #160): the Faroese government's English text of the Home Rule Act, section 10. Read 2026-10-21 by the watch's own fetcher."
     }
   ]
 }
