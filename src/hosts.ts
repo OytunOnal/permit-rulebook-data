@@ -51,9 +51,16 @@ export function unlistedHostMessageOf(host: string): string {
   return `${host} is on neither the authority hosts nor the consolidated-text hosts (src/hosts.ts) — add it to the list it belongs on`;
 }
 
-/** The kind of a source's host. Throws on a host on neither list. */
+/**
+ * The kind of a source's host. Throws on a host on neither list, and on an
+ * address that is not https: a link a page prints opens the authority's page
+ * over https or not at all, and `http://www.bamf.de/` or a `javascript:` URL
+ * naming the same host is not that page.
+ */
 export function hostKindOf(sourceUrl: string): HostKind {
-  const host = new URL(sourceUrl).host;
+  const url = new URL(sourceUrl);
+  if (url.protocol !== "https:") throw new Error(`${sourceUrl} is not an https address — a source is linked over https only`);
+  const host = url.host;
   const kind = listedKindOf(host);
   if (!kind) throw new Error(unlistedHostMessageOf(host));
   return kind;

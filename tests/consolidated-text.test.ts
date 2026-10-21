@@ -33,6 +33,11 @@ describe("the kind of a source's host", () => {
   it("throws on a host on neither list, naming it", () => {
     expect(() => hostKindOf(UNLISTED)).toThrow(/mirror\.example\.org/);
   });
+
+  it("throws on an address that is not https, whatever host it names", () => {
+    for (const url of ["http://www.bamf.de/", "javascript://www.bamf.de/%0aalert(1)", "ftp://www.buzer.de/18g_AufenthG.htm"])
+      expect(() => hostKindOf(url), url).toThrow(/https/);
+  });
 });
 
 describe("a citation names the statute, and the host kind discloses the mirror", () => {
