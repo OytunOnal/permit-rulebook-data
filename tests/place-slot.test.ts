@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { countryPhrase, optionMeans } from "../src/index.js";
+import { phraseOf, optionMeans } from "../src/index.js";
 import type { Dataset, FieldOption, Profile } from "../src/index.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -52,7 +52,7 @@ describe("each slot phrase in the dataset", () => {
     for (const option of slotPhrases)
       for (const code of declaredCodes) {
         const filled = optionMeans(option, dataset, { destination: code.toLowerCase() });
-        expect(filled, `${option.value} ${code}`).toContain(`in ${countryPhrase(code)}`);
+        expect(filled, `${option.value} ${code}`).toContain(`in ${phraseOf(code)}`);
         expect(filled, `${option.value} ${code}`).not.toMatch(/\bthere\b/i);
       }
   });

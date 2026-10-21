@@ -1,4 +1,6 @@
-import { countryVocabulary, type CountryVocabulary, type Territory, type VocabularyError } from "./countries.js";
+import {
+  countryVocabulary, openingCapitalOf, phraseWithArticleOf, type CountryVocabulary, type Territory, type VocabularyError,
+} from "./countries.js";
 import { foldForSearch, matchOptions } from "./engine.js";
 
 /** A territory a reader typed, and the country whose passport its people hold. */
@@ -25,14 +27,13 @@ export function findTerritory(typed: string, vocab: CountryVocabulary = countryV
 
 /** A territory's name as it reads inside a sentence: "Puerto Rico", "the
  * Faroe Islands" — its article is data beside the name, as a country's is. */
-export function territoryPhrase(territory: Territory): string {
-  return territory.article ? `${territory.article} ${territory.name}` : territory.name;
+export function territoryPhraseOf(territory: Territory): string {
+  return phraseWithArticleOf(territory);
 }
 
 /** The same phrase where it opens a sentence: "The Faroe Islands". */
-export function territoryPhraseAtStart(territory: Territory): string {
-  const phrase = territoryPhrase(territory);
-  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+export function territoryPhraseAtStartOf(territory: Territory): string {
+  return openingCapitalOf(territoryPhraseOf(territory));
 }
 
 const hasProvenance = (t: Territory): boolean =>

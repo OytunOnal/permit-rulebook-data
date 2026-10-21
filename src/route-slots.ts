@@ -1,4 +1,4 @@
-import { countryPossessive } from "./countries.js";
+import { possessiveOf } from "./countries.js";
 import { renderableTexts } from "./prose.js";
 import type { Country, Dataset, Route } from "./types.js";
 
@@ -52,7 +52,7 @@ function slotPhrase(dataset: Dataset, id: string): string {
   const problem = slotProblemOf(dataset, id);
   if (problem) throw new Error(problem);
   const { country, route } = slottedRoute(dataset, id)!;
-  return `${countryPossessive(country.code)} ${plainNameOf(route)} — ${route.what_it_is}`;
+  return `${possessiveOf(country.code)} ${plainNameOf(route)} — ${route.what_it_is}`;
 }
 
 /** The text with each route slot filled. Throws on a slot naming a route the
@@ -68,10 +68,10 @@ export interface RouteSlotError {
 }
 
 /** Where a word starts or ends: no letter or digit runs on across it. */
-const wholeWord = (name: string): RegExp =>
+const wholeWordPattern = (name: string): RegExp =>
   new RegExp(`(?<![\\p{L}\\p{N}])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u");
 
-interface PlainName { route: Route; plain: string; name: RegExp }
+interface PlainName { route: Route; plain: string; namePattern: RegExp }
 
 /** Each slot in one of a question's texts that cannot stand: one where nothing
  * fills it, or one naming a route that cannot fill it. */
@@ -87,7 +87,7 @@ function slotErrorsIn(dataset: Dataset, path: string, text: string): RouteSlotEr
 /** Each route whose plain name one of a question's texts types outside a slot. */
 function typedNameErrorsIn(names: PlainName[], path: string, text: string): RouteSlotError[] {
   const outside = text.replace(ROUTE_SLOT, " ");
-  return names.filter(({ name }) => name.test(outside)).map(({ route, plain }) => ({
+  return names.filter(({ namePattern }) => namePattern.test(outside)).map(({ route, plain }) => ({
     path,
     message: `"${plain}" names ${route.id} by hand — write {route:${route.id}}, which says what the route is`,
     keyword: "routeNamedOutsideSlot" as const,
@@ -102,7 +102,7 @@ function typedNameErrorsIn(names: PlainName[], path: string, text: string): Rout
 export function routeSlotErrors(dataset: Dataset): RouteSlotError[] {
   const names: PlainName[] = dataset.countries.flatMap((c) => c.routes).map((route) => {
     const plain = plainNameOf(route);
-    return { route, plain, name: wholeWord(plain) };
+    return { route, plain, namePattern: wholeWordPattern(plain) };
   });
   return renderableTexts(dataset)
     .filter(({ path }) => path.startsWith("/fields/"))

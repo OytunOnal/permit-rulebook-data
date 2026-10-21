@@ -1,4 +1,4 @@
-import { countryClasses, countryPhrase } from "./countries.js";
+import { countryClasses, phraseOf } from "./countries.js";
 import { DEFAULT_UNKNOWN_LABEL, UNKNOWN_BAND } from "./questions.js";
 import { decidingCriteria } from "./disjunction.js";
 import { fillRouteSlots } from "./route-slots.js";
@@ -174,7 +174,7 @@ export function declaredPlace(dataset: Dataset, profile: Profile): string {
   // "Netherlands". Both destination and situation_country are country codes, so
   // one lookup serves both; an option's `short` is a different sentence
   // ("Germany as your destination") and is deliberately not used here.
-  return countryPhrase(value.toUpperCase());
+  return phraseOf(value.toUpperCase());
 }
 
 /** Unknowns the person can still act on: on a hard-failed route nothing they
@@ -259,7 +259,7 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
       const place = declaredPlace(dataset, profile);
       rows.push({
         kind: "where",
-        text: `This route is in ${countryPhrase(r.country)}${place ? `, and you told us ${place}` : ""}.`,
+        text: `This route is in ${phraseOf(r.country)}${place ? `, and you told us ${place}` : ""}.`,
       });
       continue;
     }
@@ -301,7 +301,7 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
 
   if (isPlacedElsewhere(r, profile)) {
     const place = declaredPlace(dataset, profile);
-    const country = countryPhrase(r.country);
+    const country = phraseOf(r.country);
     return { line: place ? `A route in ${country} — you told us ${place}.` : `A route in ${country}.`, rows, parts };
   }
 

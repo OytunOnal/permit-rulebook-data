@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { unlocks } from "../src/engine.js";
 import { declaredPlace, optionMeans, unlockMeansOf, unlockProfile, unlockTitleOf } from "../src/verdict.js";
-import { countryPhrase } from "../src/countries.js";
+import { phraseOf } from "../src/countries.js";
 import type { Dataset, Profile, Unlock } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -66,7 +66,7 @@ describe("a leverage row names its place once", () => {
     expect(offers.length).toBeGreaterThan(0);
     for (const u of offers) {
       expect(u.qualifier?.field).toBe("situation_country");
-      const place = countryPhrase(u.qualifier!.option.value.toUpperCase())!;
+      const place = phraseOf(u.qualifier!.option.value.toUpperCase())!;
       expect(unlockTitleOf(dataset, u, EXPLORER)).toBe(`a job offer in ${place}`);
       expect(unlockMeansOf(dataset, u, EXPLORER)).toContain(`an employer in ${place}`);
     }

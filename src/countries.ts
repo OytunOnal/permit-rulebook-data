@@ -88,7 +88,7 @@ const derivedOptions: FieldOption[] = countryVocabulary.countries
     label: c.name,
     // The prose form, where it differs from the name: a sentence says "in the
     // Netherlands", a button in a list says "Netherlands".
-    ...(c.article ? { short: `${c.article} ${c.name}` } : {}),
+    ...(c.article ? { short: phraseWithArticleOf(c) } : {}),
     implies: [classOfCountry(c.code)!],
     // Names people still type. Search keys only — never displayed.
     ...(c.aliases?.length ? { aliases: c.aliases } : {}),
@@ -110,28 +110,36 @@ function countryOf(code: string, vocab: CountryVocabulary): CountryVocabulary["c
  * The article is a fact about the country, so it lives beside the name in
  * `countries.json` rather than in a set of exceptions inside a renderer.
  */
-export function countryPhrase(code: string, vocab: CountryVocabulary = countryVocabulary): string {
-  const country = countryOf(code, vocab);
-  return country.article ? `${country.article} ${country.name}` : country.name;
+export function phraseOf(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  return phraseWithArticleOf(countryOf(code, vocab));
 }
 
-const openingCapital = (phrase: string): string => phrase.charAt(0).toUpperCase() + phrase.slice(1);
+/** A name with the article it takes inside a sentence, where it takes one:
+ * "the Netherlands", "Germany". A country's and a territory's alike. */
+export function phraseWithArticleOf(named: { name: string; article?: string }): string {
+  return named.article ? `${named.article} ${named.name}` : named.name;
+}
+
+/** A phrase as it opens a sentence or a heading: its first letter a capital. */
+export function openingCapitalOf(phrase: string): string {
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+}
 
 /** The same phrase where it opens a sentence or a heading: "The Netherlands". */
-export function countryPhraseAtStart(code: string, vocab: CountryVocabulary = countryVocabulary): string {
-  return openingCapital(countryPhrase(code, vocab));
+export function phraseAtStartOf(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  return openingCapitalOf(phraseOf(code, vocab));
 }
 
 /** The phrase as a possessive: "Germany's", "the Netherlands'" — a name
  * ending in s takes the apostrophe alone. */
-export function countryPossessive(code: string, vocab: CountryVocabulary = countryVocabulary): string {
-  const phrase = countryPhrase(code, vocab);
+export function possessiveOf(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  const phrase = phraseOf(code, vocab);
   return phrase.endsWith("s") ? `${phrase}'` : `${phrase}'s`;
 }
 
 /** The possessive where it opens a sentence or a heading: "The Netherlands'". */
-export function countryPossessiveAtStart(code: string, vocab: CountryVocabulary = countryVocabulary): string {
-  return openingCapital(countryPossessive(code, vocab));
+export function possessiveAtStartOf(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  return openingCapitalOf(possessiveOf(code, vocab));
 }
 
 /**

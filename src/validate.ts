@@ -3,7 +3,7 @@ import schema from "../schema/ruleset.schema.json" with { type: "json" };
 import { countryVocabulary, vocabularyErrors } from "./countries.js";
 import { deriveBands, fieldOptions, forEachCriterion, itemRows, provenancedValuesOf, referencedFields, routeStatements } from "./engine.js";
 import { askedByCriterion } from "./scope.js";
-import { unlistedSourceHosts } from "./hosts.js";
+import { unlistedHostMessageOf, unlistedLinkHostsOf } from "./hosts.js";
 import { territoryErrors } from "./territories.js";
 import { routeSlotErrors } from "./route-slots.js";
 import { UNKNOWN_BAND } from "./questions.js";
@@ -87,12 +87,8 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
    * list. A host on neither list would have no honest label, so a mirror
    * cannot ship under "Official page" by being new.
    */
-  for (const host of unlistedSourceHosts(dataset))
-    errors.push({
-      path: "/",
-      message: `a source or learn link is on ${host}, which is on neither the authority hosts nor the consolidated-text hosts (src/hosts.ts) — add it to the list it belongs on`,
-      keyword: "listedSourceHost",
-    });
+  for (const host of unlistedLinkHostsOf(dataset))
+    errors.push({ path: "/", message: `a source or learn link: ${unlistedHostMessageOf(host)}`, keyword: "listedLinkHost" });
   const seenIds = new Set<string>();
   const thresholds = new Map<string, { amount: number; source_url: string; retrieved_at: string; route: string }>();
 

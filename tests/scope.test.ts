@@ -5,7 +5,7 @@ import { SUMMARY_FIRST_SENTENCE_MAX, validateDataset } from "../src/validate.js"
 import { proseProvenance, renderableTexts } from "../src/prose.js";
 import { scopeLine, scopeWords, statedNotAsked, SCOPE_VALUES } from "../src/scope.js";
 import { declaredPlace, optionMeans, unlockTitleOf } from "../src/verdict.js";
-import { countryPhrase } from "../src/countries.js";
+import { phraseOf } from "../src/countries.js";
 import { unlocks } from "../src/engine.js";
 import {
   excludedLimbs, limbIdsOf, routesInProse, scopeDisagreesWithExclusions, twinDisagreesWithProse,
@@ -271,9 +271,9 @@ describe("an answer a reader can mistake for the one they hold says what it mean
   });
 
   it("a country's article travels with its name, not with a renderer", () => {
-    expect(countryPhrase("NL")).toBe("the Netherlands");
-    expect(countryPhrase("DE")).toBe("Germany");
-    expect(() => countryPhrase("ZZ")).toThrow();
+    expect(phraseOf("NL")).toBe("the Netherlands");
+    expect(phraseOf("DE")).toBe("Germany");
+    expect(() => phraseOf("ZZ")).toThrow();
     expect(declaredPlace(ds, { destination: "nl" })).toBe("the Netherlands");
     expect(declaredPlace(ds, { destination: "de" })).toBe("Germany");
     expect(declaredPlace(ds, { destination: "all" })).toBe("");

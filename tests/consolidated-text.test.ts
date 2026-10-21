@@ -46,7 +46,7 @@ describe("a citation names the statute, and the host kind discloses the mirror",
 });
 
 describe("the gate: every source host is on a list", () => {
-  const listErrors = (d: Dataset) => validateDataset(d).errors.filter((e) => e.keyword === "listedSourceHost");
+  const listErrors = (d: Dataset) => validateDataset(d).errors.filter((e) => e.keyword === "listedLinkHost");
 
   it("refuses a statement quoted from a host on neither list", () => {
     const bad = clone();

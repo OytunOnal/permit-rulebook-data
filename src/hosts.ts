@@ -8,7 +8,7 @@ import { sourceUrls } from "./lang.js";
  * whose page it opens: an authority's own, or a consolidated text that someone
  * other than the authority publishes. The kind is read off the host, from two
  * declared lists, and there is deliberately no default: a host on neither list
- * is a page nobody has classified, and `unlistedSourceHosts` fails the build
+ * is a page nobody has classified, and `unlistedLinkHostsOf` fails the build
  * rather than letting a mirror ship under the authority's label.
  */
 export type HostKind = "authority" | "consolidated-text";
@@ -46,11 +46,16 @@ function listedKindOf(host: string): HostKind | undefined {
   return undefined;
 }
 
+/** What is wrong with a host on neither list, and where to put it right. */
+export function unlistedHostMessageOf(host: string): string {
+  return `${host} is on neither the authority hosts nor the consolidated-text hosts (src/hosts.ts) — add it to the list it belongs on`;
+}
+
 /** The kind of a source's host. Throws on a host on neither list. */
 export function hostKindOf(sourceUrl: string): HostKind {
   const host = new URL(sourceUrl).host;
   const kind = listedKindOf(host);
-  if (!kind) throw new Error(`${host} is on neither the authority hosts nor the consolidated-text hosts — add it to the list it belongs on`);
+  if (!kind) throw new Error(unlistedHostMessageOf(host));
   return kind;
 }
 
@@ -61,7 +66,7 @@ function linkedUrls(dataset: Dataset): string[] {
 }
 
 /** The hosts the dataset links to that are on neither list. */
-export function unlistedSourceHosts(dataset: Dataset): string[] {
+export function unlistedLinkHostsOf(dataset: Dataset): string[] {
   const hosts = linkedUrls(dataset).map((u) => new URL(u).host);
   return [...new Set(hosts)].filter((h) => listedKindOf(h) === undefined).sort();
 }
