@@ -1,7 +1,7 @@
 import { countryOptions } from "./countries.js";
 import { CARVE_OUT_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type {
-  Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
+  AskingRoutes, Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
   FieldOption, Notice,
   PointsBreakdown, PointsItem, PointsRow, Profile, ProvenancedText, Route, RouteReading, RouteResult,
   RouteStatement, RouteStatus, StatementException,
@@ -527,6 +527,22 @@ function reckonOpenRoutes(dataset: Dataset, profile: Profile): RouteReckoning[] 
  */
 export function informativeFields(dataset: Dataset, profile: Profile): Set<string> {
   return new Set(reckonOpenRoutes(dataset, profile).flatMap((r) => [...r.undecided]));
+}
+
+/**
+ * For one question on this profile: the open routes (scored, no hard fail),
+ * and those of them it is asked for — the ones whose undecided criteria read
+ * its answer. It decides nothing of its own: `asked_for` is non-empty exactly
+ * when `informativeFields` holds the field. To reckon a question being
+ * reopened, pass the profile without its answer.
+ */
+export function reckonAskingRoutes(dataset: Dataset, profile: Profile, field: string): AskingRoutes {
+  const reckoned = reckonOpenRoutes(dataset, profile);
+  const openRouteOf = ({ route, country }: RouteReckoning) => ({ route, country });
+  return {
+    asked_for: reckoned.filter((r) => r.undecided.has(field)).map(openRouteOf),
+    open: reckoned.map(openRouteOf),
+  };
 }
 
 /**
