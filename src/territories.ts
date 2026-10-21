@@ -41,7 +41,8 @@ const hasProvenance = (t: Territory): boolean =>
 
 /**
  * The territory list's own invariants: each names a passport on the list and
- * carries the source that says so, and none is a row — not by its code, and
+ * carries the source that says so, on https as every dataset source is, and
+ * none is a row — not by its code, and
  * not by a name the passport search would find a row by, or typing it would
  * show that row and the territory's line never would.
  */
@@ -55,6 +56,7 @@ export function territoryErrors(vocab: CountryVocabulary): VocabularyError[] {
     if (!t.passport) at(t, "names no passport its people hold");
     else if (!codes.has(t.passport)) at(t, `names the passport ${t.passport}, which is not on the country list`);
     if (!hasProvenance(t)) at(t, "carries no source for its passport — an official page, its quote and the day it was read");
+    else if (!t.source.source_url.startsWith("https://")) at(t, "cites its passport's source at an address that is not https");
     if (codes.has(t.code)) at(t, `is a row of the country list as ${t.code} — a territory is never a row`);
     for (const name of namesOf(t)) {
       const found = matchOptions(rows, name).map((o) => o.label);

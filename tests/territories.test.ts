@@ -101,6 +101,12 @@ describe("the gate: a territory names a passport on the list, carries its source
     }
   });
 
+  it("refuses a territory whose source is not on https", () => {
+    const vocab = written();
+    vocab.territories![1].source.source_url = "http://example.gov/territories";
+    expect(errorsOf(vocab)).toMatch(/PR.*https/);
+  });
+
   it("refuses a territory that is a row: its code on the list, or a name the search finds a row by", () => {
     const listed = written();
     listed.territories![1].code = "US";
