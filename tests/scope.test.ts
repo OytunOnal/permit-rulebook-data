@@ -273,7 +273,7 @@ describe("an answer a reader can mistake for the one they hold says what it mean
   it("a country's article travels with its name, not with a renderer", () => {
     expect(phraseOf("NL")).toBe("the Netherlands");
     expect(phraseOf("DE")).toBe("Germany");
-    expect(() => phraseOf("ZZ")).toThrow();
+    expect(() => phraseOf("ZZ")).toThrow(/ZZ/);
     expect(declaredPlace(ds, { destination: "nl" })).toBe("the Netherlands");
     expect(declaredPlace(ds, { destination: "de" })).toBe("Germany");
     expect(declaredPlace(ds, { destination: "all" })).toBe("");
@@ -343,7 +343,9 @@ describe("a reading is ours, and the words say so", () => {
     // because `expect(fn).toBeDefined()` cannot fail (Standards review,
     // 2026-09-08).
     // @ts-expect-error the counts and the reader are not optional.
-    expect(() => scopeWords("some-conditions-stated-not-asked")).toThrow();
+    expect(() => scopeWords("some-conditions-stated-not-asked")).toThrow(/needs the unasked counts and the reader/);
+    // @ts-expect-error the reader is not optional either.
+    expect(() => scopeWords("every-deciding-rule-asked", { stated: 0, noted: 0 })).toThrow(/needs the unasked counts and the reader/);
     // And the reading form never borrows the avoid-list words.
     for (const unasked of [{ stated: 0, noted: 2 }, { stated: 1, noted: 1 }]) {
       const words = scopeWords("some-conditions-stated-not-asked", unasked, { reader: "answered" });

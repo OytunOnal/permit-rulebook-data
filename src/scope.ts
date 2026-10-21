@@ -76,9 +76,11 @@ const countFigures = (n: number): string => `${n} ${n === 1 ? "condition" : "con
  * asking, and `unasked.noted` how many are our own readings; the two values
  * that state none ignore them. A route whose unasked conditions were all set
  * aside for this reader (a carve-out, s7) reads as the first form, not as a
- * sentence that counts nothing.
+ * sentence that counts nothing. A caller that passes no counts or no reader is
+ * told so, rather than handed a line with a blank or a crash from inside it.
  */
 export function scopeWords(value: ScopeValue, unasked: UnaskedCount, o: { reader: ScopeReader }): string {
+  if (!unasked || !o?.reader) throw new Error("scopeWords needs the unasked counts and the reader the line is for");
   if (value !== "some-conditions-stated-not-asked") return WORDS[o.reader][value];
   const total = unasked.stated + unasked.noted;
   if (total === 0) return WORDS[o.reader]["every-deciding-rule-asked"];
