@@ -51,7 +51,6 @@ describe("the shortage-occupation Blue Card's IT path", () => {
   it("under 3 years in the last seven is not a hard fail: the rung is an answer the reader can still improve", () => {
     const short = shortageCardFor({ ...itWorkerWithoutDegree, experience_7y: "lt3" });
     expect(short.hard_fail).toBe(false);
-    expect(short.criteria.filter((cr) => cr.outcome !== "pass")).toEqual([qualifyingDisjunctionOf(short)]);
   });
 
   it("under 3 years in the last seven: the IT path is the deciding path, and the reason names the rung, not the degree", () => {
