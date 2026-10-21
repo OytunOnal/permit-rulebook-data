@@ -178,9 +178,13 @@ they leave one dataset sentence unverifiable by machine.
 
 7. **Add every new source to the watchlist.** `npm run watch:coverage` enforces
    it in both directions: a dataset source nothing watches fails, and a watched
-   source backing no value fails. A source or learn link on a new host also
-   needs the host on one of the two lists in `src/hosts.ts`, authority hosts
-   or consolidated-text hosts; the build fails until it is.
+   source backing no value fails. A route's or a notice's source, or a
+   question's or a notice's learn link, on a new host also needs the host on
+   one of the two lists in `src/hosts.ts`, authority hosts or consolidated-text
+   hosts; the build fails until it is. The country list's own sources — a
+   passport class's legs and a territory's passport — are watched and
+   quote-checked like every source, but the site prints no link to them, so
+   they are not held to the lists.
 8. **Add the questions' words.** A criterion may only name an answer the
    dataset can put into words — give the option a `short`, or the criterion a
    `short_reason`. There is no fallback to a field id; the build fails instead.
