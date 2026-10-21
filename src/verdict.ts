@@ -72,6 +72,13 @@ export function subjectOf(dataset: Dataset, field: string): string {
   return subject === undefined ? field : fillRouteSlots(subject, dataset);
 }
 
+/** Where a reader can find the answer out — the question's help — with any
+ * route its label names said in full. */
+export function learnLinkOf(dataset: Dataset, field: string): { label: string; url: string } | undefined {
+  const learn = fieldOf(dataset, field)?.learn;
+  return learn && { label: fillRouteSlots(learn.label, dataset), url: learn.url };
+}
+
 /**
  * A value the rules name, as a noun phrase. Options carry `short` for exactly
  * this; a criterion written against a passport CLASS has no option to borrow

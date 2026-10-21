@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import dataset from "../data/dataset.json" with { type: "json" };
 import { validateDataset } from "../src/validate.js";
-import { deriveQuestions, fillRouteSlots, hostKindOf, subjectOf } from "../src/index.js";
+import { deriveQuestions, fillRouteSlots, hostKindOf, learnLinkOf, subjectOf } from "../src/index.js";
 import type { Dataset, FieldDef, Route } from "../src/types.js";
 
 const ds = dataset as unknown as Dataset;
@@ -54,6 +54,16 @@ describe("the spouse question names the card through its slot", () => {
   it("its subject is filled where a sentence names it", () => {
     expect(subjectOf(ds, "partner_ck")).not.toContain("{route:");
     expect(subjectOf(ds, "partner_ck")).toContain("Germany's Opportunity Card — the permit to come and look for work");
+  });
+
+  it("a slot in its help is filled where the learn link is handed out", () => {
+    const written = clone();
+    fieldOf(written, "partner_ck").learn!.label = "See what {route:de-chancenkarte} offers";
+    expect(learnLinkOf(written, "partner_ck")).toEqual({
+      label: "See what Germany's Opportunity Card — the permit to come and look for work offers",
+      url: fieldOf(written, "partner_ck").learn!.url,
+    });
+    expect(learnLinkOf(written, "age_band")).toBeUndefined();
   });
 
   it("its learn link opens the card's own official page", () => {
