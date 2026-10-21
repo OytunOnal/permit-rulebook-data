@@ -5,7 +5,7 @@ import {
   statementSources,
 } from "../src/engine.js";
 import { proseProvenance, quotedWithoutProvenance } from "../src/prose.js";
-import { scopeLine, statedNotAsked } from "../src/scope.js";
+import { scopeLine, scopeWords, statedNotAsked } from "../src/scope.js";
 import { validateDataset } from "../src/validate.js";
 import {
   checkCoverage, checkQuotes, datasetQuotes, datasetSourceUrls, sliceFingerprint,
@@ -114,9 +114,12 @@ describe("s7 — a carve-out names the passports a statement does not bind", () 
     const released = statedNotAsked(route, { split: true, profile: turkish });
     // One sentence apart: the recognised-sponsor condition.
     expect(released.stated.length).toBe(bound.stated.length - 1);
-    expect(scopeLine(route, turkish)).not.toBe(scopeLine(route, indian));
-    // A page with no reader states everything, and its line is the bound one.
-    expect(scopeLine(route)).toBe(scopeLine(route, indian));
+    const answeredBy = (profile: Profile) => scopeLine(route, { reader: "answered", profile });
+    expect(answeredBy(turkish)).not.toBe(answeredBy(indian));
+    // A page with no reader states everything, and its line counts what the
+    // bound reader's does.
+    expect(scopeLine(route, { reader: "not-answered" })).toBe(scopeWords(
+      route.scope.value, { stated: bound.stated.length, noted: bound.noted.length }, { reader: "not-answered" }));
   });
 });
 

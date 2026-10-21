@@ -211,23 +211,23 @@ describe("s19 — a sentence a criterion quotes is asked, not \"stated but not a
     expect(askedByCriterion(routeStatements(nl).find((s) => s.id === "mvv-needed")!)).toBe(false);
   });
 
-  it("the scope line no longer counts them — es-researcher is scored against your answers, and nothing else", () => {
-    expect(scopeLine(routeOf(ds, "es-researcher"))).toBe("quoted and dated · scored against your answers");
-    expect(scopeLine(routeOf(ds, "fr-talent-innovante"))).toBe("quoted and dated · scored against your answers");
-    // The counts are s19's; the words are s23's (v1.1 critique P4): figures,
-    // a dash, "this interview did not ask", and a reading "in our own words,
-    // not the authority's".
+  it("the scope line no longer counts them — the checker asks about all of es-researcher", () => {
+    const line = (id: string) => scopeLine(routeOf(ds, id), { reader: "not-answered" });
+    expect(line("es-researcher")).toBe("quoted and dated · the checker asks about all of it");
+    expect(line("fr-talent-innovante")).toBe("quoted and dated · the checker asks about all of it");
+    // The counts are s19's; the words are #153's: figures, and how many of
+    // them are readings, "in our own words, not the authority's".
     const OURS = "in our own words, not the authority's";
-    expect(scopeLine(routeOf(ds, "fr-talent-qualifie"))).toBe(`quoted and dated · scored — 1 condition this interview did not ask, ${OURS}`);
+    expect(line("fr-talent-qualifie")).toBe(`quoted and dated · the checker asks about it, except 1 condition — 1 of them ${OURS}`);
     // fr-talent-blue-card names two readings in `not_asked` and no statement:
     // the listed-professions reduction (s5f) and, since s25, the seven-year
     // question standing in for a five-year rule that names no window. The
     // line is derived from exactly those two.
     expect(routeOf(ds, "fr-talent-blue-card").scope.not_asked).toEqual(["listed-professions-not-modelled", "seven-year-answer-is-a-floor"]);
-    expect(scopeLine(routeOf(ds, "fr-talent-blue-card"))).toBe(`quoted and dated · scored — 2 conditions this interview did not ask, ${OURS}`);
-    expect(scopeLine(routeOf(ds, "fr-talent-mission"))).toBe("quoted and dated · scored — 1 condition this interview did not ask");
-    expect(scopeLine(routeOf(ds, "nl-blue-card"))).toBe("quoted and dated · scored — 3 conditions this interview did not ask");
-    expect(scopeLine(routeOf(ds, "nl-ict"))).toBe("quoted and dated · scored — 3 conditions this interview did not ask");
+    expect(line("fr-talent-blue-card")).toBe(`quoted and dated · the checker asks about it, except 2 conditions — 2 of them ${OURS}`);
+    expect(line("fr-talent-mission")).toBe("quoted and dated · the checker asks about it, except 1 condition");
+    expect(line("nl-blue-card")).toBe("quoted and dated · the checker asks about it, except 3 conditions");
+    expect(line("nl-ict")).toBe("quoted and dated · the checker asks about it, except 3 conditions");
     // And the statements are still on the route — asked is not dropped.
     expect(limbIdsOf(routeOf(ds, "es-researcher")).has("hosting-agreement-or-contract-with-the-research-body")).toBe(true);
   });

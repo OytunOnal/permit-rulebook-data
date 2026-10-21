@@ -4,53 +4,47 @@ import { bindsReader, routeReadings, routeStatements } from "./engine.js";
 export { SCOPE_VALUES } from "./types.js";
 
 /**
- * What each scope value says, in the words the page prints.
- *
- * These are the reader's words, not ours. The first cut of this fact shipped on
- * the route-page mock as a badge reading FULLY MODELLED, which the isolated
- * critique took apart three ways: it retracted itself two sentences later, it
- * was pipeline vocabulary a stranger cannot parse, and it wore the criteria-met
- * green on a page whose one hard rule is that it never rules on the reader
- * (B3). The words below say what is asked and what is not, and nothing about a
- * pipeline.
+ * Whether the reader the line is printed for has answered: the results card's
+ * reader has, a country or route page's has not. A line that says "checked
+ * against your answers" to someone who gave none promises a check that never
+ * ran, so the page that has no answers says what the checker asks instead.
  */
+export type ScopeReader = "answered" | "not-answered";
+
+/** How many unasked conditions the line counts: the source's and our readings. */
+export interface UnaskedCount {
+  stated: number;
+  noted: number;
+}
+
 /**
- * Revision 2 (human, 2026-09-08, amending decision 3): the words now say what
- * the reader GETS rather than what our pipeline did. "Some conditions stated,
- * not asked" is a sentence about us; "quoted and dated · scored, two conditions
- * stated but not asked" is a sentence about what the reader is about to read,
- * and it counts them. The same words on every screen that states a route's
- * scope: the country index, the results card and the route page's own short
- * line.
+ * The scope line's words, one table per reader. They say what the reader gets
+ * — quoted and dated, and how much of the route the checker looks at — and
+ * nothing about how the dataset is built: "scored", "this interview" and "rule
+ * set" are the model's words and sit on GLOSSARY's Scope statement avoid-list.
+ * Counts are figures, because the line is a tally the reader compares across
+ * cards.
  */
-const WORDS: Record<ScopeValue, (stated: number, noted: number) => string> = {
-  "every-deciding-rule-asked": () => "quoted and dated · scored against your answers",
-  "some-conditions-stated-not-asked": (stated, noted) => {
-    // What the source states and what we read into the gap are different
-    // claims, and the reader is told which is which — in the glossary's words.
-    // A source STATES a condition; what is ours is "in our own reading", never
-    // "we note", and a reading is not called a condition (Standards review,
-    // 2026-09-08).
-    //
-    // Revision 3 (s23, v1.1 critique P4, 2026-09-17): "stated but not asked"
-    // and "in our own reading" were the model's words for the split, and three
-    // critiques read them as such. The line now says who did not ask — this
-    // interview — and whose words a reading is in: ours, not the authority's.
-    // Counts are figures, because the line is a tally the reader compares
-    // across cards, and the dash separates the tally from the verdict word.
-    const said = stated ? `${countFigures(stated)} this interview did not ask` : "";
-    const ours = noted ? `${countFigures(noted)} in our own words, not the authority's` : "";
-    if (said && ours) return `quoted and dated · scored — ${said} and ${ours}`;
-    // A reading alone is still a condition the interview did not ask; the
-    // line says so before it says whose words it is in.
-    if (ours) return `quoted and dated · scored — ${countFigures(noted)} this interview did not ask, in our own words, not the authority's`;
-    // A reader whom nothing stated binds (a carve-out took the last one, s7)
-    // is scored against their answers and nothing else — the first form, not
-    // a sentence that ends in a comma (Standards review, 2026-09-10).
-    return said ? `quoted and dated · scored — ${said}` : WORDS["every-deciding-rule-asked"](0, 0);
+const WORDS: Record<ScopeReader, Record<ScopeValue, string>> = {
+  answered: {
+    "every-deciding-rule-asked": "quoted and dated · checked against your answers",
+    "some-conditions-stated-not-asked": "quoted and dated · checked against your answers, except {count} we don't ask about",
+    "rules-quoted-nothing-asked": "quoted and dated · not checked against your answers",
   },
-  "rules-quoted-nothing-asked": () => "quoted and dated · not scored",
+  "not-answered": {
+    "every-deciding-rule-asked": "quoted and dated · the checker asks about all of it",
+    "some-conditions-stated-not-asked": "quoted and dated · the checker asks about it, except {count}",
+    "rules-quoted-nothing-asked": "quoted and dated · the checker does not ask about it",
+  },
 };
+
+/**
+ * Whose words the unasked conditions are in. A source STATES a condition; a
+ * reading is ours, and the reader is told so — never "we note" (GLOSSARY,
+ * Route reading).
+ */
+const readingsTail = (noted: number): string =>
+  noted ? ` — ${noted} of them in our own words, not the authority's` : "";
 
 /** Small numbers read as words in a sentence; larger ones stay digits. */
 export const NUMBER_WORDS = [
@@ -74,28 +68,34 @@ export function countedWords(n: number, one: string, many = `${one}s`): string {
 const countFigures = (n: number): string => `${n} ${n === 1 ? "condition" : "conditions"}`;
 
 /**
- * `stated` is how many conditions the SOURCE states without our asking, and
- * `noted` how many are our own readings. Both are ignored by the two values
- * that state none, and neither has a default: a count nobody passed printed
- * "no conditions stated" (Standards review, 2026-09-08).
+ * `unasked.stated` is how many conditions the SOURCE states without our
+ * asking, and `unasked.noted` how many are our own readings; the two values
+ * that state none ignore them. A route whose unasked conditions were all set
+ * aside for this reader (a carve-out, s7) reads as the first form, not as a
+ * sentence that counts nothing.
  */
-export function scopeWords(value: ScopeValue, stated: number, noted = 0): string {
-  return WORDS[value](stated, noted);
+export function scopeWords(value: ScopeValue, unasked: UnaskedCount, o: { reader: ScopeReader }): string {
+  if (value !== "some-conditions-stated-not-asked") return WORDS[o.reader][value];
+  const total = unasked.stated + unasked.noted;
+  if (total === 0) return WORDS[o.reader]["every-deciding-rule-asked"];
+  return WORDS[o.reader][value].replace("{count}", countFigures(total)) + readingsTail(unasked.noted);
 }
 
 /**
  * The same words for a route, which knows its own counts — the split comes from
  * `statedNotAsked`, so the sentence and the evidence behind it cannot disagree.
  *
- * The reader's answers are an argument since s7, because a condition the
+ * The answered form takes the reader's answers, because a condition the
  * authority sets aside for their passport is not one of the conditions stated
- * to them, and a line that counted it would be counting a sentence the card no
- * longer shows. A route page passes nothing: it has no reader, so every
- * condition stands.
+ * to them (s7). A page with no answers has no reader to set anything aside
+ * for, so every condition stands.
  */
-export function scopeLine(route: Route, profile: Profile = {}): string {
+export function scopeLine(
+  route: Route, o: { reader: "answered"; profile: Profile } | { reader: "not-answered" },
+): string {
+  const profile = o.reader === "answered" ? o.profile : {};
   const split = statedNotAsked(route, { split: true, profile });
-  return scopeWords(route.scope.value, split.stated.length, split.noted.length);
+  return scopeWords(route.scope.value, { stated: split.stated.length, noted: split.noted.length }, o);
 }
 
 /**

@@ -55,11 +55,15 @@ with `if`, never asked of an LLM. Every value in the dataset carries its
 official source URL, a verbatim quote, the retrieval date and its change
 history. A value without provenance fails schema validation and cannot build.
 Every route also declares its scope, and the page says it in the reader's own
-words: *quoted and dated · scored against your answers*, *quoted and dated ·
-scored — 2 conditions this interview did not ask* (or *… and 1 condition in
-our own words, not the authority's*, where what is not asked is our reading rather than the source's), or *quoted and
-dated · not scored* — together with the ids of the limbs it names and never
-asks. A route with no such declaration fails
+words. Where the reader has answered: *quoted and dated · checked against your
+answers*, *quoted and dated · checked against your answers, except 2
+conditions we don't ask about* (ending *— 1 of them in our own words, not the
+authority's* where what is not asked is our reading rather than the
+source's), or *quoted and dated · not checked against your answers*. Where
+they have not: *the checker asks about all of it*, *the checker asks about
+it, except 2 conditions*, or *the checker does not ask about it*. Beside it,
+the ids of the limbs it names and never asks. A route with no such
+declaration fails
 validation too, and the limbs are held against `data/exclusions.md` in both
 directions.
 
