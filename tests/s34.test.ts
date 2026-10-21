@@ -4,7 +4,7 @@ import {
   checkCoverage, checkQuotes, datasetQuotes, datasetSourceUrls,
   type BrowserReader, type Fetcher, type WatchEntry, type Watchlist, type WatchStep, type WatchStrategy,
 } from "../src/watch/core.js";
-import { unreadSources, type WatchState } from "../src/watch/state.js";
+import { datasetSourceCountries, unreadSources, type WatchState } from "../src/watch/state.js";
 import type { Dataset } from "../src/types.js";
 import { fetchSource } from "../src/watch/fetch-source.js";
 import { readFileSync } from "node:fs";
@@ -182,7 +182,9 @@ describe("s34 — a report's url is the key the site looks a source up by", () =
     // url would match nothing there and the source would drop out of the
     // site's freshness sentence without a word (Standards review,
     // 2026-09-25).
-    const cited = [...datasetSourceUrls(dataset)];
+    // The sources a route's values rest on: the only ones the freshness
+    // clause names, since a passport class's or a territory's backs no page.
+    const cited = [...datasetSourceCountries(dataset)].filter(([, countries]) => countries.size > 0).map(([url]) => url);
     const longest = cited.reduce((a, b) => (b.length > a.length ? b : a), "");
     const entryFor = watchlist.entries.find((e) => e.url === longest)!;
     expect(entryFor, "no watch entry for the longest dataset source").toBeDefined();

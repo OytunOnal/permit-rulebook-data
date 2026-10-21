@@ -4,6 +4,7 @@ import { countryVocabulary, vocabularyErrors } from "./countries.js";
 import { deriveBands, fieldOptions, forEachCriterion, itemRows, provenancedValuesOf, referencedFields, routeStatements } from "./engine.js";
 import { askedByCriterion } from "./scope.js";
 import { unlistedSourceHosts } from "./hosts.js";
+import { territoryErrors } from "./territories.js";
 import { routeSlotErrors } from "./route-slots.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
@@ -58,7 +59,8 @@ export function validateDataset(data: unknown): ValidationResult {
  *   criterion or notice naming "schengen_only" would silently never match,
  *   and a silent never-match on citizenship is a wrong answer, not a bug
  *   report. The vocabulary's own invariants are checked here too, so
- *   `countries.json` cannot ship a country with no class or two;
+ *   `countries.json` cannot ship a country with no class or two, nor a
+ *   territory without a sourced passport on the list (`territoryErrors`);
  * - a criterion accepting two or more rungs of an ordered question says the
  *   range in its own `short_reason` (`unwordedRangeErrors`);
  * - a question names a route only through a filled slot, never by the route's
@@ -66,7 +68,8 @@ export function validateDataset(data: unknown): ValidationResult {
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
   const errors: ValidationError[] = [
-    ...vocabularyErrors(countryVocabulary), ...unwordedRangeErrors(dataset), ...routeSlotErrors(dataset),
+    ...vocabularyErrors(countryVocabulary), ...territoryErrors(countryVocabulary),
+    ...unwordedRangeErrors(dataset), ...routeSlotErrors(dataset),
   ];
 
   /**

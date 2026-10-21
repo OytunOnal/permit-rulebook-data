@@ -28,6 +28,29 @@ export interface CountryVocabulary {
    * Netherlands" → "Dutch"). It is carried for the countries this product
    * writes prose about, which is the ones it ships routes for. */
   countries: { code: string; name: string; article?: string; adjective?: string; aliases?: string[] }[];
+  /** Places a reader may type that are not passport issuers, kept beside the
+   * rows and never among them: see `Territory`. */
+  territories?: Territory[];
+}
+
+/**
+ * A dependent territory: not a row of the passport list, because its people
+ * hold the passport of the country it belongs to. `passport` is a claim about
+ * who those people are, so it carries its source like any value; a territory
+ * nobody has sourced is not listed at all. `name` and `aliases` are what a
+ * reader types, never a row's label.
+ */
+export interface Territory {
+  /** ISO 3166-1 alpha-2. */
+  code: string;
+  name: string;
+  /** The word the name takes inside a sentence ("the" Faroe Islands), as a
+   * country's `article` is. */
+  article?: string;
+  aliases?: string[];
+  /** The code of the passport its people hold — a country on the list. */
+  passport: string;
+  source: ProvenancedText;
 }
 
 export interface VocabularyError {

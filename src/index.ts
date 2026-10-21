@@ -19,7 +19,9 @@ export { scopeWords, scopeLine, statedNotAsked, askedByCriterion, countedWords, 
 export type { ScopeReader, UnaskedCount } from "./scope.js";
 export { routesInProse, excludedLimbs, twinDisagreesWithProse, limbIdsOf, scopeDisagreesWithExclusions } from "./exclusions.js";
 export { countryClasses, countryOptions, classOfCountry, countryAdjective, countryPhrase, countryPhraseAtStart, countryPossessive, countryPossessiveAtStart, countryVocabulary } from "./countries.js";
-export type { CountryClass, CountryVocabulary } from "./countries.js";
+export type { CountryClass, CountryVocabulary, Territory } from "./countries.js";
+export { findTerritory, territoryPhrase, territoryPhraseAtStart } from "./territories.js";
+export type { FoundTerritory } from "./territories.js";
 // What the watch left behind, and what a page owes a reader because of it —
 // never the watch itself, which fetches and hashes and belongs to Node. The
 // walk from a source to the values it backs stays inside the package: the site
