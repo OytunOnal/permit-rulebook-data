@@ -509,10 +509,10 @@ describe("s5e — this slice moves prose, not numbers", () => {
     // disjunction is a hard fail only when every path holds a hard-failing
     // criterion. Held against master (e4a1235, its engine on its dataset)
     // over the same 400 people, 95 rows differ, and no status moves except on
-    // the IT path: on de-blue-card-shortage, 18 go from a hard fail to held,
-    // one to met and one from held to within reach; on the five routes whose
+    // the IT path: on de-blue-card-shortage, 18 go from a hard fail to Not yet,
+    // one to met and one from Not yet to within reach; on the five routes whose
     // degree may be replaced by experience alone, rows go from a hard fail to
-    // held, the experience path failing only on the seven-year rung, which the
+    // Not yet, the experience path failing only on the seven-year rung, which the
     // reader can improve — es-blue-card 20, fr-talent-blue-card 19, es-ict 14,
     // es-highly-qualified 12, nl-blue-card 10.
     const lines = seededProfiles().flatMap((p) => evaluate(dataset, p).map(rowOf));
