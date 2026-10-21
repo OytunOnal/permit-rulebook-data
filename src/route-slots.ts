@@ -39,11 +39,19 @@ function plainNameOf(route: Route): string {
   }
 }
 
-function slotPhrase(dataset: Dataset, id: string): string {
+/** What stops a slot naming `id` from being filled: a route the dataset does
+ * not have, or one that does not say what it is. Nothing where it can be. */
+function slotProblemOf(dataset: Dataset, id: string): string | undefined {
   const slotted = slottedRoute(dataset, id);
-  if (!slotted) throw new Error(`a route slot names ${id}, which this dataset does not have`);
-  const { country, route } = slotted;
-  if (!route.what_it_is) throw new Error(`a route slot names ${id}, which does not say what it is (what_it_is)`);
+  if (!slotted) return `a route slot names ${id}, which this dataset does not have`;
+  if (!slotted.route.what_it_is) return `a route slot names ${id}, which does not say what it is (what_it_is)`;
+  return undefined;
+}
+
+function slotPhrase(dataset: Dataset, id: string): string {
+  const problem = slotProblemOf(dataset, id);
+  if (problem) throw new Error(problem);
+  const { country, route } = slottedRoute(dataset, id)!;
   return `${countryPossessive(country.code)} ${plainNameOf(route)} — ${route.what_it_is}`;
 }
 
@@ -63,29 +71,40 @@ export interface RouteSlotError {
 const wholeWord = (name: string): RegExp =>
   new RegExp(`(?<![\\p{L}\\p{N}])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u");
 
+interface PlainName { route: Route; plain: string; name: RegExp }
+
+/** Each slot in one of a question's texts that cannot stand: one where nothing
+ * fills it, or one naming a route that cannot fill it. */
+function slotErrorsIn(dataset: Dataset, path: string, text: string): RouteSlotError[] {
+  return [...text.matchAll(ROUTE_SLOT)].flatMap(([, id]) => {
+    const message = SLOTTED_TEXT.test(path)
+      ? slotProblemOf(dataset, id!)
+      : `a route slot ({route:${id}}) stands only in a question's label, help or subject — nothing fills it here`;
+    return message ? [{ path, message, keyword: "routeSlot" as const }] : [];
+  });
+}
+
+/** Each route whose plain name one of a question's texts types outside a slot. */
+function typedNameErrorsIn(names: PlainName[], path: string, text: string): RouteSlotError[] {
+  const outside = text.replace(ROUTE_SLOT, " ");
+  return names.filter(({ name }) => name.test(outside)).map(({ route, plain }) => ({
+    path,
+    message: `"${plain}" names ${route.id} by hand — write {route:${route.id}}, which says what the route is`,
+    keyword: "routeNamedOutsideSlot" as const,
+  }));
+}
+
 /**
  * The gate over every question's words: a slot stands only where it is
  * filled and names a route that says what it is, and no route's plain name is
  * typed outside a slot.
  */
 export function routeSlotErrors(dataset: Dataset): RouteSlotError[] {
-  const errors: RouteSlotError[] = [];
-  const names = dataset.countries.flatMap((c) => c.routes).map((route) => {
+  const names: PlainName[] = dataset.countries.flatMap((c) => c.routes).map((route) => {
     const plain = plainNameOf(route);
     return { route, plain, name: wholeWord(plain) };
   });
-  for (const { path, text } of renderableTexts(dataset)) {
-    if (!path.startsWith("/fields/")) continue;
-    for (const [, id] of text.matchAll(ROUTE_SLOT)) {
-      if (!SLOTTED_TEXT.test(path))
-        errors.push({ path, message: `a route slot ({route:${id}}) stands only in a question's label, help or subject — nothing fills it here`, keyword: "routeSlot" });
-      else
-        try { slotPhrase(dataset, id!); } catch (e) { errors.push({ path, message: (e as Error).message, keyword: "routeSlot" }); }
-    }
-    const outside = text.replace(ROUTE_SLOT, " ");
-    for (const { route, name, plain } of names)
-      if (name.test(outside))
-        errors.push({ path, message: `"${plain}" names ${route.id} by hand — write {route:${route.id}}, which says what the route is`, keyword: "routeNamedOutsideSlot" });
-  }
-  return errors;
+  return renderableTexts(dataset)
+    .filter(({ path }) => path.startsWith("/fields/"))
+    .flatMap(({ path, text }) => [...slotErrorsIn(dataset, path, text), ...typedNameErrorsIn(names, path, text)]);
 }
