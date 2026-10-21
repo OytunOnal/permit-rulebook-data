@@ -118,8 +118,8 @@ describe("the shortage-occupation Blue Card's degree path", () => {
     expect(below.gap_max).toBeCloseTo(304.2, 2);
   });
 
-  it("German recognition not yet or partly granted, outside IT, is not a hard fail: recognition can still come", () => {
-    for (const recognition of ["not_yet", "partial"]) {
+  it("German recognition not assessed, refused or partly granted, outside IT, is not a hard fail: recognition can still come", () => {
+    for (const recognition of ["not_assessed", "not_recognised", "partial"]) {
       const r = shortageCardFor({
         ...recognisedShortageGraduate, recognition_de: recognition, salary_eur_year: bandFor("salary_eur_year", 46000),
       });
@@ -128,10 +128,10 @@ describe("the shortage-occupation Blue Card's degree path", () => {
     }
   });
 
-  it("German recognition not yet, outside IT: the degree path still asks the shortage-list question", () => {
+  it("German recognition not assessed yet, outside IT: the degree path still asks the shortage-list question", () => {
     const { occupation_shortage: _, ...unanswered } = recognisedShortageGraduate;
     const reader: Profile = {
-      ...unanswered, recognition_de: "not_yet", salary_eur_year: bandFor("salary_eur_year", 46000),
+      ...unanswered, recognition_de: "not_assessed", salary_eur_year: bandFor("salary_eur_year", 46000),
     };
     expect(shortageCardFor(reader).hard_fail).toBe(false); // precondition: the card is open
     expect(remainingQuestions(dataset, reader).map((q) => q.field)).toContain("occupation_shortage");
