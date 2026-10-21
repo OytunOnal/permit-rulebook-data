@@ -204,7 +204,8 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
        *
        * A criterion is the one thing in this dataset that decides a case, so
        * carrying one IS being scored — a route claiming the third value beside
-       * a criterion would be told to the reader as "not scored" and would
+       * a criterion would be told to the reader as "not checked against your
+       * answers" and would
        * still turn up on a results screen with a verdict on it. The other
        * direction matters more: a route with no criteria at all passes every
        * criterion vacuously, so a scored route that lost its rules would read

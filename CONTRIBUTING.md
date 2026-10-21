@@ -148,11 +148,11 @@ they leave one dataset sentence unverifiable by machine.
    It is our own sentence about our own interview, so it never states what the
    law requires; the conditions it points at carry their own quotes on the same
    page. Words a reader cannot parse do not go in it: no *modelled*, no
-   *criteria*. *Scored* is allowed only inside the phrase the reader is shown —
-   "scored against your answers", or "scored — 2 conditions this interview did
-   not ask" — and a bare *scored* fails the build, in a reason exactly as in
-   the words the code composes (human, 2026-09-08; words revised s23,
-   2026-09-17).
+   *criteria*, and none of the Scope statement's avoid-list — *scored*, *this
+   interview*, *rule set* — which fails the build in any text the dataset
+   renders, exactly as in the words the code composes. The reader's verb is
+   *checked* ("This route is not checked against your answers"), and the
+   checker speaks as itself ("we don't ask").
 
    `not_asked` is the same fact in ids: every statement and every reading this
    route names to the reader and never asks about. It is what makes the sentence

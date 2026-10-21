@@ -116,10 +116,11 @@ describe("s32 — asked is the field, not the sentence", () => {
     // everything it turns on: the scope says so and names no limb.
     expect(researcher.scope.value).toBe("every-deciding-rule-asked");
     expect(researcher.scope.not_asked).toEqual([]);
-    expect(scopeLine(researcher)).toBe(scopeLine(routeOf(ds, "es-researcher")));
-    // The other two routes' lines are what they were.
-    expect(scopeLine(de)).toBe("quoted and dated · scored — 2 conditions this interview did not ask");
-    expect(scopeLine(fr)).toBe("quoted and dated · scored — 3 conditions this interview did not ask and 1 condition in our own words, not the authority's");
+    const notAnswered = { reader: "not-answered" } as const;
+    expect(scopeLine(researcher, notAnswered)).toBe(scopeLine(routeOf(ds, "es-researcher"), notAnswered));
+    // The other two routes count what they count.
+    expect(scopeLine(de, notAnswered)).toBe("quoted and dated · the checker asks about it, except 2 conditions");
+    expect(scopeLine(fr, notAnswered)).toBe("quoted and dated · the checker asks about it, except 4 conditions — 1 of them in our own words, not the authority's");
     // And the twin agrees.
     expect(scopeDisagreesWithExclusions(ds, exclusions())).toEqual([]);
     expect(twinDisagreesWithProse(exclusions())).toEqual([]);

@@ -16,6 +16,7 @@ export { hostKindOf, AUTHORITY_HOSTS, CONSOLIDATED_TEXT_HOSTS } from "./hosts.js
 export { fillRouteSlots } from "./route-slots.js";
 export type { HostKind } from "./hosts.js";
 export { scopeWords, scopeLine, statedNotAsked, askedByCriterion, countedWords, NUMBER_WORDS, SCOPE_VALUES } from "./scope.js";
+export type { ScopeReader, UnaskedCount } from "./scope.js";
 export { routesInProse, excludedLimbs, twinDisagreesWithProse, limbIdsOf, scopeDisagreesWithExclusions } from "./exclusions.js";
 export { countryClasses, countryOptions, classOfCountry, countryAdjective, countryPhrase, countryPhraseAtStart, countryPossessive, countryPossessiveAtStart, countryVocabulary } from "./countries.js";
 export type { CountryClass, CountryVocabulary } from "./countries.js";

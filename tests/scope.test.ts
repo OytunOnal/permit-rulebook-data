@@ -71,38 +71,16 @@ describe("s6 — every route declares what the checker asks of it", () => {
 
   it("the words are plain: no pipeline vocabulary reaches the reader", () => {
     const said = [
-      ...SCOPE_VALUES.map((v) => scopeWords(v, 2)),
+      ...SCOPE_VALUES.flatMap((v) => (["answered", "not-answered"] as const)
+        .map((reader) => scopeWords(v, { stated: 2, noted: 1 }, { reader }))),
       ...routes().map((r) => r.scope.reason),
     ].join(" ").toLowerCase();
-    // "Scored" left this list on 2026-09-08, by the human's own choice of
-    // words: "scored against your answers" says what the reader gets, which is
-    // the sentence this rule exists to demand. The ban was on our pipeline
-    // describing itself — "fully modelled", "criteria met on 4 of 6 criteria" —
-    // and it holds for every other word on it. It is narrowed here rather than
-    // deleted, with the reason, because a rule that quietly loses a term is a
-    // rule nobody can audit.
+    // The ban is on our pipeline describing itself — "fully modelled",
+    // "criteria met on 4 of 6 criteria". "Scored", "this interview" and "rule
+    // set" are the Scope statement's own avoid-list, held over every text the
+    // dataset renders in tests/checked-words.test.ts.
     for (const word of ["modelled", "modeled", "modelling", "criterion", "criteria", "pipeline", "coverage"])
       expect(said, word).not.toContain(word);
-    // And where it IS used it is used in a sentence about the reader: never
-    // bare, never as a verdict, always beside what it was scored against. The
-    // rule holds for the 23 authored reasons exactly as it holds for the words
-    // the code composes (Standards review, 2026-09-08). The tally form changed
-    // its punctuation in s23 ("scored — 2 conditions this interview did not
-    // ask"): the dash joins the list here for the reason the comma did, and a
-    // bare "scored" still fails.
-    const ALLOWED = /(?:not scored|scored,|scored —|scored against your answers)/;
-    const bare = (text: string): string[] =>
-      // Each use with enough either side to read it: "not scored" needs the
-      // word before, the others the words after.
-      [...text.matchAll(/.{0,4}scored.{0,26}/gi)]
-        .map((m) => m[0])
-        .filter((phrase) => !ALLOWED.test(phrase));
-    for (const value of SCOPE_VALUES) {
-      const words = scopeWords(value, 2, 1);
-      expect(bare(words), `${value}: "${words}"`).toEqual([]);
-    }
-    for (const route of routes())
-      expect(bare(route.scope.reason), `${route.id}: "${route.scope.reason}"`).toEqual([]);
     // A reason is our own words about our own interview. It never puts an
     // authority in quotation marks in a slot nothing can check them against.
     for (const r of routes())
@@ -330,10 +308,10 @@ describe("a reading is ours, and the words say so", () => {
     const vocational = statedNotAsked(of("de-skilled-vocational"), { split: true });
     expect(vocational.stated, "a source statement appeared from nowhere").toEqual([]);
     expect(vocational.noted.length).toBe(2);
-    // s23 (v1.1 critique P4): figures, a dash, and whose words — "in our own
-    // reading" was the model's phrase for the split, not the reader's.
-    expect(scopeLine(of("de-skilled-vocational")))
-      .toBe("quoted and dated · scored — 2 conditions this interview did not ask, in our own words, not the authority's");
+    // Figures, and whose words — "in our own reading" was the model's phrase
+    // for the split, not the reader's.
+    expect(scopeLine(of("de-skilled-vocational"), { reader: "not-answered" }))
+      .toBe("quoted and dated · the checker asks about it, except 2 conditions, in our own words, not the authority's");
 
     // The one stated condition — the contract of more than three months — is
     // the sentence the situation gate quotes, and a sentence a criterion
@@ -341,10 +319,8 @@ describe("a reading is ours, and the words say so", () => {
     const talent = statedNotAsked(of("fr-talent-qualifie"), { split: true });
     expect(talent.stated.length).toBe(0);
     expect(talent.noted.length).toBe(1);
-    expect(scopeLine(of("fr-talent-qualifie")))
-      .toBe("quoted and dated · scored — 1 condition this interview did not ask, in our own words, not the authority's");
-    // Both forms at once, on a route where a stated condition survives beside
-    // a reading: none does today, so the words are held on their own below.
+    expect(scopeLine(of("fr-talent-qualifie"), { reader: "not-answered" }))
+      .toBe("quoted and dated · the checker asks about it, except 1 condition, in our own words, not the authority's");
   });
 
   it("the split is the same list the evidence is read from", () => {
@@ -352,12 +328,12 @@ describe("a reading is ours, and the words say so", () => {
       const split = statedNotAsked(route, { split: true });
       expect([...split.stated, ...split.noted], route.id).toEqual(statedNotAsked(route));
       // And the sentence counts exactly what the split holds.
-      const line = scopeLine(route);
+      const line = scopeLine(route, { reader: "not-answered" });
       if (route.scope.value !== "some-conditions-stated-not-asked") continue;
       expect(split.stated.length + split.noted.length, route.id).toBeGreaterThan(0);
-      // Every counted condition is one this interview did not ask; the ones
-      // in our own words are the readings (s23 wording).
-      expect(line.includes("this interview did not ask"), route.id).toBe(split.stated.length + split.noted.length > 0);
+      // Every counted condition is one the checker does not ask about; the
+      // ones in our own words are the readings.
+      expect(line, route.id).toContain(`except ${split.stated.length + split.noted.length} condition`);
       expect(line.includes("in our own words, not the authority's"), route.id).toBe(split.noted.length > 0);
     }
   });
@@ -366,15 +342,11 @@ describe("a reading is ours, and the words say so", () => {
     // The type says so; this says what happens if a caller ignores the type,
     // because `expect(fn).toBeDefined()` cannot fail (Standards review,
     // 2026-09-08).
-    // @ts-expect-error the second argument is not optional any more.
-    const said = scopeWords("some-conditions-stated-not-asked");
-    expect(said).not.toContain("undefined");
-    expect(said).not.toContain("NaN");
-    expect(scopeWords("some-conditions-stated-not-asked", 1, 0))
-      .toBe("quoted and dated · scored — 1 condition this interview did not ask");
+    // @ts-expect-error the counts and the reader are not optional.
+    expect(() => scopeWords("some-conditions-stated-not-asked")).toThrow();
     // And the reading form never borrows the avoid-list words.
-    for (const words of [scopeWords("some-conditions-stated-not-asked", 0, 2),
-      scopeWords("some-conditions-stated-not-asked", 1, 1)]) {
+    for (const unasked of [{ stated: 0, noted: 2 }, { stated: 1, noted: 1 }]) {
+      const words = scopeWords("some-conditions-stated-not-asked", unasked, { reader: "answered" });
       expect(words).not.toContain("we note");
       expect(words).toContain("in our own words, not the authority's");
     }

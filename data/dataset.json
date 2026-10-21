@@ -1738,7 +1738,7 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/SelbstaendigeTaetigkeit/selbstaendigetaetigkeit-node.html",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. The permit is granted on an assessment of your business plan — how sound the idea is, what you have run before, how much capital you are putting in, what it does for jobs and training, and what it adds to innovation and research — weighed together with the local chambers, the trade authorities and the professional bodies. Five judgements and a committee are not something a form can reach, so we state what the statute says, in its own words, with the day we read it.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. The permit is granted on an assessment of your business plan — how sound the idea is, what you have run before, how much capital you are putting in, what it does for jobs and training, and what it adds to innovation and research — weighed together with the local chambers, the trade authorities and the professional bodies. Five judgements and a committee are not something a form can reach, so we state what the statute says, in its own words, with the day we read it.",
             "not_asked": [
               "an-economic-interest-and-secured-financing",
               "the-assessment-weighs-five-things",
@@ -2511,7 +2511,7 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F15898",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. The card follows a work authorisation your employer applies for, and that decision turns on whether the job was advertised for three weeks with nobody suitable answering, on your employer's own record with the tax, social-security and labour authorities, and on whether the hire is judged out of proportion to the business making it. Those are facts about somebody else, so we state the rules with the authority's own sentences and the day we read them, and we leave the verdict alone.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. The card follows a work authorisation your employer applies for, and that decision turns on whether the job was advertised for three weeks with nobody suitable answering, on your employer's own record with the tax, social-security and labour authorities, and on whether the hire is judged out of proportion to the business making it. Those are facts about somebody else, so we state the rules with the authority's own sentences and the day we read them, and we leave the verdict alone.",
             "not_asked": [
               "your-employer-applies-for-the-work-authorisation",
               "the-job-is-advertised-for-three-weeks-first",
@@ -2621,7 +2621,7 @@
           "id": "fr-talent-chercheur",
           "name": "Talent — researcher (chercheur)",
           "kind": "res-work",
-          "summary": "France's researcher card: a hosting agreement with an approved research or higher-education body, a master's-level degree, and research or university teaching as the purpose of the stay. Quoted here, not scored — the fiche's pay floor names no period, and which agreement it hangs on is not said.",
+          "summary": "France's researcher card: a hosting agreement with an approved research or higher-education body, a master's-level degree, and research or university teaching as the purpose of the stay. Quoted here, not checked — the fiche's pay floor names no period, and which agreement it hangs on is not said.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "slug": "talent-researcher",
           "situations": [
@@ -2629,7 +2629,7 @@
           ],
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. The fiche's gates are a hosting agreement with an approved body, a degree at least equivalent to a master's and a pay floor it states without a period, and the card's length follows a contract this interview never sees. We state the rules with the authority's own sentences and the day we read them, and leave the verdict alone; the situation question's research answer is the one this route would have asked about.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. The fiche's gates are a hosting agreement with an approved body, a degree at least equivalent to a master's and a pay floor it states without a period, and the card's length follows a contract we don't ask about. We state the rules with the authority's own sentences and the day we read them, and leave the verdict alone; the situation question's research answer is the one this route would have asked about.",
             "not_asked": [
               "the-card-is-for-a-researcher-and-lets-you-work",
               "every-condition-below-must-hold",
@@ -3385,7 +3385,7 @@
           "info_url": "https://www.inclusion.gob.es/web/migraciones/cuenta-ajena",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. Whether it opens at all depends on the national employment situation, which has two doors: your occupation is on a catalogue of hard-to-fill jobs that the public employment service redraws every three months for each autonomous community, or your employer has to satisfy the immigration office that the post could not be filled from the labour market already here. A quarterly regional list and an office's judgement of somebody else's recruiting are not facts you could declare, so we quote the regulation and date it instead.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. Whether it opens at all depends on the national employment situation, which has two doors: your occupation is on a catalogue of hard-to-fill jobs that the public employment service redraws every three months for each autonomous community, or your employer has to satisfy the immigration office that the post could not be filled from the labour market already here. A quarterly regional list and an office's judgement of somebody else's recruiting are not facts you could declare, so we quote the regulation and date it instead.",
             "not_asked": [
               "the-national-employment-situation-must-allow-it",
               "a-quarterly-catalogue-per-region-is-one-door",
@@ -3538,7 +3538,7 @@
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/teletrabajadores",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. It turns on a situation this interview never asks about — that you already work remotely for a company trading outside Spain, and have done for at least three months — and on an income floor the law states only as sufficient means for you and your family. The binding figure is not in the law: it is set as a multiple of a minimum wage a separate decree resets each year, in an instruction no fetch of ours can reach. We will not do arithmetic on your behalf and call it a rule, so the rules are quoted here and dated.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. It turns on a situation we don't ask about — that you already work remotely for a company trading outside Spain, and have done for at least three months — and on an income floor the law states only as sufficient means for you and your family. The binding figure is not in the law: it is set as a multiple of a minimum wage a separate decree resets each year, in an instruction no fetch of ours can reach. We will not do arithmetic on your behalf and call it a rule, so the rules are quoted here and dated.",
             "not_asked": [
               "the-work-is-remote-and-for-companies-outside-spain",
               "at-most-a-fifth-of-professional-work-from-spain",
@@ -5003,7 +5003,7 @@
           "info_url": "https://ind.nl/en/residence-permits/work/single-permit-gvva",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. The statute makes the permit refusable if there is priority supply on the Dutch labour market for the job, if the vacancy was not reported to the employee insurance agency at least five weeks before the application, or if your employer cannot show enough effort to fill it from that supply — and the agency decides for itself whether the work could have been done from the EU or the wider European Economic Area. Those are facts about your employer's search and somebody else's reading of it, so we quote them, date them, and offer you no verdict.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. The statute makes the permit refusable if there is priority supply on the Dutch labour market for the job, if the vacancy was not reported to the employee insurance agency at least five weeks before the application, or if your employer cannot show enough effort to fill it from that supply — and the agency decides for itself whether the work could have been done from the EU or the wider European Economic Area. Those are facts about your employer's search and somebody else's reading of it, so we quote them, date them, and offer you no verdict.",
             "not_asked": [
               "refused-where-there-is-priority-supply",
               "your-employer-searches-europe-for-three-months",
