@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, reckonAskingRoutes, remainingQuestions } from "../src/index.js";
+import { criterionPhrase, deriveBands, evaluate, reasonFor, reckonAskingRoutes, remainingQuestions } from "../src/index.js";
 import type { Criterion, CriterionResult, Dataset, Profile, RouteResult } from "../src/index.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -52,6 +52,19 @@ describe("the shortage-occupation Blue Card's IT path", () => {
     const short = shortageCardFor({ ...itWorkerWithoutDegree, experience_7y: "lt3" });
     expect(short.hard_fail).toBe(false);
     expect(short.criteria.filter((cr) => cr.outcome !== "pass")).toEqual([qualifyingDisjunctionOf(short)]);
+  });
+
+  it("under 3 years in the last seven: the IT path is the deciding path, and the reason names the rung, not the degree", () => {
+    const reader: Profile = { ...itWorkerWithoutDegree, experience_7y: "lt3" };
+    const short = shortageCardFor(reader);
+    const disjunction = qualifyingDisjunctionOf(short)!;
+    const choice = disjunction.criterion;
+    if (choice.op !== "any") throw new Error("precondition: the qualifying criterion is a disjunction");
+    expect(disjunction.outcome).toBe("fail"); // precondition: no path passed
+    const itIndex = choice.paths.findIndex((p) => fieldsReadBy(p.criteria).includes("occupation_it"));
+    const rung = choice.paths[itIndex]!.criteria.find((c) => "field" in c && c.field === "experience_7y")!;
+    expect(disjunction.path?.index).toBe(itIndex);
+    expect(reasonFor(dataset, short, reader).parts.needs).toEqual([criterionPhrase(dataset, rung)]);
   });
 
   it("the shortage-list answer, whichever it is, does not reach the IT path", () => {

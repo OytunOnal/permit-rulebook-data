@@ -131,8 +131,28 @@ function outcomeOf(c: Disjunction, pathResults: CriterionResult[][], judge: Crit
 function everyPathFailed(c: Disjunction, pathResults: CriterionResult[][], judge: CriterionJudge): CriterionResult {
   const nearest = nearestBoundedPath(c, pathResults);
   if (nearest) return nearest;
-  const openPathWaiting = pathResults.some((rs) => rs.some(isUnknown) && isPathOpen(rs, judge));
-  return { criterion: c, outcome: openPathWaiting ? "unknown" : "fail" };
+  if (pathResults.some((rs) => rs.some(isUnknown) && isPathOpen(rs, judge))) return { criterion: c, outcome: "unknown" };
+  const index = indexOfOpenPathWithFewestUnmet(pathResults, judge);
+  return index === undefined
+    ? { criterion: c, outcome: "fail" }
+    : { criterion: c, outcome: "fail", path: decidedPath(c, index, pathResults[index]) };
+}
+
+/**
+ * Where no path failed only by a bounded gap, the deciding path is the open
+ * one (no hard-failing criterion) with the fewest unmet criteria, ties to the
+ * dataset's order: an IT worker short of the experience rung is told the rung
+ * on the IT path, not a degree they declared they do not have. Undefined when
+ * every path holds a hard fail.
+ */
+function indexOfOpenPathWithFewestUnmet(pathResults: CriterionResult[][], judge: CriterionJudge): number | undefined {
+  const unmet = (rs: CriterionResult[]) => rs.filter((r) => r.outcome !== "pass").length;
+  let best: number | undefined;
+  for (const [index, rs] of pathResults.entries()) {
+    if (!isPathOpen(rs, judge)) continue;
+    if (best === undefined || unmet(rs) < unmet(pathResults[best])) best = index;
+  }
+  return best;
 }
 
 /**
@@ -155,9 +175,10 @@ function nearestBoundedPath(c: Disjunction, pathResults: CriterionResult[][]): C
 
 /**
  * The criterion nodes an outcome actually rested on. A disjunction contributes
- * only its deciding path — the one that passed, or the nearest reachable one
- * the gap was measured against — so a consumer can name the threshold the
- * reader was measured against instead of whichever the dataset wrote first.
+ * only its deciding path — the one that passed, the nearest reachable one the
+ * gap was measured against, or the open one with the fewest unmet criteria —
+ * so a consumer can name the threshold the reader was measured against
+ * instead of whichever the dataset wrote first.
  * An undecided disjunction contributes nothing: nothing has decided it.
  */
 export function decidingCriteria(results: CriterionResult[]): CriterionResult[] {

@@ -208,14 +208,13 @@ describe("every question does work on every destination it is asked on", () => {
 
   /**
    * Neighbouring rungs known to read the same on a destination, each owned by
-   * an open issue. France reads the seven-year question only as "5 years or
-   * more", so its lower two rungs cannot differ there until #89 cuts ladder
-   * rungs per destination. The check fails when an entry stops failing, so the
-   * entry goes when #89 lands.
+   * an open issue. The check fails when an entry stops failing, so an entry
+   * goes when its issue lands. France reads the seven-year question only as
+   * "5 years or more"; its two lower rungs still differ there, because the
+   * Talent Blue Card's reason names its experience path and quotes the
+   * declared rung back.
    */
-  const KNOWN_SAME_RUNGS: SameRungs[] = [
-    { destination: "fr", field: "experience_7y", rungs: ["lt3", "3to5"] }, // #89
-  ];
+  const KNOWN_SAME_RUNGS: SameRungs[] = [];
 
   it("per rung: neighbouring rungs of a ladder question move the screen of every destination it is asked on", () => {
     const same: SameRungs[] = [];
