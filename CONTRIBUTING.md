@@ -34,7 +34,9 @@ append-only.
 
 1. **Read the source yourself.** Open the official page or document and find
    the sentence. Not a news article about it, not a summary, not a mirror
-   unless the mirror is disclosed as one on the card.
+   unless its host is on the consolidated-text list in `src/hosts.ts`: the
+   site labels every link to such a host as a consolidated text, so the
+   citation in `legal_basis` names the statute alone.
 2. **Move the old value into `history`.** Never overwrite. The old entry keeps
    its own `amount`/`value`, `retrieved_at`, and — where you have it — the
    quote and URL it stood on. The audit trail is the point: a reader must be
@@ -176,7 +178,9 @@ they leave one dataset sentence unverifiable by machine.
 
 7. **Add every new source to the watchlist.** `npm run watch:coverage` enforces
    it in both directions: a dataset source nothing watches fails, and a watched
-   source backing no value fails.
+   source backing no value fails. A source or learn link on a new host also
+   needs the host on one of the two lists in `src/hosts.ts`, authority hosts
+   or consolidated-text hosts; the build fails until it is.
 8. **Add the questions' words.** A criterion may only name an answer the
    dataset can put into words — give the option a `short`, or the criterion a
    `short_reason`. There is no fallback to a field id; the build fails instead.

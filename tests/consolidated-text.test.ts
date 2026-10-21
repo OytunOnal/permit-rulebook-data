@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import dataset from "../data/dataset.json" with { type: "json" };
 import { validateDataset } from "../src/validate.js";
-import { hostKindOf, routeStatements } from "../src/index.js";
+import { CONSOLIDATED_TEXT_HOSTS, hostKindOf, renderableTexts, routeStatements } from "../src/index.js";
 import type { Dataset, Route } from "../src/types.js";
 
 const ds = dataset as unknown as Dataset;
@@ -32,6 +32,16 @@ describe("the kind of a source's host", () => {
 
   it("throws on a host on neither list, naming it", () => {
     expect(() => hostKindOf(UNLISTED)).toThrow(/mirror\.example\.org/);
+  });
+});
+
+describe("a citation names the statute, and the host kind discloses the mirror", () => {
+  it("no legal_basis names a consolidated-text host", () => {
+    const hosts = CONSOLIDATED_TEXT_HOSTS.map((h) => h.replace(/^www\./, ""));
+    const citations = renderableTexts(ds).filter((t) => t.path.endsWith("/legal_basis"));
+    expect(citations.length).toBeGreaterThan(0);
+    for (const c of citations)
+      for (const host of hosts) expect(c.text, c.path).not.toContain(host);
   });
 });
 
