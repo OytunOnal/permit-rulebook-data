@@ -1,7 +1,7 @@
 import { countryOptions } from "./countries.js";
 import { CARVE_OUT_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type {
-  Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
+  AskingRoutes, Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
   FieldOption, Notice,
   PointsBreakdown, PointsItem, PointsRow, Profile, ProvenancedText, Route, RouteReading, RouteResult,
   RouteStatement, RouteStatus, StatementException,
@@ -494,6 +494,31 @@ function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): st
   return profile[c.field] === undefined ? [c.field] : [];
 }
 
+/** One open route (scored, no hard fail) and the unanswered fields that can
+ * still change its outcome. */
+interface RouteReckoning {
+  route: Route;
+  country: string;
+  undecided: Set<string>;
+}
+
+/**
+ * The asking reckoning, route by route, in dataset order. Every reading of
+ * "which question is worth asking, and for whom" goes through this one walk,
+ * so the asking rule and the routes it names cannot drift apart.
+ */
+function reckonOpenRoutes(dataset: Dataset, profile: Profile): RouteReckoning[] {
+  const open: RouteReckoning[] = [];
+  for (const country of dataset.countries)
+    for (const route of country.routes) {
+      // A route nothing is asked about asks for no question either (s9).
+      if (!isScored(route) || hasHardFail(dataset, route, profile)) continue;
+      const undecided = new Set(route.criteria.flatMap((c) => undecidedFieldsOf(dataset, c, profile)));
+      open.push({ route, country: country.code, undecided });
+    }
+  return open;
+}
+
 /**
  * Fields that can still change some live route's outcome. Sharper than "fields
  * of live routes": a points criterion already passed, a decided criterion, or
@@ -501,17 +526,23 @@ function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): st
  * them is noise.
  */
 export function informativeFields(dataset: Dataset, profile: Profile): Set<string> {
-  const fields = new Set<string>();
-  for (const country of dataset.countries) {
-    for (const route of country.routes) {
-      // A route nothing is asked about asks for no question either (s9).
-      if (!isScored(route)) continue;
-      if (hasHardFail(dataset, route, profile)) continue; // dead route
-      for (const c of route.criteria)
-        for (const f of undecidedFieldsOf(dataset, c, profile)) fields.add(f);
-    }
-  }
-  return fields;
+  return new Set(reckonOpenRoutes(dataset, profile).flatMap((r) => [...r.undecided]));
+}
+
+/**
+ * For one question on this profile: the open routes (scored, no hard fail),
+ * and those of them it is asked for — the ones whose undecided criteria read
+ * its answer. It decides nothing of its own: `asked_for` is non-empty exactly
+ * when `informativeFields` holds the field. To reckon a question being
+ * reopened, pass the profile without its answer.
+ */
+export function reckonAskingRoutes(dataset: Dataset, profile: Profile, field: string): AskingRoutes {
+  const reckoned = reckonOpenRoutes(dataset, profile);
+  const openRouteOf = ({ route, country }: RouteReckoning) => ({ route, country });
+  return {
+    asked_for: reckoned.filter((r) => r.undecided.has(field)).map(openRouteOf),
+    open: reckoned.map(openRouteOf),
+  };
 }
 
 /**
