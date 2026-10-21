@@ -67,6 +67,23 @@ describe("the shortage-occupation Blue Card's IT path", () => {
   });
 });
 
+describe("what the IT path states and never asks", () => {
+  it("the academic-level IT job and the Federal Employment Agency's approval are preconditions from the IT path's own source, listed as not asked", () => {
+    const route = shortageCardFor(itWorkerWithoutDegree).route;
+    const itPath = route.criteria.flatMap((c) => (c.op === "any" ? c.paths : []))
+      .find((p) => fieldsReadBy(p.criteria).includes("occupation_it"))!;
+    const itSources = itPath.criteria.map((c) => ({ url: c.source!.source_url, basis: c.source!.legal_basis }));
+    for (const id of ["academic-level-it-job", "federal-employment-agency-approval"]) {
+      const statement = route.statements?.find((s) => s.id === id);
+      expect(statement, id).toBeDefined();
+      expect(statement!.kind).toBe("precondition");
+      expect(statement!.field, id).toBeUndefined();
+      expect(itSources).toContainEqual({ url: statement!.source!.source_url, basis: statement!.source!.legal_basis });
+      expect(route.scope.not_asked).toContain(id);
+    }
+  });
+});
+
 describe("the shortage-occupation Blue Card's degree path", () => {
   const recognisedShortageGraduate: Profile = {
     destination: "de", citizenship: "IN", situation: "offer", qualification: "degree",

@@ -700,10 +700,12 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Migrathek/BlaueKarteEU/blauekarteeu-node.html",
           "scope": {
             "value": "some-conditions-stated-not-asked",
-            "reason": "Every rule that decides the shortage-occupation Blue Card is a question you answer, including whether the occupation is on Germany's list; the two conditions the authority states — the six-month job offer, and the licence where the profession is regulated — are listed with the rules below and never asked.",
+            "reason": "Every rule that decides the shortage-occupation Blue Card is a question you answer, including whether the occupation is on Germany's list and, without a degree, your IT experience; the four conditions the authority states — the six-month job offer, the licence where the profession is regulated, and, on the IT path, an IT job at academic level and the Federal Employment Agency's approval — are listed with the rules below and never asked.",
             "not_asked": [
               "job-offer-of-at-least-six-months",
-              "licence-for-a-regulated-profession"
+              "licence-for-a-regulated-profession",
+              "academic-level-it-job",
+              "federal-employment-agency-approval"
             ]
           },
           "criteria": [
@@ -843,6 +845,28 @@
                 "quote": "Handelt es sich um einen reglementierten Beruf, muss zusätzlich eine Berufsausübungserlaubnis vorliegen.",
                 "retrieved_at": "2026-09-07",
                 "legal_basis": "§ 18g AufenthG"
+              }
+            },
+            {
+              "id": "academic-level-it-job",
+              "kind": "precondition",
+              "text": "Without a degree, in IT: the job must be a qualified IT job at academic level",
+              "source": {
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                "quote": "Es muss sich um eine qualifizierte Beschäftigung auf akademischem Niveau in einem IT-Beruf handeln",
+                "retrieved_at": "2026-10-21",
+                "legal_basis": "§ 18g Abs. 2 AufenthG"
+              }
+            },
+            {
+              "id": "federal-employment-agency-approval",
+              "kind": "precondition",
+              "text": "Without a degree, in IT: the Federal Employment Agency must approve the employment, after checking its terms",
+              "source": {
+                "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                "quote": "die Zustimmung der Bundesagentur für Arbeit (Prüfung der Beschäftigungsbedingungen) ist erforderlich",
+                "retrieved_at": "2026-10-21",
+                "legal_basis": "§ 18g Abs. 2 AufenthG"
               }
             }
           ]
