@@ -187,10 +187,31 @@ describe("s14 — s11's freshness sentence is not disturbed (point 7)", () => {
       .toEqual(["nl-ind-blue-card", "nl-ind-ict", "nl-ind-orientation-year", "nl-ind-researcher"]);
   });
 
-  it("over the shipped state, no Dutch source is named", () => {
-    const sources = unreadSources(dataset, state);
-    for (const s of sources) expect(FORM_GATED[s.id], `${s.id} is human-tier and in the clause`).toBeUndefined();
+  // Two states written here, never the shipped one: the daily watch rewrites
+  // `watch/state.json`, and while a Dutch source was down this case read it
+  // and turned every check and every deploy red (#144).
+  const lastRunMissed = (id: string): WatchState => ({
+    entries: {
+      "bamf-hochschulabsolvent": { hash: "h", retrieved_at: "2026-09-07", history: [] },
+      "wetten-wav-artikel-8": { hash: "h", retrieved_at: "2026-09-10", history: [] },
+    },
+    last_run: "2026-10-21",
+    unread: [{ id, url: entryOf(id).url }],
+  });
+
+  it("a German source the last run missed names Germany, and no Dutch source", () => {
+    const missed = lastRunMissed("bamf-hochschulabsolvent");
+    const sources = unreadSources(dataset, missed);
+    expect(sources.flatMap((s) => s.countries)).toEqual(["DE"]);
     expect(unreadSentence(sources)).not.toMatch(/Dutch/);
-    expect(unreadNeverRead(dataset, state)).toEqual([]);
+    expect(unreadNeverRead(dataset, missed)).toEqual([]);
+  });
+
+  it("a Dutch source the machine reads, missed by the last run, is named", () => {
+    const missed = lastRunMissed("wetten-wav-artikel-8");
+    const sources = unreadSources(dataset, missed);
+    expect(sources.flatMap((s) => s.countries)).toEqual(["NL"]);
+    expect(unreadSentence(sources)).toMatch(/Dutch/);
+    expect(unreadNeverRead(dataset, missed)).toEqual([]);
   });
 });
