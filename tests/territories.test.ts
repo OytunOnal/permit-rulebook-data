@@ -8,8 +8,6 @@ import type { Dataset } from "../src/types.js";
 
 const readJson = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const dataset = readJson("../data/dataset.json") as Dataset;
-const shippedWatchlist = readJson("../watch/watchlist.json") as Watchlist;
-const shippedState = readJson("../watch/state.json") as WatchState;
 
 /**
  * #160 — a territory typed in the passport search names its passport.
@@ -129,11 +127,29 @@ describe("a territory's source is watched like a passport class's", () => {
     }
   });
 
-  it("every territory's quote is still on the page it cites, read by a machine", () => {
-    // The quote gate, which reads the watch's snapshots by design.
-    const check = checkQuotes(dataset, shippedWatchlist, shippedState);
+  it("the quote gate holds every territory's quote to the page it cites", () => {
+    // A watch state written here, never the shipped one, which the daily run
+    // rewrites: every territory's page reads its quote, and then one does not.
+    const territories = countryVocabulary.territories ?? [];
+    expect(territories.length, "precondition: the list carries territories").toBeGreaterThan(0);
+    const watchlist: Watchlist = {
+      entries: territories.map((t) => ({ id: t.code, url: t.source.source_url, strategy: "html", kind: "value-source" })),
+    };
+    const stateWith = (pageText: (code: string) => string): WatchState => ({
+      entries: Object.fromEntries(territories.map((t) => [t.code, {
+        hash: "written", retrieved_at: "2026-10-21", text: pageText(t.code), history: [],
+      }])),
+    });
     const territorial = (where: string) => where.startsWith("territory:");
-    expect(check.missing.filter((m) => territorial(m.where))).toEqual([]);
-    expect(check.unverifiable.filter((u) => territorial(u.where))).toEqual([]);
+    const quoteOf = (code: string) => territories.find((t) => t.code === code)!.source.quote;
+
+    const read = checkQuotes(dataset, watchlist, stateWith((code) => `The page. ${quoteOf(code)} More.`));
+    expect(read.missing.filter((m) => territorial(m.where))).toEqual([]);
+    expect(read.unverifiable.filter((u) => territorial(u.where))).toEqual([]);
+
+    const moved = territories[0]!.code;
+    const changed = checkQuotes(dataset, watchlist,
+      stateWith((code) => (code === moved ? "The page now says something else." : quoteOf(code))));
+    expect(changed.missing.filter((m) => territorial(m.where)).map((m) => m.where)).toEqual([`territory:${moved}`]);
   });
 });
