@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { bindsReader, deriveBands, evaluate, fieldOptions, routeStatements } from "../src/engine.js";
-import { reasonFor } from "../src/verdict.js";
-import { scopeLine } from "../src/scope.js";
 import { remainingQuestions } from "../src/questions.js";
 import { classOfCountry, countryOptions } from "../src/countries.js";
-import type { Dataset, FieldDef, FieldOption, Profile } from "../src/types.js";
+import type { CriterionResult, Dataset, FieldDef, FieldOption, Profile } from "../src/types.js";
 
 /**
  * Every question the interview asks changes something the reader sees.
@@ -19,7 +17,7 @@ import type { Dataset, FieldDef, FieldOption, Profile } from "../src/types.js";
  *
  * The check is generated, not enumerated: for each field, hold everything
  * else fixed and walk the field's answers; somewhere across a handful of
- * baselines, two answers must produce two different screens. For the passport
+ * baselines, two answers must make some route decide differently. For the passport
  * the pool is third-country passports only, because a free-movement passport
  * changing everything was already true when #8 was open.
  */
@@ -36,8 +34,8 @@ const thirdCountry = countryOptions()
 
 /**
  * Every answer the question offers, the passport's EU ones included: on one
- * destination, a free-movement passport is often the only one that moves the
- * screen, and that is the passport doing its work there.
+ * destination, a free-movement passport is often the only one that moves a
+ * decision, and that is the passport doing its work there.
  */
 function everyAnswerTo(def: FieldDef): string[] {
   if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
@@ -61,37 +59,44 @@ function baseline(seed: number, destination: string): Profile {
   return p;
 }
 
+/** Each criterion's outcome, a disjunction's with the path it rested on and that path's own outcomes. */
+function outcomesOf(results: CriterionResult[]): unknown[] {
+  return results.map((cr) => (cr.path ? [cr.outcome, cr.path.index, outcomesOf(cr.path.criteria)] : cr.outcome));
+}
+
 /**
- * Everything on the screen that an answer could move, as one string: every
- * route's, or only the given routes'.
+ * What every route decided for this profile, as one string: its status, its
+ * hard fail, the rules it found unmet and the deciding path of each
+ * disjunction, its gaps, and which of its stated conditions bind this reader
+ * (a carve-out sets one aside for a passport the authority names). Never the
+ * reason's words: a reason quotes the reader's own answer back, so two answers
+ * read differently even where every route decides the same. Every route's
+ * decisions, or only the given routes'.
  */
-function screen(profile: Profile, routes?: ReadonlySet<string>): string {
-  const out: string[] = [];
-  for (const r of evaluate(dataset, profile)) {
-    if (routes && !routes.has(r.route.id)) continue;
-    const reason = reasonFor(dataset, r, profile);
-    out.push(r.route.id, reason.line, ...reason.rows.map((x) => x.text));
-    out.push(...routeStatements(r.route).filter((s) => bindsReader(s, profile)).map((s) => s.id));
-    out.push(scopeLine(r.route, profile));
-  }
-  return out.join("\n");
+function decisions(profile: Profile, routes?: ReadonlySet<string>): string {
+  return JSON.stringify(evaluate(dataset, profile)
+    .filter((r) => !routes || routes.has(r.route.id))
+    .map((r) => [
+      r.route.id, r.status, r.hard_fail, outcomesOf(r.criteria), r.gap_max ?? null, r.gap_points ?? null,
+      routeStatements(r.route).filter((s) => bindsReader(s, profile)).map((s) => s.id),
+    ]));
 }
 
 const SEEDS = 60;
 
 /**
- * Whether two of these answers to the field give two different screens on
- * some baseline for the destination: every route's screen, or only the given
+ * Whether two of these answers to the field give two different decisions on
+ * some baseline for the destination: every route's, or only the given
  * routes'.
  */
-function answersMoveScreen(
+function answersMoveDecisions(
   field: string, answers: string[], where: { destination: string; routes?: ReadonlySet<string> },
 ): boolean {
   for (let seed = 1; seed <= SEEDS; seed++) {
     const base = baseline(seed, where.destination);
     const seen = new Set<string>();
     for (const value of answers) {
-      seen.add(screen({ ...base, [field]: value }, where.routes));
+      seen.add(decisions({ ...base, [field]: value }, where.routes));
       if (seen.size > 1) return true;
     }
   }
@@ -103,17 +108,17 @@ describe("every question does work", () => {
   const asked = dataset.fields.filter((f) => f.id !== "destination");
 
   for (const def of asked)
-    it(`${def.id}: two answers produce two different screens`, () => {
+    it(`${def.id}: two answers produce two different decisions`, () => {
       const answers = answersFor(def);
       expect(answers.length, `${def.id} has fewer than two answers to compare`).toBeGreaterThan(1);
       // A field the interview asks only for one country changes nothing under
       // another, so every destination gets a turn — and enough seeds that a
       // one-point field on the Chancenkarte meets a baseline sitting one point
       // short: with three seeds it never did, and the test blamed the question.
-      const moved = destinations.some((destination) => answersMoveScreen(def.id, answers, { destination }));
+      const moved = destinations.some((destination) => answersMoveDecisions(def.id, answers, { destination }));
       expect(
         moved,
-        `${def.id}: no two answers change anything a reader sees — either the question goes, `
+        `${def.id}: no two answers change any route's decision — either the question goes, `
           + `or a rule is missing (the passport was this, data #8)`,
       ).toBe(true);
     });
@@ -123,8 +128,8 @@ describe("every question does work", () => {
     // Japanese passport on the Dutch highly skilled migrant route see
     // different conditions, because the IND says so.
     const base = baseline(1, "nl");
-    const tr = screen({ ...base, citizenship: "TR" });
-    const jp = screen({ ...base, citizenship: "JP" });
+    const tr = decisions({ ...base, citizenship: "TR" });
+    const jp = decisions({ ...base, citizenship: "JP" });
     expect(tr).not.toBe(jp);
   });
 });
@@ -133,7 +138,7 @@ describe("every question does work", () => {
  * The check above passes a field when any destination moves, so the
  * seven-year question passed on Spain, the Netherlands and France while
  * "Under 3" and "3 to under 5" gave every German card the same result (B1,
- * #133). These checks hold each destination to its own screen, and each pair
+ * #133). These checks hold each destination to its own decisions, and each pair
  * of neighbouring rungs of an improvable enum to a difference of its own.
  */
 describe("every question does work on every destination it is asked on", () => {
@@ -168,18 +173,18 @@ describe("every question does work on every destination it is asked on", () => {
     return asked;
   }
 
-  /** Whether two of these answers to the field move the screen of the routes
+  /** Whether two of these answers to the field move a decision of a route
    * the destination leaves open, on some baseline. */
   const answersMoveDestination = (destination: string, field: string, answers: string[]): boolean =>
-    answersMoveScreen(field, answers, { destination, routes: openRoutesOf(destination) });
+    answersMoveDecisions(field, answers, { destination, routes: openRoutesOf(destination) });
 
-  it("per destination: a field asked on a destination moves that destination's screen", () => {
+  it("per destination: a field asked on a destination moves that destination's decisions", () => {
     const failures: string[] = [];
     for (const destination of destinations)
       for (const def of dataset.fields) {
         if (!fieldsAskedOn(destination).has(def.id)) continue;
         if (!answersMoveDestination(destination, def.id, everyAnswerTo(def)))
-          failures.push(`${destination}: ${def.id} is asked there, but no change of its answer moves that destination's screen`);
+          failures.push(`${destination}: ${def.id} is asked there, but no change of its answer moves that destination's decisions`);
       }
     expect(failures).toEqual([]);
   });
@@ -207,15 +212,16 @@ describe("every question does work on every destination it is asked on", () => {
 
   /**
    * Neighbouring rungs known to read the same on a destination, each owned by
-   * an open issue. The check fails when an entry stops failing, so an entry
-   * goes when its issue lands. France reads the seven-year question only as
-   * "5 years or more"; its two lower rungs still differ there, because the
-   * Talent Blue Card's reason names its experience path and quotes the
-   * declared rung back.
+   * an open issue. France reads the seven-year question only as "5 years or
+   * more", so its lower two rungs cannot differ there until
+   * OytunOnal/permit-rulebook#89 cuts ladder rungs per destination. The check
+   * fails when an entry stops failing, so the entry goes when #89 lands.
    */
-  const KNOWN_SAME_RUNGS: SameRungs[] = [];
+  const KNOWN_SAME_RUNGS: SameRungs[] = [
+    { destination: "fr", field: "experience_7y", rungs: ["lt3", "3to5"] }, // OytunOnal/permit-rulebook#89
+  ];
 
-  it("per rung: neighbouring rungs of an improvable enum move the screen of every destination it is asked on", () => {
+  it("per rung: neighbouring rungs of an improvable enum move the decisions of every destination it is asked on", () => {
     const rungsReadingTheSame: SameRungs[] = [];
     const messages: string[] = [];
     for (const destination of destinations)
@@ -226,7 +232,7 @@ describe("every question does work on every destination it is asked on", () => {
           const [lower, upper] = [rungs[i - 1]!, rungs[i]!];
           if (answersMoveDestination(destination, def.id, [lower.value, upper.value])) continue;
           rungsReadingTheSame.push({ destination, field: def.id, rungs: [lower.value, upper.value] });
-          messages.push(`${destination}: ${def.id}: "${lower.label}" and "${upper.label}" give that destination the same screen on every baseline`);
+          messages.push(`${destination}: ${def.id}: "${lower.label}" and "${upper.label}" give that destination the same decisions on every baseline`);
         }
       }
     expect(rungsReadingTheSame, `neighbouring rungs that read the same, against the known list:\n${messages.join("\n")}`)
