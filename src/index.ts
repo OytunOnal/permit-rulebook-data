@@ -13,6 +13,7 @@ export type { ProseProvenance, QuotationOffence, RenderableKind, RenderableText 
 export { quoteLanguage, sourceUrls, unmappedSources, QUOTE_LANGUAGES, LANGUAGE_NAMES } from "./lang.js";
 export { QUOTED_NOT_SCORED, DESTINATION_FIELD, SITUATION_FIELD } from "./types.js";
 export { hostKindOf, AUTHORITY_HOSTS, CONSOLIDATED_TEXT_HOSTS } from "./hosts.js";
+export { fillRouteSlots } from "./route-slots.js";
 export type { HostKind } from "./hosts.js";
 export { scopeWords, scopeLine, statedNotAsked, askedByCriterion, countedWords, NUMBER_WORDS, SCOPE_VALUES } from "./scope.js";
 export { routesInProse, excludedLimbs, twinDisagreesWithProse, limbIdsOf, scopeDisagreesWithExclusions } from "./exclusions.js";

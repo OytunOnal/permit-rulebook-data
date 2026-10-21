@@ -190,7 +190,13 @@ they leave one dataset sentence unverifiable by machine.
    of related experience in the last seven"), or the build fails. A criterion
    with paths, and each of its paths, carries a `label`: the criterion is
    named by its label wherever it is named in one line, and each path's line
-   opens with the path's.
+   opens with the path's. A question that names a route writes
+   `{route:<route id>}` in its `label`, its `learn` label or its `subject`,
+   and the route carries `what_it_is`, a short phrase saying what it is; the
+   slot fills as "Germany's Opportunity Card — the permit to come and look for
+   work". A route's plain name (its name without the bracketed citation) typed
+   into any of a question's words fails the build, and so does a slot anywhere
+   else in them.
 9. **A `learn` label is what the reader does there** — one sentence opening
    on an action (`Check` · `See` · `Read` · `Find`), in plain words, never
    statute shorthand such as `§ 18g AufenthG`: the site prints it verbatim as

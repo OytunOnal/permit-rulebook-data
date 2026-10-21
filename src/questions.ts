@@ -2,6 +2,7 @@ import {
   deriveBands, fieldOptions, informativeFields, isRouteAlive, isScored, optionEquivalenceClasses,
   referencedFields,
 } from "./engine.js";
+import { fillRouteSlots } from "./route-slots.js";
 import type { Dataset, Profile, Question } from "./types.js";
 
 /**
@@ -25,10 +26,12 @@ export function deriveQuestions(dataset: Dataset): Question[] {
   const questions: Question[] = [];
   for (const def of dataset.fields) {
     if (!referenced.has(def.id)) continue;
+    // The label as a reader reads it, with any route it names said in full.
+    const label = fillRouteSlots(def.label, dataset);
     if (def.type === "enum") {
       // Inline options or a declared vocabulary (`options_from`) — the engine
       // expands both, so a question never has to know where its list lives.
-      questions.push({ field: def.id, label: def.label, options: fieldOptions(dataset, def.id) });
+      questions.push({ field: def.id, label, options: fieldOptions(dataset, def.id) });
     } else {
       // The amounts, and then a door that is neither a number nor a lie. A
       // money question describes money the reader may not have, for a stay they
@@ -44,7 +47,7 @@ export function deriveQuestions(dataset: Dataset): Question[] {
         ...deriveBands(dataset, def.id).map((b) => ({ value: b.id, label: b.label })),
         { value: UNKNOWN_BAND, label: def.unknown_label ?? DEFAULT_UNKNOWN_LABEL, is_unknown: true },
       ];
-      questions.push({ field: def.id, label: def.label, options });
+      questions.push({ field: def.id, label, options });
     }
   }
   return questions;

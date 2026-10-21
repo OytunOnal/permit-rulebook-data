@@ -4,6 +4,7 @@ import { countryVocabulary, vocabularyErrors } from "./countries.js";
 import { deriveBands, fieldOptions, forEachCriterion, itemRows, provenancedValuesOf, referencedFields, routeStatements } from "./engine.js";
 import { askedByCriterion } from "./scope.js";
 import { unlistedSourceHosts } from "./hosts.js";
+import { routeSlotErrors } from "./route-slots.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
@@ -59,10 +60,14 @@ export function validateDataset(data: unknown): ValidationResult {
  *   report. The vocabulary's own invariants are checked here too, so
  *   `countries.json` cannot ship a country with no class or two;
  * - a criterion accepting two or more rungs of an ordered question says the
- *   range in its own `short_reason` (`unwordedRangeErrors`).
+ *   range in its own `short_reason` (`unwordedRangeErrors`);
+ * - a question names a route only through a filled slot, never by the route's
+ *   plain name typed by hand (`routeSlotErrors`).
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
-  const errors: ValidationError[] = [...vocabularyErrors(countryVocabulary), ...unwordedRangeErrors(dataset)];
+  const errors: ValidationError[] = [
+    ...vocabularyErrors(countryVocabulary), ...unwordedRangeErrors(dataset), ...routeSlotErrors(dataset),
+  ];
 
   /**
    * s5e: nothing reaches a screen in quotation marks without provenance beside

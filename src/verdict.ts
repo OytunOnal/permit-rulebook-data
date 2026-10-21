@@ -1,6 +1,7 @@
 import { countryClasses, countryPhrase } from "./countries.js";
 import { DEFAULT_UNKNOWN_LABEL, UNKNOWN_BAND } from "./questions.js";
 import { decidingCriteria } from "./disjunction.js";
+import { fillRouteSlots } from "./route-slots.js";
 import { closedBy, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields, } from "./engine.js";
 import type {
   Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
@@ -64,9 +65,11 @@ export function shortLabelOf(dataset: Dataset, field: string): string {
   return fieldOf(dataset, field)?.short_label ?? field;
 }
 
-/** The fact as a noun phrase inside a sentence. */
+/** The fact as a noun phrase inside a sentence, with any route it names said
+ * in full. */
 export function subjectOf(dataset: Dataset, field: string): string {
-  return fieldOf(dataset, field)?.subject ?? field;
+  const subject = fieldOf(dataset, field)?.subject;
+  return subject === undefined ? field : fillRouteSlots(subject, dataset);
 }
 
 /**

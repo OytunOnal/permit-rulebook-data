@@ -218,6 +218,7 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
     for (const route of country.routes) {
       const p = `/countries/${country.code}/routes/${route.id}`;
       label(`${p}/name`, route.name);
+      label(`${p}/what_it_is`, route.what_it_is);
       label(`${p}/summary`, route.summary);
       // A precondition states what the AUTHORITY requires of an applicant —
       // "the professional licence must already be in hand" is the authority's
