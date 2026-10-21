@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { checkCoverage, checkQuotes, datasetQuotes, runWatch, STRATEGIES, type Fetcher, type Watchlist } from "../src/watch/core.js";
 import { unreadNeverRead, unreadSentence, unreadSources, type WatchState } from "../src/watch/state.js";
+import { countryAdjective } from "../src/countries.js";
 import type { Dataset } from "../src/types.js";
 
 /**
@@ -188,9 +189,9 @@ describe("s14 — s11's freshness sentence is not disturbed (point 7)", () => {
   });
 
   // Two states written here, never the shipped one: the daily watch rewrites
-  // `watch/state.json`, and while a Dutch source was down this case read it
-  // and turned every check and every deploy red (#144).
-  const lastRunMissed = (id: string): WatchState => ({
+  // `watch/state.json`, so a source down that morning would turn a case
+  // reading it, and every check and every deploy, red (#144).
+  const stateWhoseLastRunMissed = (id: string): WatchState => ({
     entries: {
       "bamf-hochschulabsolvent": { hash: "h", retrieved_at: "2026-09-07", history: [] },
       "wetten-wav-artikel-8": { hash: "h", retrieved_at: "2026-09-10", history: [] },
@@ -198,20 +199,27 @@ describe("s14 — s11's freshness sentence is not disturbed (point 7)", () => {
     last_run: "2026-10-21",
     unread: [{ id, url: entryOf(id).url }],
   });
+  const german = countryAdjective("DE");
+  const dutch = countryAdjective("NL");
 
   it("a German source the last run missed names Germany, and no Dutch source", () => {
-    const missed = lastRunMissed("bamf-hochschulabsolvent");
-    const sources = unreadSources(dataset, missed);
+    expect(german).toBeTruthy();
+    expect(dutch).toBeTruthy();
+    const fixedState = stateWhoseLastRunMissed("bamf-hochschulabsolvent");
+    const sources = unreadSources(dataset, fixedState);
     expect(sources.flatMap((s) => s.countries)).toEqual(["DE"]);
-    expect(unreadSentence(sources)).not.toMatch(/Dutch/);
-    expect(unreadNeverRead(dataset, missed)).toEqual([]);
+    const sentence = unreadSentence(sources);
+    expect(sentence).toContain(german!);
+    expect(sentence).not.toContain(dutch!);
+    expect(unreadNeverRead(dataset, fixedState)).toEqual([]);
   });
 
   it("a Dutch source the machine reads, missed by the last run, is named", () => {
-    const missed = lastRunMissed("wetten-wav-artikel-8");
-    const sources = unreadSources(dataset, missed);
+    expect(dutch).toBeTruthy();
+    const fixedState = stateWhoseLastRunMissed("wetten-wav-artikel-8");
+    const sources = unreadSources(dataset, fixedState);
     expect(sources.flatMap((s) => s.countries)).toEqual(["NL"]);
-    expect(unreadSentence(sources)).toMatch(/Dutch/);
-    expect(unreadNeverRead(dataset, missed)).toEqual([]);
+    expect(unreadSentence(sources)).toContain(dutch!);
+    expect(unreadNeverRead(dataset, fixedState)).toEqual([]);
   });
 });
