@@ -3,6 +3,7 @@ import schema from "../schema/ruleset.schema.json" with { type: "json" };
 import { countryVocabulary, vocabularyErrors } from "./countries.js";
 import { deriveBands, fieldOptions, forEachCriterion, itemRows, provenancedValuesOf, referencedFields, routeStatements } from "./engine.js";
 import { askedByCriterion } from "./scope.js";
+import { unlistedSourceHosts } from "./hosts.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
@@ -72,6 +73,18 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
    */
   for (const offence of quotedWithoutProvenance(dataset))
     errors.push({ path: offence.path, message: offenceMessage(offence), keyword: "quotedWithoutProvenance" });
+
+  /**
+   * #158: the site labels a link by whose page it opens, read off the host's
+   * list. A host on neither list would have no honest label, so a mirror
+   * cannot ship under "Official page" by being new.
+   */
+  for (const host of unlistedSourceHosts(dataset))
+    errors.push({
+      path: "/",
+      message: `a source or learn link is on ${host}, which is on neither the authority hosts nor the consolidated-text hosts (src/hosts.ts) — add it to the list it belongs on`,
+      keyword: "listedSourceHost",
+    });
   const seenIds = new Set<string>();
   const thresholds = new Map<string, { amount: number; source_url: string; retrieved_at: string; route: string }>();
 

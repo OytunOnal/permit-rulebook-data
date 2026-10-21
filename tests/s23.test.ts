@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import dataset from "../data/dataset.json" with { type: "json" };
-import { datasetMeta, forEachCriterion, notices } from "../src/engine.js";
+import { datasetMeta, forEachCriterion, notices, routeStatements } from "../src/engine.js";
+import { hostKindOf } from "../src/hosts.js";
 import { scopeLine, scopeWords } from "../src/scope.js";
 import { criterionPhrase } from "../src/verdict.js";
 import { renderableTexts } from "../src/prose.js";
@@ -52,18 +53,19 @@ describe("s23 P3 — the curator's note leaves the card", () => {
   it("no citation a card prints is about us", () => {
     // "(consolidated mirror — gesetze-im-internet.de times out from here)"
     // sat in the § 20a caveat's legal_basis, which card.ts and route-page.ts
-    // print verbatim beside the quote. A citation names the statute and,
-    // where the read is a mirror, discloses that — nothing about our fetcher.
+    // print verbatim beside the quote. A citation names the statute, nothing
+    // about our fetcher; a mirror is disclosed by its host's kind (#158).
     for (const c of citations()) {
       expect(c.text, c.path).not.toMatch(/times out/);
       expect(c.text, c.path).not.toMatch(/from here/);
     }
   });
 
-  it("the § 20a caveat still discloses the mirror, the way the § 21 citations do", () => {
-    const caveat = citations().find((c) => c.path.includes("de-chancenkarte") && c.text.startsWith("§ 20a Absatz 2"));
-    expect(caveat, "the Opportunity Card's 20-hour caveat citation").toBeDefined();
-    expect(caveat!.text).toBe("§ 20a Absatz 2 AufenthG (consolidated mirror, buzer.de)");
+  it("the § 20a caveat still discloses the mirror, the way the § 21 citations do: its source is a consolidated text", () => {
+    const route = ds.countries.flatMap((c) => c.routes).find((r) => r.id === "de-chancenkarte")!;
+    const caveat = routeStatements(route).find((s) => s.source?.legal_basis?.startsWith("§ 20a Absatz 2"));
+    expect(caveat, "the Opportunity Card's 20-hour caveat").toBeDefined();
+    expect(hostKindOf(caveat!.source!.source_url)).toBe("consolidated-text");
   });
 
   it("the note stays in the data: on the watch entry for the source it is about", () => {
