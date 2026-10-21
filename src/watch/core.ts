@@ -3,7 +3,7 @@ import { htmlToText, normalize } from "./normalize.js";
 import { pdfToText } from "./pdf-text.js";
 import { repairKnownGlyphs, unboundedReason, type GlyphSubstitution } from "./corrections.js";
 import { noticeSources, provenancedValuesOf, routeStatements, statementSources, forEachCriterion } from "../engine.js";
-import { countryVocabulary } from "../countries.js";
+import { countryListQuotes } from "./country-list-quotes.js";
 import { datasetSourceUrls, usesCountryVocabulary, type Snapshot, type UnreadEntry, type WatchState } from "./state.js";
 import { failureOfStatus, MOST_OF_A_FAILURE, printableWithin, type FailureClass } from "./failure.js";
 import { refusalOfEntryAddress, type RedirectPolicy, stripCredentials } from "./trust-line.js";
@@ -1082,13 +1082,7 @@ export function datasetQuotes(dataset: Dataset): { quote: string; source_url: st
   for (const n of dataset.notices ?? [])
     for (const value of noticeSources(n))
       out.push({ quote: value.quote, source_url: value.source_url, where: `notice:${n.id}` });
-  if (usesCountryVocabulary(dataset)) {
-    for (const [id, cls] of Object.entries(countryVocabulary.classes))
-      for (const source of cls.sources ?? [])
-        out.push({ quote: source.quote, source_url: source.source_url, where: `class:${id}` });
-    for (const t of countryVocabulary.territories ?? [])
-      out.push({ quote: t.source.quote, source_url: t.source.source_url, where: `territory:${t.code}` });
-  }
+  if (usesCountryVocabulary(dataset)) out.push(...countryListQuotes());
   return out;
 }
 
