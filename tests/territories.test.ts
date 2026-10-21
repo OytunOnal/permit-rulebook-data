@@ -53,6 +53,15 @@ describe("the territory a reader typed, and whose passport its people hold", () 
     expect(findTerritory("Ahvenanmaa", written())?.territory.code).toBe("AX");
   });
 
+  it("finds a territory typed with the article its name takes, as the line prints it", () => {
+    const vocab = written();
+    vocab.territories![0].article = "the";
+    expect(findTerritory("the Åland Islands", vocab)?.territory.code).toBe("AX");
+    expect(findTerritory("The Aland Islands", vocab)?.territory.code).toBe("AX");
+    // An article the name does not take is not a name of it.
+    expect(findTerritory("the Puerto Rico", vocab)).toBeUndefined();
+  });
+
   it("finds nothing for a country's own name, a part of a name, or anything else", () => {
     for (const typed of ["Finland", "Puerto", "Narnia", "", "   "])
       expect(findTerritory(typed, written()), typed).toBeUndefined();

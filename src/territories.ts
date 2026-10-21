@@ -11,16 +11,20 @@ export interface FoundTerritory {
 
 const namesOf = (t: Territory): string[] => [t.name, ...(t.aliases ?? [])];
 
+/** What a reader may type for a territory: its names, and its name with the
+ * article it takes, as the territory's line prints it ("the Faroe Islands"). */
+const typedFormsOf = (t: Territory): string[] => [...namesOf(t), ...(t.article ? [territoryPhraseOf(t)] : [])];
+
 /**
- * The territory whose name or alias is what the reader typed, whole — folded
- * the way the passport search folds, so case, marks and punctuation do not
- * matter — with the country whose passport its people hold. Nothing for
- * anything else: a part of a name is still a search in progress.
+ * The territory whose name, alias or name with its article is what the reader
+ * typed, whole — folded the way the passport search folds, so case, marks and
+ * punctuation do not matter — with the country whose passport its people hold.
+ * Nothing for anything else: a part of a name is still a search in progress.
  */
 export function findTerritory(typed: string, vocab: CountryVocabulary = countryVocabulary): FoundTerritory | undefined {
   const folded = foldForSearch(typed.trim());
   if (!folded) return undefined;
-  const territory = (vocab.territories ?? []).find((t) => namesOf(t).some((n) => foldForSearch(n) === folded));
+  const territory = (vocab.territories ?? []).find((t) => typedFormsOf(t).some((n) => foldForSearch(n) === folded));
   const country = territory && vocab.countries.find((c) => c.code === territory.passport);
   return territory && country ? { territory, country } : undefined;
 }
