@@ -164,8 +164,7 @@ export function declaredPlace(dataset: Dataset, profile: Profile): string {
   // "Netherlands". Both destination and situation_country are country codes, so
   // one lookup serves both; an option's `short` is a different sentence
   // ("Germany as your destination") and is deliberately not used here.
-  return countryPhrase(value.toUpperCase()) ??
-    fieldOptions(dataset, field).find((o) => o.value === value)?.label ?? "";
+  return countryPhrase(value.toUpperCase());
 }
 
 /** Unknowns the person can still act on: on a hard-failed route nothing they
@@ -198,9 +197,6 @@ export interface Reason {
    * themselves — and for the test that no field NAME ever lands in one. */
   parts: { needs: string[]; unknown: string[]; moot: string[] };
 }
-
-const countryName = (dataset: Dataset, code: string): string =>
-  dataset.countries.find((c) => c.code === code)?.name ?? code;
 
 /**
  * The criterion results a reason names. A disjunction with a deciding path is
@@ -253,7 +249,7 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
       const place = declaredPlace(dataset, profile);
       rows.push({
         kind: "where",
-        text: `This route is ${countryName(dataset, r.country)}${place ? `, and you told us ${place}` : ""}.`,
+        text: `This route is in ${countryPhrase(r.country)}${place ? `, and you told us ${place}` : ""}.`,
       });
       continue;
     }
@@ -295,8 +291,8 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
 
   if (isPlacedElsewhere(r, profile)) {
     const place = declaredPlace(dataset, profile);
-    const country = countryName(dataset, r.country);
-    return { line: place ? `A ${country} route — you told us ${place}.` : `A ${country} route.`, rows, parts };
+    const country = countryPhrase(r.country);
+    return { line: place ? `A route in ${country} — you told us ${place}.` : `A route in ${country}.`, rows, parts };
   }
 
   const sentences: string[] = [];

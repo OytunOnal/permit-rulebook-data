@@ -122,7 +122,8 @@
     },
     {
       "code": "BS",
-      "name": "Bahamas"
+      "name": "Bahamas",
+      "article": "the"
     },
     {
       "code": "BH",
@@ -218,7 +219,8 @@
     },
     {
       "code": "CF",
-      "name": "Central African Republic"
+      "name": "Central African Republic",
+      "article": "the"
     },
     {
       "code": "TD",
@@ -238,11 +240,13 @@
     },
     {
       "code": "KM",
-      "name": "Comoros"
+      "name": "Comoros",
+      "article": "the"
     },
     {
       "code": "CG",
       "name": "Republic of the Congo",
+      "article": "the",
       "aliases": [
         "Congo",
         "Congo-Brazzaville",
@@ -252,6 +256,7 @@
     {
       "code": "CD",
       "name": "Democratic Republic of the Congo",
+      "article": "the",
       "aliases": [
         "DRC",
         "Zaire",
@@ -303,7 +308,8 @@
     },
     {
       "code": "DO",
-      "name": "Dominican Republic"
+      "name": "Dominican Republic",
+      "article": "the"
     },
     {
       "code": "EC",
@@ -362,7 +368,8 @@
     },
     {
       "code": "GM",
-      "name": "Gambia"
+      "name": "Gambia",
+      "article": "the"
     },
     {
       "code": "GE",
@@ -556,7 +563,8 @@
     },
     {
       "code": "MV",
-      "name": "Maldives"
+      "name": "Maldives",
+      "article": "the"
     },
     {
       "code": "ML",
@@ -568,7 +576,8 @@
     },
     {
       "code": "MH",
-      "name": "Marshall Islands"
+      "name": "Marshall Islands",
+      "article": "the"
     },
     {
       "code": "MR",
@@ -693,6 +702,7 @@
     {
       "code": "PS",
       "name": "Palestinian Territories",
+      "article": "the",
       "aliases": [
         "Palestine",
         "West Bank",
@@ -717,7 +727,8 @@
     },
     {
       "code": "PH",
-      "name": "Philippines"
+      "name": "Philippines",
+      "article": "the"
     },
     {
       "code": "PL",
@@ -776,7 +787,8 @@
     },
     {
       "code": "SC",
-      "name": "Seychelles"
+      "name": "Seychelles",
+      "article": "the"
     },
     {
       "code": "SL",
@@ -799,7 +811,8 @@
     },
     {
       "code": "SB",
-      "name": "Solomon Islands"
+      "name": "Solomon Islands",
+      "article": "the"
     },
     {
       "code": "SO",
@@ -960,6 +973,7 @@
     {
       "code": "AE",
       "name": "United Arab Emirates",
+      "article": "the",
       "aliases": [
         "UAE",
         "Emirates"
@@ -968,6 +982,7 @@
     {
       "code": "GB",
       "name": "United Kingdom",
+      "article": "the",
       "aliases": [
         "UK",
         "Great Britain",
@@ -981,6 +996,7 @@
     {
       "code": "US",
       "name": "United States",
+      "article": "the",
       "aliases": [
         "USA",
         "US",

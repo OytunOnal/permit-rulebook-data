@@ -295,7 +295,7 @@ describe("an answer a reader can mistake for the one they hold says what it mean
   it("a country's article travels with its name, not with a renderer", () => {
     expect(countryPhrase("NL")).toBe("the Netherlands");
     expect(countryPhrase("DE")).toBe("Germany");
-    expect(countryPhrase("ZZ")).toBeUndefined();
+    expect(() => countryPhrase("ZZ")).toThrow();
     expect(declaredPlace(ds, { destination: "nl" })).toBe("the Netherlands");
     expect(declaredPlace(ds, { destination: "de" })).toBe("Germany");
     expect(declaredPlace(ds, { destination: "all" })).toBe("");
