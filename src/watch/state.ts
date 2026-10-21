@@ -162,9 +162,13 @@ export function datasetSourceCountries(dataset: Dataset): Map<string, Set<string
   // all, so every leg of that claim is watched like a threshold — but only for
   // a dataset that reads the vocabulary. Folding it in unconditionally made the
   // gate fail on a ruleset that never mentions a country (review).
-  if (usesCountryVocabulary(dataset))
+  if (usesCountryVocabulary(dataset)) {
     for (const cls of Object.values(countryVocabulary.classes))
       for (const source of cls.sources ?? []) add(source.source_url);
+    // A territory's passport is the same kind of claim — whose passport a
+    // reader is told to choose — so its source is watched the same way.
+    for (const territory of countryVocabulary.territories ?? []) add(territory.source.source_url);
+  }
   walkCache.set(dataset, urls);
   return urls;
 }

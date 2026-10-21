@@ -1082,10 +1082,13 @@ export function datasetQuotes(dataset: Dataset): { quote: string; source_url: st
   for (const n of dataset.notices ?? [])
     for (const value of noticeSources(n))
       out.push({ quote: value.quote, source_url: value.source_url, where: `notice:${n.id}` });
-  if (usesCountryVocabulary(dataset))
+  if (usesCountryVocabulary(dataset)) {
     for (const [id, cls] of Object.entries(countryVocabulary.classes))
       for (const source of cls.sources ?? [])
         out.push({ quote: source.quote, source_url: source.source_url, where: `class:${id}` });
+    for (const t of countryVocabulary.territories ?? [])
+      out.push({ quote: t.source.quote, source_url: t.source.source_url, where: `territory:${t.code}` });
+  }
   return out;
 }
 

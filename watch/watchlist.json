@@ -695,6 +695,57 @@
         "from": "Requirements for the opportunity card",
         "to": "All news"
       }
+    },
+    {
+      "id": "us-citizenship-puerto-rico",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2023-title8/html/USCODE-2023-title8-chap12-subchapIII-partI-sec1402.htm",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Backs the passport Puerto Rico's people hold (countries.json territories, #160): 8 U.S.C. 1402 as the Government Publishing Office publishes it. Read 2026-10-21 by the watch's own fetcher; the page is the section alone, so it is not sliced."
+    },
+    {
+      "id": "us-citizenship-northern-mariana-islands",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2023-title48/html/USCODE-2023-title48-chap17-subchapI-sec1801.htm",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Proc. No. 5564.",
+        "to": "congratulate our new fellow citizens."
+      },
+      "note": "Backs the passport the Northern Mariana Islands' people hold (countries.json territories, #160): Proclamation 5564, printed in the notes to 48 U.S.C. 1801 by the Government Publishing Office. Sliced to the proclamation up to the citizenship it declares; the page also carries the whole Covenant and every later note. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "doi-oia-guam",
+      "url": "https://www.doi.gov/oia/islands/guam",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Political Status",
+        "to": "Was this page helpful?"
+      },
+      "note": "Backs the passport Guam's people hold (countries.json territories, #160): the Department of the Interior's Office of Insular Affairs on Guam. Sliced to the page's own text, between its menus and its feedback form. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "doi-oia-virgin-islands",
+      "url": "https://www.doi.gov/oia/islands/virgin-islands",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Political Status",
+        "to": "Was this page helpful?"
+      },
+      "note": "Backs the passport the U.S. Virgin Islands' people hold (countries.json territories, #160): the Department of the Interior's Office of Insular Affairs on the U.S. Virgin Islands. Sliced to the page's own text, between its menus and its feedback form. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "doi-oia-american-samoa",
+      "url": "https://www.doi.gov/oia/islands/american-samoa",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Political Status",
+        "to": "Was this page helpful?"
+      },
+      "note": "Backs the passport American Samoa's people hold (countries.json territories, #160): the Department of the Interior's Office of Insular Affairs on American Samoa, whose people are U.S. nationals. Sliced to the page's own text, between its menus and its feedback form. Read 2026-10-21 by the watch's own fetcher."
     }
   ]
 }
