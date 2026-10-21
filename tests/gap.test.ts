@@ -104,7 +104,7 @@ describe("a within-reach card names the rule it is short of", () => {
   it("a points route still speaks of points, not money", () => {
     const profile: Profile = {
       destination: "de", citizenship: "third_country", situation: "none",
-      qualification: "vocational", recognition_de: "not_yet", occupation_shortage: "no",
+      qualification: "vocational", recognition_de: "not_assessed", occupation_shortage: "no",
       experience_5y: "lt2", experience_7y: "lt3", german: "none", funds_eur_month: "band_9", age_band: "a36to39",
     };
     for (const r of evaluate(dataset, profile))
