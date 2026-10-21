@@ -1155,8 +1155,8 @@
       "name": "Gibraltar",
       "passport": "GB",
       "source": {
-        "source_url": "https://www.gibraltar.gov.gi/press-releases/applications-for-id-cards-and-passports-4222020-5990",
-        "quote": "Application Forms for UK Issued Passports, available to Gibraltar residents only, may be obtained by contacting the Passport and Nationality Section.",
+        "source_url": "https://www.gibraltar.gov.gi/press-releases/stamping-of-passports-at-the-border-4342021-7002",
+        "quote": "All British Citizens, including Gibraltarians, are entitled to spend 90 days in each 180 in the European Union without a visa.",
         "retrieved_at": "2026-10-21"
       }
     },
@@ -1169,9 +1169,10 @@
       ],
       "passport": "DK",
       "source": {
-        "source_url": "https://politi.gl/da/bestil-pas",
-        "quote": "I Grønland kan man både få udstedt et grønlandsk og dansk pas.",
-        "retrieved_at": "2026-10-21"
+        "source_url": "https://stm.dk/statsministeriet/publikationer/faelleserklaering-mellem-eu-groenland-og-danmark/",
+        "quote": "the citizens of Greenland, as citizens of the Kingdom of Denmark, have EU citizenship",
+        "retrieved_at": "2026-10-21",
+        "legal_basis": "Joint Declaration between the European Union, the Government of Greenland and the Government of Denmark"
       }
     },
     {

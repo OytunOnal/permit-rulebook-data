@@ -12,8 +12,8 @@ const ENTITIES: Record<string, string> = {
   "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'",
   "&nbsp;": " ", "&euro;": "€", "&auml;": "ä", "&ouml;": "ö", "&uuml;": "ü",
   "&Auml;": "Ä", "&Ouml;": "Ö", "&Uuml;": "Ü", "&szlig;": "ß",
-  // The Danish letters, which Greenland Police's passport page writes as
-  // entities (politi-gl-passport).
+  // The Danish letters, which Danish and Greenlandic official pages write as
+  // entities.
   "&aelig;": "æ", "&oslash;": "ø", "&aring;": "å", "&AElig;": "Æ", "&Oslash;": "Ø", "&Aring;": "Å",
 };
 

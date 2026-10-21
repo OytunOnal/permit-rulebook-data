@@ -445,13 +445,6 @@
       "text": "Identity documents Customers living in the Isle of Man will hold a Crown Dependency variant British passport if they applied for their passport in the place they live. Customers may hold a non-variant British passport if they apply directly to HM Passport Office. Back to top",
       "history": []
     },
-    "gibraltar-passport-applications": {
-      "hash": "ff040e4f522cd46eea57037d1eee7e56760cb89d4927a7bf8fbf24c361b05d61",
-      "retrieved_at": "2026-10-21",
-      "slice_read": "97b13d204046168012c489129a44bf1200992328f60dfcbd8d075e035a6677a2",
-      "text": "Members of the public are reminded that, whilst counters at the Civil Status and Registration Office are closed, systems are in place to make it possible to apply for Identity and Civilian Registration cards. Application forms are available on the Civil Status and Registration Office portal at www.gibraltar.gov.gi and from egov.gi. Requests for application forms may also be made by contacting the Immigration Section at immigration.crso@gibraltar.gov.gi (Tel: 20059828) Completed application forms must be accompanied by the relevant documentation, a passport size photo and payment. They should then be posted to, or deposited at the Immigration Drop Box in the lobby of Joshua Hassan House, Secretary&rsquo;s Lane. Similarly, application forms for Gibraltar Variant Passports are available on the Civil Status and Registration Office portal at www.gibraltar.gov.gi and from egov.gi. Requests for application forms may also be made by contacting the Passport and nationality Section at passports.csro@gibraltar.gov.gi (Tel: 20051727) Application Forms for UK Issued Passports, available to Gibraltar residents only, may be obtained by contacting the Passport and Nationality Section.",
-      "history": []
-    },
     "faroe-home-rule-act": {
       "hash": "83f2d5f548a95706f7e50f4923acb9fb47da6af48a8475d20d6c6e9b706fa75d",
       "retrieved_at": "2026-10-21",
@@ -459,11 +452,18 @@
       "text": "Section 10. In a passport or a certificate of nationality issued in the Faroes for a Faroese the words “Føroyingur” and “Førovar” shall be inserted after the words “Dansk” and “Danmark”. A person who is a Danish subject and a resident in the Faroes shall be deemed a Faroese.",
       "history": []
     },
-    "politi-gl-passport": {
-      "hash": "2951b511ea6c6593ab758e21c4109d86e8c884c7488bd978e56af558f2a78dd2",
+    "gibraltar-passport-stamping": {
+      "hash": "dca5e8c5412484bd82ba57786c442a4b8435f786abab46f6d71e1fc72fc303d6",
       "retrieved_at": "2026-10-21",
-      "slice_read": "9a07254e73b4f6c0959221b6d78d3cf645f35cb7b7de0de6cce84fe2e0d6a2fc",
-      "text": "Grønlandsk eller dansk pas I Grønland kan man både få udstedt et grønlandsk og dansk pas. Du må selv bestemme, om du vil have et grønlandsk eller et dansk pas, når du bor i Grønland. Forskellen på de to pas er: På forsiden af det danske pas, står der Danmark &ndash; Den Europæiske Union På forsiden af det grønlandske pas, står der Danmark &ndash; Kalaallit Nunaat Der er ikke forskel på i hvilke lande passene er gyldige, men der er lidt forskel på, hvilke sprog der er brugt i teksten inde i passet. Betingelser for udstedelse af pas Du skal være dansk statsborger for at kunne få grønlandsk eller dansk pas.",
+      "slice_read": "c101d38c7f827a55c7b116a29ec1894ace002c053c720c5d56bd459d45d66630",
+      "text": "which was the format issued to UK nationals and EU citizens resident in Gibraltar. All British Citizens, including Gibraltarians, are entitled to spend 90 days in each 180 in the European Union without a visa. The stamping of passports is to record the date of entry",
+      "history": []
+    },
+    "stm-eu-greenland-denmark-declaration": {
+      "hash": "ef1f01ab912b48bfbec18e87f574cea451fe37107b5ace753ce7264010e8f7b4",
+      "retrieved_at": "2026-10-21",
+      "slice_read": "98b81184e7728a5d579fa38043bcb19c2afa054d59a27fa4a5585abe5658150c",
+      "text": "there is a potential for an even closer relationship, recalling that the citizens of Greenland, as citizens of the Kingdom of Denmark, have EU citizenship and reaffirming the mutual interest in developing fully the benefits coming from the relationship with the EU, noting that fisheries remain a central pillar",
       "history": []
     }
   },

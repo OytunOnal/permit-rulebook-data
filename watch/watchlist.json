@@ -781,26 +781,26 @@
       "note": "Backs the passport the Isle of Man's people hold (countries.json territories, #160): HM Passport Office's Knowledge Base profile of the Isle of Man. Sliced to its identity-documents section. Read 2026-10-21 by the watch's own fetcher."
     },
     {
-      "id": "gibraltar-passport-applications",
-      "url": "https://www.gibraltar.gov.gi/press-releases/applications-for-id-cards-and-passports-4222020-5990",
+      "id": "gibraltar-passport-stamping",
+      "url": "https://www.gibraltar.gov.gi/press-releases/stamping-of-passports-at-the-border-4342021-7002",
       "strategy": "html",
       "kind": "value-source",
       "slice": {
-        "from": "Members of the public are reminded",
-        "to": "contacting the Passport and Nationality Section."
+        "from": "which was the format issued to UK nationals and EU citizens resident in Gibraltar.",
+        "to": "The stamping of passports is to record the date of entry"
       },
-      "note": "Backs the passport Gibraltar's people hold (countries.json territories, #160): HM Government of Gibraltar's notice 422/2020 on applying for identity cards and passports. Sliced to the notice's own text. Read 2026-10-21 by the watch's own fetcher."
+      "note": "Backs the passport Gibraltar's people hold (countries.json territories, #160; #151's fix round, ruling 3): HM Government of Gibraltar's press release 434/2021 on the stamping of passports at the border, whose sentence counts Gibraltarians among British citizens. Sliced to the two sentences around it. Read 2026-10-21 by the watch's own fetcher."
     },
     {
-      "id": "politi-gl-passport",
-      "url": "https://politi.gl/da/bestil-pas",
+      "id": "stm-eu-greenland-denmark-declaration",
+      "url": "https://stm.dk/statsministeriet/publikationer/faelleserklaering-mellem-eu-groenland-og-danmark/",
       "strategy": "html",
       "kind": "value-source",
       "slice": {
-        "from": "Grønlandsk eller dansk pas",
-        "to": "grønlandsk eller dansk pas."
+        "from": "there is a potential for an even closer relationship,",
+        "to": "noting that fisheries remain a central pillar"
       },
-      "note": "Backs the passport Greenland's people hold (countries.json territories, #160): Greenland Police's page on ordering a passport, in Danish. Sliced from its section on the Greenlandic or Danish passport to the condition that the holder is a Danish citizen. The page writes its Danish letters as entities, which the watch decodes. Read 2026-10-21 by the watch's own fetcher."
+      "note": "Backs the passport Greenland's people hold (countries.json territories, #160; #151's fix round, ruling 3): the Danish Prime Minister's Office's text of the Joint Declaration between the EU, Greenland and Denmark, in English, whose preamble says the citizens of Greenland are citizens of the Kingdom of Denmark. Sliced to the clauses around it. The page writes a non-breaking space inside the clause as an entity, which the watch decodes. Read 2026-10-21 by the watch's own fetcher."
     },
     {
       "id": "faroe-home-rule-act",
