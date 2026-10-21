@@ -284,7 +284,8 @@ describe("s25 — the critique's profile and its neighbours", () => {
  * "keine Punkte nach Nummer 6".
  */
 describe("s25 — a points item with rows on two fields pays the best row, never the sum", () => {
-  const PROV = { source_url: "https://example.gov.de/points", quote: "mindestens sechs Punkte erforderlich", retrieved_at: "2026-09-02" };
+  // On a listed host, which every dataset that validates needs (src/hosts.ts).
+  const PROV = { source_url: "https://www.bamf.de/points", quote: "mindestens sechs Punkte erforderlich", retrieved_at: "2026-09-02" };
   const fixture = (): Dataset => ({
     schema_version: "0.8.1",
     dataset_version: "test",
@@ -300,7 +301,7 @@ describe("s25 — a points item with rows on two fields pays the best row, never
     countries: [{
       code: "DE", name: "Germany",
       routes: [{
-        id: "de-points-card", name: "Points card", kind: "seek", info_url: "https://example.gov.de/route",
+        id: "de-points-card", name: "Points card", kind: "seek", info_url: "https://www.bamf.de/route",
         scope: { value: "every-deciding-rule-asked", reason: "Every rule that decides this route is a question you answer, and nothing else is stated.", not_asked: [] },
         criteria: [{
           op: "points",

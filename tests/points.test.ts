@@ -5,9 +5,10 @@ import { validateDataset } from "../src/validate.js";
 import type { Dataset } from "../src/types.js";
 
 // Chancenkarte-shaped fixture: independent of live curation data so these
-// tests stay green regardless of dataset contents.
+// tests stay green regardless of dataset contents. Its addresses are on a
+// listed host, which every dataset that validates needs (src/hosts.ts).
 const PROV = {
-  source_url: "https://example.gov.de/points",
+  source_url: "https://www.bamf.de/points",
   quote: "mindestens sechs Punkte erforderlich",
   retrieved_at: "2026-09-02",
 };
@@ -34,7 +35,7 @@ const fixture: Dataset = {
       id: "de-points-card",
       name: "Points card",
       kind: "seek",
-      info_url: "https://example.gov.de/route",
+      info_url: "https://www.bamf.de/route",
       // s6: every route declares what the interview asks of it, and the schema
       // refuses one that does not — a fixture is a route like any other.
       scope: {
