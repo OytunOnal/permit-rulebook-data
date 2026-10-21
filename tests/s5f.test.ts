@@ -251,7 +251,8 @@ describe("s5f — each experience question is ordinal: a longer record is never 
       for (const [id, two] of answering(p, FIVE, "2plus"))
         if (rowOf(two) !== rowOf(lt2.get(id)!)) movers[FIVE]!.add(id);
     }
-    expect([...movers[SEVEN]!].sort()).toEqual(["es-highly-qualified", "es-ict", "nl-blue-card"]);
+    // de-blue-card-shortage since #134: its IT path is three years in the last seven.
+    expect([...movers[SEVEN]!].sort()).toEqual(["de-blue-card-shortage", "es-highly-qualified", "es-ict", "nl-blue-card"]);
     expect([...movers[FIVE]!].sort()).toEqual(["de-chancenkarte", "de-experienced-worker"]);
     for (const field of [FIVE, SEVEN])
       for (const id of movers[field]!) expect(readsField(routeOf(id), field), `${id} moved on ${field}`).toBe(true);

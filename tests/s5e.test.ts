@@ -149,7 +149,9 @@ describe("s5e — what is ours is marked as ours", () => {
       // this product states and does not score. A route nothing is asked about
       // is nothing BUT the authority's sentences, so every limb of it is here.
       // Nine more with s19: France's researcher card, quoted the same way.
-      with_provenance: 110 + 44 + 9,
+      // Four more with #134: the shortage card's IT path, two criteria and the
+      // two preconditions the interview does not ask.
+      with_provenance: 110 + 44 + 9 + 4,
       // Ours, declared as ours and shown to the reader as ours: 13 route
       // readings, plus the 28 scope-statement reasons s6 authored — one per route,
       // our own words about our own interview, printed as the page's scope
@@ -502,9 +504,16 @@ describe("s5e — this slice moves prose, not numbers", () => {
     // status (points or gaps re-counted), and the one status that moves is
     // the critique's own case, Experienced worker met → not yet for a person
     // with three years in the last seven and under two in the last five.
+    //
+    // Re-pinned in #134: the shortage card gained its IT path. Held against
+    // the parent dataset over the same 400 people, 19 rows differ, all on
+    // de-blue-card-shortage: 12 go from a hard fail to held (the IT path is
+    // still open), one to met and one from held to within reach (both on the
+    // IT path), and 5 from held to a hard fail — German recognition not yet
+    // or partly granted, an improvable answer, with the IT path closed.
     const lines = seededProfiles().flatMap((p) => evaluate(dataset, p).map(rowOf));
     expect(createHash("sha256").update(lines.join("\n")).digest("hex"))
-      .toBe("0f7dd483f77b95dde4717a991e6b45f2b580ddbf73007fb258e179bc2397f0f1");
+      .toBe("2437078dc25ff2c3a5ef5d10ff554e1cd3792de8cd3013d7dccc4ceb6ae60fb2");
   });
 
   it("and the rules that read experience are the only ones that read it", () => {
@@ -530,6 +539,8 @@ describe("s5e — this slice moves prose, not numbers", () => {
         }
       });
     expect([...readers].sort()).toEqual([
+      // Since #134: the shortage card's IT path reads the seven-year question.
+      "de-blue-card-shortage",
       "de-chancenkarte", "de-experienced-worker", "es-blue-card", "es-highly-qualified", "es-ict",
       "fr-talent-blue-card", "nl-blue-card",
     ]);

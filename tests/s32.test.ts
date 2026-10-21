@@ -168,11 +168,12 @@ describe("s32 — the verbatim cross-check runs the other way: a shared sentence
 });
 
 describe("s32 — the dataset says so in its version", () => {
-  it("schema 0.8.2 for the field; the day is the day the eleven were decided; nothing was read at a source", () => {
+  it("schema 0.8.2 for the field; the version and the newest read are the latest data change's day", () => {
     expect(datasetMeta(ds).schema_version).toBe("0.8.2");
-    expect(datasetMeta(ds).dataset_version).toBe("2026.09.18");
+    // 2026.10.21 since #134, the shortage card's IT path.
+    expect(datasetMeta(ds).dataset_version).toBe("2026.10.21");
     // Every quote keeps its date: the decision is which question covers a
-    // sentence already held, not a new read of it.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-17");
+    // sentence already held, not a new read of it. The newest read is #134's.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });
 });

@@ -364,22 +364,24 @@ describe("s25 — a points item with rows on two fields pays the best row, never
 describe("s25 — the dataset says so in its version, and nothing else moved", () => {
   it("the schema and the day moved on since — the item's shape stands", () => {
     // 0.8.1 was this slice's (the two-field item); 0.8.2 is s32's (a
-    // statement names its question), and the day is s32's too — s23's test
+    // statement names its question), and the day is #134's — s23's test
     // pins it. What this case holds is that nothing here undid the item.
     expect(datasetMeta(ds).schema_version).toBe("0.8.2");
-    expect(datasetMeta(ds).dataset_version).toBe("2026.09.18");
+    expect(datasetMeta(ds).dataset_version).toBe("2026.10.21");
     // Nothing was read at a source by the re-keying: the rules moved against
-    // snapshots already held, and every quote keeps its date. The day's newest
-    // read came later, with s29's two free-movement sentences.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-17");
+    // snapshots already held, and every quote keeps its date. The newest read
+    // came later, with the shortage card's IT path (#134).
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
     expect(validateDataset(clone()).ok).toBe(true);
   });
 
-  it("only the seven routes in the table read either question", () => {
+  it("only the seven routes in the table, and the shortage card's IT path, read either question", () => {
     const readers = routes()
       .filter((r) => reading(r, FIVE).length + reading(r, SEVEN).length > 0)
       .map((r) => r.id).sort();
     expect(readers).toEqual([
+      // Since #134: the IT path reads the seven-year question.
+      "de-blue-card-shortage",
       "de-chancenkarte", "de-experienced-worker", "es-blue-card", "es-highly-qualified", "es-ict",
       "fr-talent-blue-card", "nl-blue-card",
     ]);

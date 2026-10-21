@@ -83,10 +83,14 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
   // an offer-holder nothing to answer. § 20a conditions nothing on being
   // offerless (human read 2026-09-07), so the card now stays live until the
   // applicant's own answers decide it: three more questions for P1 and P2
-  // (both languages and living costs), measured 2026-09-07.
-  it("P1 engineer with offer: at most 11 questions (destination included), occupation_it never asked", () => {
+  // (both languages and living costs), measured 2026-09-07. One more for P1
+  // and for P2 since #134: the shortage card's IT path keeps it open until the
+  // shortage answer (P1) or the IT answer (P2) closes that path, so P1 is asked
+  // the seven-year question before the shortage list, and P2 whether the work
+  // is IT. Measured 2026-10-21: P1 12, P2 11.
+  it("P1 engineer with offer: at most 12 questions (destination included), occupation_it never asked", () => {
     const { asked } = runFlow({ ...engineer, german: "none", english: "none", funds_eur_month: "band_1" });
-    expect(asked.length).toBeLessThanOrEqual(11);
+    expect(asked.length).toBeLessThanOrEqual(12);
     expect(asked).not.toContain("occupation_it");
     // The language answer retires the card, so the points ladder behind it is
     // still never walked.
@@ -112,19 +116,20 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
       expect(asked.filter((f) => f === "german"), german).toHaveLength(1);
       for (const item of ["age_band", "partner_ck", "occupation_it"])
         expect(asked, `german=${german} still asked ${item}`).not.toContain(item);
-      expect(asked.length, `german=${german}`).toBeLessThanOrEqual(11);
+      expect(asked.length, `german=${german}`).toBeLessThanOrEqual(12);
     }
   });
 
-  it("P2 vocational worker with offer: at most 10 questions, shortage list never asked", () => {
+  it("P2 vocational worker with offer: at most 11 questions, shortage list never asked", () => {
     const { asked, profile } = runFlow({
       destination: "de", citizenship: "third_country", situation: "offer", qualification: "vocational",
       recognition_de: "recognized", experience_5y: "2plus", experience_7y: "5plus", salary_eur_year: "band_4",
       occupation_shortage: "no", occupation_it: "no",
       german: "none", english: "none", funds_eur_month: "band_1",
     });
-    expect(asked.length).toBeLessThanOrEqual(10);
-    expect(asked).not.toContain("occupation_shortage"); // only Blue Card wants it, and Blue Card is dead
+    expect(asked.length).toBeLessThanOrEqual(11);
+    // The shortage card's degree path wants it, and without a degree that path is closed.
+    expect(asked).not.toContain("occupation_shortage");
     const byId = Object.fromEntries(evaluate(dataset, profile).map((r) => [r.route.id, r]));
     expect(byId["de-skilled-vocational"].status).toBe("met");
     expect(byId["de-experienced-worker"].status).toBe("met");
@@ -242,17 +247,16 @@ describe("provenance and meta", () => {
       // 0.8.2 since s32: a statement may name the question that asks it
       // (`field`) — additive again.
       schema_version: "0.8.2",
-      // 2026.09.18: the eleven statements decided (s32) — nine name their
-      // question, two stay unasked; no value moved and nothing was read at a
-      // source that day.
-      dataset_version: "2026.09.18",
+      // 2026.10.21: the shortage Blue Card's IT path (#134), its two criteria
+      // and two preconditions quoted from the ZAV page that day.
+      dataset_version: "2026.10.21",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two
-      // authorities disagreeing (s8). The freshest are the two sentences the
-      // free-movement notice gained for its EEA and Swiss readers, read on
-      // 2026-09-17 (s29); before them, the nine sentences of the talent
-      // fiche's Chercheur tab, read on 2026-09-16 (s19).
-      newest_retrieved_at: "2026-09-17",
+      // authorities disagreeing (s8). The freshest are the IT path's four
+      // sentences, read on 2026-10-21 (#134); before them, the two sentences
+      // the free-movement notice gained for its EEA and Swiss readers, read on
+      // 2026-09-17 (s29).
+      newest_retrieved_at: "2026-10-21",
     });
   });
 });

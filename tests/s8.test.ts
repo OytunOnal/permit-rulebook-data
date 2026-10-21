@@ -289,9 +289,8 @@ describe("s8 — the new sources are watched and quote-checked like every other 
   });
 
   it("a fresher source is a fresher dataset", () => {
-    // 2026-09-17 since s29: the two free-movement sentences (the IND's EEA
-    // sentence, Your Europe's Swiss one), read that day.
-    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-09-17");
+    // 2026-10-21 since #134: the shortage card's IT path, read that day.
+    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-10-21");
     const bumped = clone();
     bumped.notices!.find((n) => n.id === "fr-dz-talent-open-question")!.sources![0].retrieved_at = "2099-01-01";
     expect(datasetMeta(bumped).newest_retrieved_at).toBe("2099-01-01");

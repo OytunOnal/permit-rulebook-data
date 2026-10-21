@@ -147,9 +147,8 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
     // 0.8.1 since s25: a points item may key its rows on two fields; 0.8.2
     // since s32: a statement may name the question that asks it.
     expect(datasetMeta(ds).schema_version).toBe("0.8.2");
-    // 2026-09-17 since s29: the two free-movement sentences (the IND's EEA
-    // sentence, Your Europe's Swiss one), read that day.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-17");
+    // 2026-10-21 since #134: the shortage card's IT path, read that day.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });
 });
 
