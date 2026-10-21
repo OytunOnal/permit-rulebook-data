@@ -2,38 +2,10 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, fieldOptions, isRouteAlive, notices, unlocks } from "../src/engine.js";
 import { remainingQuestions } from "../src/questions.js";
-import type { Dataset, FieldDef, Profile } from "../src/types.js";
+import type { Dataset, Profile } from "../src/types.js";
+import { lcg, optionValues, randomProfile } from "./random-profile.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
-
-// Deterministic PRNG so every run checks the same profile population.
-function lcg(seed: number) {
-  let s = seed >>> 0;
-  return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
-}
-
-function optionValues(def: FieldDef): string[] {
-  if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
-  // Not `def.options`: a field may declare its option list by reference
-  // (`options_from`), and the engine is what expands it.
-  return fieldOptions(dataset, def.id).map((o) => o.value);
-}
-
-function randomProfile(rand: () => number, answerProb = 1): Profile {
-  const p: Profile = {};
-  // Destination first: a money answer is a position in the ladder that
-  // destination is asked, so drawing one first would put a band on a profile
-  // whose own country never offers it (F12).
-  const fields = [...dataset.fields]
-    .sort((a, b) => Number(b.id === "destination") - Number(a.id === "destination"));
-  for (const def of fields) {
-    if (rand() < answerProb) {
-      const vals = optionValues(def);
-      p[def.id] = vals[Math.floor(rand() * vals.length)];
-    }
-  }
-  return p;
-}
 
 function statusMap(p: Profile): Record<string, string> {
   return Object.fromEntries(evaluate(dataset, p).map((r) => [r.route.id, r.status]));
@@ -43,7 +15,7 @@ describe("property: the interview always terminates and never repeats a question
   it("holds for 300 random answer-oracles", { timeout: 120_000 }, () => {
     const rand = lcg(42);
     for (let i = 0; i < 300; i++) {
-      const oracle = randomProfile(rand);
+      const oracle = randomProfile(dataset, rand);
       const profile: Profile = {};
       const asked: string[] = [];
       for (let step = 0; step < dataset.fields.length + 1; step++) {
@@ -64,7 +36,7 @@ describe("property: every result status is internally consistent", () => {
   it("met = all pass; near = only gapped fails, nothing undecided (2000 random profiles)", { timeout: 120_000 }, () => {
     const rand = lcg(7);
     for (let i = 0; i < 2000; i++) {
-      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.6);
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.6);
       for (const r of evaluate(dataset, p)) {
         const fails = r.criteria.filter((c) => c.outcome === "fail");
         const unknowns = r.criteria.filter((c) => c.outcome === "unknown");
@@ -88,7 +60,7 @@ describe("property: unlock rows are SOUND and COMPLETE single-step recommendatio
   it("a row exists exactly when the step opens something, and lists exactly what opens (400 random profiles)", { timeout: 120_000 }, () => {
     const rand = lcg(1337);
     for (let i = 0; i < 400; i++) {
-      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.7);
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.7);
       const baseline = statusMap(p);
       const rows = unlocks(dataset, p);
 
@@ -185,7 +157,7 @@ describe("property: when the interview ends, no unanswered question could change
   it("holds for 200 completed random flows", { timeout: 120_000 }, () => {
     const rand = lcg(99);
     for (let i = 0; i < 200; i++) {
-      const oracle = randomProfile(rand);
+      const oracle = randomProfile(dataset, rand);
       const profile: Profile = {};
       for (let step = 0; step < dataset.fields.length + 1; step++) {
         const remaining = remainingQuestions(dataset, profile);
@@ -195,7 +167,7 @@ describe("property: when the interview ends, no unanswered question could change
       const finalStatuses = statusMap(profile);
       for (const def of dataset.fields) {
         if (profile[def.id] !== undefined) continue;
-        for (const v of optionValues(def)) {
+        for (const v of optionValues(dataset, def)) {
           expect(statusMap({ ...profile, [def.id]: v })).toEqual(finalStatuses);
         }
       }
@@ -230,7 +202,7 @@ describe("property: a notice is stated only on an answer that was actually given
   it("non-empty exactly when the notice's field carries its matching value (500 random profiles)", () => {
     const rand = lcg(2026);
     for (let i = 0; i < 500; i++) {
-      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.6);
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.6);
       const matched = notices(dataset, p);
       for (const n of dataset.notices ?? []) {
         const answer = p[n.when.field];
@@ -252,7 +224,7 @@ describe("property: hard_fail is exactly the aliveness predicate, inverted", () 
   it("holds for every route of 500 random profiles", () => {
     const rand = lcg(31337);
     for (let i = 0; i < 500; i++) {
-      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.6);
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.6);
       for (const r of evaluate(dataset, p))
         expect(r.hard_fail, r.route.id).toBe(!isRouteAlive(dataset, r.route, p));
     }

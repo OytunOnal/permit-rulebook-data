@@ -1,32 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, fieldOptions, forEachCriterion, routeStatements, unlocks } from "../src/engine.js";
+import { evaluate, fieldOptions, forEachCriterion, routeStatements, unlocks } from "../src/engine.js";
 import { deriveQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
 import { answerLabel, criterionPhrase, mootWith, reasonFor, shortLabelOf, subjectOf, unlockTitleOf } from "../src/verdict.js";
-import type { Dataset, FieldDef, Profile } from "../src/types.js";
+import type { Dataset, Profile } from "../src/types.js";
+import { lcg, optionValues, randomProfile } from "./random-profile.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
-
-function lcg(seed: number) {
-  let s = seed >>> 0;
-  return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
-}
-
-function optionValues(def: FieldDef): string[] {
-  if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
-  return fieldOptions(dataset, def.id).map((o) => o.value);
-}
-
-function randomProfile(rand: () => number, answerProb = 1): Profile {
-  const p: Profile = {};
-  for (const def of dataset.fields)
-    if (rand() < answerProb) {
-      const vals = optionValues(def);
-      p[def.id] = vals[Math.floor(rand() * vals.length)];
-    }
-  return p;
-}
 
 /** Everything a person could read on a result screen for one profile. */
 function userFacingFor(profile: Profile): string[] {
@@ -83,7 +64,7 @@ describe("invariant: no user-facing string contains a dataset field id", () => {
     expect(identifierShaped.length).toBeGreaterThan(10);
     const rand = lcg(5150);
     for (let i = 0; i < 120; i++) {
-      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.6);
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.6);
       for (const s of userFacingFor(p))
         for (const id of identifierShaped)
           expect(s, `"${s}" leaks ${id}`).not.toContain(id);
@@ -108,7 +89,7 @@ describe("invariant: no user-facing string contains a dataset field id", () => {
     }
     const rand = lcg(90210);
     for (let i = 0; i < 200; i++) {
-      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.7);
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.7);
       for (const r of evaluate(dataset, p)) {
         const { parts } = reasonFor(dataset, r, p);
         for (const phrase of [...parts.needs, ...parts.unknown, ...parts.moot])
@@ -136,7 +117,7 @@ describe("invariant: no user-facing string contains a dataset field id", () => {
     for (const f of dataset.fields) {
       slots.push([`${f.id} ledger label`, shortLabelOf(dataset, f.id)]);
       slots.push([`${f.id} subject`, subjectOf(dataset, f.id)]);
-      for (const v of optionValues(f)) slots.push([`${f.id}=${v} answer`, answerLabel(dataset, f.id, v)]);
+      for (const v of optionValues(dataset, f)) slots.push([`${f.id}=${v} answer`, answerLabel(dataset, f.id, v)]);
     }
     for (const country of dataset.countries)
       for (const route of country.routes) {
@@ -150,7 +131,7 @@ describe("invariant: no user-facing string contains a dataset field id", () => {
     // line a card leads with.
     const rand = lcg(13579);
     for (let i = 0; i < 120; i++) {
-      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.7);
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.7);
       for (const u of unlocks(dataset, p)) slots.push([`${u.field} unlock title`, unlockTitleOf(dataset, u)]);
       for (const r of evaluate(dataset, p)) {
         const reason = reasonFor(dataset, r, p);
@@ -168,7 +149,7 @@ describe("invariant: every reason a route gives is a sentence", () => {
   it("starts with a capital, ends with a full stop, and is never empty", () => {
     const rand = lcg(31415);
     for (let i = 0; i < 200; i++) {
-      const p = randomProfile(rand, rand() < 0.5 ? 1 : 0.7);
+      const p = randomProfile(dataset, rand, rand() < 0.5 ? 1 : 0.7);
       for (const r of evaluate(dataset, p)) {
         const reason = reasonFor(dataset, r, p);
         for (const s of [reason.line, ...reason.rows.map((x) => x.text)]) {

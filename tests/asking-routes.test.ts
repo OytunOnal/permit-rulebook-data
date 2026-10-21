@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, fieldOptions, reckonAskingRoutes, remainingQuestions } from "../src/index.js";
-import type { Dataset, FieldDef, OpenRoute, Profile } from "../src/index.js";
+import { evaluate, reckonAskingRoutes, remainingQuestions } from "../src/index.js";
+import type { Dataset, OpenRoute } from "../src/index.js";
+import { lcg, randomProfile } from "./random-profile.js";
 
 /**
  * The routes a question is asked for, named by the engine from the same walk
@@ -11,28 +12,6 @@ import type { Dataset, FieldDef, OpenRoute, Profile } from "../src/index.js";
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
 const ids = (routes: OpenRoute[]): string[] => routes.map((r) => r.route.id);
-
-// Deterministic PRNG so every run checks the same profile population.
-function lcg(seed: number) {
-  let s = seed >>> 0;
-  return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
-}
-
-function optionValues(def: FieldDef): string[] {
-  if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
-  return fieldOptions(dataset, def.id).map((o) => o.value);
-}
-
-/** Each field answered with probability `answerProb`, by a random option. */
-function randomProfile(rand: () => number, answerProb: number): Profile {
-  const p: Profile = {};
-  for (const def of dataset.fields) {
-    if (rand() >= answerProb) continue;
-    const vals = optionValues(def);
-    p[def.id] = vals[Math.floor(rand() * vals.length)]!;
-  }
-  return p;
-}
 
 describe("the routes a question is asked for", () => {
   it("funds on a Germany-offer profile: asked for the Opportunity Card alone, among more open routes", () => {
@@ -53,7 +32,7 @@ describe("the routes a question is asked for", () => {
     const rand = lcg(135);
     let hardFailsSeen = 0;
     for (let i = 0; i < 300; i++) {
-      const profile = randomProfile(rand, rand() < 0.5 ? 0.3 : 0.7);
+      const profile = randomProfile(dataset, rand, rand() < 0.5 ? 0.3 : 0.7);
       const hardFailed = new Set(evaluate(dataset, profile).filter((r) => r.hard_fail).map((r) => r.route.id));
       hardFailsSeen += hardFailed.size;
       for (const def of dataset.fields) {
@@ -71,7 +50,7 @@ describe("the routes a question is asked for", () => {
     let askedSeen = 0;
     let unaskedUnansweredSeen = 0;
     for (let i = 0; i < 300; i++) {
-      const profile = randomProfile(rand, rand() < 0.5 ? 0.3 : 0.7);
+      const profile = randomProfile(dataset, rand, rand() < 0.5 ? 0.3 : 0.7);
       const asked = new Set(remainingQuestions(dataset, profile).map((q) => q.field));
       askedSeen += asked.size;
       for (const def of dataset.fields) {

@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, fieldOptions, forEachCriterion, referencedFields, routeReadings, routeStatements } from "../src/engine.js";
 import { quotedWithoutProvenance } from "../src/prose.js";
 import { criterionPhrase } from "../src/verdict.js";
-import type { Criterion, Dataset, FieldDef, Profile, Route, RouteResult, RouteStatus } from "../src/types.js";
+import type { Criterion, Dataset, Profile, Route, RouteResult, RouteStatus } from "../src/types.js";
+import { lcg, randomProfile } from "./random-profile.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
@@ -22,30 +23,6 @@ const NEW_OPTION = "3to5";
 const SEVEN = "experience_7y";
 const FIVE = "experience_5y";
 const READS_IT = "es-highly-qualified";
-
-function lcg(seed: number) {
-  let s = seed >>> 0;
-  return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
-}
-
-function optionValues(ds: Dataset, def: FieldDef): string[] {
-  return def.type === "money_band"
-    ? deriveBands(ds, def.id).map((b) => b.id)
-    : fieldOptions(ds, def.id).map((o) => o.value);
-}
-
-function randomProfile(ds: Dataset, rand: () => number, answerProb: number): Profile {
-  const p: Profile = {};
-  // Destination first: a money answer is an index into the ladder that
-  // destination is asked, so drawing one before it would draw from a ladder
-  // the profile is not on (F12).
-  for (const def of [...ds.fields].sort((a, b) => Number(b.id === "destination") - Number(a.id === "destination")))
-    if (rand() < answerProb) {
-      const vals = optionValues(ds, def);
-      p[def.id] = vals[Math.floor(rand() * vals.length)];
-    }
-  return p;
-}
 
 /** The band a euro figure falls in — band ids move when a threshold does. */
 function bandFor(field: string, amount: number): string {
