@@ -302,7 +302,9 @@ function isNearerThan(a: CriterionResult, b: CriterionResult): boolean {
  * rule's `allFailsGapped`, the question-picker's "this path can still be
  * MEASURED", and `isHardFail`'s two early returns. They composed only by
  * coincidence, and the next edit to any one of them would have moved a
- * verdict without moving the others (review 2026-09-07).
+ * verdict without moving the others (review 2026-09-07). Route status reads it
+ * directly; `isHardFail` adds the improvable answers to it, and `isPathOpen`,
+ * which the questions read, is built on `isHardFail` — never spelled again.
  */
 function stillReachable(r: CriterionResult): boolean {
   return r.outcome !== "fail" || r.gap_max !== undefined || r.gap_points !== undefined;
@@ -339,20 +341,21 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
       // ungapped fail and are excluded here, so no gap is ever measured
       // against a threshold the person cannot get to.
       let best: CriterionResult | undefined;
-      // A path whose failures are all bounded but whose own answers are still
-      // open has not had its say: answering them turns "nothing decided" into a
-      // measured shortfall. Reporting an ungapped fail there retires the route
-      // AND its remaining questions, so the answer that would have made it a
-      // near miss is never asked — a €0 transfer to the Netherlands read as a
-      // dead ICT route because nobody asked the applicant's age (found by the
-      // completed-interview property, 2026-09-07).
-      let openBounded = false;
+      // An open path (no hard-failing criterion) whose own answers are still
+      // unanswered has not had its say: answering them turns "nothing decided"
+      // into a measured shortfall or a shortfall the reader can close.
+      // Reporting a fail there retires the route's remaining questions, so the
+      // answer that would have made it a near miss is never asked — a €0
+      // transfer to the Netherlands read as a dead ICT route because nobody
+      // asked the applicant's age (found by the completed-interview property,
+      // 2026-09-07).
+      let openPathWaiting = false;
       for (const [index, rs] of pathResults.entries()) {
         const fails = rs.filter((r) => r.outcome === "fail");
         const undecided = rs.filter((r) => r.outcome === "unknown");
         const bounded = fails.every(stillReachable);
         if (undecided.length > 0) {
-          if (bounded) openBounded = true;
+          if (isPathOpen(dataset, rs, profile)) openPathWaiting = true;
           continue;
         }
         if (!bounded) continue;
@@ -366,7 +369,7 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
         if (best === undefined || isNearerThan(result, best)) best = result;
       }
       if (best) return best;
-      return { criterion: c, outcome: openBounded ? "unknown" : "fail" };
+      return { criterion: c, outcome: openPathWaiting ? "unknown" : "fail" };
     }
     // Undecided: surface points progress from a still-open points path, if any.
     const open = pathResults.find((rs) => !rs.some((r) => r.outcome === "fail") && rs.some((r) => r.points));
@@ -470,9 +473,22 @@ function isHardFail(dataset: Dataset, r: CriterionResult, profile: Profile): boo
   if (stillReachable(r)) return false;
   const c = r.criterion;
   if (c.op === "any")
-    return c.paths.every((p) =>
-      p.criteria.some((pc) => isHardFail(dataset, evalCriterion(dataset, pc, profile), profile)));
+    return c.paths.every((p) => !isPathOpen(dataset, pathResultsOf(dataset, p, profile), profile));
   return !failsOnlyImprovables(dataset, c);
+}
+
+/**
+ * Whether a disjunction's path can still lead somewhere: none of its criteria
+ * hard-failed. The one test for a path, read by the hard fail above, by the
+ * disjunction's own outcome and by the questions it asks, so a path that keeps
+ * a route alive always asks its open questions.
+ */
+function isPathOpen(dataset: Dataset, results: CriterionResult[], profile: Profile): boolean {
+  return !results.some((r) => isHardFail(dataset, r, profile));
+}
+
+function pathResultsOf(dataset: Dataset, path: { criteria: Criterion[] }, profile: Profile): CriterionResult[] {
+  return path.criteria.map((pc) => evalCriterion(dataset, pc, profile));
 }
 
 function hasHardFail(dataset: Dataset, route: Route, profile: Profile): boolean {
@@ -494,12 +510,12 @@ function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): st
   if (c.op === "points")
     return referencedFields(c).filter((f) => profile[f] === undefined);
   if (c.op === "any")
-    // Paths that can still be satisfied — or still be MEASURED. A path failing
-    // on an ungapped criterion is out of reach and its questions are noise; one
-    // failing only by a bounded gap still turns the route into a near miss, so
-    // the answers it is waiting on are worth asking for.
+    // Open paths only. A path holding a hard fail is out of reach and its
+    // questions are noise; one failing only by a bounded gap or on answers the
+    // reader can improve still leads somewhere, so the answers it is waiting on
+    // are worth asking for.
     return c.paths
-      .filter((p) => p.criteria.every((pc) => stillReachable(evalCriterion(dataset, pc, profile))))
+      .filter((p) => isPathOpen(dataset, pathResultsOf(dataset, p, profile), profile))
       .flatMap((p) => p.criteria.flatMap((pc) => undecidedFieldsOf(dataset, pc, profile)));
   return profile[c.field] === undefined ? [c.field] : [];
 }

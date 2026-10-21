@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate } from "../src/index.js";
+import { deriveBands, evaluate, reckonAskingRoutes, remainingQuestions } from "../src/index.js";
 import type { Criterion, CriterionResult, Dataset, Profile, RouteResult } from "../src/index.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -114,6 +114,20 @@ describe("the shortage-occupation Blue Card's degree path", () => {
       expect(r.status, recognition).not.toBe("met");
       expect(r.hard_fail, recognition).toBe(false);
     }
+  });
+
+  it("German recognition not yet, outside IT: the degree path still asks the shortage-list question", () => {
+    const { occupation_shortage: _, ...unanswered } = recognisedShortageGraduate;
+    const reader: Profile = {
+      ...unanswered, recognition_de: "not_yet", salary_eur_year: bandFor("salary_eur_year", 46000),
+    };
+    expect(shortageCardFor(reader).hard_fail).toBe(false); // precondition: the card is open
+    expect(remainingQuestions(dataset, reader).map((q) => q.field)).toContain("occupation_shortage");
+    // The Opportunity Card's points ladder asks the shortage list of this reader
+    // too, so the question alone does not say whose it is: the asking reckoning,
+    // which remainingQuestions reads, names the routes it is asked for.
+    const askedFor = reckonAskingRoutes(dataset, reader, "occupation_shortage").asked_for.map((r) => r.route.id);
+    expect(askedFor).toContain(SHORTAGE_CARD);
   });
 
   it("a reader who meets both paths is met", () => {
