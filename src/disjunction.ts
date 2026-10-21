@@ -122,11 +122,10 @@ function outcomeOf(c: Disjunction, pathResults: CriterionResult[][], judge: Crit
  *
  * An open path (no hard-failing criterion) whose own answers are still
  * unanswered has not had its say: answering them turns "nothing decided" into
- * a measured shortfall or a shortfall the reader can close. Reporting a fail
- * there retires the route's remaining questions, so the answer that would
- * have made it a near miss is never asked — a €0 transfer to the Netherlands
- * read as a dead ICT route because nobody asked the applicant's age (found by
- * the completed-interview property, 2026-09-07).
+ * a measured shortfall or a shortfall the reader can close. A fail there would
+ * retire the route's remaining questions, so the answer that can make it a
+ * near miss would never be asked: a €0 transfer to the Netherlands would read
+ * as a dead ICT route without the applicant's age.
  */
 function everyPathFailed(c: Disjunction, pathResults: CriterionResult[][], judge: CriterionJudge): CriterionResult {
   const nearest = nearestBoundedPath(c, pathResults);
