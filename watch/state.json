@@ -391,39 +391,29 @@
       "history": []
     }
   },
-  "last_run": "2026-10-20",
+  "last_run": "2026-10-21",
   "unread": [
+    {
+      "id": "wetten-wav-artikel-8",
+      "url": "https://wetten.overheid.nl/BWBR0007149"
+    },
     {
       "id": "de-bmi-chancenkarte",
       "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html"
     }
   ],
   "lapses": {
-    "buzer-anlage-aufenthg": [
-      "2026-10-14"
-    ],
-    "learn-18g-aufenthg": [
-      "2026-10-14"
-    ],
-    "buzer-20a-aufenthg": [
-      "2026-10-14"
-    ],
-    "buzer-6-beschv": [
-      "2026-10-14"
-    ],
-    "buzer-21-aufenthg": [
-      "2026-10-14"
-    ],
     "wetten-wav-artikel-8": [
-      "2026-10-14",
-      "2026-10-16"
+      "2026-10-16",
+      "2026-10-21"
     ],
     "de-bmi-chancenkarte": [
       "2026-10-15",
       "2026-10-16",
       "2026-10-18",
       "2026-10-19",
-      "2026-10-20"
+      "2026-10-20",
+      "2026-10-21"
     ]
   }
 }
