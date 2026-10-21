@@ -5,9 +5,9 @@ import type { CriterionResult, Dataset, Profile, RouteResult } from "../src/inde
 import { lcg, randomProfile } from "./random-profile.js";
 
 /**
- * Ruling 9 of #92 (#151, #157): a degree never assessed and a degree assessed
- * and refused are two answers, and the rules treat both as they treated the one
- * answer that covered them. No criterion and no points row reads them apart.
+ * A degree never assessed and a degree assessed and refused are two answers a
+ * reader can tell apart, and no criterion and no points row reads them apart
+ * (#92, ruling 9).
  */
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
