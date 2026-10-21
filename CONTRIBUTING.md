@@ -182,8 +182,9 @@ they leave one dataset sentence unverifiable by machine.
    `short_reason`. There is no fallback to a field id; the build fails instead.
 9. **A `learn` label is what the reader does there** — one sentence opening
    on an action (`Check` · `See` · `Read` · `Find`), in plain words, never
-   statute shorthand such as `§ 18g AufenthG`: the site prints it verbatim as
-   the text of a link, and a link is not glossed (s28). It binds every door,
+   statute shorthand such as `§ 18g AufenthG`: the site prints it as the text
+   of a link, and the gloss a citation brings would land inside the link
+   (s28). It binds every door,
    a notice's as much as a field's: the Algerian notice's foot link is the
    same link to the same reader, and it read as a statement for a day after
    the fields' were rewritten (s29).

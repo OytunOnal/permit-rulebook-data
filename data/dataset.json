@@ -238,7 +238,7 @@
       "subject": "whether your occupation is on Germany's shortage list",
       "type": "enum",
       "learn": {
-        "label": "Check the shortage groups in section 18g of the Residence Act (ISCO-08 codes 132, 133, 134, 21, 221, 222, 225, 226, 23, 25)",
+        "label": "Check the occupation groups on Germany's shortage list (ISCO-08 codes 132, 133, 134, 21, 221, 222, 225, 226, 23, 25) in section 18g of the Residence Act",
         "url": "https://www.buzer.de/18g_AufenthG.htm"
       },
       "options": [
@@ -413,7 +413,7 @@
     },
     {
       "id": "german",
-      "label": "Your German level?",
+      "label": "Your German, in levels on the European language scale (CEFR)?",
       "short_label": "German",
       "subject": "your German level",
       "type": "enum",
@@ -422,7 +422,7 @@
         {
           "value": "none",
           "label": "None / below A1",
-          "short": "German below A1",
+          "short": "German below A1 (beginner)",
           "is_fallback": true
         },
         {
@@ -449,7 +449,7 @@
     },
     {
       "id": "english",
-      "label": "Your English level?",
+      "label": "Your English, in levels on the European language scale (CEFR)?",
       "short_label": "English",
       "subject": "your English level",
       "type": "enum",
@@ -458,7 +458,7 @@
         {
           "value": "none",
           "label": "Below B2",
-          "short": "English below B2",
+          "short": "English below B2 (upper intermediate)",
           "is_fallback": true
         },
         {
@@ -4934,7 +4934,7 @@
             {
               "id": "english-where-the-institution-was-abroad",
               "kind": "precondition",
-              "text": "If you studied at a foreign educational institution the Dutch immigration service (IND) designates, you must also meet one of its further requirements: a score of at least 6.0 on the IELTS English test or another accepted test, or a programme that was taught in English or Dutch",
+              "text": "If you studied at a foreign educational institution the Dutch immigration service (IND) designates, you must also meet one of its further requirements: a score of at least 6.0 on IELTS or another accepted English test, or a programme that was taught in English or Dutch",
               "source": {
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
                 "quote": "If you have completed your course or programme at a designated foreign educational institution, you must also meet one of the following requirements: You obtained a minimum score of 6.0 on a test in the International English Language Testing System (IELTS).",
