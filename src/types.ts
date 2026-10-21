@@ -654,6 +654,8 @@ export interface CriterionResult {
   points?: PointsBreakdown;
   /** `any` only, and only once something has decided it. */
   path?: DecidedPath;
+  /** `any` only: every path's criterion results, in the dataset's path order. */
+  path_results?: CriterionResult[][];
 }
 
 export type RouteStatus = "met" | "near" | "hold";
@@ -669,6 +671,22 @@ export interface RouteResult {
   gap_points?: number;
   points?: PointsBreakdown;
   unknown_fields: string[];
+}
+
+/** A scored route with no hard fail, and the code of the country it is in. */
+export interface OpenRoute {
+  route: Route;
+  country: string;
+}
+
+/**
+ * The asking reckoning for one question on one profile, in dataset order:
+ * the open routes it was measured against, and those of them whose undecided
+ * criteria read the question's answer.
+ */
+export interface AskingRoutes {
+  asked_for: OpenRoute[];
+  open: OpenRoute[];
 }
 
 export interface DatasetMeta {

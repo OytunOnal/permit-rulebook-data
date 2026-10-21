@@ -1,6 +1,7 @@
 import { countryClasses, countryPhrase } from "./countries.js";
 import { DEFAULT_UNKNOWN_LABEL, UNKNOWN_BAND } from "./questions.js";
-import { closedBy, decidingCriteria, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields, } from "./engine.js";
+import { decidingCriteria } from "./disjunction.js";
+import { closedBy, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields, } from "./engine.js";
 import type {
   Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
 } from "./types.js";
@@ -200,6 +201,15 @@ export interface Reason {
 const countryName = (dataset: Dataset, code: string): string =>
   dataset.countries.find((c) => c.code === code)?.name ?? code;
 
+/**
+ * The criterion results a reason names. A disjunction with a deciding path is
+ * named by that path's own criteria, so the reader is told what stands between
+ * them on the path they were measured on, never every path read out.
+ */
+function namedResults(results: CriterionResult[]): CriterionResult[] {
+  return results.flatMap((cr) => (cr.criterion.op === "any" && cr.path ? decidingCriteria([cr]) : [cr]));
+}
+
 export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): Reason {
   const rows: ReasonRow[] = [];
   const needs: string[] = [];
@@ -226,7 +236,7 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
   // this line was a second copy of `closedBy`).
   const [closure] = closedBy(r);
 
-  for (const cr of r.criteria) {
+  for (const cr of namedResults(r.criteria)) {
     if (cr.outcome !== "fail") continue;
     if (cr.criterion.op === "not-in") {
       rows.push({ kind: "closed", text: cr.criterion.text });

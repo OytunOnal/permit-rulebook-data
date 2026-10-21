@@ -1,7 +1,9 @@
 import { countryOptions } from "./countries.js";
+import { evalDisjunction, hasNoOpenPath, isPathOpen, pathResultsOf, stillReachable } from "./disjunction.js";
+import type { CriterionJudge } from "./disjunction.js";
 import { CARVE_OUT_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type {
-  Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, DecidedPath, FieldDef,
+  AskingRoutes, Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef, OpenRoute,
   FieldOption, Notice,
   PointsBreakdown, PointsItem, PointsRow, Profile, ProvenancedText, Route, RouteReading, RouteResult,
   RouteStatement, RouteStatus, StatementException,
@@ -278,148 +280,40 @@ function isUnknownAnswer(dataset: Dataset, field: string, answer: string | undef
   return fieldIndex(dataset, field)?.byValue.get(answer)?.is_unknown === true;
 }
 
-/**
- * Which of two fully-gapped disjunction paths is the shorter way through.
- * Euros and points are not comparable, so a path that closes on one currency
- * beats one that needs both; within a currency the smaller gap wins. Ties keep
- * the earlier path, so the dataset's own order stays the tie-break.
- */
-function isNearerThan(a: CriterionResult, b: CriterionResult): boolean {
-  const currencies = (r: CriterionResult) => (r.gap_max !== undefined ? 1 : 0) + (r.gap_points !== undefined ? 1 : 0);
-  if (currencies(a) !== currencies(b)) return currencies(a) < currencies(b);
-  if (a.gap_max !== undefined && b.gap_max !== undefined && a.gap_max !== b.gap_max) return a.gap_max < b.gap_max;
-  if (a.gap_points !== undefined && b.gap_points !== undefined && a.gap_points !== b.gap_points)
-    return a.gap_points < b.gap_points;
-  return false;
+/** The rules for a single criterion, bound to this dataset and this profile. */
+function judgeFor(dataset: Dataset, profile: Profile): CriterionJudge {
+  return {
+    evaluate: (c) => evalCriterion(dataset, c, profile),
+    isHardFail: (r) => isHardFail(dataset, r, profile),
+  };
 }
 
-/**
- * Whether this criterion result leaves its route or path still reachable: it
- * did not fail, or it failed only by a bounded gap the person can still close.
- *
- * The one definition. It had drifted into four spellings of the same
- * conjunction — the disjunction's "every failure is bounded", the status
- * rule's `allFailsGapped`, the question-picker's "this path can still be
- * MEASURED", and `isHardFail`'s two early returns. They composed only by
- * coincidence, and the next edit to any one of them would have moved a
- * verdict without moving the others (review 2026-09-07).
- */
-function stillReachable(r: CriterionResult): boolean {
-  return r.outcome !== "fail" || r.gap_max !== undefined || r.gap_points !== undefined;
+function evalPoints(dataset: Dataset, c: Extract<Criterion, { op: "points" }>, profile: Profile): CriterionResult {
+  let scored = 0;
+  let unanswered = 0;
+  const items: PointsBreakdown["items"] = [];
+  for (const item of c.table.items) {
+    // An item counts what it knows and stays open while any field it reads
+    // is unanswered: a two-field item half answered may still climb to its
+    // higher row, and the score so far is a floor, as an unanswered item's
+    // 0 always was.
+    if (itemFields(item).some((f) => isUnknownAnswer(dataset, f, profile[f]))) unanswered++;
+    const row = bestRow(dataset, item, profile);
+    if (row && row.points > 0) {
+      scored += row.points;
+      items.push({ field: row.field, points: row.points });
+    }
+  }
+  const points: PointsBreakdown = { scored, required: c.required.value, items };
+  if (scored >= c.required.value) return { criterion: c, outcome: "pass", points };
+  // Deliberately no early-unreachable death: the full score IS the gap
+  // analysis ("4 of 6"), and the ladder is short. Decide only when complete.
+  if (unanswered > 0) return { criterion: c, outcome: "unknown", points };
+  return { criterion: c, outcome: "fail", points, gap_points: c.required.value - scored };
 }
 
-/** Which path decided a disjunction, in the shape a consumer can walk. */
-function decidedPath(c: Extract<Criterion, { op: "any" }>, index: number, criteria: CriterionResult[]): DecidedPath {
-  const label = c.paths[index].label;
-  return label === undefined ? { index, criteria } : { index, label, criteria };
-}
-
-function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): CriterionResult {
-  if (c.op === "any") {
-    const pathResults = c.paths.map((p) => p.criteria.map((pc) => evalCriterion(dataset, pc, profile)));
-    // A path passes when all its criteria pass; the disjunction passes with it.
-    // WHICH path passed is the story the card tells — a route met through the
-    // reduced salary must name the reduced threshold, not the first one written.
-    const passedIndex = pathResults.findIndex((rs) => rs.every((r) => r.outcome === "pass"));
-    if (passedIndex >= 0) {
-      const passed = pathResults[passedIndex];
-      const points = passed.find((r) => r.points)?.points;
-      const result: CriterionResult = { criterion: c, outcome: "pass", path: decidedPath(c, passedIndex, passed) };
-      if (points) result.points = points;
-      return result;
-    }
-    if (pathResults.every((rs) => rs.some((r) => r.outcome === "fail"))) {
-      // Every path failed — but if a path failed only by bounded gaps (salary
-      // just below, points just short), that near-miss is the story the gap
-      // analysis must tell. With two salary paths on one route (full criterion
-      // OR reduced criterion plus the fact that earns it) the honest distance
-      // is the NEAREST reachable path, not whichever was written first: a
-      // graduate under €3,122 is €3,122 away, never €4,357 away. Paths the
-      // profile cannot reach (a flat "no" on the qualifying fact) carry an
-      // ungapped fail and are excluded here, so no gap is ever measured
-      // against a threshold the person cannot get to.
-      let best: CriterionResult | undefined;
-      // A path whose failures are all bounded but whose own answers are still
-      // open has not had its say: answering them turns "nothing decided" into a
-      // measured shortfall. Reporting an ungapped fail there retires the route
-      // AND its remaining questions, so the answer that would have made it a
-      // near miss is never asked — a €0 transfer to the Netherlands read as a
-      // dead ICT route because nobody asked the applicant's age (found by the
-      // completed-interview property, 2026-09-07).
-      let openBounded = false;
-      for (const [index, rs] of pathResults.entries()) {
-        const fails = rs.filter((r) => r.outcome === "fail");
-        const undecided = rs.filter((r) => r.outcome === "unknown");
-        const bounded = fails.every(stillReachable);
-        if (undecided.length > 0) {
-          if (bounded) openBounded = true;
-          continue;
-        }
-        if (!bounded) continue;
-        const result: CriterionResult = { criterion: c, outcome: "fail", path: decidedPath(c, index, rs) };
-        const gapsMoney = fails.map((f) => f.gap_max).filter((g): g is number => g !== undefined);
-        const gapsPoints = fails.map((f) => f.gap_points).filter((g): g is number => g !== undefined);
-        if (gapsMoney.length) result.gap_max = Math.max(...gapsMoney);
-        if (gapsPoints.length) result.gap_points = Math.max(...gapsPoints);
-        const pts = rs.find((r) => r.points)?.points;
-        if (pts) result.points = pts;
-        if (best === undefined || isNearerThan(result, best)) best = result;
-      }
-      if (best) return best;
-      return { criterion: c, outcome: openBounded ? "unknown" : "fail" };
-    }
-    // Undecided: surface points progress from a still-open points path, if any.
-    const open = pathResults.find((rs) => !rs.some((r) => r.outcome === "fail") && rs.some((r) => r.points));
-    const points = open?.find((r) => r.points)?.points;
-    return points ? { criterion: c, outcome: "unknown", points } : { criterion: c, outcome: "unknown" };
-  }
-
-  if (c.op === "points") {
-    let scored = 0;
-    let unanswered = 0;
-    const items: PointsBreakdown["items"] = [];
-    for (const item of c.table.items) {
-      // An item counts what it knows and stays open while any field it reads
-      // is unanswered: a two-field item half answered may still climb to its
-      // higher row, and the score so far is a floor, as an unanswered item's
-      // 0 always was.
-      if (itemFields(item).some((f) => isUnknownAnswer(dataset, f, profile[f]))) unanswered++;
-      const row = bestRow(dataset, item, profile);
-      if (row && row.points > 0) {
-        scored += row.points;
-        items.push({ field: row.field, points: row.points });
-      }
-    }
-    const points: PointsBreakdown = { scored, required: c.required.value, items };
-    if (scored >= c.required.value) return { criterion: c, outcome: "pass", points };
-    // Deliberately no early-unreachable death: the full score IS the gap
-    // analysis ("4 of 6"), and the ladder is short. Decide only when complete.
-    if (unanswered > 0) return { criterion: c, outcome: "unknown", points };
-    return { criterion: c, outcome: "fail", points, gap_points: c.required.value - scored };
-  }
-
-  const answer = profile[c.field];
-  if (answer === undefined) return { criterion: c, outcome: "unknown" };
-
-  if (c.op === "eq") {
-    if (isUnknownAnswer(dataset, c.field, answer)) return { criterion: c, outcome: "unknown" };
-    return { criterion: c, outcome: satisfies(dataset, c.field, answer, [c.value]) ? "pass" : "fail" };
-  }
-
-  if (c.op === "in") {
-    if (isUnknownAnswer(dataset, c.field, answer)) return { criterion: c, outcome: "unknown" };
-    return { criterion: c, outcome: satisfies(dataset, c.field, answer, c.values) ? "pass" : "fail" };
-  }
-
-  if (c.op === "not-in") {
-    if (isUnknownAnswer(dataset, c.field, answer)) return { criterion: c, outcome: "unknown" };
-    // The SAME predicate the other operators use, deliberately: a closure
-    // written against a class must shut out every country that class holds,
-    // and one written against a country must not shut out its neighbours.
-    return { criterion: c, outcome: satisfies(dataset, c.field, answer, c.values) ? "fail" : "pass" };
-  }
-
-  // gte over a money_band answer
+/** A `gte` criterion over a money_band answer. */
+function evalThreshold(dataset: Dataset, c: Extract<Criterion, { op: "gte" }>, answer: string): CriterionResult {
   const bands = deriveBands(dataset, c.field);
   const band = bands.find((b) => b.id === answer);
   if (!band) return { criterion: c, outcome: "unknown" };
@@ -433,6 +327,22 @@ function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): Criter
   if (band.max !== undefined && band.max <= c.threshold.amount)
     result.gap_max = c.threshold.amount - (band.min ?? 0);
   return result;
+}
+
+function evalCriterion(dataset: Dataset, c: Criterion, profile: Profile): CriterionResult {
+  if (c.op === "any") return evalDisjunction(c, judgeFor(dataset, profile));
+  if (c.op === "points") return evalPoints(dataset, c, profile);
+
+  const answer = profile[c.field];
+  if (answer === undefined) return { criterion: c, outcome: "unknown" };
+  if (c.op === "gte") return evalThreshold(dataset, c, answer);
+  if (isUnknownAnswer(dataset, c.field, answer)) return { criterion: c, outcome: "unknown" };
+  if (c.op === "eq") return { criterion: c, outcome: satisfies(dataset, c.field, answer, [c.value]) ? "pass" : "fail" };
+  if (c.op === "in") return { criterion: c, outcome: satisfies(dataset, c.field, answer, c.values) ? "pass" : "fail" };
+  // The SAME predicate the other operators use, deliberately: a closure
+  // written against a class must shut out every country that class holds,
+  // and one written against a country must not shut out its neighbours.
+  return { criterion: c, outcome: satisfies(dataset, c.field, answer, c.values) ? "fail" : "pass" };
 }
 
 function routeStatus(criteria: CriterionResult[]): RouteStatus {
@@ -458,15 +368,14 @@ function failsOnlyImprovables(dataset: Dataset, c: Criterion): boolean {
  * Bounded shortfalls (adjacent money band, points a few short) and improvable
  * shortfalls (no German yet) keep the interview going so the route can finish
  * with a complete, actionable picture. Fixed-attribute and path fails
- * (citizenship, qualification, situation) end it for real.
+ * (citizenship, qualification, situation) end it for real. A disjunction is
+ * judged path by path (`hasNoOpenPath`).
  */
-function isHardFail(dataset: Dataset, r: CriterionResult): boolean {
+function isHardFail(dataset: Dataset, r: CriterionResult, profile: Profile): boolean {
   if (stillReachable(r)) return false;
-  return !failsOnlyImprovables(dataset, r.criterion);
-}
-
-function hasHardFail(dataset: Dataset, route: Route, profile: Profile): boolean {
-  return route.criteria.some((c) => isHardFail(dataset, evalCriterion(dataset, c, profile)));
+  const c = r.criterion;
+  if (c.op === "any") return hasNoOpenPath(r, judgeFor(dataset, profile));
+  return !failsOnlyImprovables(dataset, c);
 }
 
 /**
@@ -474,24 +383,49 @@ function hasHardFail(dataset: Dataset, route: Route, profile: Profile): boolean 
  * "unknown" answers and bounded gaps keep a route alive — an open gap is not a no.
  */
 export function isRouteAlive(dataset: Dataset, route: Route, profile: Profile): boolean {
-  return !hasHardFail(dataset, route, profile);
+  return !route.criteria.some((c) => isHardFail(dataset, evalCriterion(dataset, c, profile), profile));
 }
 
-/** Unanswered fields that can still flip THIS criterion's outcome. */
-function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): string[] {
-  const result = evalCriterion(dataset, c, profile);
-  if (result.outcome !== "unknown") return [];
+/** Unanswered fields that can still flip this criterion result's outcome. */
+function undecidedFieldsOf(dataset: Dataset, r: CriterionResult, profile: Profile): string[] {
+  const c = r.criterion;
+  if (r.outcome !== "unknown") return [];
   if (c.op === "points")
     return referencedFields(c).filter((f) => profile[f] === undefined);
   if (c.op === "any")
-    // Paths that can still be satisfied — or still be MEASURED. A path failing
-    // on an ungapped criterion is out of reach and its questions are noise; one
-    // failing only by a bounded gap still turns the route into a near miss, so
-    // the answers it is waiting on are worth asking for.
-    return c.paths
-      .filter((p) => p.criteria.every((pc) => stillReachable(evalCriterion(dataset, pc, profile))))
-      .flatMap((p) => p.criteria.flatMap((pc) => undecidedFieldsOf(dataset, pc, profile)));
+    // Open paths only. A path holding a hard fail is out of reach and its
+    // questions are noise; one failing only by a bounded gap or on answers the
+    // reader can improve still leads somewhere, so the answers it is waiting on
+    // are worth asking for.
+    return pathResultsOf(r)
+      .filter((rs) => isPathOpen(rs, judgeFor(dataset, profile)))
+      .flatMap((rs) => rs.flatMap((pr) => undecidedFieldsOf(dataset, pr, profile)));
   return profile[c.field] === undefined ? [c.field] : [];
+}
+
+/** One open route (scored, no hard fail) and the unanswered fields that can
+ * still change its outcome. */
+interface RouteReckoning extends OpenRoute {
+  undecidedFields: Set<string>;
+}
+
+/**
+ * The asking reckoning, route by route, in dataset order. Every reading of
+ * "which question is worth asking, and for whom" goes through this one walk,
+ * so the asking rule and the routes it names cannot drift apart.
+ */
+function reckonOpenRoutes(dataset: Dataset, profile: Profile): RouteReckoning[] {
+  const open: RouteReckoning[] = [];
+  for (const country of dataset.countries)
+    for (const route of country.routes) {
+      // A route nothing is asked about asks for no question either (s9).
+      if (!isScored(route)) continue;
+      const results = route.criteria.map((c) => evalCriterion(dataset, c, profile));
+      if (results.some((r) => isHardFail(dataset, r, profile))) continue;
+      const undecidedFields = new Set(results.flatMap((r) => undecidedFieldsOf(dataset, r, profile)));
+      open.push({ route, country: country.code, undecidedFields });
+    }
+  return open;
 }
 
 /**
@@ -501,17 +435,19 @@ function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): st
  * them is noise.
  */
 export function informativeFields(dataset: Dataset, profile: Profile): Set<string> {
-  const fields = new Set<string>();
-  for (const country of dataset.countries) {
-    for (const route of country.routes) {
-      // A route nothing is asked about asks for no question either (s9).
-      if (!isScored(route)) continue;
-      if (hasHardFail(dataset, route, profile)) continue; // dead route
-      for (const c of route.criteria)
-        for (const f of undecidedFieldsOf(dataset, c, profile)) fields.add(f);
-    }
-  }
-  return fields;
+  return new Set(reckonOpenRoutes(dataset, profile).flatMap((r) => [...r.undecidedFields]));
+}
+
+/**
+ * For one question on this profile: the open routes (scored, no hard fail),
+ * and those of them it is asked for — the ones whose undecided criteria read
+ * its answer. It decides nothing of its own: `asked_for` is non-empty exactly
+ * when `informativeFields` holds the field. To reckon a question being
+ * reopened, pass the profile without its answer.
+ */
+export function reckonAskingRoutes(dataset: Dataset, profile: Profile, field: string): AskingRoutes {
+  const open = reckonOpenRoutes(dataset, profile);
+  return { asked_for: open.filter((r) => r.undecidedFields.has(field)), open };
 }
 
 /**
@@ -706,7 +642,7 @@ export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
         status,
         // Same predicate that retires a route mid-interview: the UI needs it to
         // tell "an unknown still binds here" from "nothing can save this".
-        hard_fail: criteria.some((cr) => isHardFail(dataset, cr)),
+        hard_fail: criteria.some((cr) => isHardFail(dataset, cr, profile)),
         criteria,
         gap_max: gaps.length ? Math.max(...gaps) : undefined,
         gap_points: pointsGaps.length ? Math.max(...pointsGaps) : undefined,
@@ -977,22 +913,6 @@ export function routeProvenance(route: Route): ProvenanceEntry[] {
   for (const s of routeStatements(route))
     for (const value of statementSources(s)) entries.push({ value });
   return entries;
-}
-
-/**
- * The criterion nodes an outcome actually rested on. A disjunction contributes
- * only its deciding path — the one that passed, or the nearest reachable one
- * the gap was measured against — so a consumer can name the threshold the
- * reader was measured against instead of whichever the dataset wrote first.
- * An undecided disjunction contributes nothing: nothing has decided it.
- */
-export function decidingCriteria(results: CriterionResult[]): CriterionResult[] {
-  const out: CriterionResult[] = [];
-  for (const r of results) {
-    if (r.criterion.op !== "any") { out.push(r); continue; }
-    if (r.path) out.push(...decidingCriteria(r.path.criteria));
-  }
-  return out;
 }
 
 /**

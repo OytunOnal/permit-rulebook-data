@@ -200,7 +200,9 @@ describe("s29 — the dataset says so in its version, and the schema did not mov
     expect(datasetMeta(ds).schema_version).toBe("0.8.2");
   });
 
-  it("two sentences were read at their sources today", () => {
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-17");
+  it("the newest read at a source is stamped with its day", () => {
+    // s29's two sentences were the newest, read on 2026-09-17, until #134's
+    // IT path on the shortage card, read on 2026-10-21.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });
 });

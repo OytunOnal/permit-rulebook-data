@@ -153,8 +153,12 @@ describe("NL Blue Card — the IT experience rule (human verification 2026-09-04
       // applicant too. None of them is another country's.
       german: "none", english: "none", funds_eur_month: "band_1",
     });
-    expect(asked).not.toContain("experience_7y");
-    expect(asked.length).toBeLessThanOrEqual(11);
+    // The seven-year question is Germany's own since #134 (the shortage card's
+    // IT path reads it), so what shows the Dutch rule stayed in the Netherlands
+    // is its gate: this degree holder is never asked whether the work is IT.
+    expect(asked).not.toContain("occupation_it");
+    // 12 since #134: the seven-year question comes before the shortage list.
+    expect(asked.length).toBeLessThanOrEqual(12);
   });
 });
 

@@ -79,13 +79,13 @@ describe("s23 P3 — the curator's note leaves the card", () => {
 describe("s23 — the dataset says so in its version", () => {
   it("is stamped with the day of the latest data change", () => {
     // The day of the copy pass until s32 moved it on 2026-09-18 (nine
-    // statements name their question); the same-day convention keeps one
-    // stamp for every change of a day.
-    expect(datasetMeta(ds).dataset_version).toBe("2026.09.18");
+    // statements name their question), and #134 on 2026-10-21 (the shortage
+    // card's IT path); the same-day convention keeps one stamp for every
+    // change of a day.
+    expect(datasetMeta(ds).dataset_version).toBe("2026.10.21");
     // Nothing was read at a source by the copy pass: two of our own sentences
-    // moved. The day's newest read came later, with s29's two free-movement
-    // sentences.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-09-17");
+    // moved. The newest read came later, with #134's IT path.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });
 });
 

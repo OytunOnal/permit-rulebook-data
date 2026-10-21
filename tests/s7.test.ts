@@ -213,13 +213,13 @@ describe("s7 — a carve-out is watched and quote-checked like every other value
     // routes that are quoted and not scored — none of them a carve-out — and one
     // more when the Spec review found article 76.2 read but not stated. 163
     // since s19: the nine sentences of France's researcher card, quoted and not
-    // scored like the five before it.
-    expect(proseProvenance(dataset).with_provenance).toBe(154 + 9);
+    // scored like the five before it. 167 since #134: the shortage card's IT
+    // path, two criteria and two preconditions.
+    expect(proseProvenance(dataset).with_provenance).toBe(154 + 9 + 4);
   });
 
   it("a fresher carve-out is a fresher dataset", () => {
-    // 2026-09-17 since s29: the two free-movement sentences (the IND's EEA
-    // sentence, Your Europe's Swiss one), read that day.
-    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-09-17");
+    // 2026-10-21 since #134: the shortage card's IT path, read that day.
+    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-10-21");
   });
 });
