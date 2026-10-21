@@ -1112,58 +1112,6 @@
       }
     },
     {
-      "code": "AW",
-      "name": "Aruba",
-      "passport": "NL",
-      "source": {
-        "source_url": "https://www.netherlandsworldwide.nl/passport-id-card/abroad",
-        "quote": "If you live in Aruba, Curaçao, St Maarten, Bonaire, St Eustatius or Saba, find out below where you can apply for a passport or ID card:",
-        "retrieved_at": "2026-10-21"
-      }
-    },
-    {
-      "code": "CW",
-      "name": "Curaçao",
-      "passport": "NL",
-      "source": {
-        "source_url": "https://www.netherlandsworldwide.nl/passport-id-card/abroad",
-        "quote": "If you live in Aruba, Curaçao, St Maarten, Bonaire, St Eustatius or Saba, find out below where you can apply for a passport or ID card:",
-        "retrieved_at": "2026-10-21"
-      }
-    },
-    {
-      "code": "SX",
-      "name": "Sint Maarten",
-      "aliases": [
-        "St Maarten",
-        "Saint Maarten"
-      ],
-      "passport": "NL",
-      "source": {
-        "source_url": "https://www.netherlandsworldwide.nl/passport-id-card/abroad",
-        "quote": "If you live in Aruba, Curaçao, St Maarten, Bonaire, St Eustatius or Saba, find out below where you can apply for a passport or ID card:",
-        "retrieved_at": "2026-10-21"
-      }
-    },
-    {
-      "code": "BQ",
-      "name": "Caribbean Netherlands",
-      "article": "the",
-      "aliases": [
-        "Bonaire",
-        "Sint Eustatius",
-        "St Eustatius",
-        "Saba",
-        "BES islands"
-      ],
-      "passport": "NL",
-      "source": {
-        "source_url": "https://www.netherlandsworldwide.nl/passport-id-card/abroad",
-        "quote": "If you live in Aruba, Curaçao, St Maarten, Bonaire, St Eustatius or Saba, find out below where you can apply for a passport or ID card:",
-        "retrieved_at": "2026-10-21"
-      }
-    },
-    {
       "code": "JE",
       "name": "Jersey",
       "aliases": [
