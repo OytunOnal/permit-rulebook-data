@@ -1538,6 +1538,7 @@
                     {
                       "field": "german",
                       "op": "in",
+                      "short_reason": "German at A1 or higher",
                       "values": [
                         "a1",
                         "a2",
@@ -1553,6 +1554,7 @@
                     {
                       "field": "english",
                       "op": "in",
+                      "short_reason": "English at B2 or higher",
                       "values": [
                         "b2",
                         "c1"
