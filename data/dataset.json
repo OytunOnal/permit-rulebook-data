@@ -175,9 +175,14 @@
           "short": "a partial recognition decision"
         },
         {
-          "value": "not_yet",
-          "label": "Not assessed / not recognised",
-          "short": "a qualification that is not assessed or not recognised in Germany"
+          "value": "not_assessed",
+          "label": "Not assessed yet",
+          "short": "a qualification not yet assessed in Germany"
+        },
+        {
+          "value": "not_recognised",
+          "label": "Assessed and not recognised",
+          "short": "a qualification Germany assessed and did not recognise"
         },
         {
           "value": "unknown",
