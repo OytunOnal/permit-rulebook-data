@@ -429,7 +429,7 @@
         {
           "value": "none",
           "label": "None / below A1",
-          "short": "German below A1 (beginner)",
+          "short": "German below A1 (no German yet)",
           "is_fallback": true
         },
         {
@@ -465,7 +465,7 @@
         {
           "value": "none",
           "label": "Below B2",
-          "short": "English below B2 (upper intermediate)",
+          "short": "English below B2 (intermediate or lower)",
           "is_fallback": true
         },
         {
