@@ -197,9 +197,6 @@ export interface Reason {
   parts: { needs: string[]; unknown: string[]; moot: string[] };
 }
 
-const countryName = (dataset: Dataset, code: string): string =>
-  dataset.countries.find((c) => c.code === code)?.name ?? code;
-
 /**
  * The criterion results a reason names. A disjunction with a deciding path is
  * named by that path's own criteria, so the reader is told what stands between
@@ -251,7 +248,7 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
       const place = declaredPlace(dataset, profile);
       rows.push({
         kind: "where",
-        text: `This route is ${countryName(dataset, r.country)}${place ? `, and you told us ${place}` : ""}.`,
+        text: `This route is in ${countryPhrase(r.country)}${place ? `, and you told us ${place}` : ""}.`,
       });
       continue;
     }
@@ -293,8 +290,8 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
 
   if (isPlacedElsewhere(r, profile)) {
     const place = declaredPlace(dataset, profile);
-    const country = countryName(dataset, r.country);
-    return { line: place ? `A ${country} route — you told us ${place}.` : `A ${country} route.`, rows, parts };
+    const country = countryPhrase(r.country);
+    return { line: place ? `A route in ${country} — you told us ${place}.` : `A route in ${country}.`, rows, parts };
   }
 
   const sentences: string[] = [];

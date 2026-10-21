@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { countryPhrase, countryPhraseAtStart, countryPossessive, countryVocabulary } from "../src/index.js";
-import type { CountryVocabulary } from "../src/index.js";
+import { readFileSync } from "node:fs";
+import {
+  countryPhrase, countryPhraseAtStart, countryPossessive, countryVocabulary, evaluate, reasonFor,
+} from "../src/index.js";
+import type { CountryVocabulary, Dataset, Profile } from "../src/index.js";
+
+const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
 /**
  * A country's name in running text (#152; #151, ruling 6): one phrase from the
@@ -45,6 +50,19 @@ describe("the country phrase at a sentence or heading start", () => {
 
   it("throws on a code the list does not hold", () => {
     expect(() => countryPhraseAtStart("ZZ")).toThrow(/ZZ/);
+  });
+});
+
+describe("a verdict line that names a route's country", () => {
+  it("names it with its article, wherever the name falls", () => {
+    const toGermany: Profile = { destination: "de" };
+    const dutch = evaluate(dataset, toGermany).filter((r) => r.country === "NL");
+    const said = dutch.flatMap((r) => {
+      const reason = reasonFor(dataset, r, toGermany);
+      return [reason.line, ...reason.rows.filter((row) => row.kind === "where").map((row) => row.text)];
+    }).filter((text) => text.includes("Netherlands"));
+    expect(said.length).toBeGreaterThan(0);
+    for (const text of said) expect(text).not.toMatch(/(?<!the )Netherlands/);
   });
 });
 
