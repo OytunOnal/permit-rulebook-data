@@ -61,7 +61,7 @@ describe("unlocks — improvable fields (language, funds, recognition…)", () =
   // paths; points would be 5 of 6 (experience 2 + shortage 1 + age 2).
   const languageless: Profile = {
     destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
-    recognition_de: "not_yet", german: "none", english: "none",
+    recognition_de: "not_assessed", german: "none", english: "none",
     experience_5y: "2plus", experience_7y: "3to5", occupation_shortage: "yes", age_band: "a30to35",
     de_stay6m: "no", partner_ck: "no", funds_eur_month: "band_1",
   };
