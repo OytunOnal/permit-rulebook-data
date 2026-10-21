@@ -530,20 +530,24 @@
     },
     {
       "id": "partner_ck",
-      "label": "Is your spouse or partner also applying for (and eligible for) an Opportunity Card?",
+      "label": "Is your spouse or partner also applying for {route:de-chancenkarte} — and eligible for one?",
       "short_label": "Partner applying too",
-      "subject": "whether your partner is also applying for an Opportunity Card",
+      "subject": "whether your partner is also applying for {route:de-chancenkarte}",
       "type": "enum",
+      "learn": {
+        "label": "See what the card offers on the page of Germany's Federal Ministry of the Interior",
+        "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html"
+      },
       "options": [
         {
           "value": "yes",
           "label": "Yes",
-          "short": "a partner applying for an Opportunity Card too"
+          "short": "a partner also applying for the card"
         },
         {
           "value": "no",
           "label": "No",
-          "short": "no partner applying for an Opportunity Card"
+          "short": "no partner applying for the card"
         }
       ]
     },
@@ -1500,6 +1504,7 @@
         {
           "id": "de-chancenkarte",
           "name": "Opportunity Card (Chancenkarte, § 20a)",
+          "what_it_is": "the permit to come and look for work",
           "kind": "seek",
           "summary": "A one-year card to come and look for work, with part-time work of up to 20 hours a week. If your qualification is fully recognised in Germany you get it directly; otherwise you need six points from the official table. Having an offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html",

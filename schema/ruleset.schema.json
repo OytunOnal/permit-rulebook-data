@@ -1068,6 +1068,12 @@
           "description": "One or two sentences about the route. Its FIRST sentence stands alone as the card's gist on a country index and is bounded there (see the build's summaryFirstSentence check); the whole summary is the route page's own opening line and may run longer.",
           "maxLength": 600
         },
+        "what_it_is": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "What the route is, in a short phrase a question carries after the route's name (\"the permit to come and look for work\"). Required where a question names the route through a {route:<id>} slot (see the build's routeSlot check), which the data package fills as \"<the country's possessive> <the plain name> — <this phrase>\"."
+        },
         "info_url": {
           "type": "string",
           "pattern": "^https://"
