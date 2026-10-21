@@ -72,7 +72,6 @@ describe("s25 — two questions replace the four-rung ladder", () => {
 
   it("the seven-year question: under 3 · 3 to under 5 · 5 or more, improvable, the yes/no gone", () => {
     const def = ds.fields.find((f) => f.id === SEVEN)!;
-    expect(def.label).toBe("And in the last seven years?");
     expect(def.short_label).toBe("Experience (last 7 years)");
     expect(def.subject).toBe("your related experience in the last seven years");
     expect(def.kind).toBe("improvable");

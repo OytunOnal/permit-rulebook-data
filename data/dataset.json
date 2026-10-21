@@ -208,7 +208,7 @@
     },
     {
       "id": "experience_7y",
-      "label": "And in the last seven years?",
+      "label": "Related skilled work experience in the last seven years?",
       "short_label": "Experience (last 7 years)",
       "subject": "your related experience in the last seven years",
       "type": "enum",
