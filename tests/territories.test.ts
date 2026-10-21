@@ -3,10 +3,13 @@ import { readFileSync } from "node:fs";
 import { countryVocabulary, type CountryVocabulary } from "../src/countries.js";
 import { findTerritory, territoryErrors, territoryPhrase, territoryPhraseAtStart } from "../src/territories.js";
 import { validateDataset } from "../src/validate.js";
-import { datasetQuotes, datasetSourceUrls } from "../src/watch/core.js";
+import { checkQuotes, datasetQuotes, datasetSourceUrls, type WatchState, type Watchlist } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const readJson = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
+const dataset = readJson("../data/dataset.json") as Dataset;
+const shippedWatchlist = readJson("../watch/watchlist.json") as Watchlist;
+const shippedState = readJson("../watch/state.json") as WatchState;
 
 /**
  * #160 — a territory typed in the passport search names its passport.
@@ -124,5 +127,13 @@ describe("a territory's source is watched like a passport class's", () => {
       expect([...urls], t.code).toContain(t.source.source_url);
       expect(quoted, t.code).toContainEqual({ quote: t.source.quote, source_url: t.source.source_url, where: `territory:${t.code}` });
     }
+  });
+
+  it("every territory's quote is still on the page it cites, read by a machine", () => {
+    // The quote gate, which reads the watch's snapshots by design.
+    const check = checkQuotes(dataset, shippedWatchlist, shippedState);
+    const territorial = (where: string) => where.startsWith("territory:");
+    expect(check.missing.filter((m) => territorial(m.where))).toEqual([]);
+    expect(check.unverifiable.filter((u) => territorial(u.where))).toEqual([]);
   });
 });

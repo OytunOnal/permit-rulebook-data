@@ -12,6 +12,9 @@ const ENTITIES: Record<string, string> = {
   "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'",
   "&nbsp;": " ", "&euro;": "€", "&auml;": "ä", "&ouml;": "ö", "&uuml;": "ü",
   "&Auml;": "Ä", "&Ouml;": "Ö", "&Uuml;": "Ü", "&szlig;": "ß",
+  // The Danish letters, which Greenland Police's passport page writes as
+  // entities (politi-gl-passport).
+  "&aelig;": "æ", "&oslash;": "ø", "&aring;": "å", "&AElig;": "Æ", "&Oslash;": "Ø", "&Aring;": "Å",
 };
 
 /** Total function: an out-of-range or malformed code point keeps its literal
