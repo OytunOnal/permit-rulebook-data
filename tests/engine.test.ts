@@ -138,7 +138,7 @@ describe("scenario step 4 — personas reach a verdict in few questions", () => 
   it("P3 explorer without offer: only Chancenkarte questions come, salary never asked (A10 measurement)", () => {
     const { asked, profile } = runFlow({
       destination: "de", citizenship: "third_country", situation: "none", qualification: "degree",
-      funds_eur_month: "band_1", recognition_de: "not_yet",
+      funds_eur_month: "band_1", recognition_de: "not_assessed",
       german: "b1", english: "none", experience_5y: "lt2", experience_7y: "lt3", occupation_shortage: "no",
       age_band: "a30to35", de_stay6m: "no", partner_ck: "no",
     });

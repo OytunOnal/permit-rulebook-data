@@ -515,9 +515,16 @@ describe("s5e — this slice moves prose, not numbers", () => {
     // Not yet, the experience path failing only on the seven-year rung, which the
     // reader can improve — es-blue-card 20, fr-talent-blue-card 19, es-ict 14,
     // es-highly-qualified 12, nl-blue-card 10.
+    //
+    // Re-pinned in #157: the recognition question's not_yet became two
+    // options, not_assessed and not_recognised, so the seeded draw changed (one
+    // more option to draw from) and no rule did. Held against the parent
+    // (dfd1a47): its 400 people, drawn from its dataset, with the 81 who answer
+    // not_yet answering not_assessed — or, run again, not_recognised — digest
+    // on this dataset to the parent's pin, 3febe1b1…3921: not one row moves.
     const lines = seededProfiles().flatMap((p) => evaluate(dataset, p).map(rowOf));
     expect(createHash("sha256").update(lines.join("\n")).digest("hex"))
-      .toBe("3febe1b11387707954de6aca9c4cb87148689225d76f3692ff47ed8eb14e3921");
+      .toBe("553bfb65105deb1ff071582865821a709dcf6a75ba7c286a2c02762f4fb3f8ea");
   });
 
   it("and the rules that read experience are the only ones that read it", () => {
