@@ -180,6 +180,13 @@ they leave one dataset sentence unverifiable by machine.
 8. **Add the questions' words.** A criterion may only name an answer the
    dataset can put into words — give the option a `short`, or the criterion a
    `short_reason`. There is no fallback to a field id; the build fails instead.
+   A question whose options run from least to most of one amount (years of
+   experience) is marked `ordered`, and a criterion accepting two or more of
+   its rungs carries a `short_reason` that says the range ("at least 3 years
+   of related experience in the last seven"), or the build fails. A criterion
+   with paths, and each of its paths, carries a `label`: the criterion is
+   named by its label wherever it is named in one line, and each path's line
+   opens with the path's.
 9. **A `learn` label is what the reader does there** — one sentence opening
    on an action (`Check` · `See` · `Read` · `Find`), in plain words, never
    statute shorthand such as `§ 18g AufenthG`: the site prints it verbatim as

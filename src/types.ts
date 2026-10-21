@@ -200,8 +200,12 @@ export type Criterion =
   | ({ field: string; op: "not-in"; values: string[]; text: string; source: ProvenancedText } & CriterionExtras)
   | ({ field: string; op: "gte"; threshold: ProvenancedAmount; threshold_label?: string } & CriterionExtras)
   | ({ op: "points"; required: ProvenancedNumber; table: PointsTable } & CriterionExtras)
-  /** Disjunction: the criterion passes when ANY path's criteria all pass (e.g. §20a "Fachkraft ODER Punktzahl"). */
-  | ({ op: "any"; label?: string; paths: { label?: string; criteria: Criterion[] }[] } & CriterionExtras);
+  /**
+   * Disjunction: the criterion passes when ANY path's criteria all pass (e.g.
+   * §20a "Fachkraft ODER Punktzahl"). `label` is its one-line name; each path's
+   * `label` heads that path's own line where the paths are listed.
+   */
+  | ({ op: "any"; label: string; paths: { label: string; criteria: Criterion[] }[] } & CriterionExtras);
 
 /**
  * What a source says about one route that no criterion can compute.
@@ -556,6 +560,10 @@ export interface FieldDef {
    * Only fields whose answer is part of the same real-world decision as the
    * step itself belong here; anything else produces nonsense advice. */
   is_qualifier?: boolean;
+  /** enum only: the options run from least to most of one amount, so a
+   * criterion accepting two or more of them says the range in its own
+   * `short_reason` rather than reading the rungs out. */
+  ordered?: boolean;
 }
 
 export interface Unlock {
@@ -640,7 +648,7 @@ export interface PointsBreakdown {
 export interface DecidedPath {
   /** Position in the criterion's own `paths` array. */
   index: number;
-  label?: string;
+  label: string;
   criteria: CriterionResult[];
 }
 

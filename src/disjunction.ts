@@ -80,8 +80,7 @@ function isNearerThan(a: CriterionResult, b: CriterionResult): boolean {
 
 /** Which path decided a disjunction, in the shape a consumer can walk. */
 function decidedPath(c: Disjunction, index: number, criteria: CriterionResult[]): DecidedPath {
-  const label = c.paths[index].label;
-  return label === undefined ? { index, criteria } : { index, label, criteria };
+  return { index, label: c.paths[index].label, criteria };
 }
 
 const isFail = (r: CriterionResult): boolean => r.outcome === "fail";

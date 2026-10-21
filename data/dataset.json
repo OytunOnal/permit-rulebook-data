@@ -192,6 +192,7 @@
       "short_label": "Experience (last 5 years)",
       "subject": "your related experience in the last five years",
       "type": "enum",
+      "ordered": true,
       "kind": "improvable",
       "options": [
         {
@@ -212,6 +213,7 @@
       "short_label": "Experience (last 7 years)",
       "subject": "your related experience in the last seven years",
       "type": "enum",
+      "ordered": true,
       "kind": "improvable",
       "options": [
         {
@@ -798,6 +800,7 @@
                         "3to5",
                         "5plus"
                       ],
+                      "short_reason": "at least 3 years of related experience in the last seven",
                       "source": {
                         "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
                         "quote": "zudem muss in den letzten sieben Jahren einschlägige, mindestens dreijährige Berufserfahrung auf akademischem Niveau im IT-Bereich gesammelt worden sein",
@@ -4286,6 +4289,7 @@
                         "3to5",
                         "5plus"
                       ],
+                      "short_reason": "at least 3 years of related experience in the last seven",
                       "source": {
                         "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
                         "quote": "Are you an IT manager or IT professional? A minimum of 3 years of relevant work experience is required during the period of 7 years before the application.",

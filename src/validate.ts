@@ -6,7 +6,7 @@ import { askedByCriterion } from "./scope.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
-import type { Dataset } from "./types.js";
+import type { Criterion, Dataset } from "./types.js";
 
 /**
  * How long the sentence a country-index card prints may be. Measured from the
@@ -56,10 +56,12 @@ export function validateDataset(data: unknown): ValidationResult {
  *   criterion or notice naming "schengen_only" would silently never match,
  *   and a silent never-match on citizenship is a wrong answer, not a bug
  *   report. The vocabulary's own invariants are checked here too, so
- *   `countries.json` cannot ship a country with no class or two.
+ *   `countries.json` cannot ship a country with no class or two;
+ * - a criterion accepting two or more rungs of an ordered question says the
+ *   range in its own `short_reason` (`unwordedRangeErrors`).
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
-  const errors: ValidationError[] = [...vocabularyErrors(countryVocabulary)];
+  const errors: ValidationError[] = [...vocabularyErrors(countryVocabulary), ...unwordedRangeErrors(dataset)];
 
   /**
    * s5e: nothing reaches a screen in quotation marks without provenance beside
@@ -377,6 +379,30 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
     }
   }
 
+  return errors;
+}
+
+/**
+ * The criteria that accept two or more rungs of an ordered question and carry
+ * no `short_reason`. Composed from the options, such a criterion reads the
+ * rungs out ("3 to under 5 or 5+ years …") where a reader wants the range
+ * ("at least 3 years …"), and only the dataset can say the range in words.
+ */
+function unwordedRangeErrors(dataset: Dataset): ValidationError[] {
+  const ordered = new Set(dataset.fields.filter((f) => f.ordered).map((f) => f.id));
+  const isUnwordedRange = (c: Criterion): c is Extract<Criterion, { op: "in" }> =>
+    c.op === "in" && c.values.length >= 2 && ordered.has(c.field) && !c.short_reason;
+  const errors: ValidationError[] = [];
+  for (const country of dataset.countries)
+    for (const route of country.routes)
+      forEachCriterion(route.criteria, (c) => {
+        if (!isUnwordedRange(c)) return;
+        errors.push({
+          path: `/countries/${country.code}/routes/${route.id}`,
+          message: `${route.id}: a criterion accepts ${c.values.length} rungs of ${c.field}, an ordered question — give it a "short_reason" that says the range in one phrase`,
+          keyword: "orderedRangeHasWords",
+        });
+      });
   return errors;
 }
 

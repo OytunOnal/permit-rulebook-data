@@ -96,8 +96,9 @@ export function answerLabel(dataset: Dataset, field: string, value: string | und
 /**
  * What a criterion asks for, as a noun phrase. `short_reason` overrides where
  * the option list reads badly in a sentence ("an age of 30 or older" beats
- * "30 to 35, 36 to 40 or over 40"); a disjunction expands into its paths, so
- * a route never has to name its own internal structure.
+ * "30 to 35, 36 to 40 or over 40"); a disjunction is named by its own label,
+ * because its paths joined into one line are a run of "and"s and "or"s a
+ * reader cannot group.
  */
 export function criterionPhrase(dataset: Dataset, c: Criterion): string {
   if (c.short_reason) return c.short_reason;
@@ -116,7 +117,7 @@ export function criterionPhrase(dataset: Dataset, c: Criterion): string {
     case "points":
       return `${c.required.value} points from the official table`;
     case "any":
-      return joinOr(c.paths.map((p) => joinAnd(p.criteria.map((pc) => criterionPhrase(dataset, pc)))));
+      return c.label;
     default: {
       const _exhaustive: never = c;
       throw new Error(`unhandled criterion op: ${JSON.stringify(_exhaustive)}`);

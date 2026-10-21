@@ -104,10 +104,12 @@ describe("s23 P2 — a rule with two limbs is one sentence", () => {
     // rule's condition line, heading and "Needs …" line all read the option
     // list out in full. (The rule this was first proved on, the experienced
     // worker's "2+ or 5+ years of related experience", became a one-limb rule
-    // in s25 when the experience ladder was split in two.)
-    const c = inCriterion(routeOf("nl-blue-card"), "experience_7y");
-    expect(c.op).toBe("in");
-    expect(criterionPhrase(ds, c)).toBe("3 to under 5 or 5+ years of related experience in the last seven");
+    // in s25 when the experience ladder was split in two.) The shipped rule
+    // says its range in its own short_reason, which the gate asks of a range
+    // on an ordered question, so the composition is read without it.
+    const { short_reason: _, ...composed } = inCriterion(routeOf("nl-blue-card"), "experience_7y");
+    expect(composed.op).toBe("in");
+    expect(criterionPhrase(ds, composed)).toBe("3 to under 5 or 5+ years of related experience in the last seven");
   });
 
   it("leaves a rule whose options share no tail exactly as it was", () => {

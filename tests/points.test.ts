@@ -119,6 +119,7 @@ describe("any-of paths (§20a shape: direct OR points)", () => {
     { field: "citizenship", op: "eq", value: "third" },
     {
       op: "any",
+      label: "direct or points",
       paths: [
         { label: "direct", criteria: [{ field: "recognized", op: "eq", value: "yes" }] },
         { label: "points", criteria: [
