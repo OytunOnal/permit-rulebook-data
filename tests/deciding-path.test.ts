@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { decidingCriteria, deriveBands, evaluate, resultProvenance } from "../src/engine.js";
+import { decidingCriteria } from "../src/disjunction.js";
+import { deriveBands, evaluate, resultProvenance } from "../src/engine.js";
 import type { CriterionResult, Dataset, Profile, RouteResult } from "../src/types.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
