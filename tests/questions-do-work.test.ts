@@ -34,10 +34,19 @@ const thirdCountry = countryOptions()
   .map((o) => o.value)
   .filter((code) => classOfCountry(code) === "third_country");
 
-function answersFor(def: FieldDef): string[] {
-  if (def.id === "citizenship") return thirdCountry;
+/**
+ * Every answer the question offers, the passport's EU ones included: on one
+ * destination, a free-movement passport is often the only one that moves the
+ * screen, and that is the passport doing its work there.
+ */
+function everyAnswerTo(def: FieldDef): string[] {
   if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
   return fieldOptions(dataset, def.id).map((o) => o.value);
+}
+
+/** Every answer the question offers, the passport a third-country one. */
+function answersFor(def: FieldDef): string[] {
+  return def.id === "citizenship" ? thirdCountry : everyAnswerTo(def);
 }
 
 /** A full profile, every field answered, the passport a third-country one. */
@@ -70,6 +79,25 @@ function screen(profile: Profile, routes?: ReadonlySet<string>): string {
 
 const SEEDS = 60;
 
+/**
+ * Whether two of these answers to the field give two different screens on
+ * some baseline for the destination: every route's screen, or only the given
+ * routes'.
+ */
+function answersMoveScreen(
+  field: string, answers: string[], where: { destination: string; routes?: ReadonlySet<string> },
+): boolean {
+  for (let seed = 1; seed <= SEEDS; seed++) {
+    const base = baseline(seed, where.destination);
+    const seen = new Set<string>();
+    for (const value of answers) {
+      seen.add(screen({ ...base, [field]: value }, where.routes));
+      if (seen.size > 1) return true;
+    }
+  }
+  return false;
+}
+
 describe("every question does work", () => {
   const destinations = fieldOptions(dataset, "destination").map((o) => o.value);
   const asked = dataset.fields.filter((f) => f.id !== "destination");
@@ -78,20 +106,11 @@ describe("every question does work", () => {
     it(`${def.id}: two answers produce two different screens`, () => {
       const answers = answersFor(def);
       expect(answers.length, `${def.id} has fewer than two answers to compare`).toBeGreaterThan(1);
-      let moved = false;
       // A field the interview asks only for one country changes nothing under
       // another, so every destination gets a turn — and enough seeds that a
       // one-point field on the Chancenkarte meets a baseline sitting one point
       // short: with three seeds it never did, and the test blamed the question.
-      outer: for (const destination of destinations)
-        for (let seed = 1; seed <= SEEDS; seed++) {
-          const base = baseline(seed, destination);
-          const seen = new Set<string>();
-          for (const value of answers) {
-            seen.add(screen({ ...base, [def.id]: value }));
-            if (seen.size > 1) { moved = true; break outer; }
-          }
-        }
+      const moved = destinations.some((destination) => answersMoveScreen(def.id, answers, { destination }));
       expect(
         moved,
         `${def.id}: no two answers change anything a reader sees — either the question goes, `
@@ -149,37 +168,17 @@ describe("every question does work on every destination it is asked on", () => {
     return asked;
   }
 
-  /** Whether two of these answers to the field give the destination's routes
-   * two different screens, on some baseline. */
-  function answersMoveScreen(destination: string, field: string, answers: string[]): boolean {
-    const routes = openRoutesOf(destination);
-    for (let seed = 1; seed <= SEEDS; seed++) {
-      const base = baseline(seed, destination);
-      const seen = new Set<string>();
-      for (const value of answers) {
-        seen.add(screen({ ...base, [field]: value }, routes));
-        if (seen.size > 1) return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Every answer the question offers, the passport's EU ones included: on one
-   * destination, a free-movement passport is often the only one that moves the
-   * screen, and that is the passport doing its work there.
-   */
-  function everyAnswerTo(def: FieldDef): string[] {
-    if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
-    return fieldOptions(dataset, def.id).map((o) => o.value);
-  }
+  /** Whether two of these answers to the field move the screen of the routes
+   * the destination leaves open, on some baseline. */
+  const answersMoveDestination = (destination: string, field: string, answers: string[]): boolean =>
+    answersMoveScreen(field, answers, { destination, routes: openRoutesOf(destination) });
 
   it("per destination: a field asked on a destination moves that destination's screen", () => {
     const failures: string[] = [];
     for (const destination of destinations)
       for (const def of dataset.fields) {
         if (!fieldsAskedOn(destination).has(def.id)) continue;
-        if (!answersMoveScreen(destination, def.id, everyAnswerTo(def)))
+        if (!answersMoveDestination(destination, def.id, everyAnswerTo(def)))
           failures.push(`${destination}: ${def.id} is asked there, but no change of its answer moves that destination's screen`);
       }
     expect(failures).toEqual([]);
@@ -225,7 +224,7 @@ describe("every question does work on every destination it is asked on", () => {
         const rungs = rungsOf(def);
         for (let i = 1; i < rungs.length; i++) {
           const [lower, upper] = [rungs[i - 1]!, rungs[i]!];
-          if (answersMoveScreen(destination, def.id, [lower.value, upper.value])) continue;
+          if (answersMoveDestination(destination, def.id, [lower.value, upper.value])) continue;
           rungsReadingTheSame.push({ destination, field: def.id, rungs: [lower.value, upper.value] });
           messages.push(`${destination}: ${def.id}: "${lower.label}" and "${upper.label}" give that destination the same screen on every baseline`);
         }
