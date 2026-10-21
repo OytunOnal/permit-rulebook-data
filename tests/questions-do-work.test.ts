@@ -115,7 +115,7 @@ describe("every question does work", () => {
  * seven-year question passed on Spain, the Netherlands and France while
  * "Under 3" and "3 to under 5" gave every German card the same result (B1,
  * #133). These checks hold each destination to its own screen, and each pair
- * of neighbouring rungs of a ladder question to a difference of its own.
+ * of neighbouring rungs of an improvable enum to a difference of its own.
  */
 describe("every question does work on every destination it is asked on", () => {
   const destinations = fieldOptions(dataset, "destination").map((o) => o.value);
@@ -186,16 +186,16 @@ describe("every question does work on every destination it is asked on", () => {
   });
 
   /**
-   * A ladder question: an enum the reader can climb, its options rungs in
+   * An improvable enum: an enum the reader can climb, its options rungs in
    * order. A money band is not one (its edges are global until #89 cuts them
    * per destination), and neither is an enum the reader cannot improve, such
    * as the passport, which gives one result for most countries by design.
    */
-  function isLadder(def: FieldDef): boolean {
+  function isImprovableEnum(def: FieldDef): boolean {
     return def.type === "enum" && def.kind === "improvable";
   }
 
-  /** A ladder's rungs in order; "I don't know" is an answer, not a rung. */
+  /** An improvable enum's rungs in order; "I don't know" is an answer, not a rung. */
   function rungsOf(def: FieldDef): FieldOption[] {
     return fieldOptions(dataset, def.id).filter((o) => !o.is_unknown);
   }
@@ -216,11 +216,11 @@ describe("every question does work on every destination it is asked on", () => {
    */
   const KNOWN_SAME_RUNGS: SameRungs[] = [];
 
-  it("per rung: neighbouring rungs of a ladder question move the screen of every destination it is asked on", () => {
+  it("per rung: neighbouring rungs of an improvable enum move the screen of every destination it is asked on", () => {
     const same: SameRungs[] = [];
     const messages: string[] = [];
     for (const destination of destinations)
-      for (const def of dataset.fields.filter(isLadder)) {
+      for (const def of dataset.fields.filter(isImprovableEnum)) {
         if (!fieldsAskedOn(destination).has(def.id)) continue;
         const rungs = rungsOf(def);
         for (let i = 1; i < rungs.length; i++) {
