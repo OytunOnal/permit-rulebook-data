@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { reckonAskingRoutes } from "../src/index.js";
-import type { Dataset, OpenRoute } from "../src/index.js";
+import { deriveBands, evaluate, fieldOptions, reckonAskingRoutes } from "../src/index.js";
+import type { Dataset, FieldDef, OpenRoute, Profile } from "../src/index.js";
 
 /**
  * The routes a question is asked for, named by the engine from the same walk
@@ -12,6 +12,28 @@ const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.m
 
 const ids = (routes: OpenRoute[]): string[] => routes.map((r) => r.route.id);
 
+// Deterministic PRNG so every run checks the same profile population.
+function lcg(seed: number) {
+  let s = seed >>> 0;
+  return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+}
+
+function optionValues(def: FieldDef): string[] {
+  if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
+  return fieldOptions(dataset, def.id).map((o) => o.value);
+}
+
+/** Each field answered with probability `answerProb`, by a random option. */
+function randomProfile(rand: () => number, answerProb: number): Profile {
+  const p: Profile = {};
+  for (const def of dataset.fields) {
+    if (rand() >= answerProb) continue;
+    const vals = optionValues(def);
+    p[def.id] = vals[Math.floor(rand() * vals.length)]!;
+  }
+  return p;
+}
+
 describe("the routes a question is asked for", () => {
   it("funds on a Germany-offer profile: asked for the Opportunity Card alone, among more open routes", () => {
     const offer = { destination: "de", citizenship: "IN", situation: "offer" };
@@ -19,5 +41,28 @@ describe("the routes a question is asked for", () => {
     expect(ids(asked_for)).toEqual(["de-chancenkarte"]);
     expect(asked_for[0]!.country).toBe("DE");
     expect(open.length).toBeGreaterThan(1);
+  });
+
+  it("the passport on an empty profile: asked for every open route", () => {
+    const { asked_for, open } = reckonAskingRoutes(dataset, {}, "citizenship");
+    expect(open.length, "an empty profile leaves no route open").toBeGreaterThan(0);
+    expect(ids(asked_for)).toEqual(ids(open));
+  });
+
+  it("a route with a hard fail is never one a question is asked for (300 random profiles)", () => {
+    const rand = lcg(135);
+    let hardFailsSeen = 0;
+    for (let i = 0; i < 300; i++) {
+      const profile = randomProfile(rand, rand() < 0.5 ? 0.3 : 0.7);
+      const hardFailed = new Set(evaluate(dataset, profile).filter((r) => r.hard_fail).map((r) => r.route.id));
+      hardFailsSeen += hardFailed.size;
+      for (const def of dataset.fields) {
+        const { asked_for, open } = reckonAskingRoutes(dataset, profile, def.id);
+        const where = `${def.id} @ ${JSON.stringify(profile)}`;
+        expect(ids(asked_for).filter((id) => hardFailed.has(id)), where).toEqual([]);
+        expect(ids(open).filter((id) => hardFailed.has(id)), where).toEqual([]);
+      }
+    }
+    expect(hardFailsSeen, "no generated profile hard-failed a route").toBeGreaterThan(0);
   });
 });
