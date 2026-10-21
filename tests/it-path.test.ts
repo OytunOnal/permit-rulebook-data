@@ -48,6 +48,12 @@ describe("the shortage-occupation Blue Card's IT path", () => {
     expect(qualifyingDisjunctionOf(short)!.outcome).toBe("fail");
   });
 
+  it("under 3 years in the last seven is not a hard fail: the rung is an answer the reader can still improve", () => {
+    const short = shortageCardFor({ ...itWorkerWithoutDegree, experience_7y: "lt3" });
+    expect(short.hard_fail).toBe(false);
+    expect(short.criteria.filter((cr) => cr.outcome !== "pass")).toEqual([qualifyingDisjunctionOf(short)]);
+  });
+
   it("the shortage-list answer, whichever it is, does not reach the IT path", () => {
     for (const answer of ["yes", "no", "unknown"]) {
       const r = shortageCardFor({ ...itWorkerWithoutDegree, occupation_shortage: answer });
@@ -98,6 +104,16 @@ describe("the shortage-occupation Blue Card's degree path", () => {
     const below = shortageCardFor({ ...recognisedShortageGraduate, salary_eur_year: bandFor("salary_eur_year", 45800) });
     expect(below.status).toBe("near");
     expect(below.gap_max).toBeCloseTo(304.2, 2);
+  });
+
+  it("German recognition not yet or partly granted, outside IT, is not a hard fail: recognition can still come", () => {
+    for (const recognition of ["not_yet", "partial"]) {
+      const r = shortageCardFor({
+        ...recognisedShortageGraduate, recognition_de: recognition, salary_eur_year: bandFor("salary_eur_year", 46000),
+      });
+      expect(r.status, recognition).not.toBe("met");
+      expect(r.hard_fail, recognition).toBe(false);
+    }
   });
 
   it("a reader who meets both paths is met", () => {

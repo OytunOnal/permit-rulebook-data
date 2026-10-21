@@ -459,14 +459,24 @@ function failsOnlyImprovables(dataset: Dataset, c: Criterion): boolean {
  * shortfalls (no German yet) keep the interview going so the route can finish
  * with a complete, actionable picture. Fixed-attribute and path fails
  * (citizenship, qualification, situation) end it for real.
+ *
+ * A disjunction reads every path's fields, but only one path has to hold, so
+ * it is a hard fail only when every path holds a hard-failing criterion. A path
+ * that failed only on answers the reader can improve, or only by a bounded gap,
+ * keeps it open: a degree awaiting German recognition still leads to the
+ * shortage Blue Card when its IT path is closed.
  */
-function isHardFail(dataset: Dataset, r: CriterionResult): boolean {
+function isHardFail(dataset: Dataset, r: CriterionResult, profile: Profile): boolean {
   if (stillReachable(r)) return false;
-  return !failsOnlyImprovables(dataset, r.criterion);
+  const c = r.criterion;
+  if (c.op === "any")
+    return c.paths.every((p) =>
+      p.criteria.some((pc) => isHardFail(dataset, evalCriterion(dataset, pc, profile), profile)));
+  return !failsOnlyImprovables(dataset, c);
 }
 
 function hasHardFail(dataset: Dataset, route: Route, profile: Profile): boolean {
-  return route.criteria.some((c) => isHardFail(dataset, evalCriterion(dataset, c, profile)));
+  return route.criteria.some((c) => isHardFail(dataset, evalCriterion(dataset, c, profile), profile));
 }
 
 /**
@@ -737,7 +747,7 @@ export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
         status,
         // Same predicate that retires a route mid-interview: the UI needs it to
         // tell "an unknown still binds here" from "nothing can save this".
-        hard_fail: criteria.some((cr) => isHardFail(dataset, cr)),
+        hard_fail: criteria.some((cr) => isHardFail(dataset, cr, profile)),
         criteria,
         gap_max: gaps.length ? Math.max(...gaps) : undefined,
         gap_points: pointsGaps.length ? Math.max(...pointsGaps) : undefined,
