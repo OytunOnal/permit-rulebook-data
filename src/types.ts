@@ -654,6 +654,8 @@ export interface CriterionResult {
   points?: PointsBreakdown;
   /** `any` only, and only once something has decided it. */
   path?: DecidedPath;
+  /** `any` only: every path's criterion results, in the dataset's path order. */
+  path_results?: CriterionResult[][];
 }
 
 export type RouteStatus = "met" | "near" | "hold";

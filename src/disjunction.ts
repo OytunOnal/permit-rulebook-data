@@ -52,8 +52,15 @@ export function isPathOpen(results: CriterionResult[], judge: CriterionJudge): b
  * only by a bounded gap, keeps it open: a degree awaiting German recognition
  * still leads to the shortage Blue Card when its IT path is closed.
  */
-export function hasNoOpenPath(c: Disjunction, judge: CriterionJudge): boolean {
-  return c.paths.every((p) => !isPathOpen(p.criteria.map((pc) => judge.evaluate(pc)), judge));
+export function hasNoOpenPath(r: CriterionResult, judge: CriterionJudge): boolean {
+  return pathResultsOf(r).every((rs) => !isPathOpen(rs, judge));
+}
+
+/** A disjunction's results, path by path, as its evaluation made them. */
+export function pathResultsOf(r: CriterionResult): CriterionResult[][] {
+  if (r.criterion.op !== "any" || r.path_results === undefined)
+    throw new Error(`not an evaluated disjunction: ${JSON.stringify(r.criterion)}`);
+  return r.path_results;
 }
 
 /**
@@ -84,10 +91,15 @@ const isUnknown = (r: CriterionResult): boolean => r.outcome === "unknown";
  * A disjunction's outcome. A path passes when all its criteria pass; the
  * disjunction passes with it. WHICH path passed is the story the card tells —
  * a route met through the reduced salary must name the reduced threshold, not
- * the first one written.
+ * the first one written. Every path's results ride on the outcome, so what
+ * reads the paths afterwards never evaluates them again.
  */
 export function evalDisjunction(c: Disjunction, judge: CriterionJudge): CriterionResult {
   const pathResults = c.paths.map((p) => p.criteria.map((pc) => judge.evaluate(pc)));
+  return { ...outcomeOf(c, pathResults, judge), path_results: pathResults };
+}
+
+function outcomeOf(c: Disjunction, pathResults: CriterionResult[][], judge: CriterionJudge): CriterionResult {
   const passedIndex = pathResults.findIndex((rs) => rs.every((r) => r.outcome === "pass"));
   if (passedIndex >= 0) {
     const passed = pathResults[passedIndex];

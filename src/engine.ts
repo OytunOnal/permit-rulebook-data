@@ -1,5 +1,5 @@
 import { countryOptions } from "./countries.js";
-import { evalDisjunction, hasNoOpenPath, isPathOpen, stillReachable } from "./disjunction.js";
+import { evalDisjunction, hasNoOpenPath, isPathOpen, pathResultsOf, stillReachable } from "./disjunction.js";
 import type { CriterionJudge } from "./disjunction.js";
 import { CARVE_OUT_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type {
@@ -374,7 +374,7 @@ function failsOnlyImprovables(dataset: Dataset, c: Criterion): boolean {
 function isHardFail(dataset: Dataset, r: CriterionResult, profile: Profile): boolean {
   if (stillReachable(r)) return false;
   const c = r.criterion;
-  if (c.op === "any") return hasNoOpenPath(c, judgeFor(dataset, profile));
+  if (c.op === "any") return hasNoOpenPath(r, judgeFor(dataset, profile));
   return !failsOnlyImprovables(dataset, c);
 }
 
@@ -386,10 +386,10 @@ export function isRouteAlive(dataset: Dataset, route: Route, profile: Profile): 
   return !route.criteria.some((c) => isHardFail(dataset, evalCriterion(dataset, c, profile), profile));
 }
 
-/** Unanswered fields that can still flip THIS criterion's outcome. */
-function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): string[] {
-  const result = evalCriterion(dataset, c, profile);
-  if (result.outcome !== "unknown") return [];
+/** Unanswered fields that can still flip this criterion result's outcome. */
+function undecidedFieldsOf(dataset: Dataset, r: CriterionResult, profile: Profile): string[] {
+  const c = r.criterion;
+  if (r.outcome !== "unknown") return [];
   if (c.op === "points")
     return referencedFields(c).filter((f) => profile[f] === undefined);
   if (c.op === "any")
@@ -397,9 +397,9 @@ function undecidedFieldsOf(dataset: Dataset, c: Criterion, profile: Profile): st
     // questions are noise; one failing only by a bounded gap or on answers the
     // reader can improve still leads somewhere, so the answers it is waiting on
     // are worth asking for.
-    return c.paths
-      .filter((p) => isPathOpen(p.criteria.map((pc) => evalCriterion(dataset, pc, profile)), judgeFor(dataset, profile)))
-      .flatMap((p) => p.criteria.flatMap((pc) => undecidedFieldsOf(dataset, pc, profile)));
+    return pathResultsOf(r)
+      .filter((rs) => isPathOpen(rs, judgeFor(dataset, profile)))
+      .flatMap((rs) => rs.flatMap((pr) => undecidedFieldsOf(dataset, pr, profile)));
   return profile[c.field] === undefined ? [c.field] : [];
 }
 
@@ -421,8 +421,10 @@ function reckonOpenRoutes(dataset: Dataset, profile: Profile): RouteReckoning[] 
   for (const country of dataset.countries)
     for (const route of country.routes) {
       // A route nothing is asked about asks for no question either (s9).
-      if (!isScored(route) || !isRouteAlive(dataset, route, profile)) continue;
-      const undecided = new Set(route.criteria.flatMap((c) => undecidedFieldsOf(dataset, c, profile)));
+      if (!isScored(route)) continue;
+      const results = route.criteria.map((c) => evalCriterion(dataset, c, profile));
+      if (results.some((r) => isHardFail(dataset, r, profile))) continue;
+      const undecided = new Set(results.flatMap((r) => undecidedFieldsOf(dataset, r, profile)));
       open.push({ route, country: country.code, undecided });
     }
   return open;
