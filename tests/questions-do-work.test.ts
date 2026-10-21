@@ -121,7 +121,7 @@ describe("every question does work on every destination it is asked on", () => {
   const destinations = fieldOptions(dataset, "destination").map((o) => o.value);
 
   /** The routes a destination answer leaves open, the engine told only that. */
-  function routesOf(destination: string): Set<string> {
+  function openRoutesOf(destination: string): Set<string> {
     return new Set(evaluate(dataset, { destination }).filter((r) => !r.hard_fail).map((r) => r.route.id));
   }
 
@@ -152,7 +152,7 @@ describe("every question does work on every destination it is asked on", () => {
   /** Whether two of these answers to the field give the destination's routes
    * two different screens, on some baseline. */
   function answersMoveScreen(destination: string, field: string, answers: string[]): boolean {
-    const routes = routesOf(destination);
+    const routes = openRoutesOf(destination);
     for (let seed = 1; seed <= SEEDS; seed++) {
       const base = baseline(seed, destination);
       const seen = new Set<string>();
@@ -217,7 +217,7 @@ describe("every question does work on every destination it is asked on", () => {
   const KNOWN_SAME_RUNGS: SameRungs[] = [];
 
   it("per rung: neighbouring rungs of an improvable enum move the screen of every destination it is asked on", () => {
-    const same: SameRungs[] = [];
+    const rungsReadingTheSame: SameRungs[] = [];
     const messages: string[] = [];
     for (const destination of destinations)
       for (const def of dataset.fields.filter(isImprovableEnum)) {
@@ -226,11 +226,11 @@ describe("every question does work on every destination it is asked on", () => {
         for (let i = 1; i < rungs.length; i++) {
           const [lower, upper] = [rungs[i - 1]!, rungs[i]!];
           if (answersMoveScreen(destination, def.id, [lower.value, upper.value])) continue;
-          same.push({ destination, field: def.id, rungs: [lower.value, upper.value] });
+          rungsReadingTheSame.push({ destination, field: def.id, rungs: [lower.value, upper.value] });
           messages.push(`${destination}: ${def.id}: "${lower.label}" and "${upper.label}" give that destination the same screen on every baseline`);
         }
       }
-    expect(same, `neighbouring rungs that read the same, against the known list:\n${messages.join("\n")}`)
+    expect(rungsReadingTheSame, `neighbouring rungs that read the same, against the known list:\n${messages.join("\n")}`)
       .toEqual(KNOWN_SAME_RUNGS);
   });
 });
