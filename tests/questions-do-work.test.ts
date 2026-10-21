@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { bindsReader, deriveBands, evaluate, fieldOptions, routeStatements } from "../src/engine.js";
 import { reasonFor } from "../src/verdict.js";
 import { scopeLine } from "../src/scope.js";
+import { remainingQuestions } from "../src/questions.js";
 import { classOfCountry, countryOptions } from "../src/countries.js";
 import type { Dataset, FieldDef, Profile } from "../src/types.js";
 
@@ -51,10 +52,14 @@ function baseline(seed: number, destination: string): Profile {
   return p;
 }
 
-/** Everything on the screen that an answer could move, as one string. */
-function screen(profile: Profile): string {
+/**
+ * Everything on the screen that an answer could move, as one string: every
+ * route's, or only the given routes'.
+ */
+function screen(profile: Profile, routes?: ReadonlySet<string>): string {
   const out: string[] = [];
   for (const r of evaluate(dataset, profile)) {
+    if (routes && !routes.has(r.route.id)) continue;
     const reason = reasonFor(dataset, r, profile);
     out.push(r.route.id, reason.line, ...reason.rows.map((x) => x.text));
     out.push(...routeStatements(r.route).filter((s) => bindsReader(s, profile)).map((s) => s.id));
@@ -102,5 +107,80 @@ describe("every question does work", () => {
     const tr = screen({ ...base, citizenship: "TR" });
     const jp = screen({ ...base, citizenship: "JP" });
     expect(tr).not.toBe(jp);
+  });
+});
+
+/**
+ * The check above passes a field when any destination moves, so the
+ * seven-year question passed on Spain, the Netherlands and France while
+ * "Under 3" and "3 to under 5" gave every German card the same result (B1,
+ * #133). These checks hold each destination to its own screen.
+ */
+describe("every question does work on every destination it is asked on", () => {
+  const destinations = fieldOptions(dataset, "destination").map((o) => o.value);
+
+  /** The routes a destination answer leaves open, the engine told only that. */
+  function routesOf(destination: string): Set<string> {
+    return new Set(evaluate(dataset, { destination }).filter((r) => !r.hard_fail).map((r) => r.route.id));
+  }
+
+  const askedOn = new Map<string, Set<string>>();
+  /**
+   * The fields the interview offers on this destination: every question
+   * `remainingQuestions` lists at any step of an interview answered from each
+   * baseline.
+   */
+  function fieldsAskedOn(destination: string): Set<string> {
+    const cached = askedOn.get(destination);
+    if (cached) return cached;
+    const asked = new Set<string>();
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const answers = baseline(seed, destination);
+      const profile: Profile = { destination };
+      for (let step = 0; step <= dataset.fields.length; step++) {
+        const offered = remainingQuestions(dataset, profile);
+        if (offered.length === 0) break;
+        for (const q of offered) asked.add(q.field);
+        profile[offered[0]!.field] = answers[offered[0]!.field];
+      }
+    }
+    askedOn.set(destination, asked);
+    return asked;
+  }
+
+  /** Whether two of these answers to the field give the destination's routes
+   * two different screens, on some baseline. */
+  function answersMoveScreen(destination: string, field: string, answers: string[]): boolean {
+    const routes = routesOf(destination);
+    for (let seed = 1; seed <= SEEDS; seed++) {
+      const base = baseline(seed, destination);
+      const seen = new Set<string>();
+      for (const value of answers) {
+        seen.add(screen({ ...base, [field]: value }, routes));
+        if (seen.size > 1) return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Every answer the question offers, the passport's EU ones included: on one
+   * destination, a free-movement passport is often the only one that moves the
+   * screen, and that is the passport doing its work there.
+   */
+  function everyAnswerTo(def: FieldDef): string[] {
+    if (def.type === "money_band") return deriveBands(dataset, def.id).map((b) => b.id);
+    return fieldOptions(dataset, def.id).map((o) => o.value);
+  }
+
+  it("per destination: a field asked on a destination moves that destination's screen", () => {
+    const failures: string[] = [];
+    for (const destination of destinations)
+      for (const def of dataset.fields) {
+        if (!fieldsAskedOn(destination).has(def.id)) continue;
+        if (!answersMoveScreen(destination, def.id, everyAnswerTo(def)))
+          failures.push(`${destination}: ${def.id} is asked there, but no change of its answer moves that destination's screen`);
+      }
+    expect(failures).toEqual([]);
   });
 });
