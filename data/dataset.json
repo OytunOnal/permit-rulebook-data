@@ -752,19 +752,60 @@
               ]
             },
             {
-              "field": "qualification",
-              "op": "eq",
-              "value": "degree"
-            },
-            {
-              "field": "recognition_de",
-              "op": "eq",
-              "value": "recognized"
-            },
-            {
-              "field": "occupation_shortage",
-              "op": "eq",
-              "value": "yes"
+              "op": "any",
+              "label": "recognised degree or IT experience",
+              "paths": [
+                {
+                  "label": "recognised degree",
+                  "criteria": [
+                    {
+                      "field": "qualification",
+                      "op": "eq",
+                      "value": "degree"
+                    },
+                    {
+                      "field": "recognition_de",
+                      "op": "eq",
+                      "value": "recognized"
+                    },
+                    {
+                      "field": "occupation_shortage",
+                      "op": "eq",
+                      "value": "yes"
+                    }
+                  ]
+                },
+                {
+                  "label": "IT specialist",
+                  "criteria": [
+                    {
+                      "field": "occupation_it",
+                      "op": "eq",
+                      "value": "yes",
+                      "source": {
+                        "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                        "quote": "Eine Sonderregelung gibt es für Fach- und Führungskräfte im IT-Bereich, die auch ohne formalen Berufsabschluss die Blaue Karte EU beantragen können.",
+                        "retrieved_at": "2026-10-21",
+                        "legal_basis": "§ 18g Abs. 2 AufenthG"
+                      }
+                    },
+                    {
+                      "field": "experience_7y",
+                      "op": "in",
+                      "values": [
+                        "3to5",
+                        "5plus"
+                      ],
+                      "source": {
+                        "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
+                        "quote": "zudem muss in den letzten sieben Jahren einschlägige, mindestens dreijährige Berufserfahrung auf akademischem Niveau im IT-Bereich gesammelt worden sein",
+                        "retrieved_at": "2026-10-21",
+                        "legal_basis": "§ 18g Abs. 2 AufenthG"
+                      }
+                    }
+                  ]
+                }
+              ]
             },
             {
               "field": "salary_eur_year",
