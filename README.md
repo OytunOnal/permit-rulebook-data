@@ -58,8 +58,9 @@ Every route also declares its scope, and the page says it in the reader's own
 words. Where the reader has answered: *quoted and dated · checked against your
 answers*, *quoted and dated · checked against your answers, except 2
 conditions we don't ask about* (ending *— 1 of them in our own words, not the
-authority's* where what is not asked is our reading rather than the
-source's), or *quoted and dated · not checked against your answers*. Where
+authority's* where some of what is not asked is our reading rather than the
+source's, and *, in our own words, not the authority's* where all of it is),
+or *quoted and dated · not checked against your answers*. Where
 they have not: *the checker asks about all of it*, *the checker asks about
 it, except 2 conditions*, or *the checker does not ask about it*. Beside it,
 the ids of the limbs it names and never asks. A route with no such

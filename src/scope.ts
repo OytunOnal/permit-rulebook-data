@@ -41,10 +41,14 @@ const WORDS: Record<ScopeReader, Record<ScopeValue, string>> = {
 /**
  * Whose words the unasked conditions are in. A source STATES a condition; a
  * reading is ours, and the reader is told so — never "we note" (GLOSSARY,
- * Route reading).
+ * Route reading). Where every one of them is a reading, the line says so
+ * without counting them a second time.
  */
-const readingsTail = (noted: number): string =>
-  noted ? ` — ${noted} of them in our own words, not the authority's` : "";
+function readingsTail(unasked: UnaskedCount): string {
+  if (unasked.noted === 0) return "";
+  if (unasked.stated === 0) return ", in our own words, not the authority's";
+  return ` — ${unasked.noted} of them in our own words, not the authority's`;
+}
 
 /** Small numbers read as words in a sentence; larger ones stay digits. */
 export const NUMBER_WORDS = [
@@ -78,7 +82,7 @@ export function scopeWords(value: ScopeValue, unasked: UnaskedCount, o: { reader
   if (value !== "some-conditions-stated-not-asked") return WORDS[o.reader][value];
   const total = unasked.stated + unasked.noted;
   if (total === 0) return WORDS[o.reader]["every-deciding-rule-asked"];
-  return WORDS[o.reader][value].replace("{count}", countFigures(total)) + readingsTail(unasked.noted);
+  return WORDS[o.reader][value].replace("{count}", countFigures(total)) + readingsTail(unasked);
 }
 
 /**

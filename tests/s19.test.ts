@@ -218,13 +218,13 @@ describe("s19 — a sentence a criterion quotes is asked, not \"stated but not a
     // The counts are s19's; the words are #153's: figures, and how many of
     // them are readings, "in our own words, not the authority's".
     const OURS = "in our own words, not the authority's";
-    expect(line("fr-talent-qualifie")).toBe(`quoted and dated · the checker asks about it, except 1 condition — 1 of them ${OURS}`);
+    expect(line("fr-talent-qualifie")).toBe(`quoted and dated · the checker asks about it, except 1 condition, ${OURS}`);
     // fr-talent-blue-card names two readings in `not_asked` and no statement:
     // the listed-professions reduction (s5f) and, since s25, the seven-year
     // question standing in for a five-year rule that names no window. The
     // line is derived from exactly those two.
     expect(routeOf(ds, "fr-talent-blue-card").scope.not_asked).toEqual(["listed-professions-not-modelled", "seven-year-answer-is-a-floor"]);
-    expect(line("fr-talent-blue-card")).toBe(`quoted and dated · the checker asks about it, except 2 conditions — 2 of them ${OURS}`);
+    expect(line("fr-talent-blue-card")).toBe(`quoted and dated · the checker asks about it, except 2 conditions, ${OURS}`);
     expect(line("fr-talent-mission")).toBe("quoted and dated · the checker asks about it, except 1 condition");
     expect(line("nl-blue-card")).toBe("quoted and dated · the checker asks about it, except 3 conditions");
     expect(line("nl-ict")).toBe("quoted and dated · the checker asks about it, except 3 conditions");

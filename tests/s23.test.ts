@@ -172,9 +172,9 @@ describe("s23 P4 — the scope line speaks the reader's language", () => {
 
   it("a reading is in our own words, not the authority's", () => {
     expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 1 }, answered))
-      .toBe("quoted and dated · checked against your answers, except 1 condition we don't ask about — 1 of them in our own words, not the authority's");
+      .toBe("quoted and dated · checked against your answers, except 1 condition we don't ask about, in our own words, not the authority's");
     expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 2 }, answered))
-      .toBe("quoted and dated · checked against your answers, except 2 conditions we don't ask about — 2 of them in our own words, not the authority's");
+      .toBe("quoted and dated · checked against your answers, except 2 conditions we don't ask about, in our own words, not the authority's");
   });
 
   it("both at once: one count, and how many of them are ours", () => {
@@ -190,6 +190,6 @@ describe("s23 P4 — the scope line speaks the reader's language", () => {
     expect(scopeLine(routeOf("nl-blue-card"), { reader: "not-answered" }))
       .toBe("quoted and dated · the checker asks about it, except 3 conditions");
     expect(scopeLine(routeOf("fr-talent-qualifie"), { reader: "not-answered" }))
-      .toBe("quoted and dated · the checker asks about it, except 1 condition — 1 of them in our own words, not the authority's");
+      .toBe("quoted and dated · the checker asks about it, except 1 condition, in our own words, not the authority's");
   });
 });

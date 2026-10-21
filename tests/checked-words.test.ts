@@ -40,9 +40,18 @@ describe("#153 — the scope line in the reader's words", () => {
     expect(scopeWords("some-conditions-stated-not-asked", { stated: 1, noted: 0 }, notAnswered))
       .toBe("quoted and dated · the checker asks about it, except 1 condition");
     expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 2 }, notAnswered))
-      .toBe("quoted and dated · the checker asks about it, except 2 conditions — 2 of them in our own words, not the authority's");
+      .toBe("quoted and dated · the checker asks about it, except 2 conditions, in our own words, not the authority's");
     expect(scopeWords("rules-quoted-nothing-asked", { stated: 0, noted: 0 }, notAnswered))
       .toBe("quoted and dated · the checker does not ask about it");
+  });
+
+  it("where every unasked condition is a reading, the line says whose words they are without counting them twice", () => {
+    expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 1 }, { reader: "not-answered" }))
+      .toBe("quoted and dated · the checker asks about it, except 1 condition, in our own words, not the authority's");
+    expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 1 }, { reader: "answered" }))
+      .toBe("quoted and dated · checked against your answers, except 1 condition we don't ask about, in our own words, not the authority's");
+    expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 2 }, { reader: "not-answered" }))
+      .toBe("quoted and dated · the checker asks about it, except 2 conditions, in our own words, not the authority's");
   });
 
   it("a route whose unasked conditions are all set aside reads as the first form, in either", () => {
@@ -56,9 +65,9 @@ describe("#153 — the scope line in the reader's words", () => {
     // fr-talent-qualifie: no stated condition left unasked, one reading.
     const route = routeOf("fr-talent-qualifie");
     expect(scopeLine(route, { reader: "not-answered" }))
-      .toBe("quoted and dated · the checker asks about it, except 1 condition — 1 of them in our own words, not the authority's");
+      .toBe("quoted and dated · the checker asks about it, except 1 condition, in our own words, not the authority's");
     expect(scopeLine(route, { reader: "answered", profile: { citizenship: "IN" } }))
-      .toBe("quoted and dated · checked against your answers, except 1 condition we don't ask about — 1 of them in our own words, not the authority's");
+      .toBe("quoted and dated · checked against your answers, except 1 condition we don't ask about, in our own words, not the authority's");
   });
 
   it("no scope line, in either form, carries a word on the Scope statement's avoid-list", () => {

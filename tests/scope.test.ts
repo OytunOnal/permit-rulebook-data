@@ -311,7 +311,7 @@ describe("a reading is ours, and the words say so", () => {
     // Figures, and whose words — "in our own reading" was the model's phrase
     // for the split, not the reader's.
     expect(scopeLine(of("de-skilled-vocational"), { reader: "not-answered" }))
-      .toBe("quoted and dated · the checker asks about it, except 2 conditions — 2 of them in our own words, not the authority's");
+      .toBe("quoted and dated · the checker asks about it, except 2 conditions, in our own words, not the authority's");
 
     // The one stated condition — the contract of more than three months — is
     // the sentence the situation gate quotes, and a sentence a criterion
@@ -320,7 +320,7 @@ describe("a reading is ours, and the words say so", () => {
     expect(talent.stated.length).toBe(0);
     expect(talent.noted.length).toBe(1);
     expect(scopeLine(of("fr-talent-qualifie"), { reader: "not-answered" }))
-      .toBe("quoted and dated · the checker asks about it, except 1 condition — 1 of them in our own words, not the authority's");
+      .toBe("quoted and dated · the checker asks about it, except 1 condition, in our own words, not the authority's");
   });
 
   it("the split is the same list the evidence is read from", () => {
