@@ -48,13 +48,13 @@ describe("a leverage row names its place once", () => {
     const u = row(GERMAN, "offer");
     expect(u.qualifier).toBeUndefined();
     expect(unlockTitleOf(dataset, u, GERMAN)).toBe("a job offer");
-    expect(unlockMeansOf(dataset, u, GERMAN)).toContain("an employer in Germany itself");
+    expect(unlockMeansOf(dataset, u, GERMAN)).toContain("an employer in Germany");
   });
 
   it("still deciding: the fork's own country is the place, in the heading and the sentence", () => {
     const u = row(EXPLORER, "offer", "de");
     expect(unlockTitleOf(dataset, u, EXPLORER)).toBe("a job offer in Germany");
-    expect(unlockMeansOf(dataset, u, EXPLORER)).toContain("an employer in Germany itself");
+    expect(unlockMeansOf(dataset, u, EXPLORER)).toContain("an employer in Germany");
     // The place is the country, never the field's subject text.
     expect(unlockTitleOf(dataset, u, EXPLORER)).not.toContain("your offer, transfer or agreement");
   });
@@ -68,7 +68,7 @@ describe("a leverage row names its place once", () => {
       expect(u.qualifier?.field).toBe("situation_country");
       const place = countryPhrase(u.qualifier!.option.value.toUpperCase())!;
       expect(unlockTitleOf(dataset, u, EXPLORER)).toBe(`a job offer in ${place}`);
-      expect(unlockMeansOf(dataset, u, EXPLORER)).toContain(`an employer in ${place} itself`);
+      expect(unlockMeansOf(dataset, u, EXPLORER)).toContain(`an employer in ${place}`);
     }
   });
 
@@ -77,7 +77,7 @@ describe("a leverage row names its place once", () => {
     expect(declaredPlace(dataset, nowhere)).toBe("");
     const offer = dataset.fields.find((f) => f.id === "situation")!.options!
       .find((o) => o.value === "offer")!;
-    expect(optionMeans(offer, dataset, nowhere)).toContain("an employer there itself");
+    expect(optionMeans(offer, dataset, nowhere)).toContain("an employer in the country you move to");
   });
 
   it("an offer already placed: that country wins over the destination, and carries its article", () => {
