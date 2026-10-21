@@ -57,7 +57,7 @@
           "value": "offer",
           "label": "I have (or am about to get) a job offer there",
           "short": "a job offer",
-          "means": "An employment contract with an employer {place} itself — including one you already hold — not a transfer to a branch on a contract you hold abroad."
+          "means": "An employment contract directly with an employer {place} — including one you already hold — not a transfer to a branch on a contract you hold abroad."
         },
         {
           "value": "ict",

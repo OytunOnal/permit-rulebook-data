@@ -429,18 +429,22 @@ export function unlockMeansOf(dataset: Dataset, u: Unlock, profile: Profile = {}
   return optionMeans(u.option, dataset, unlockProfile(u, profile));
 }
 
+/** The place slot's fill when the reader has declared no country. */
+const NO_PLACE_DECLARED = "in the country you move to";
+
 /**
  * What an option means here, with `{place}` filled in from what the reader
  * declared.
  *
- * The preposition travels with the place, not with the sentence: where nothing
- * has been declared the token becomes "there" — the word the option labels
- * already use — and "an employer in there" is not a sentence anyone would say.
+ * The preposition travels with the place, so a phrase reads the same with a
+ * country or without one. Where none has been declared the slot is "in the
+ * country you move to", never "there": an option on the all-four path names no
+ * place for "there" to point back to (#151, ruling 7).
  */
 export function optionMeans(
   option: FieldOption, dataset: Dataset, profile: Profile = {},
 ): string {
   if (!option.means) return "";
   const place = declaredPlace(dataset, profile);
-  return option.means.split("{place}").join(place ? `in ${place}` : "there");
+  return option.means.split("{place}").join(place ? `in ${place}` : NO_PLACE_DECLARED);
 }

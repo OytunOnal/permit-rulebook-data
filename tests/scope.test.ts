@@ -278,11 +278,11 @@ describe("an answer a reader can mistake for the one they hold says what it mean
   it("the place is filled in from what was declared, with its article", () => {
     const offer = optionsOf("situation").find((o) => o.value === "offer")!;
     expect(optionMeans(offer, ds, { destination: "nl" }))
-      .toBe("An employment contract with an employer in the Netherlands itself — including one you already hold — not a transfer to a branch on a contract you hold abroad.");
-    expect(optionMeans(offer, ds, { destination: "de" })).toContain("an employer in Germany itself");
-    // Nothing declared yet: the sentence still reads, in the word the option
-    // labels already use.
-    expect(optionMeans(offer, ds, {})).toContain("an employer there itself");
+      .toBe("An employment contract directly with an employer in the Netherlands — including one you already hold — not a transfer to a branch on a contract you hold abroad.");
+    expect(optionMeans(offer, ds, { destination: "de" })).toContain("an employer in Germany");
+    // Nothing declared yet: the sentence still reads, and names no place it
+    // has not been given.
+    expect(optionMeans(offer, ds, {})).toContain("an employer in the country you move to");
     // No token survives rendering, ever.
     const profiles: Profile[] = [{}, { destination: "nl" }, { destination: "all" }, { situation_country: "NL" }];
     for (const profile of profiles)
@@ -312,7 +312,7 @@ describe("an answer a reader can mistake for the one they hold says what it mean
     // The row is still scanned by its short step.
     expect(unlockTitleOf(ds, offer!)).toBe("a job offer");
     // And the sentence beside it says which offer.
-    expect(optionMeans(offer!.option, ds, profile)).toContain("in the Netherlands itself");
+    expect(optionMeans(offer!.option, ds, profile)).toContain("an employer in the Netherlands");
     expect(offer!.routes.some((r) => r.route.id === "nl-hsm-30plus" && r.status === "met")).toBe(true);
   });
 });
