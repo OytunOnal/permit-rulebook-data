@@ -3,7 +3,7 @@ import { evalDisjunction, hasNoOpenPath, isPathOpen, pathResultsOf, stillReachab
 import type { CriterionJudge } from "./disjunction.js";
 import { CARVE_OUT_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type {
-  AskingRoutes, Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef,
+  AskingRoutes, Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef, OpenRoute,
   FieldOption, Notice,
   PointsBreakdown, PointsItem, PointsRow, Profile, ProvenancedText, Route, RouteReading, RouteResult,
   RouteStatement, RouteStatus, StatementException,
@@ -405,10 +405,8 @@ function undecidedFieldsOf(dataset: Dataset, r: CriterionResult, profile: Profil
 
 /** One open route (scored, no hard fail) and the unanswered fields that can
  * still change its outcome. */
-interface RouteReckoning {
-  route: Route;
-  country: string;
-  undecided: Set<string>;
+interface RouteReckoning extends OpenRoute {
+  undecidedFields: Set<string>;
 }
 
 /**
@@ -424,8 +422,8 @@ function reckonOpenRoutes(dataset: Dataset, profile: Profile): RouteReckoning[] 
       if (!isScored(route)) continue;
       const results = route.criteria.map((c) => evalCriterion(dataset, c, profile));
       if (results.some((r) => isHardFail(dataset, r, profile))) continue;
-      const undecided = new Set(results.flatMap((r) => undecidedFieldsOf(dataset, r, profile)));
-      open.push({ route, country: country.code, undecided });
+      const undecidedFields = new Set(results.flatMap((r) => undecidedFieldsOf(dataset, r, profile)));
+      open.push({ route, country: country.code, undecidedFields });
     }
   return open;
 }
@@ -437,7 +435,7 @@ function reckonOpenRoutes(dataset: Dataset, profile: Profile): RouteReckoning[] 
  * them is noise.
  */
 export function informativeFields(dataset: Dataset, profile: Profile): Set<string> {
-  return new Set(reckonOpenRoutes(dataset, profile).flatMap((r) => [...r.undecided]));
+  return new Set(reckonOpenRoutes(dataset, profile).flatMap((r) => [...r.undecidedFields]));
 }
 
 /**
@@ -448,12 +446,8 @@ export function informativeFields(dataset: Dataset, profile: Profile): Set<strin
  * reopened, pass the profile without its answer.
  */
 export function reckonAskingRoutes(dataset: Dataset, profile: Profile, field: string): AskingRoutes {
-  const reckoned = reckonOpenRoutes(dataset, profile);
-  const openRouteOf = ({ route, country }: RouteReckoning) => ({ route, country });
-  return {
-    asked_for: reckoned.filter((r) => r.undecided.has(field)).map(openRouteOf),
-    open: reckoned.map(openRouteOf),
-  };
+  const open = reckonOpenRoutes(dataset, profile);
+  return { asked_for: open.filter((r) => r.undecidedFields.has(field)), open };
 }
 
 /**
