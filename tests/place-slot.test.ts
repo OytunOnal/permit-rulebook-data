@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { phraseOf, optionMeans } from "../src/index.js";
+import { phraseOf, optionMeans, renderableTexts } from "../src/index.js";
 import type { Dataset, FieldOption, Profile } from "../src/index.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
@@ -43,8 +43,11 @@ describe("the place filler", () => {
 });
 
 describe("each slot phrase in the dataset", () => {
-  it("is found on the situation question's offer and transfer options", () => {
-    expect(slotPhrases.map((o) => o.value).sort()).toEqual(["ict", "offer"]);
+  it("stands only in an option's meaning, where the filler reaches it", () => {
+    expect(slotPhrases.length, "precondition: the dataset carries a place slot").toBeGreaterThan(0);
+    const slotted = renderableTexts(dataset).filter((t) => t.text.includes("{place}"));
+    for (const { path } of slotted) expect(path).toMatch(/^\/fields\/\d+\/options\/\d+\/means$/);
+    expect(slotted).toHaveLength(slotPhrases.length);
   });
 
   it("names the declared country with its phrase, and never 'there'", () => {
@@ -66,17 +69,12 @@ describe("each slot phrase in the dataset", () => {
       }
   });
 
-  it("reads as ruling 7 words the two situation phrases, with a place and without", () => {
-    const situation = dataset.fields.find((f) => f.id === "situation")!.options!;
-    const offer = situation.find((o) => o.value === "offer")!;
-    const ict = situation.find((o) => o.value === "ict")!;
-    expect(optionMeans(offer, dataset, { destination: "de" })).toBe(
-      "An employment contract directly with an employer in Germany — including one you already hold — not a transfer to a branch on a contract you hold abroad.");
-    expect(optionMeans(offer, dataset, { destination: "all" })).toBe(
-      "An employment contract directly with an employer in the country you move to — including one you already hold — not a transfer to a branch on a contract you hold abroad.");
-    expect(optionMeans(ict, dataset, { destination: "nl" })).toBe(
-      "Your contract stays with the company abroad and it moves you to its branch in the Netherlands.");
-    expect(optionMeans(ict, dataset, {})).toBe(
-      "Your contract stays with the company abroad and it moves you to its branch in the country you move to.");
+  it("reads the same sentence with a place and without: only the place's words differ", () => {
+    for (const option of slotPhrases)
+      for (const code of declaredCodes) {
+        const placed = optionMeans(option, dataset, { destination: code.toLowerCase() });
+        const placeless = optionMeans(option, dataset, {});
+        expect(placed, `${option.value} ${code}`).toBe(placeless.split(NO_PLACE).join(`in ${phraseOf(code)}`));
+      }
   });
 });
