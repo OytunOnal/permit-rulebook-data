@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 import dataset from "../data/dataset.json" with { type: "json" };
 import { renderableTexts, scopeLine, scopeWords, SCOPE_VALUES } from "../src/index.js";
-import type { Dataset, Route } from "../src/index.js";
+import type { Dataset } from "../src/index.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
-const routeOf = (id: string): Route =>
-  ds.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
-
 /**
  * GLOSSARY's Scope statement avoid-list: the model's words, kept in code and on
  * `/data/`, never in front of a reader (#151).
@@ -63,7 +61,7 @@ describe("#153 — the scope line in the reader's words", () => {
 
   it("a shipped route's line counts its own readings, in the form the caller asks for", () => {
     // fr-talent-qualifie: no stated condition left unasked, one reading.
-    const route = routeOf("fr-talent-qualifie");
+    const route = routeOf(ds, "fr-talent-qualifie");
     expect(scopeLine(route, { reader: "not-answered" }))
       .toBe("quoted and dated · the checker asks about it, except 1 condition, in our own words, not the authority's");
     expect(scopeLine(route, { reader: "answered", profile: { citizenship: "IN" } }))

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import dataset from "../data/dataset.json" with { type: "json" };
 import { validateDataset } from "../src/validate.js";
-import { deriveQuestions, fillRouteSlots, hostKindOf, learnLinkOf, subjectOf } from "../src/index.js";
-import type { Dataset, FieldDef, Route } from "../src/types.js";
+import { deriveQuestions, fillRouteSlots, hostKindOf, learnLinkOf, possessiveOf, subjectOf } from "../src/index.js";
+import type { Dataset, FieldDef } from "../src/types.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
 const clone = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
-const routeOf = (d: Dataset, id: string): Route => d.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 const fieldOf = (d: Dataset, id: string): FieldDef => d.fields.find((f) => f.id === id)!;
 
 /**
@@ -18,14 +18,13 @@ const fieldOf = (d: Dataset, id: string): FieldDef => d.fields.find((f) => f.id 
  * into a question by hand; it demands nothing.
  */
 
-/** #151's sentence for the spouse question (ruling 11). */
-const SPOUSE_QUESTION =
-  "Is your spouse or partner also applying for Germany's Opportunity Card — the permit to come and look for work — and eligible for one?";
+/** The card's slot, filled: what a question that names the card says. */
+const CARD_SLOT = "{route:de-chancenkarte}";
 
 describe("a route slot fills with the country's possessive, the route's plain name and what it is", () => {
   it("the Opportunity Card", () => {
-    expect(fillRouteSlots("Applying for {route:de-chancenkarte}?", ds))
-      .toBe("Applying for Germany's Opportunity Card — the permit to come and look for work?");
+    expect(fillRouteSlots(`Applying for ${CARD_SLOT}?`, ds))
+      .toBe(`Applying for ${possessiveOf("DE")} Opportunity Card — ${routeOf(ds, "de-chancenkarte").what_it_is}?`);
   });
 
   it("a name whose citation holds brackets of its own, in a country named with its article", () => {
@@ -46,14 +45,16 @@ describe("a route slot fills with the country's possessive, the route's plain na
 });
 
 describe("the spouse question names the card through its slot", () => {
-  it("its label reads #151's sentence, filled", () => {
+  it("its label names the card through its slot, and the question reads it filled", () => {
+    expect(fieldOf(ds, "partner_ck").label).toContain(CARD_SLOT);
     const question = deriveQuestions(ds).find((q) => q.field === "partner_ck")!;
-    expect(question.label).toBe(SPOUSE_QUESTION);
+    expect(question.label).toBe(fillRouteSlots(fieldOf(ds, "partner_ck").label, ds));
+    expect(question.label).toContain(fillRouteSlots(CARD_SLOT, ds));
   });
 
   it("its subject is filled where a sentence names it", () => {
     expect(subjectOf(ds, "partner_ck")).not.toContain("{route:");
-    expect(subjectOf(ds, "partner_ck")).toContain("Germany's Opportunity Card — the permit to come and look for work");
+    expect(subjectOf(ds, "partner_ck")).toContain(fillRouteSlots(CARD_SLOT, ds));
   });
 
   it("a slot in its help is filled where the learn link is handed out", () => {

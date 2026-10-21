@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import dataset from "../data/dataset.json" with { type: "json" };
 import { validateDataset } from "../src/validate.js";
 import { CONSOLIDATED_TEXT_HOSTS, hostKindOf, renderableTexts, routeStatements } from "../src/index.js";
-import type { Dataset, Route } from "../src/types.js";
+import type { Dataset } from "../src/types.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
 const clone = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
-const routeOf = (d: Dataset, id: string): Route => d.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 
 /**
  * #158 — a link to a consolidated text says so.

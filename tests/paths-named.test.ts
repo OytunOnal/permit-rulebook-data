@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { criterionPhrase, deriveBands, evaluate, forEachCriterion, reasonFor } from "../src/index.js";
 import { validateDataset } from "../src/validate.js";
-import type { Criterion, Dataset, Profile, Route } from "../src/index.js";
+import type { Criterion, Dataset, Profile } from "../src/index.js";
+import { routeOf } from "./route-of.js";
 
 /**
  * #155 (rulings 12–13 of #92): a criterion with paths is named in one line by
@@ -16,8 +17,6 @@ const copy = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 
 type Disjunction = Extract<Criterion, { op: "any" }>;
 
-const routeIn = (ds: Dataset, id: string): Route => ds.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
-
 /** Every criterion with paths in a dataset, nested ones included. */
 function disjunctionsOf(ds: Dataset): Disjunction[] {
   const out: Disjunction[] = [];
@@ -28,7 +27,7 @@ function disjunctionsOf(ds: Dataset): Disjunction[] {
 
 /** The shortage Blue Card's choice between a recognised degree and IT experience. */
 function degreeOrIt(ds: Dataset): Disjunction {
-  const found = routeIn(ds, "de-blue-card-shortage").criteria.find((c): c is Disjunction =>
+  const found = routeOf(ds, "de-blue-card-shortage").criteria.find((c): c is Disjunction =>
     c.op === "any" && c.paths.some((p) => p.criteria.some((pc) => "field" in pc && pc.field === "occupation_it")));
   if (!found) throw new Error("precondition: the shortage card has a degree-or-IT criterion");
   return found;
@@ -120,9 +119,9 @@ describe("#155 the gate: a criterion accepting two or more rungs of an ordered a
         { value: "top", label: "Top", short: "the top rung" },
       ],
     });
-    routeIn(ds, "fr-talent-qualifie").criteria.push({ field: "ladder", op: "in", values: ["mid", "top"] });
+    routeOf(ds, "fr-talent-qualifie").criteria.push({ field: "ladder", op: "in", values: ["mid", "top"] });
     expect(gateSays(ds).join(" | ")).toContain(`${RULE} at /countries/FR/routes/fr-talent-qualifie`);
-    routeIn(ds, "fr-talent-qualifie").criteria.at(-1)!.short_reason = "the middle rung or higher";
+    routeOf(ds, "fr-talent-qualifie").criteria.at(-1)!.short_reason = "the middle rung or higher";
     expect(gateSays(ds)).toEqual([]);
   });
 
