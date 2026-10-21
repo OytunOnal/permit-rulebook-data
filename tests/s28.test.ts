@@ -61,7 +61,7 @@ describe("a learn label is what the reader does there", () => {
     expect(doors().some((d) => d.field.startsWith("notice:"))).toBe(true);
   });
 
-  it("the five are the sentences the scenarios decided", () => {
+  it("the six are the sentences the scenarios decided", () => {
     expect(Object.fromEntries(doors().map((d) => [d.field, d.label]))).toEqual({
       recognition_de: "Check your degree in the official Anabin database",
       // #151, ruling 8: the label says what the codes are for, the list kept.
@@ -78,6 +78,8 @@ describe("a learn label is what the reader does there", () => {
       // a label is our sentence, and our voice writes the numeral out.
       "notice:fr-dz-talent-open-question":
         "Read the page for Algerian nationals (certificat de résidence d'un an)",
+      // #159: the spouse question opens the card's own official page (#151, ruling 11).
+      partner_ck: "See what the card offers on the page of Germany's Federal Ministry of the Interior",
     });
   });
 

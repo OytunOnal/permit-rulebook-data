@@ -432,6 +432,13 @@ export interface Route {
   name: string;
   kind: "res-work" | "seek" | "self-employed";
   summary?: string;
+  /**
+   * What the route is, in a short phrase a question can carry after its name:
+   * "the permit to come and look for work". Required where a question names
+   * the route through a `{route:<id>}` slot, which `fillRouteSlots` fills with
+   * the country's possessive, the plain name and this phrase.
+   */
+  what_it_is?: string;
   info_url: string;
   /**
    * The address this route keeps, whatever it is called.
