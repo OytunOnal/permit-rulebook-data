@@ -163,8 +163,7 @@ export function declaredPlace(dataset: Dataset, profile: Profile): string {
   // "Netherlands". Both destination and situation_country are country codes, so
   // one lookup serves both; an option's `short` is a different sentence
   // ("Germany as your destination") and is deliberately not used here.
-  return countryPhrase(value.toUpperCase()) ??
-    fieldOptions(dataset, field).find((o) => o.value === value)?.label ?? "";
+  return countryPhrase(value.toUpperCase());
 }
 
 /** Unknowns the person can still act on: on a hard-failed route nothing they

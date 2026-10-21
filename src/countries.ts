@@ -72,20 +72,37 @@ const derivedOptions: FieldOption[] = countryVocabulary.countries
   }))
   .sort((a, b) => a.label.localeCompare(b.label, "en"));
 
+/** The list's entry for a code. A code the list does not hold throws: a
+ * sentence with a bare code or a blank where a country belongs is worse than a
+ * build that stops. */
+function countryOf(code: string, vocab: CountryVocabulary): CountryVocabulary["countries"][number] {
+  const country = vocab.countries.find((c) => c.code === code);
+  if (!country) throw new Error(`country ${code} is not in the country list`);
+  return country;
+}
+
 /**
  * A country's name as it reads inside a sentence: "Germany", "the Netherlands".
  *
  * The article is a fact about the country, so it lives beside the name in
- * `countries.json` rather than in a set of exceptions inside a renderer — where
- * it sat, with a comment saying it would move here the second country that
- * needed it. The second was the leverage line (human walk, 2026-09-08).
+ * `countries.json` rather than in a set of exceptions inside a renderer.
  */
-export function countryPhrase(
-  code: string, vocab: CountryVocabulary = countryVocabulary,
-): string | undefined {
-  const country = vocab.countries.find((c) => c.code === code);
-  if (!country) return undefined;
+export function countryPhrase(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  const country = countryOf(code, vocab);
   return country.article ? `${country.article} ${country.name}` : country.name;
+}
+
+/** The same phrase where it opens a sentence or a heading: "The Netherlands". */
+export function countryPhraseAtStart(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  const phrase = countryPhrase(code, vocab);
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+}
+
+/** The phrase as a possessive: "Germany's", "the Netherlands'" — a name
+ * ending in s takes the apostrophe alone. */
+export function countryPossessive(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  const phrase = countryPhrase(code, vocab);
+  return phrase.endsWith("s") ? `${phrase}'` : `${phrase}'s`;
 }
 
 /**
