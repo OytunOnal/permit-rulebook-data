@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
-  countryPhrase, countryPhraseAtStart, countryPossessive, countryVocabulary, evaluate, reasonFor,
+  countryPhrase, countryPhraseAtStart, countryPossessive, countryPossessiveAtStart, countryVocabulary, evaluate,
+  reasonFor,
 } from "../src/index.js";
 import type { CountryVocabulary, Dataset, Profile } from "../src/index.js";
 
@@ -76,5 +77,13 @@ describe("the country phrase as a possessive", () => {
 
   it("throws on a code the list does not hold", () => {
     expect(() => countryPossessive("ZZ")).toThrow(/ZZ/);
+  });
+
+  it("opens with a capital where it opens a sentence or a heading", () => {
+    expect(countryPossessiveAtStart("NL")).toBe("The Netherlands'");
+    expect(countryPossessiveAtStart("DE")).toBe("Germany's");
+    expect(countryPossessiveAtStart("XA", WRITTEN)).toBe("The Testing Islands'");
+    expect(countryPossessiveAtStart("XB", WRITTEN)).toBe("Plainland's");
+    expect(() => countryPossessiveAtStart("ZZ")).toThrow(/ZZ/);
   });
 });

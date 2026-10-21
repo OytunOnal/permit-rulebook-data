@@ -92,10 +92,11 @@ export function countryPhrase(code: string, vocab: CountryVocabulary = countryVo
   return country.article ? `${country.article} ${country.name}` : country.name;
 }
 
+const openingCapital = (phrase: string): string => phrase.charAt(0).toUpperCase() + phrase.slice(1);
+
 /** The same phrase where it opens a sentence or a heading: "The Netherlands". */
 export function countryPhraseAtStart(code: string, vocab: CountryVocabulary = countryVocabulary): string {
-  const phrase = countryPhrase(code, vocab);
-  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+  return openingCapital(countryPhrase(code, vocab));
 }
 
 /** The phrase as a possessive: "Germany's", "the Netherlands'" — a name
@@ -103,6 +104,11 @@ export function countryPhraseAtStart(code: string, vocab: CountryVocabulary = co
 export function countryPossessive(code: string, vocab: CountryVocabulary = countryVocabulary): string {
   const phrase = countryPhrase(code, vocab);
   return phrase.endsWith("s") ? `${phrase}'` : `${phrase}'s`;
+}
+
+/** The possessive where it opens a sentence or a heading: "The Netherlands'". */
+export function countryPossessiveAtStart(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  return openingCapital(countryPossessive(code, vocab));
 }
 
 /**
