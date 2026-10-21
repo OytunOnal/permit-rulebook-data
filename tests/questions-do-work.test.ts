@@ -212,13 +212,18 @@ describe("every question does work on every destination it is asked on", () => {
 
   /**
    * Neighbouring rungs known to read the same on a destination, each owned by
-   * an open issue. France reads the seven-year question only as "5 years or
-   * more", so its lower two rungs cannot differ there until
-   * OytunOnal/permit-rulebook#89 cuts ladder rungs per destination. The check
-   * fails when an entry stops failing, so the entry goes when #89 lands.
+   * an open issue or a ruling. France reads the seven-year question only as
+   * "5 years or more", so its lower two rungs cannot differ there until
+   * OytunOnal/permit-rulebook#89 cuts ladder rungs per destination; the entry
+   * goes when #89 lands. "Not assessed yet" and "Assessed and not recognised"
+   * are two situations a reader tells apart that every rule reads alike, by
+   * ruling (OytunOnal/permit-rulebook#92, ruling 9), wherever Germany is
+   * asked. The check fails when an entry stops failing.
    */
   const KNOWN_SAME_RUNGS: SameRungs[] = [
+    { destination: "de", field: "recognition_de", rungs: ["not_assessed", "not_recognised"] }, // OytunOnal/permit-rulebook#92, ruling 9
     { destination: "fr", field: "experience_7y", rungs: ["lt3", "3to5"] }, // OytunOnal/permit-rulebook#89
+    { destination: "all", field: "recognition_de", rungs: ["not_assessed", "not_recognised"] }, // OytunOnal/permit-rulebook#92, ruling 9
   ];
 
   it("per rung: neighbouring rungs of an improvable enum move the decisions of every destination it is asked on", () => {
