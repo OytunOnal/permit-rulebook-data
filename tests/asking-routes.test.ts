@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, fieldOptions, reckonAskingRoutes } from "../src/index.js";
+import { deriveBands, evaluate, fieldOptions, reckonAskingRoutes, remainingQuestions } from "../src/index.js";
 import type { Dataset, FieldDef, OpenRoute, Profile } from "../src/index.js";
 
 /**
@@ -64,5 +64,23 @@ describe("the routes a question is asked for", () => {
       }
     }
     expect(hardFailsSeen, "no generated profile hard-failed a route").toBeGreaterThan(0);
+  });
+
+  it("names a route exactly when the asking rule would ask the question (300 random profiles)", { timeout: 120_000 }, () => {
+    const rand = lcg(1335);
+    let askedSeen = 0;
+    let unaskedUnansweredSeen = 0;
+    for (let i = 0; i < 300; i++) {
+      const profile = randomProfile(rand, rand() < 0.5 ? 0.3 : 0.7);
+      const asked = new Set(remainingQuestions(dataset, profile).map((q) => q.field));
+      askedSeen += asked.size;
+      for (const def of dataset.fields) {
+        if (!asked.has(def.id) && profile[def.id] === undefined) unaskedUnansweredSeen++;
+        const named = reckonAskingRoutes(dataset, profile, def.id).asked_for.length;
+        expect(named > 0, `${def.id} @ ${JSON.stringify(profile)}`).toBe(asked.has(def.id));
+      }
+    }
+    expect(askedSeen, "the asking rule asked nothing on any generated profile").toBeGreaterThan(0);
+    expect(unaskedUnansweredSeen, "no generated profile left an unanswered question unasked").toBeGreaterThan(0);
   });
 });
