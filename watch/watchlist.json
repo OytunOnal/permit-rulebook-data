@@ -12,7 +12,7 @@
       "url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
       "strategy": "html",
       "kind": "value-source",
-      "note": "Backs both EU Blue Card thresholds (EUR 50,700 / 45,934.20)."
+      "note": "Backs both EU Blue Card thresholds (EUR 50,700 / 45,934.20) and the shortage card's four IT-path sentences: its two criteria and its two stated preconditions."
     },
     {
       "id": "zav-berufserfahrene-04-2026",
