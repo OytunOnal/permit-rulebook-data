@@ -5,7 +5,7 @@ import { reasonFor } from "../src/verdict.js";
 import { scopeLine } from "../src/scope.js";
 import { remainingQuestions } from "../src/questions.js";
 import { classOfCountry, countryOptions } from "../src/countries.js";
-import type { Dataset, FieldDef, Profile } from "../src/types.js";
+import type { Dataset, FieldDef, FieldOption, Profile } from "../src/types.js";
 
 /**
  * Every question the interview asks changes something the reader sees.
@@ -114,7 +114,8 @@ describe("every question does work", () => {
  * The check above passes a field when any destination moves, so the
  * seven-year question passed on Spain, the Netherlands and France while
  * "Under 3" and "3 to under 5" gave every German card the same result (B1,
- * #133). These checks hold each destination to its own screen.
+ * #133). These checks hold each destination to its own screen, and each pair
+ * of neighbouring rungs of a ladder question to a difference of its own.
  */
 describe("every question does work on every destination it is asked on", () => {
   const destinations = fieldOptions(dataset, "destination").map((o) => o.value);
@@ -182,5 +183,55 @@ describe("every question does work on every destination it is asked on", () => {
           failures.push(`${destination}: ${def.id} is asked there, but no change of its answer moves that destination's screen`);
       }
     expect(failures).toEqual([]);
+  });
+
+  /**
+   * A ladder question: an enum the reader can climb, its options rungs in
+   * order. A money band is not one (its edges are global until #89 cuts them
+   * per destination), and neither is an enum the reader cannot improve, such
+   * as the passport, which gives one result for most countries by design.
+   */
+  function isLadder(def: FieldDef): boolean {
+    return def.type === "enum" && def.kind === "improvable";
+  }
+
+  /** A ladder's rungs in order; "I don't know" is an answer, not a rung. */
+  function rungsOf(def: FieldDef): FieldOption[] {
+    return fieldOptions(dataset, def.id).filter((o) => !o.is_unknown);
+  }
+
+  interface SameRungs {
+    destination: string;
+    field: string;
+    rungs: [string, string];
+  }
+
+  /**
+   * Neighbouring rungs known to read the same on a destination, each owned by
+   * an open issue. France reads the seven-year question only as "5 years or
+   * more", so its lower two rungs cannot differ there until #89 cuts ladder
+   * rungs per destination. The check fails when an entry stops failing, so the
+   * entry goes when #89 lands.
+   */
+  const KNOWN_SAME_RUNGS: SameRungs[] = [
+    { destination: "fr", field: "experience_7y", rungs: ["lt3", "3to5"] }, // #89
+  ];
+
+  it("per rung: neighbouring rungs of a ladder question move the screen of every destination it is asked on", () => {
+    const same: SameRungs[] = [];
+    const messages: string[] = [];
+    for (const destination of destinations)
+      for (const def of dataset.fields.filter(isLadder)) {
+        if (!fieldsAskedOn(destination).has(def.id)) continue;
+        const rungs = rungsOf(def);
+        for (let i = 1; i < rungs.length; i++) {
+          const [lower, upper] = [rungs[i - 1]!, rungs[i]!];
+          if (answersMoveScreen(destination, def.id, [lower.value, upper.value])) continue;
+          same.push({ destination, field: def.id, rungs: [lower.value, upper.value] });
+          messages.push(`${destination}: ${def.id}: "${lower.label}" and "${upper.label}" give that destination the same screen on every baseline`);
+        }
+      }
+    expect(same, `neighbouring rungs that read the same, against the known list:\n${messages.join("\n")}`)
+      .toEqual(KNOWN_SAME_RUNGS);
   });
 });
