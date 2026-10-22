@@ -6,7 +6,7 @@ export { routesAnOfferFrees } from "./offer-frees.js";
 export { deriveQuestions, remainingQuestions } from "./questions.js";
 export {
   reasonFor, criterionPhrase, subjectOf, learnLinkOf, shortLabelOf, answerLabel, unlockTitleOf,
-  declaredPlace, optionMeans, unlockProfile, unlockMeansOf, gapCriterionOf, isLocalization, isPlacedElsewhere, liveUnknowns, mootWith, joinOr, joinAnd,
+  declaredPlace, optionMeans, unlockProfile, unlockMeansOf, gapCriterionOf, isLocalization, isPlacedElsewhere, isStepGated, liveUnknowns, mootWith, joinOr, joinAnd,
 } from "./verdict.js";
 export type { Reason, ReasonRow } from "./verdict.js";
 export { quotedSpans, hasUnbalancedQuotationMark, quotedWithoutProvenance, renderableTexts, offenceMessage, proseProvenance } from "./prose.js";

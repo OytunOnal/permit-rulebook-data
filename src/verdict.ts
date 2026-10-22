@@ -190,6 +190,25 @@ export function isPlacedElsewhere(r: RouteResult, profile: Profile): boolean {
     liveUnknowns(r, profile).length === 0;
 }
 
+/**
+ * A not-yet route whose only genuine failure is a path answer: nothing on it
+ * is left to find out or to improve, so the one thing between the reader and
+ * the route is an arrangement (a job offer, a transfer, a hosting agreement).
+ * Such rows say one thing, and the not-yet group collapses them into one line
+ * naming the path answers they ask for. A moot criterion is failed by having
+ * more than the route wants, the opposite story, so it never files a row here;
+ * a criterion reading no field asks for no path answer.
+ */
+export function isStepGated(dataset: Dataset, r: RouteResult, profile: Profile): boolean {
+  const fails = r.criteria.filter((cr) => cr.outcome === "fail");
+  if (!fails.length || liveUnknowns(r, profile).length) return false;
+  if (fails.some((cr) => mootWith(dataset, cr, profile) !== null)) return false;
+  return fails.every((cr) => {
+    const fields = referencedFields(cr.criterion);
+    return fields.length > 0 && fields.every((f) => fieldOf(dataset, f)?.kind === "path");
+  });
+}
+
 export interface ReasonRow {
   /** needs: a shortfall · moot: already covered · where: another country ·
    * unknown: an answer of "I don't know" that still binds · closed: the
