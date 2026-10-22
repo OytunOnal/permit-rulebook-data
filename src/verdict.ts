@@ -4,7 +4,7 @@ import { decidingCriteria } from "./disjunction.js";
 import { fillRouteSlots } from "./route-slots.js";
 import { closedBy, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields, } from "./engine.js";
 import type {
-  Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
+  Band, Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
 } from "./types.js";
 
 /**
@@ -25,6 +25,11 @@ function fieldOf(dataset: Dataset, id: string): FieldDef | undefined {
   let index = fieldCache.get(dataset);
   if (!index) fieldCache.set(dataset, (index = new Map(dataset.fields.map((f) => [f.id, f]))));
   return index.get(id);
+}
+
+/** The money band the reader declared on a field; none where the answer is not a band ("I don't know"). */
+function declaredBandOf(dataset: Dataset, field: string, profile: Profile): Band | undefined {
+  return deriveBands(dataset, field).find((b) => b.id === profile[field]);
 }
 
 const join = (xs: string[], last: string): string =>
@@ -347,7 +352,7 @@ type Gte = Extract<Criterion, { op: "gte" }>;
 
 /** How far the declared band sits below one threshold, worst case. */
 function gapAgainst(dataset: Dataset, c: Gte, profile: Profile): number | undefined {
-  const band = deriveBands(dataset, c.field).find((b) => b.id === profile[c.field]);
+  const band = declaredBandOf(dataset, c.field, profile);
   if (!band || band.max === undefined || band.max > c.threshold.amount) return undefined;
   return c.threshold.amount - (band.min ?? 0);
 }
@@ -401,7 +406,7 @@ function shortfallLine(dataset: Dataset, r: RouteResult, profile: Profile): stri
   const rule = shortLabelOf(dataset, measured.field).toLowerCase();
   const period = fieldOf(dataset, measured.field)?.period;
   const named = measured.threshold_label ? ` — ${measured.threshold_label}` : "";
-  const band = deriveBands(dataset, measured.field).find((b) => b.id === profile[measured.field]);
+  const band = declaredBandOf(dataset, measured.field, profile);
   if (band && band.min === undefined)
     return `Needs ${formatEURPer(measured.threshold.amount, period)} or more on ${rule}${named}.`;
   return `Up to ${formatEURPer(r.gap_max, period)} short of the ${rule} this route asks for${named}.`;
@@ -428,9 +433,8 @@ export function unlockTitleOf(dataset: Dataset, u: Unlock, profile: Profile = {}
     // (isolated v1-gate critique, 2026-09-08, B3). Where the declared answer
     // has no floor — the bottom band, or "I don't know" — there is no distance
     // to state, so the step is the amount the rule asks for.
-    const bands = deriveBands(dataset, u.field);
-    const step = bands.find((b) => b.id === u.option.value);
-    const declared = bands.find((b) => b.id === profile[u.field]);
+    const step = deriveBands(dataset, u.field).find((b) => b.id === u.option.value);
+    const declared = declaredBandOf(dataset, u.field, profile);
     if (step?.min !== undefined)
       title = declared?.min === undefined
         ? `at least ${formatEURPer(step.min, def.period)}`
