@@ -190,6 +190,12 @@ export function isPlacedElsewhere(r: RouteResult, profile: Profile): boolean {
     liveUnknowns(r, profile).length === 0;
 }
 
+export function isStepGated(dataset: Dataset, r: RouteResult, profile: Profile): boolean {
+  void profile;
+  return r.criteria.some((cr) =>
+    cr.outcome === "fail" && referencedFields(cr.criterion).some((f) => fieldOf(dataset, f)?.kind === "path"));
+}
+
 export interface ReasonRow {
   /** needs: a shortfall · moot: already covered · where: another country ·
    * unknown: an answer of "I don't know" that still binds · closed: the
