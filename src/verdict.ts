@@ -389,16 +389,22 @@ export function gapCriterionOf(dataset: Dataset, r: RouteResult, profile: Profil
  * distance the card shows beside it.
  *
  * "Up to", because a band is a range: the reader declared somewhere inside it,
- * and the worst case is the only honest number.
+ * and the worst case is the only honest number. It is exact, cents only where
+ * it has them: rounded down, "up to" would understate it. A band open at the
+ * bottom has no lower edge to measure a gap from, so the sentence names the
+ * line the route asks instead — that line is not the reader's shortfall.
  */
 function shortfallLine(dataset: Dataset, r: RouteResult, profile: Profile): string {
   const measured = gapCriterionOf(dataset, r, profile);
   if (!measured || r.gap_max === undefined)
     return "One rule on this route is within reach — the card below shows which.";
   const rule = shortLabelOf(dataset, measured.field).toLowerCase();
-  const amount = formatEURPer(Math.round(r.gap_max), fieldOf(dataset, measured.field)?.period);
+  const period = fieldOf(dataset, measured.field)?.period;
   const named = measured.threshold_label ? ` — ${measured.threshold_label}` : "";
-  return `Up to ${amount} short of the ${rule} this route asks for${named}.`;
+  const band = deriveBands(dataset, measured.field).find((b) => b.id === profile[measured.field]);
+  if (band && band.min === undefined)
+    return `Needs ${formatEURPer(measured.threshold.amount, period)} or more on ${rule}${named}.`;
+  return `Up to ${formatEURPer(r.gap_max, period)} short of the ${rule} this route asks for${named}.`;
 }
 
 /**
@@ -428,7 +434,7 @@ export function unlockTitleOf(dataset: Dataset, u: Unlock, profile: Profile = {}
     if (step?.min !== undefined)
       title = declared?.min === undefined
         ? `at least ${formatEURPer(step.min, def.period)}`
-        : `${formatEURPer(Math.round(step.min - declared.min), def.period)} more`;
+        : `${formatEURPer(step.min - declared.min, def.period)} more`;
     title += ` — ${shortLabelOf(dataset, u.field).toLowerCase()}`;
   }
   if (u.qualifier) {
