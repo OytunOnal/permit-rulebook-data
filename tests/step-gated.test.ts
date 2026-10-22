@@ -42,8 +42,8 @@ describe("a step-gated row: a not-yet route whose only genuine failure is a path
 
   it("the Opportunity Card for an offer-holder, whose situation criterion is moot, is not", () => {
     // No shipped route asks for the absence of a step (verdict.test.ts), so the
-    // case writes its own dataset: the card with the criterion it once had,
-    // wanting no job offer yet, failed by a reader who has one.
+    // case writes its own dataset: the card with a criterion wanting no job
+    // offer yet, failed by a reader who has one.
     const written = structuredClone(dataset);
     routeOf(written, "de-chancenkarte").criteria.push({ field: "situation", op: "eq", value: "none" });
     const offerHolder: Profile = {
