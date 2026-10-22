@@ -593,6 +593,18 @@ export interface Unlock {
   routes: RouteResult[];
 }
 
+/** What a job offer in one country would free for a reader who has none. */
+export interface RoutesFreedByAnOffer {
+  /** The country's code, as `Country.code`. */
+  country: string;
+  /** The routes there whose hard fail the offer lifts, evaluated with the
+   * offer: each is still "hold", resting on what the reader has not told us. */
+  routes: RouteResult[];
+  /** The fields those routes would then be checked on — unanswered, or
+   * answered "I don't know" — each once, in dataset order. */
+  fieldsLeftOpen: string[];
+}
+
 /**
  * Two answers a person cannot honestly give at once.
  *
