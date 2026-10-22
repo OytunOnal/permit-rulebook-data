@@ -512,8 +512,9 @@ export interface FieldOption {
   is_fallback?: boolean;
   /** A path answer someone else arranges for the reader (a transfer is the
    * employer's decision, a hosting agreement the host's) — never offered as a
-   * step. A path answer that carries neither this nor `is_fallback` is one
-   * the reader can go and get. */
+   * step. A path answer that carries none of this, `is_fallback` and
+   * `is_unknown` is one the reader can go and get (on the situation question,
+   * the job offer). */
   is_arranged?: boolean;
   /** Values this answer ALSO satisfies: a country implies its class, so
    * `citizenship eq third_country` keeps passing on an answer of "TR". One
