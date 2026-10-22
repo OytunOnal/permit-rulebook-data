@@ -192,8 +192,11 @@ export function isPlacedElsewhere(r: RouteResult, profile: Profile): boolean {
 
 export function isStepGated(dataset: Dataset, r: RouteResult, profile: Profile): boolean {
   void profile;
-  return r.criteria.some((cr) =>
-    cr.outcome === "fail" && referencedFields(cr.criterion).some((f) => fieldOf(dataset, f)?.kind === "path"));
+  const fails = r.criteria.filter((cr) => cr.outcome === "fail");
+  return fails.length > 0 && fails.every((cr) => {
+    const fields = referencedFields(cr.criterion);
+    return fields.length > 0 && fields.every((f) => fieldOf(dataset, f)?.kind === "path");
+  });
 }
 
 export interface ReasonRow {
