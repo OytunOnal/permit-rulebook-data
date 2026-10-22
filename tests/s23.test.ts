@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import dataset from "../data/dataset.json" with { type: "json" };
-import { datasetMeta, forEachCriterion, notices } from "../src/engine.js";
+import { datasetMeta, forEachCriterion, notices, routeStatements } from "../src/engine.js";
+import { hostKindOf } from "../src/hosts.js";
 import { scopeLine, scopeWords } from "../src/scope.js";
 import { criterionPhrase } from "../src/verdict.js";
 import { renderableTexts } from "../src/prose.js";
@@ -52,18 +53,19 @@ describe("s23 P3 — the curator's note leaves the card", () => {
   it("no citation a card prints is about us", () => {
     // "(consolidated mirror — gesetze-im-internet.de times out from here)"
     // sat in the § 20a caveat's legal_basis, which card.ts and route-page.ts
-    // print verbatim beside the quote. A citation names the statute and,
-    // where the read is a mirror, discloses that — nothing about our fetcher.
+    // print verbatim beside the quote. A citation names the statute, nothing
+    // about our fetcher; a mirror is disclosed by its host's kind (#158).
     for (const c of citations()) {
       expect(c.text, c.path).not.toMatch(/times out/);
       expect(c.text, c.path).not.toMatch(/from here/);
     }
   });
 
-  it("the § 20a caveat still discloses the mirror, the way the § 21 citations do", () => {
-    const caveat = citations().find((c) => c.path.includes("de-chancenkarte") && c.text.startsWith("§ 20a Absatz 2"));
-    expect(caveat, "the Opportunity Card's 20-hour caveat citation").toBeDefined();
-    expect(caveat!.text).toBe("§ 20a Absatz 2 AufenthG (consolidated mirror, buzer.de)");
+  it("the § 20a caveat still discloses the mirror, the way the § 21 citations do: its source is a consolidated text", () => {
+    const route = ds.countries.flatMap((c) => c.routes).find((r) => r.id === "de-chancenkarte")!;
+    const caveat = routeStatements(route).find((s) => s.source?.legal_basis?.startsWith("§ 20a Absatz 2"));
+    expect(caveat, "the Opportunity Card's 20-hour caveat").toBeDefined();
+    expect(hostKindOf(caveat!.source!.source_url)).toBe("consolidated-text");
   });
 
   it("the note stays in the data: on the watch entry for the source it is about", () => {
@@ -104,10 +106,12 @@ describe("s23 P2 — a rule with two limbs is one sentence", () => {
     // rule's condition line, heading and "Needs …" line all read the option
     // list out in full. (The rule this was first proved on, the experienced
     // worker's "2+ or 5+ years of related experience", became a one-limb rule
-    // in s25 when the experience ladder was split in two.)
-    const c = inCriterion(routeOf("nl-blue-card"), "experience_7y");
-    expect(c.op).toBe("in");
-    expect(criterionPhrase(ds, c)).toBe("3 to under 5 or 5+ years of related experience in the last seven");
+    // in s25 when the experience ladder was split in two.) The shipped rule
+    // says its range in its own short_reason, which the gate asks of a range
+    // on an ordered question, so the composition is read without it.
+    const { short_reason: _, ...composed } = inCriterion(routeOf("nl-blue-card"), "experience_7y");
+    expect(composed.op).toBe("in");
+    expect(criterionPhrase(ds, composed)).toBe("3 to under 5 or 5+ years of related experience in the last seven");
   });
 
   it("leaves a rule whose options share no tail exactly as it was", () => {
@@ -157,38 +161,35 @@ describe("s23 P2 — a rule with two limbs is one sentence", () => {
 describe("s23 P4 — the scope line speaks the reader's language", () => {
   const routeOf = (id: string): Route => ds.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 
-  it("counts in figures, after a dash, and says who did not ask", () => {
-    expect(scopeWords("some-conditions-stated-not-asked", 2, 0))
-      .toBe("quoted and dated · scored — 2 conditions this interview did not ask");
-    expect(scopeWords("some-conditions-stated-not-asked", 1, 0))
-      .toBe("quoted and dated · scored — 1 condition this interview did not ask");
+  const answered = { reader: "answered" } as const;
+
+  it("counts in figures, and says who does not ask", () => {
+    expect(scopeWords("some-conditions-stated-not-asked", { stated: 2, noted: 0 }, answered))
+      .toBe("quoted and dated · checked against your answers, except 2 conditions we don't ask about");
+    expect(scopeWords("some-conditions-stated-not-asked", { stated: 1, noted: 0 }, answered))
+      .toBe("quoted and dated · checked against your answers, except 1 condition we don't ask about");
   });
 
   it("a reading is in our own words, not the authority's", () => {
-    expect(scopeWords("some-conditions-stated-not-asked", 0, 1))
-      .toBe("quoted and dated · scored — 1 condition this interview did not ask, in our own words, not the authority's");
-    expect(scopeWords("some-conditions-stated-not-asked", 0, 2))
-      .toBe("quoted and dated · scored — 2 conditions this interview did not ask, in our own words, not the authority's");
+    expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 1 }, answered))
+      .toBe("quoted and dated · checked against your answers, except 1 condition we don't ask about, in our own words, not the authority's");
+    expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 2 }, answered))
+      .toBe("quoted and dated · checked against your answers, except 2 conditions we don't ask about, in our own words, not the authority's");
   });
 
-  it("both at once, joined with and", () => {
-    expect(scopeWords("some-conditions-stated-not-asked", 2, 1))
-      .toBe("quoted and dated · scored — 2 conditions this interview did not ask and 1 condition in our own words, not the authority's");
-  });
-
-  it("the two lines that did not change did not change", () => {
-    expect(scopeWords("every-deciding-rule-asked", 0, 0)).toBe("quoted and dated · scored against your answers");
-    expect(scopeWords("rules-quoted-nothing-asked", 0, 0)).toBe("quoted and dated · not scored");
-    expect(scopeWords("some-conditions-stated-not-asked", 0, 0)).toBe("quoted and dated · scored against your answers");
+  it("both at once: one count, and how many of them are ours", () => {
+    expect(scopeWords("some-conditions-stated-not-asked", { stated: 2, noted: 1 }, answered))
+      .toBe("quoted and dated · checked against your answers, except 3 conditions we don't ask about — 1 of them in our own words, not the authority's");
   });
 
   it("no route's line carries the old words", () => {
     for (const route of ds.countries.flatMap((c) => c.routes)) {
-      const line = scopeLine(route);
+      const line = scopeLine(route, { reader: "not-answered" });
       expect(line, route.id).not.toMatch(/stated but not asked|in our own reading/);
     }
-    expect(scopeLine(routeOf("nl-blue-card"))).toBe("quoted and dated · scored — 3 conditions this interview did not ask");
-    expect(scopeLine(routeOf("fr-talent-qualifie")))
-      .toBe("quoted and dated · scored — 1 condition this interview did not ask, in our own words, not the authority's");
+    expect(scopeLine(routeOf("nl-blue-card"), { reader: "not-answered" }))
+      .toBe("quoted and dated · the checker asks about it, except 3 conditions");
+    expect(scopeLine(routeOf("fr-talent-qualifie"), { reader: "not-answered" }))
+      .toBe("quoted and dated · the checker asks about it, except 1 condition, in our own words, not the authority's");
   });
 });

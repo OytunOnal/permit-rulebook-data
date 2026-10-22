@@ -57,7 +57,7 @@
           "value": "offer",
           "label": "I have (or am about to get) a job offer there",
           "short": "a job offer",
-          "means": "An employment contract with an employer {place} itself — including one you already hold — not a transfer to a branch on a contract you hold abroad."
+          "means": "An employment contract directly with an employer {place} — including one you already hold — not a transfer to a branch on a contract you hold abroad."
         },
         {
           "value": "ict",
@@ -175,9 +175,14 @@
           "short": "a partial recognition decision"
         },
         {
-          "value": "not_yet",
-          "label": "Not assessed / not recognised",
-          "short": "a qualification that is not assessed or not recognised in Germany"
+          "value": "not_assessed",
+          "label": "Not assessed yet",
+          "short": "a qualification not yet assessed in Germany"
+        },
+        {
+          "value": "not_recognised",
+          "label": "Assessed and not recognised",
+          "short": "a qualification Germany assessed and did not recognise"
         },
         {
           "value": "unknown",
@@ -192,6 +197,7 @@
       "short_label": "Experience (last 5 years)",
       "subject": "your related experience in the last five years",
       "type": "enum",
+      "ordered": true,
       "kind": "improvable",
       "options": [
         {
@@ -212,6 +218,7 @@
       "short_label": "Experience (last 7 years)",
       "subject": "your related experience in the last seven years",
       "type": "enum",
+      "ordered": true,
       "kind": "improvable",
       "options": [
         {
@@ -238,7 +245,7 @@
       "subject": "whether your occupation is on Germany's shortage list",
       "type": "enum",
       "learn": {
-        "label": "Check the shortage groups in section 18g of the Residence Act (ISCO-08 codes 132, 133, 134, 21, 221, 222, 225, 226, 23, 25)",
+        "label": "Check the occupation groups on Germany's shortage list (ISCO-08 codes 132, 133, 134, 21, 221, 222, 225, 226, 23, 25) in section 18g of the Residence Act",
         "url": "https://www.buzer.de/18g_AufenthG.htm"
       },
       "options": [
@@ -413,7 +420,7 @@
     },
     {
       "id": "german",
-      "label": "Your German level?",
+      "label": "Your German, in levels on the European language scale (CEFR)?",
       "short_label": "German",
       "subject": "your German level",
       "type": "enum",
@@ -422,7 +429,7 @@
         {
           "value": "none",
           "label": "None / below A1",
-          "short": "German below A1",
+          "short": "German below A1 (no German yet)",
           "is_fallback": true
         },
         {
@@ -449,7 +456,7 @@
     },
     {
       "id": "english",
-      "label": "Your English level?",
+      "label": "Your English, in levels on the European language scale (CEFR)?",
       "short_label": "English",
       "subject": "your English level",
       "type": "enum",
@@ -458,7 +465,7 @@
         {
           "value": "none",
           "label": "Below B2",
-          "short": "English below B2",
+          "short": "English below B2 (intermediate or lower)",
           "is_fallback": true
         },
         {
@@ -523,20 +530,24 @@
     },
     {
       "id": "partner_ck",
-      "label": "Is your spouse or partner also applying for (and eligible for) an Opportunity Card?",
+      "label": "Is your spouse or partner also applying for {route:de-chancenkarte} — and eligible for one?",
       "short_label": "Partner applying too",
-      "subject": "whether your partner is also applying for an Opportunity Card",
+      "subject": "whether your partner is also applying for {route:de-chancenkarte}",
       "type": "enum",
+      "learn": {
+        "label": "See what the card offers on the page of Germany's Federal Ministry of the Interior",
+        "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html"
+      },
       "options": [
         {
           "value": "yes",
           "label": "Yes",
-          "short": "a partner applying for an Opportunity Card too"
+          "short": "a partner also applying for the card"
         },
         {
           "value": "no",
           "label": "No",
-          "short": "no partner applying for an Opportunity Card"
+          "short": "no partner applying for the card"
         }
       ]
     },
@@ -798,6 +809,7 @@
                         "3to5",
                         "5plus"
                       ],
+                      "short_reason": "at least 3 years of related experience in the last seven",
                       "source": {
                         "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
                         "quote": "zudem muss in den letzten sieben Jahren einschlägige, mindestens dreijährige Berufserfahrung auf akademischem Niveau im IT-Bereich gesammelt worden sein",
@@ -1492,6 +1504,7 @@
         {
           "id": "de-chancenkarte",
           "name": "Opportunity Card (Chancenkarte, § 20a)",
+          "what_it_is": "the permit to come and look for work",
           "kind": "seek",
           "summary": "A one-year card to come and look for work, with part-time work of up to 20 hours a week. If your qualification is fully recognised in Germany you get it directly; otherwise you need six points from the official table. Having an offer does not stop you applying — but with an offer the work routes may fit you directly, so compare them.",
           "info_url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html",
@@ -1711,7 +1724,7 @@
                 "source_url": "https://www.buzer.de/20a_AufenthG.htm",
                 "quote": "Die Chancenkarte berechtigt nur dazu, 1. eine Beschäftigung von durchschnittlich insgesamt höchstens 20 Stunden je Woche auszuüben und 2. eine Probebeschäftigung für jeweils höchstens zwei Wochen auszuüben",
                 "retrieved_at": "2026-09-07",
-                "legal_basis": "§ 20a Absatz 2 AufenthG (consolidated mirror, buzer.de)",
+                "legal_basis": "§ 20a Absatz 2 AufenthG",
                 "history": []
               }
             }
@@ -1725,7 +1738,7 @@
           "info_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/SelbstaendigeTaetigkeit/selbstaendigetaetigkeit-node.html",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. The permit is granted on an assessment of your business plan — how sound the idea is, what you have run before, how much capital you are putting in, what it does for jobs and training, and what it adds to innovation and research — weighed together with the local chambers, the trade authorities and the professional bodies. Five judgements and a committee are not something a form can reach, so we state what the statute says, in its own words, with the day we read it.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. The permit is granted on an assessment of your business plan — how sound the idea is, what you have run before, how much capital you are putting in, what it does for jobs and training, and what it adds to innovation and research — weighed together with the local chambers, the trade authorities and the professional bodies. Five judgements and a committee are not something a form can reach, so we state what the statute says, in its own words, with the day we read it.",
             "not_asked": [
               "an-economic-interest-and-secured-financing",
               "the-assessment-weighs-five-things",
@@ -1749,7 +1762,7 @@
                 "source_url": "https://www.buzer.de/21_AufenthG.htm",
                 "quote": "Einem Ausländer kann eine Aufenthaltserlaubnis zur Ausübung einer selbständigen Tätigkeit erteilt werden, wenn 1. ein wirtschaftliches Interesse oder ein regionales Bedürfnis besteht, 2. die Tätigkeit positive Auswirkungen auf die Wirtschaft erwarten lässt und 3. die Finanzierung der Umsetzung durch Eigenkapital oder durch eine Kreditzusage gesichert ist.",
                 "retrieved_at": "2026-09-10",
-                "legal_basis": "§ 21 Abs. 1 Satz 1 AufenthG (consolidated mirror, buzer.de)",
+                "legal_basis": "§ 21 Abs. 1 Satz 1 AufenthG",
                 "history": []
               }
             },
@@ -1761,7 +1774,7 @@
                 "source_url": "https://www.buzer.de/21_AufenthG.htm",
                 "quote": "Die Beurteilung der Voraussetzungen nach Satz 1 richtet sich insbesondere nach der Tragfähigkeit der zu Grunde liegenden Geschäftsidee, den unternehmerischen Erfahrungen des Ausländers, der Höhe des Kapitaleinsatzes, den Auswirkungen auf die Beschäftigungs- und Ausbildungssituation und dem Beitrag für Innovation und Forschung.",
                 "retrieved_at": "2026-09-10",
-                "legal_basis": "§ 21 Abs. 1 Satz 2 AufenthG (consolidated mirror, buzer.de)",
+                "legal_basis": "§ 21 Abs. 1 Satz 2 AufenthG",
                 "history": []
               }
             },
@@ -1773,7 +1786,7 @@
                 "source_url": "https://www.buzer.de/21_AufenthG.htm",
                 "quote": "Bei der Prüfung sind die für den Ort der geplanten Tätigkeit fachkundigen Körperschaften, die zuständigen Gewerbebehörden, die öffentlich-rechtlichen Berufsvertretungen und die für die Berufszulassung zuständigen Behörden zu beteiligen.",
                 "retrieved_at": "2026-09-10",
-                "legal_basis": "§ 21 Abs. 1 Satz 3 AufenthG (consolidated mirror, buzer.de)",
+                "legal_basis": "§ 21 Abs. 1 Satz 3 AufenthG",
                 "history": []
               }
             },
@@ -1797,7 +1810,7 @@
                 "source_url": "https://www.buzer.de/21_AufenthG.htm",
                 "quote": "Ausländern, die älter sind als 45 Jahre, soll die Aufenthaltserlaubnis nur erteilt werden, wenn sie über eine angemessene Altersversorgung verfügen.",
                 "retrieved_at": "2026-09-10",
-                "legal_basis": "§ 21 Abs. 3 AufenthG (consolidated mirror, buzer.de)",
+                "legal_basis": "§ 21 Abs. 3 AufenthG",
                 "history": []
               }
             },
@@ -1809,7 +1822,7 @@
                 "source_url": "https://www.buzer.de/21_AufenthG.htm",
                 "quote": "Die Aufenthaltserlaubnis wird auf längstens drei Jahre befristet.",
                 "retrieved_at": "2026-09-10",
-                "legal_basis": "§ 21 Abs. 4 Satz 1 AufenthG (consolidated mirror, buzer.de)",
+                "legal_basis": "§ 21 Abs. 4 Satz 1 AufenthG",
                 "history": []
               }
             },
@@ -1821,7 +1834,7 @@
                 "source_url": "https://www.buzer.de/21_AufenthG.htm",
                 "quote": "Die beabsichtigte selbständige Tätigkeit muss einen Zusammenhang mit den in der Hochschulausbildung erworbenen Kenntnissen oder der Tätigkeit als Forscher oder Wissenschaftler erkennen lassen.",
                 "retrieved_at": "2026-09-10",
-                "legal_basis": "§ 21 Abs. 2a Satz 2 AufenthG (consolidated mirror, buzer.de)",
+                "legal_basis": "§ 21 Abs. 2a Satz 2 AufenthG",
                 "history": []
               }
             },
@@ -1833,7 +1846,7 @@
                 "source_url": "https://www.buzer.de/21_AufenthG.htm",
                 "quote": "Eine erforderliche Erlaubnis zur Ausübung des freien Berufes muss erteilt worden oder ihre Erteilung zugesagt sein.",
                 "retrieved_at": "2026-09-10",
-                "legal_basis": "§ 21 Abs. 5 Satz 2 AufenthG (consolidated mirror, buzer.de)",
+                "legal_basis": "§ 21 Abs. 5 Satz 2 AufenthG",
                 "history": []
               }
             },
@@ -1845,7 +1858,7 @@
                 "source_url": "https://www.buzer.de/21_AufenthG.htm",
                 "quote": "Eine Aufenthaltserlaubnis zur Ausübung einer selbständigen Tätigkeit kann auch erteilt werden, wenn völkerrechtliche Vergünstigungen auf der Grundlage der Gegenseitigkeit bestehen.",
                 "retrieved_at": "2026-09-10",
-                "legal_basis": "§ 21 Abs. 2 AufenthG (consolidated mirror, buzer.de)",
+                "legal_basis": "§ 21 Abs. 2 AufenthG",
                 "history": []
               }
             }
@@ -2498,7 +2511,7 @@
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F15898",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. The card follows a work authorisation your employer applies for, and that decision turns on whether the job was advertised for three weeks with nobody suitable answering, on your employer's own record with the tax, social-security and labour authorities, and on whether the hire is judged out of proportion to the business making it. Those are facts about somebody else, so we state the rules with the authority's own sentences and the day we read them, and we leave the verdict alone.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. The card follows a work authorisation your employer applies for, and that decision turns on whether the job was advertised for three weeks with nobody suitable answering, on your employer's own record with the tax, social-security and labour authorities, and on whether the hire is judged out of proportion to the business making it. Those are facts about somebody else, so we state the rules with the authority's own sentences and the day we read them, and we leave the verdict alone.",
             "not_asked": [
               "your-employer-applies-for-the-work-authorisation",
               "the-job-is-advertised-for-three-weeks-first",
@@ -2608,7 +2621,7 @@
           "id": "fr-talent-chercheur",
           "name": "Talent — researcher (chercheur)",
           "kind": "res-work",
-          "summary": "France's researcher card: a hosting agreement with an approved research or higher-education body, a master's-level degree, and research or university teaching as the purpose of the stay. Quoted here, not scored — the fiche's pay floor names no period, and which agreement it hangs on is not said.",
+          "summary": "France's researcher card: a hosting agreement with an approved research or higher-education body, a master's-level degree, and research or university teaching as the purpose of the stay. Quoted here, not checked — the fiche's pay floor names no period, and which agreement it hangs on is not said.",
           "info_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
           "slug": "talent-researcher",
           "situations": [
@@ -2616,7 +2629,7 @@
           ],
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. The fiche's gates are a hosting agreement with an approved body, a degree at least equivalent to a master's and a pay floor it states without a period, and the card's length follows a contract this interview never sees. We state the rules with the authority's own sentences and the day we read them, and leave the verdict alone; the situation question's research answer is the one this route would have asked about.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. The fiche's gates are a hosting agreement with an approved body, a degree at least equivalent to a master's and a pay floor it states without a period, and the card's length follows a contract we don't ask about. We state the rules with the authority's own sentences and the day we read them, and leave the verdict alone; the situation question's research answer is the one this route would have asked about.",
             "not_asked": [
               "the-card-is-for-a-researcher-and-lets-you-work",
               "every-condition-below-must-hold",
@@ -3372,7 +3385,7 @@
           "info_url": "https://www.inclusion.gob.es/web/migraciones/cuenta-ajena",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. Whether it opens at all depends on the national employment situation, which has two doors: your occupation is on a catalogue of hard-to-fill jobs that the public employment service redraws every three months for each autonomous community, or your employer has to satisfy the immigration office that the post could not be filled from the labour market already here. A quarterly regional list and an office's judgement of somebody else's recruiting are not facts you could declare, so we quote the regulation and date it instead.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. Whether it opens at all depends on the national employment situation, which has two doors: your occupation is on a catalogue of hard-to-fill jobs that the public employment service redraws every three months for each autonomous community, or your employer has to satisfy the immigration office that the post could not be filled from the labour market already here. A quarterly regional list and an office's judgement of somebody else's recruiting are not facts you could declare, so we quote the regulation and date it instead.",
             "not_asked": [
               "the-national-employment-situation-must-allow-it",
               "a-quarterly-catalogue-per-region-is-one-door",
@@ -3525,7 +3538,7 @@
           "info_url": "https://www.inclusion.gob.es/web/unidadgrandesempresas/teletrabajadores",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. It turns on a situation this interview never asks about — that you already work remotely for a company trading outside Spain, and have done for at least three months — and on an income floor the law states only as sufficient means for you and your family. The binding figure is not in the law: it is set as a multiple of a minimum wage a separate decree resets each year, in an instruction no fetch of ours can reach. We will not do arithmetic on your behalf and call it a rule, so the rules are quoted here and dated.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. It turns on a situation we don't ask about — that you already work remotely for a company trading outside Spain, and have done for at least three months — and on an income floor the law states only as sufficient means for you and your family. The binding figure is not in the law: it is set as a multiple of a minimum wage a separate decree resets each year, in an instruction no fetch of ours can reach. We will not do arithmetic on your behalf and call it a rule, so the rules are quoted here and dated.",
             "not_asked": [
               "the-work-is-remote-and-for-companies-outside-spain",
               "at-most-a-fifth-of-professional-work-from-spain",
@@ -4286,6 +4299,7 @@
                         "3to5",
                         "5plus"
                       ],
+                      "short_reason": "at least 3 years of related experience in the last seven",
                       "source": {
                         "source_url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit",
                         "quote": "Are you an IT manager or IT professional? A minimum of 3 years of relevant work experience is required during the period of 7 years before the application.",
@@ -4666,7 +4680,7 @@
           "id": "nl-researcher",
           "name": "Researcher (Directive (EU) 2016/801)",
           "kind": "res-work",
-          "summary": "A contract or hosting agreement with a Dutch research institution the immigration service (IND) recognises as a sponsor. Up to five years.",
+          "summary": "A contract or hosting agreement with a Dutch research institution the Dutch immigration service (IND) recognises as a sponsor. Up to five years.",
           "info_url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801",
           "scope": {
             "value": "some-conditions-stated-not-asked",
@@ -4934,7 +4948,7 @@
             {
               "id": "english-where-the-institution-was-abroad",
               "kind": "precondition",
-              "text": "If you studied at a foreign educational institution the Dutch immigration service (IND) designates, you must also meet one of its further requirements: a score of at least 6.0 on the IELTS English test or another accepted test, or a programme that was taught in English or Dutch",
+              "text": "If you studied at a foreign educational institution the Dutch immigration service (IND) designates, you must also meet one of its further requirements: a score of at least 6.0 on IELTS or another accepted English test, or a programme that was taught in English or Dutch",
               "source": {
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
                 "quote": "If you have completed your course or programme at a designated foreign educational institution, you must also meet one of the following requirements: You obtained a minimum score of 6.0 on a test in the International English Language Testing System (IELTS).",
@@ -4989,7 +5003,7 @@
           "info_url": "https://ind.nl/en/residence-permits/work/single-permit-gvva",
           "scope": {
             "value": "rules-quoted-nothing-asked",
-            "reason": "This route is not scored, and nothing below asks you anything. The statute makes the permit refusable if there is priority supply on the Dutch labour market for the job, if the vacancy was not reported to the employee insurance agency at least five weeks before the application, or if your employer cannot show enough effort to fill it from that supply — and the agency decides for itself whether the work could have been done from the EU or the wider European Economic Area. Those are facts about your employer's search and somebody else's reading of it, so we quote them, date them, and offer you no verdict.",
+            "reason": "This route is not checked against your answers, and nothing below asks you anything. The statute makes the permit refusable if there is priority supply on the Dutch labour market for the job, if the vacancy was not reported to the employee insurance agency at least five weeks before the application, or if your employer cannot show enough effort to fill it from that supply — and the agency decides for itself whether the work could have been done from the EU or the wider European Economic Area. Those are facts about your employer's search and somebody else's reading of it, so we quote them, date them, and offer you no verdict.",
             "not_asked": [
               "refused-where-there-is-priority-supply",
               "your-employer-searches-europe-for-three-months",

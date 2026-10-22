@@ -4,6 +4,7 @@ import { evaluate, fieldOptions, forEachCriterion, routeStatements, unlocks } fr
 import { deriveQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
 import { answerLabel, criterionPhrase, mootWith, reasonFor, shortLabelOf, subjectOf, unlockTitleOf } from "../src/verdict.js";
+import { fillRouteSlots } from "../src/route-slots.js";
 import type { Dataset, Profile } from "../src/types.js";
 import { lcg, optionValues, randomProfile } from "./random-profile.js";
 
@@ -200,7 +201,7 @@ describe("s5d — the reason column reads as prose (blocker B3)", () => {
   /** Walk C's profile: exploring all four, weak answers throughout. */
   const explorer: Profile = {
     destination: "all", citizenship: "US", situation: "none", qualification: "degree",
-    recognition_de: "not_yet", experience_5y: "2plus", experience_7y: "5plus", occupation_shortage: "unknown",
+    recognition_de: "not_recognised", experience_5y: "2plus", experience_7y: "5plus", occupation_shortage: "unknown",
     nl_recent_grad: "no", top200_grad: "unknown", german: "a2", english: "c1",
     age_band: "u30",
   };
@@ -231,7 +232,8 @@ describe("s5d — the plain-words primitives the page renders", () => {
     for (const q of deriveQuestions(dataset)) {
       const def = dataset.fields.find((f) => f.id === q.field)!;
       expect(def.short_label, q.field).toBeTruthy();
-      expect(subjectOf(dataset, q.field), q.field).toBe(def.subject);
+      // The field's own subject, with any route it names said in full (#159).
+      expect(subjectOf(dataset, q.field), q.field).toBe(fillRouteSlots(def.subject, dataset));
       expect(def.short_label, q.field).not.toBe(q.field);
     }
   });

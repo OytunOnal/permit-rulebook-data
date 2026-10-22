@@ -53,8 +53,9 @@ describe("cleared blocker: a person with EU free movement is never told they nee
   it("the vocabulary lists passport issuers only — a dependent territory would misclassify its residents", () => {
     // Åland was listed and classed third-country; its residents hold Finnish
     // passports, so the tool told EU citizens they needed a permit (s5c
-    // review). Re-adding any of these means first sourcing which passport its
-    // residents actually hold.
+    // review). None of these comes back as a row: a territory a reader may
+    // type is listed beside the rows, with the passport its residents hold
+    // and that claim's source (tests/territories.test.ts).
     const territories = ["AX", "GP", "MQ", "RE", "GF", "YT", "GL", "FO", "GI", "JE", "GG", "IM",
       "AW", "CW", "SX", "BQ", "NC", "PF", "WF", "PM", "BL", "MF", "PR", "GU", "VI", "AS", "MP",
       "AQ", "BV", "HM", "UM", "TF"];

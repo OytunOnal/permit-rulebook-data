@@ -34,7 +34,9 @@ append-only.
 
 1. **Read the source yourself.** Open the official page or document and find
    the sentence. Not a news article about it, not a summary, not a mirror
-   unless the mirror is disclosed as one on the card.
+   unless its host is on the consolidated-text list in `src/hosts.ts`: the
+   site labels every link to such a host as a consolidated text, so the
+   citation in `legal_basis` names the statute alone.
 2. **Move the old value into `history`.** Never overwrite. The old entry keeps
    its own `amount`/`value`, `retrieved_at`, and — where you have it — the
    quote and URL it stood on. The audit trail is the point: a reader must be
@@ -146,11 +148,11 @@ they leave one dataset sentence unverifiable by machine.
    It is our own sentence about our own interview, so it never states what the
    law requires; the conditions it points at carry their own quotes on the same
    page. Words a reader cannot parse do not go in it: no *modelled*, no
-   *criteria*. *Scored* is allowed only inside the phrase the reader is shown —
-   "scored against your answers", or "scored — 2 conditions this interview did
-   not ask" — and a bare *scored* fails the build, in a reason exactly as in
-   the words the code composes (human, 2026-09-08; words revised s23,
-   2026-09-17).
+   *criteria*, and none of the Scope statement's avoid-list — *scored*, *this
+   interview*, *rule set* — which fails the build in any text the dataset
+   renders, exactly as in the words the code composes. The reader's verb is
+   *checked* ("This route is not checked against your answers"), and the
+   checker speaks as itself ("we don't ask").
 
    `not_asked` is the same fact in ids: every statement and every reading this
    route names to the reader and never asks about. It is what makes the sentence
@@ -176,14 +178,34 @@ they leave one dataset sentence unverifiable by machine.
 
 7. **Add every new source to the watchlist.** `npm run watch:coverage` enforces
    it in both directions: a dataset source nothing watches fails, and a watched
-   source backing no value fails.
+   source backing no value fails. A route's or a notice's source, or a
+   question's or a notice's learn link, on a new host also needs the host on
+   one of the two lists in `src/hosts.ts`, authority hosts or consolidated-text
+   hosts; the build fails until it is. The country list's own sources — a
+   passport class's legs and a territory's passport — are watched and
+   quote-checked like every source, but the site prints no link to them, so
+   they are not held to the lists.
 8. **Add the questions' words.** A criterion may only name an answer the
    dataset can put into words — give the option a `short`, or the criterion a
    `short_reason`. There is no fallback to a field id; the build fails instead.
+   A question whose options run from least to most of one amount (years of
+   experience) is marked `ordered`, and a criterion accepting two or more of
+   its rungs carries a `short_reason` that says the range ("at least 3 years
+   of related experience in the last seven"), or the build fails. A criterion
+   with paths, and each of its paths, carries a `label`: the criterion is
+   named by its label wherever it is named in one line, and each path's line
+   opens with the path's. A question that names a route writes
+   `{route:<route id>}` in its `label`, its `learn` label or its `subject`,
+   and the route carries `what_it_is`, a short phrase saying what it is; the
+   slot fills as "Germany's Opportunity Card — the permit to come and look for
+   work". A route's plain name (its name without the bracketed citation) typed
+   into any of a question's words fails the build, and so does a slot anywhere
+   else in them.
 9. **A `learn` label is what the reader does there** — one sentence opening
    on an action (`Check` · `See` · `Read` · `Find`), in plain words, never
-   statute shorthand such as `§ 18g AufenthG`: the site prints it verbatim as
-   the text of a link, and a link is not glossed (s28). It binds every door,
+   statute shorthand such as `§ 18g AufenthG`: the site prints it as the text
+   of a link, and the gloss a citation brings would land inside the link
+   (s28). It binds every door,
    a notice's as much as a field's: the Algerian notice's foot link is the
    same link to the same reader, and it read as a statement for a day after
    the fields' were rewritten (s29).

@@ -122,7 +122,8 @@
     },
     {
       "code": "BS",
-      "name": "Bahamas"
+      "name": "Bahamas",
+      "article": "the"
     },
     {
       "code": "BH",
@@ -218,7 +219,8 @@
     },
     {
       "code": "CF",
-      "name": "Central African Republic"
+      "name": "Central African Republic",
+      "article": "the"
     },
     {
       "code": "TD",
@@ -238,11 +240,13 @@
     },
     {
       "code": "KM",
-      "name": "Comoros"
+      "name": "Comoros",
+      "article": "the"
     },
     {
       "code": "CG",
       "name": "Republic of the Congo",
+      "article": "the",
       "aliases": [
         "Congo",
         "Congo-Brazzaville",
@@ -252,6 +256,7 @@
     {
       "code": "CD",
       "name": "Democratic Republic of the Congo",
+      "article": "the",
       "aliases": [
         "DRC",
         "Zaire",
@@ -303,7 +308,8 @@
     },
     {
       "code": "DO",
-      "name": "Dominican Republic"
+      "name": "Dominican Republic",
+      "article": "the"
     },
     {
       "code": "EC",
@@ -362,7 +368,8 @@
     },
     {
       "code": "GM",
-      "name": "Gambia"
+      "name": "Gambia",
+      "article": "the"
     },
     {
       "code": "GE",
@@ -556,7 +563,8 @@
     },
     {
       "code": "MV",
-      "name": "Maldives"
+      "name": "Maldives",
+      "article": "the"
     },
     {
       "code": "ML",
@@ -568,7 +576,8 @@
     },
     {
       "code": "MH",
-      "name": "Marshall Islands"
+      "name": "Marshall Islands",
+      "article": "the"
     },
     {
       "code": "MR",
@@ -693,6 +702,7 @@
     {
       "code": "PS",
       "name": "Palestinian Territories",
+      "article": "the",
       "aliases": [
         "Palestine",
         "West Bank",
@@ -717,7 +727,8 @@
     },
     {
       "code": "PH",
-      "name": "Philippines"
+      "name": "Philippines",
+      "article": "the"
     },
     {
       "code": "PL",
@@ -776,7 +787,8 @@
     },
     {
       "code": "SC",
-      "name": "Seychelles"
+      "name": "Seychelles",
+      "article": "the"
     },
     {
       "code": "SL",
@@ -799,7 +811,8 @@
     },
     {
       "code": "SB",
-      "name": "Solomon Islands"
+      "name": "Solomon Islands",
+      "article": "the"
     },
     {
       "code": "SO",
@@ -960,6 +973,7 @@
     {
       "code": "AE",
       "name": "United Arab Emirates",
+      "article": "the",
       "aliases": [
         "UAE",
         "Emirates"
@@ -968,6 +982,7 @@
     {
       "code": "GB",
       "name": "United Kingdom",
+      "article": "the",
       "aliases": [
         "UK",
         "Great Britain",
@@ -981,6 +996,7 @@
     {
       "code": "US",
       "name": "United States",
+      "article": "the",
       "aliases": [
         "USA",
         "US",
@@ -1030,5 +1046,152 @@
       "name": "Zimbabwe"
     }
   ],
-  "note": "The question asks which passport the person will apply with, so this list is passport issuers: sovereign states plus the widely-held non-UN documents (HK, MO, TW, XK, PS). Dependent territories are deliberately absent — a resident of Åland holds a Finnish passport and of Guadeloupe a French one, and listing the territory made the tool answer 'third country' for people who have EU free movement (s5c review). Adding one back means stating, with a source, which passport its residents hold. Labels are hand-written English usage, not CLDR's localisation, which abbreviates (\"St. Kitts & Nevis\") and disambiguates in ways no passport does (\"Congo - Kinshasa\", \"Hong Kong SAR China\"). Some entries carry `aliases`: names people still type (Turkey, Holland, Czech Republic). They are search keys only — the label the tool prints is always the official name."
+  "territories": [
+    {
+      "code": "PR",
+      "name": "Puerto Rico",
+      "passport": "US",
+      "source": {
+        "source_url": "https://www.govinfo.gov/content/pkg/USCODE-2023-title8/html/USCODE-2023-title8-chap12-subchapIII-partI-sec1402.htm",
+        "quote": "All persons born in Puerto Rico on or after January 13, 1941, and subject to the jurisdiction of the United States, are citizens of the United States at birth.",
+        "retrieved_at": "2026-10-21",
+        "legal_basis": "8 U.S.C. 1402"
+      }
+    },
+    {
+      "code": "GU",
+      "name": "Guam",
+      "passport": "US",
+      "source": {
+        "source_url": "https://www.doi.gov/oia/islands/guam",
+        "quote": "The Guam Organic Act of 1950 conferred U.S. citizenship on Guamanians and established the territory's government.",
+        "retrieved_at": "2026-10-21",
+        "legal_basis": "Guam Organic Act of 1950"
+      }
+    },
+    {
+      "code": "VI",
+      "name": "U.S. Virgin Islands",
+      "article": "the",
+      "aliases": [
+        "United States Virgin Islands",
+        "USVI"
+      ],
+      "passport": "US",
+      "source": {
+        "source_url": "https://www.doi.gov/oia/islands/virgin-islands",
+        "quote": "U.S. citizenship was conferred on U.S. Virgin Islanders in 1927.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "MP",
+      "name": "Northern Mariana Islands",
+      "article": "the",
+      "aliases": [
+        "Northern Marianas",
+        "CNMI",
+        "Saipan"
+      ],
+      "passport": "US",
+      "source": {
+        "source_url": "https://www.govinfo.gov/content/pkg/USCODE-2023-title48/html/USCODE-2023-title48-chap17-subchapI-sec1801.htm",
+        "quote": "The domiciliaries of the Northern Mariana Islands are citizens of the United States to the extent provided for in Sections 301 through 303 of the Covenant on the date and at the time specified in this Proclamation.",
+        "retrieved_at": "2026-10-21",
+        "legal_basis": "Proclamation 5564, in the notes to 48 U.S.C. 1801"
+      }
+    },
+    {
+      "code": "AS",
+      "name": "American Samoa",
+      "passport": "US",
+      "source": {
+        "source_url": "https://www.doi.gov/oia/islands/american-samoa",
+        "quote": "Unlike citizens of other U.S. territories who are U.S. citizens, American Samoans are U.S. nationals.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "JE",
+      "name": "Jersey",
+      "aliases": [
+        "Bailiwick of Jersey"
+      ],
+      "passport": "GB",
+      "source": {
+        "source_url": "https://www.gov.uk/government/publications/jersey-knowledge-base-profile/jersey-knowledge-base-profile",
+        "quote": "Customers living in the Bailiwick of Jersey will hold a Crown Dependency variant British passport if they applied for their passport in the place they live.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "GG",
+      "name": "Guernsey",
+      "aliases": [
+        "Bailiwick of Guernsey",
+        "Alderney",
+        "Sark"
+      ],
+      "passport": "GB",
+      "source": {
+        "source_url": "https://www.gov.uk/government/publications/guernsey-alderney-and-sark-knowledge-base-profile/guernsey-alderney-and-sark-knowledge-base-profile",
+        "quote": "Customers living in the Bailiwick of Guernsey will hold a Crown Dependency variant British passport if they applied for their passport in the place they live.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "IM",
+      "name": "Isle of Man",
+      "article": "the",
+      "passport": "GB",
+      "source": {
+        "source_url": "https://www.gov.uk/government/publications/isle-of-man-knowledge-base-profile/isle-of-man-knowledge-base-profile",
+        "quote": "Customers living in the Isle of Man will hold a Crown Dependency variant British passport if they applied for their passport in the place they live.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "GI",
+      "name": "Gibraltar",
+      "passport": "GB",
+      "source": {
+        "source_url": "https://www.gibraltar.gov.gi/press-releases/stamping-of-passports-at-the-border-4342021-7002",
+        "quote": "All British Citizens, including Gibraltarians, are entitled to spend 90 days in each 180 in the European Union without a visa.",
+        "retrieved_at": "2026-10-21"
+      }
+    },
+    {
+      "code": "GL",
+      "name": "Greenland",
+      "aliases": [
+        "Kalaallit Nunaat",
+        "Grønland"
+      ],
+      "passport": "DK",
+      "source": {
+        "source_url": "https://stm.dk/statsministeriet/publikationer/faelleserklaering-mellem-eu-groenland-og-danmark/",
+        "quote": "the citizens of Greenland, as citizens of the Kingdom of Denmark, have EU citizenship",
+        "retrieved_at": "2026-10-21",
+        "legal_basis": "Joint Declaration between the European Union, the Government of Greenland and the Government of Denmark"
+      }
+    },
+    {
+      "code": "FO",
+      "name": "Faroe Islands",
+      "article": "the",
+      "aliases": [
+        "Faroes",
+        "Faeroe Islands",
+        "Føroyar"
+      ],
+      "passport": "DK",
+      "source": {
+        "source_url": "https://www.government.fo/en/foreign-relations/constitutional-status/the-home-rule-act",
+        "quote": "In a passport or a certificate of nationality issued in the Faroes for a Faroese the words “Føroyingur” and “Førovar” shall be inserted after the words “Dansk” and “Danmark”.",
+        "retrieved_at": "2026-10-21",
+        "legal_basis": "Home Rule Act of the Faroe Islands, section 10"
+      }
+    }
+  ],
+  "note": "The question asks which passport the person will apply with, so this list is passport issuers: sovereign states plus the widely-held non-UN documents (HK, MO, TW, XK, PS). Dependent territories are deliberately absent from it — a resident of Åland holds a Finnish passport and of Guadeloupe a French one, and listing the territory made the tool answer 'third country' for people who have EU free movement (s5c review). A territory a reader may type is listed under `territories` instead, never as a row: its name and aliases, the passport its people hold, and that claim's source (an official page, its quote, the day it was read), so the search can answer it with the passport's country (#160). A territory nobody has sourced is not listed, and the search says what it says for any name it does not know. Labels are hand-written English usage, not CLDR's localisation, which abbreviates (\"St. Kitts & Nevis\") and disambiguates in ways no passport does (\"Congo - Kinshasa\", \"Hong Kong SAR China\"). Some entries carry `aliases`: names people still type (Turkey, Holland, Czech Republic). They are search keys only — the label the tool prints is always the official name."
 }

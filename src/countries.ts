@@ -28,6 +28,29 @@ export interface CountryVocabulary {
    * Netherlands" → "Dutch"). It is carried for the countries this product
    * writes prose about, which is the ones it ships routes for. */
   countries: { code: string; name: string; article?: string; adjective?: string; aliases?: string[] }[];
+  /** Places a reader may type that are not passport issuers, kept beside the
+   * rows and never among them: see `Territory`. */
+  territories?: Territory[];
+}
+
+/**
+ * A dependent territory: not a row of the passport list, because its people
+ * hold the passport of the country it belongs to. `passport` is a claim about
+ * who those people are, so it carries its source like any value; a territory
+ * nobody has sourced is not listed at all. `name` and `aliases` are what a
+ * reader types, never a row's label.
+ */
+export interface Territory {
+  /** ISO 3166-1 alpha-2. */
+  code: string;
+  name: string;
+  /** The word the name takes inside a sentence ("the" Faroe Islands), as a
+   * country's `article` is. */
+  article?: string;
+  aliases?: string[];
+  /** The code of the passport its people hold — a country on the list. */
+  passport: string;
+  source: ProvenancedText;
 }
 
 export interface VocabularyError {
@@ -65,27 +88,58 @@ const derivedOptions: FieldOption[] = countryVocabulary.countries
     label: c.name,
     // The prose form, where it differs from the name: a sentence says "in the
     // Netherlands", a button in a list says "Netherlands".
-    ...(c.article ? { short: `${c.article} ${c.name}` } : {}),
+    ...(c.article ? { short: phraseWithArticleOf(c) } : {}),
     implies: [classOfCountry(c.code)!],
     // Names people still type. Search keys only — never displayed.
     ...(c.aliases?.length ? { aliases: c.aliases } : {}),
   }))
   .sort((a, b) => a.label.localeCompare(b.label, "en"));
 
+/** The list's entry for a code. A code the list does not hold throws: a
+ * sentence with a bare code or a blank where a country belongs is worse than a
+ * build that stops. */
+function countryOf(code: string, vocab: CountryVocabulary): CountryVocabulary["countries"][number] {
+  const country = vocab.countries.find((c) => c.code === code);
+  if (!country) throw new Error(`country ${code} is not in the country list`);
+  return country;
+}
+
 /**
  * A country's name as it reads inside a sentence: "Germany", "the Netherlands".
  *
  * The article is a fact about the country, so it lives beside the name in
- * `countries.json` rather than in a set of exceptions inside a renderer — where
- * it sat, with a comment saying it would move here the second country that
- * needed it. The second was the leverage line (human walk, 2026-09-08).
+ * `countries.json` rather than in a set of exceptions inside a renderer.
  */
-export function countryPhrase(
-  code: string, vocab: CountryVocabulary = countryVocabulary,
-): string | undefined {
-  const country = vocab.countries.find((c) => c.code === code);
-  if (!country) return undefined;
-  return country.article ? `${country.article} ${country.name}` : country.name;
+export function phraseOf(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  return phraseWithArticleOf(countryOf(code, vocab));
+}
+
+/** A name with the article it takes inside a sentence, where it takes one:
+ * "the Netherlands", "Germany". A country's and a territory's alike. */
+export function phraseWithArticleOf(named: { name: string; article?: string }): string {
+  return named.article ? `${named.article} ${named.name}` : named.name;
+}
+
+/** A phrase as it opens a sentence or a heading: its first letter a capital. */
+export function openingCapitalOf(phrase: string): string {
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+}
+
+/** The same phrase where it opens a sentence or a heading: "The Netherlands". */
+export function phraseAtStartOf(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  return openingCapitalOf(phraseOf(code, vocab));
+}
+
+/** The phrase as a possessive: "Germany's", "the Netherlands'" — a name
+ * ending in s takes the apostrophe alone. */
+export function possessiveOf(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  const phrase = phraseOf(code, vocab);
+  return phrase.endsWith("s") ? `${phrase}'` : `${phrase}'s`;
+}
+
+/** The possessive where it opens a sentence or a heading: "The Netherlands'". */
+export function possessiveAtStartOf(code: string, vocab: CountryVocabulary = countryVocabulary): string {
+  return openingCapitalOf(possessiveOf(code, vocab));
 }
 
 /**

@@ -11,9 +11,9 @@ const ds = dataset as unknown as Dataset;
  * A field's `learn` door is rendered as link text on three of the site's
  * surfaces. One label was an action (Anabin); three were statements about a
  * source, and one of those opened on "§ 18g AufenthG" — a symbol a screen
- * would want to gloss, inside a link, which is not glossed (the human's walk,
- * 2026-09-17: "bu link çok garip duruyor"). CONTRIBUTING now says what a
- * label is; this holds every field to it.
+ * glosses, and the gloss lands inside the link (the human's walk,
+ * 2026-09-17: "bu link çok garip duruyor"). CONTRIBUTING says what a label
+ * is; this holds every field to it.
  */
 
 /**
@@ -47,7 +47,7 @@ describe("a learn label is what the reader does there", () => {
       ).toBe(true);
   });
 
-  it("no label carries the section sign — a symbol in a link would want a gloss, and a link is not glossed", () => {
+  it("no label carries the section sign — a citation in a link would carry its explanation inside the link", () => {
     for (const d of doors()) expect(d.label, d.field).not.toContain("§");
   });
 
@@ -61,11 +61,12 @@ describe("a learn label is what the reader does there", () => {
     expect(doors().some((d) => d.field.startsWith("notice:"))).toBe(true);
   });
 
-  it("the five are the sentences the scenarios decided", () => {
+  it("the six are the sentences the scenarios decided", () => {
     expect(Object.fromEntries(doors().map((d) => [d.field, d.label]))).toEqual({
       recognition_de: "Check your degree in the official Anabin database",
+      // #151, ruling 8: the label says what the codes are for, the list kept.
       occupation_shortage:
-        "Check the shortage groups in section 18g of the Residence Act (ISCO-08 codes 132, 133, 134, 21, 221, 222, 225, 226, 23, 25)",
+        "Check the occupation groups on Germany's shortage list (ISCO-08 codes 132, 133, 134, 21, 221, 222, 225, 226, 23, 25) in section 18g of the Residence Act",
       fr_innovative_employer: "See the talent card's innovative-company route on service-public.fr",
       // The scenario wrote "on the IND's orientation-year page"; the dataset's own
       // rule (s5d) expands an abbreviation wherever our voice uses it, and the
@@ -77,6 +78,8 @@ describe("a learn label is what the reader does there", () => {
       // a label is our sentence, and our voice writes the numeral out.
       "notice:fr-dz-talent-open-question":
         "Read the page for Algerian nationals (certificat de résidence d'un an)",
+      // #159: the spouse question opens the card's own official page (#151, ruling 11).
+      partner_ck: "See what the card offers on the page of Germany's Federal Ministry of the Interior",
     });
   });
 

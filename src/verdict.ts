@@ -1,6 +1,7 @@
-import { countryClasses, countryPhrase } from "./countries.js";
+import { countryClasses, phraseOf } from "./countries.js";
 import { DEFAULT_UNKNOWN_LABEL, UNKNOWN_BAND } from "./questions.js";
 import { decidingCriteria } from "./disjunction.js";
+import { fillRouteSlots } from "./route-slots.js";
 import { closedBy, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields, } from "./engine.js";
 import type {
   Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
@@ -64,9 +65,18 @@ export function shortLabelOf(dataset: Dataset, field: string): string {
   return fieldOf(dataset, field)?.short_label ?? field;
 }
 
-/** The fact as a noun phrase inside a sentence. */
+/** The fact as a noun phrase inside a sentence, with any route it names said
+ * in full. */
 export function subjectOf(dataset: Dataset, field: string): string {
-  return fieldOf(dataset, field)?.subject ?? field;
+  const subject = fieldOf(dataset, field)?.subject;
+  return subject === undefined ? field : fillRouteSlots(subject, dataset);
+}
+
+/** Where a reader can find the answer out — the question's help — with any
+ * route its label names said in full. */
+export function learnLinkOf(dataset: Dataset, field: string): { label: string; url: string } | undefined {
+  const learn = fieldOf(dataset, field)?.learn;
+  return learn && { label: fillRouteSlots(learn.label, dataset), url: learn.url };
 }
 
 /**
@@ -96,8 +106,9 @@ export function answerLabel(dataset: Dataset, field: string, value: string | und
 /**
  * What a criterion asks for, as a noun phrase. `short_reason` overrides where
  * the option list reads badly in a sentence ("an age of 30 or older" beats
- * "30 to 35, 36 to 40 or over 40"); a disjunction expands into its paths, so
- * a route never has to name its own internal structure.
+ * "30 to 35, 36 to 40 or over 40"); a disjunction is named by its own label,
+ * because its paths joined into one line are a run of "and"s and "or"s a
+ * reader cannot group.
  */
 export function criterionPhrase(dataset: Dataset, c: Criterion): string {
   if (c.short_reason) return c.short_reason;
@@ -116,7 +127,7 @@ export function criterionPhrase(dataset: Dataset, c: Criterion): string {
     case "points":
       return `${c.required.value} points from the official table`;
     case "any":
-      return joinOr(c.paths.map((p) => joinAnd(p.criteria.map((pc) => criterionPhrase(dataset, pc)))));
+      return c.label;
     default: {
       const _exhaustive: never = c;
       throw new Error(`unhandled criterion op: ${JSON.stringify(_exhaustive)}`);
@@ -163,8 +174,7 @@ export function declaredPlace(dataset: Dataset, profile: Profile): string {
   // "Netherlands". Both destination and situation_country are country codes, so
   // one lookup serves both; an option's `short` is a different sentence
   // ("Germany as your destination") and is deliberately not used here.
-  return countryPhrase(value.toUpperCase()) ??
-    fieldOptions(dataset, field).find((o) => o.value === value)?.label ?? "";
+  return phraseOf(value.toUpperCase());
 }
 
 /** Unknowns the person can still act on: on a hard-failed route nothing they
@@ -197,9 +207,6 @@ export interface Reason {
    * themselves — and for the test that no field NAME ever lands in one. */
   parts: { needs: string[]; unknown: string[]; moot: string[] };
 }
-
-const countryName = (dataset: Dataset, code: string): string =>
-  dataset.countries.find((c) => c.code === code)?.name ?? code;
 
 /**
  * The criterion results a reason names. A disjunction with a deciding path is
@@ -252,7 +259,7 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
       const place = declaredPlace(dataset, profile);
       rows.push({
         kind: "where",
-        text: `This route is ${countryName(dataset, r.country)}${place ? `, and you told us ${place}` : ""}.`,
+        text: `This route is in ${phraseOf(r.country)}${place ? `, and you told us ${place}` : ""}.`,
       });
       continue;
     }
@@ -294,8 +301,8 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
 
   if (isPlacedElsewhere(r, profile)) {
     const place = declaredPlace(dataset, profile);
-    const country = countryName(dataset, r.country);
-    return { line: place ? `A ${country} route — you told us ${place}.` : `A ${country} route.`, rows, parts };
+    const country = phraseOf(r.country);
+    return { line: place ? `A route in ${country} — you told us ${place}.` : `A route in ${country}.`, rows, parts };
   }
 
   const sentences: string[] = [];
@@ -432,18 +439,22 @@ export function unlockMeansOf(dataset: Dataset, u: Unlock, profile: Profile = {}
   return optionMeans(u.option, dataset, unlockProfile(u, profile));
 }
 
+/** The place slot's fill when the reader has declared no country. */
+const NO_PLACE_DECLARED = "in the country you move to";
+
 /**
  * What an option means here, with `{place}` filled in from what the reader
  * declared.
  *
- * The preposition travels with the place, not with the sentence: where nothing
- * has been declared the token becomes "there" — the word the option labels
- * already use — and "an employer in there" is not a sentence anyone would say.
+ * The preposition travels with the place, so a phrase reads the same with a
+ * country or without one. Where none has been declared the slot is "in the
+ * country you move to", never "there": an option on the all-four path names no
+ * place for "there" to point back to (#151, ruling 7).
  */
 export function optionMeans(
   option: FieldOption, dataset: Dataset, profile: Profile = {},
 ): string {
   if (!option.means) return "";
   const place = declaredPlace(dataset, profile);
-  return option.means.split("{place}").join(place ? `in ${place}` : "there");
+  return option.means.split("{place}").join(place ? `in ${place}` : NO_PLACE_DECLARED);
 }

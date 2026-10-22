@@ -37,7 +37,7 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
       const route = routeOf(id);
       expect(route, id).toBeDefined();
       expect(route.scope.value, id).toBe(QUOTED_NOT_SCORED);
-      expect(scopeLine(route), id).toBe("quoted and dated · not scored");
+      expect(scopeLine(route, { reader: "not-answered" }), id).toBe("quoted and dated · the checker does not ask about it");
     }
     // 23 scored, five quoted and not scored — six since s19, when France's
     // researcher card joined them (tests/s19.test.ts holds that one).

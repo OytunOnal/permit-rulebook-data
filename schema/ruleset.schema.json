@@ -134,6 +134,10 @@
         "is_qualifier": {
           "type": "boolean"
         },
+        "ordered": {
+          "type": "boolean",
+          "description": "An enum question whose options run from least to most of one amount (years of experience). A criterion accepting two or more of its options carries a short_reason saying the range in one phrase, so no card reads the rungs out one by one."
+        },
         "learn": {
           "type": "object",
           "required": [
@@ -908,6 +912,7 @@
           "type": "object",
           "required": [
             "op",
+            "label",
             "paths"
           ],
           "additionalProperties": false,
@@ -916,7 +921,9 @@
               "const": "any"
             },
             "label": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "description": "The criterion's one-line name, said wherever it is named in one line (a card's heading, a verdict line). Its paths joined into one line read as a run of 'and's and 'or's nobody can group."
             },
             "paths": {
               "type": "array",
@@ -924,12 +931,15 @@
               "items": {
                 "type": "object",
                 "required": [
+                  "label",
                   "criteria"
                 ],
                 "additionalProperties": false,
                 "properties": {
                   "label": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The path's name, which heads its own line where the paths are listed."
                   },
                   "criteria": {
                     "type": "array",
@@ -1057,6 +1067,12 @@
           "type": "string",
           "description": "One or two sentences about the route. Its FIRST sentence stands alone as the card's gist on a country index and is bounded there (see the build's summaryFirstSentence check); the whole summary is the route page's own opening line and may run longer.",
           "maxLength": 600
+        },
+        "what_it_is": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "What the route is, in a short phrase a question carries after the route's name (\"the permit to come and look for work\"). Required where a question names the route through a {route:<id>} slot (see the build's routeSlot check), which the data package fills as \"<the country's possessive> <the plain name> — <this phrase>\"."
         },
         "info_url": {
           "type": "string",

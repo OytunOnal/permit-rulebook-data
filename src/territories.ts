@@ -1,0 +1,71 @@
+import {
+  countryVocabulary, openingCapitalOf, phraseWithArticleOf, type CountryVocabulary, type Territory, type VocabularyError,
+} from "./countries.js";
+import { foldForSearch, matchOptions } from "./engine.js";
+
+/** A territory a reader typed, and the country whose passport its people hold. */
+export interface FoundTerritory {
+  territory: Territory;
+  country: CountryVocabulary["countries"][number];
+}
+
+const namesOf = (t: Territory): string[] => [t.name, ...(t.aliases ?? [])];
+
+/** What a reader may type for a territory: its names, and its name with the
+ * article it takes, as the territory's line prints it ("the Faroe Islands"). */
+const typedFormsOf = (t: Territory): string[] => [...namesOf(t), ...(t.article ? [territoryPhraseOf(t)] : [])];
+
+/**
+ * The territory whose name, alias or name with its article is what the reader
+ * typed, whole — folded the way the passport search folds, so case, marks and
+ * punctuation do not matter — with the country whose passport its people hold.
+ * Nothing for anything else: a part of a name is still a search in progress.
+ */
+export function findTerritory(typed: string, vocab: CountryVocabulary = countryVocabulary): FoundTerritory | undefined {
+  const folded = foldForSearch(typed.trim());
+  if (!folded) return undefined;
+  const territory = (vocab.territories ?? []).find((t) => typedFormsOf(t).some((n) => foldForSearch(n) === folded));
+  const country = territory && vocab.countries.find((c) => c.code === territory.passport);
+  return territory && country ? { territory, country } : undefined;
+}
+
+/** A territory's name as it reads inside a sentence: "Puerto Rico", "the
+ * Faroe Islands" — its article is data beside the name, as a country's is. */
+export function territoryPhraseOf(territory: Territory): string {
+  return phraseWithArticleOf(territory);
+}
+
+/** The same phrase where it opens a sentence: "The Faroe Islands". */
+export function territoryPhraseAtStartOf(territory: Territory): string {
+  return openingCapitalOf(territoryPhraseOf(territory));
+}
+
+const hasProvenance = (t: Territory): boolean =>
+  Boolean(t.source?.source_url && t.source.quote && t.source.retrieved_at);
+
+/**
+ * The territory list's own invariants: each names a passport on the list and
+ * carries the source that says so, on https as every dataset source is, and
+ * none is a row — not by its code, and
+ * not by a name the passport search would find a row by, or typing it would
+ * show that row and the territory's line never would.
+ */
+export function territoryErrors(vocab: CountryVocabulary): VocabularyError[] {
+  const errors: VocabularyError[] = [];
+  const at = (t: Territory, message: string) =>
+    errors.push({ path: `/territories/${t.code}`, message: `${t.code} (${t.name}) ${message}`, keyword: "territoryPassport" });
+  const codes = new Set(vocab.countries.map((c) => c.code));
+  const rows = vocab.countries.map((c) => ({ value: c.code, label: c.name, aliases: c.aliases }));
+  for (const t of vocab.territories ?? []) {
+    if (!t.passport) at(t, "names no passport its people hold");
+    else if (!codes.has(t.passport)) at(t, `names the passport ${t.passport}, which is not on the country list`);
+    if (!hasProvenance(t)) at(t, "carries no source for its passport — an official page, its quote and the day it was read");
+    else if (!t.source.source_url.startsWith("https://")) at(t, "cites its passport's source at an address that is not https");
+    if (codes.has(t.code)) at(t, `is a row of the country list as ${t.code} — a territory is never a row`);
+    for (const name of namesOf(t)) {
+      const found = matchOptions(rows, name).map((o) => o.label);
+      if (found.length) at(t, `is found as a row by "${name}" (${found.join(", ")}) — typing it would never reach the territory's line`);
+    }
+  }
+  return errors;
+}

@@ -695,6 +695,123 @@
         "from": "Requirements for the opportunity card",
         "to": "All news"
       }
+    },
+    {
+      "id": "us-citizenship-puerto-rico",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2023-title8/html/USCODE-2023-title8-chap12-subchapIII-partI-sec1402.htm",
+      "strategy": "html",
+      "kind": "value-source",
+      "note": "Backs the passport Puerto Rico's people hold (countries.json territories, #160): 8 U.S.C. 1402 as the Government Publishing Office publishes it. Read 2026-10-21 by the watch's own fetcher; the page is the section alone, so it is not sliced."
+    },
+    {
+      "id": "us-citizenship-northern-mariana-islands",
+      "url": "https://www.govinfo.gov/content/pkg/USCODE-2023-title48/html/USCODE-2023-title48-chap17-subchapI-sec1801.htm",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Proc. No. 5564.",
+        "to": "congratulate our new fellow citizens."
+      },
+      "note": "Backs the passport the Northern Mariana Islands' people hold (countries.json territories, #160): Proclamation 5564, printed in the notes to 48 U.S.C. 1801 by the Government Publishing Office. Sliced to the proclamation up to the citizenship it declares; the page also carries the whole Covenant and every later note. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "doi-oia-guam",
+      "url": "https://www.doi.gov/oia/islands/guam",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Political Status",
+        "to": "Was this page helpful?"
+      },
+      "note": "Backs the passport Guam's people hold (countries.json territories, #160): the Department of the Interior's Office of Insular Affairs on Guam. Sliced to the page's own text, between its menus and its feedback form. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "doi-oia-virgin-islands",
+      "url": "https://www.doi.gov/oia/islands/virgin-islands",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Political Status",
+        "to": "Was this page helpful?"
+      },
+      "note": "Backs the passport the U.S. Virgin Islands' people hold (countries.json territories, #160): the Department of the Interior's Office of Insular Affairs on the U.S. Virgin Islands. Sliced to the page's own text, between its menus and its feedback form. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "doi-oia-american-samoa",
+      "url": "https://www.doi.gov/oia/islands/american-samoa",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Political Status",
+        "to": "Was this page helpful?"
+      },
+      "note": "Backs the passport American Samoa's people hold (countries.json territories, #160): the Department of the Interior's Office of Insular Affairs on American Samoa, whose people are U.S. nationals. Sliced to the page's own text, between its menus and its feedback form. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "hmpo-jersey-profile",
+      "url": "https://www.gov.uk/government/publications/jersey-knowledge-base-profile/jersey-knowledge-base-profile",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Identity documents",
+        "to": "Back to top"
+      },
+      "note": "Backs the passport Jersey's people hold (countries.json territories, #160): HM Passport Office's Knowledge Base profile of Jersey. Sliced to its identity-documents section. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "hmpo-guernsey-profile",
+      "url": "https://www.gov.uk/government/publications/guernsey-alderney-and-sark-knowledge-base-profile/guernsey-alderney-and-sark-knowledge-base-profile",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Identity documents",
+        "to": "Back to top"
+      },
+      "note": "Backs the passport Guernsey's people hold (countries.json territories, #160): HM Passport Office's Knowledge Base profile of Guernsey, Alderney and Sark. Sliced to its identity-documents section. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "hmpo-isle-of-man-profile",
+      "url": "https://www.gov.uk/government/publications/isle-of-man-knowledge-base-profile/isle-of-man-knowledge-base-profile",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Identity documents",
+        "to": "Back to top"
+      },
+      "note": "Backs the passport the Isle of Man's people hold (countries.json territories, #160): HM Passport Office's Knowledge Base profile of the Isle of Man. Sliced to its identity-documents section. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "gibraltar-passport-stamping",
+      "url": "https://www.gibraltar.gov.gi/press-releases/stamping-of-passports-at-the-border-4342021-7002",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "which was the format issued to UK nationals and EU citizens resident in Gibraltar.",
+        "to": "The stamping of passports is to record the date of entry"
+      },
+      "note": "Backs the passport Gibraltar's people hold (countries.json territories, #160; #151's fix round, ruling 3): HM Government of Gibraltar's press release 434/2021 on the stamping of passports at the border, whose sentence counts Gibraltarians among British citizens. Sliced to the two sentences around it. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "stm-eu-greenland-denmark-declaration",
+      "url": "https://stm.dk/statsministeriet/publikationer/faelleserklaering-mellem-eu-groenland-og-danmark/",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "there is a potential for an even closer relationship,",
+        "to": "noting that fisheries remain a central pillar"
+      },
+      "note": "Backs the passport Greenland's people hold (countries.json territories, #160; #151's fix round, ruling 3): the Danish Prime Minister's Office's text of the Joint Declaration between the EU, Greenland and Denmark, in English, whose preamble says the citizens of Greenland are citizens of the Kingdom of Denmark. Sliced to the clauses around it. The page writes a non-breaking space inside the clause as an entity, which the watch decodes. Read 2026-10-21 by the watch's own fetcher."
+    },
+    {
+      "id": "faroe-home-rule-act",
+      "url": "https://www.government.fo/en/foreign-relations/constitutional-status/the-home-rule-act",
+      "strategy": "html",
+      "kind": "value-source",
+      "slice": {
+        "from": "Section 10.",
+        "to": "shall be deemed a Faroese."
+      },
+      "note": "Backs the passport the Faroe Islands' people hold (countries.json territories, #160): the Faroese government's English text of the Home Rule Act, section 10. Read 2026-10-21 by the watch's own fetcher."
     }
   ]
 }
