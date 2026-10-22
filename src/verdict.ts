@@ -191,9 +191,9 @@ export function isPlacedElsewhere(r: RouteResult, profile: Profile): boolean {
 }
 
 export function isStepGated(dataset: Dataset, r: RouteResult, profile: Profile): boolean {
-  void profile;
   const fails = r.criteria.filter((cr) => cr.outcome === "fail");
-  return fails.length > 0 && fails.every((cr) => {
+  if (!fails.length || liveUnknowns(r, profile).length) return false;
+  return fails.every((cr) => {
     const fields = referencedFields(cr.criterion);
     return fields.length > 0 && fields.every((f) => fieldOf(dataset, f)?.kind === "path");
   });

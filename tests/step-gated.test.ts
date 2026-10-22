@@ -27,6 +27,18 @@ describe("a step-gated row: a not-yet route whose only genuine failure is a path
     expect(isStepGated(dataset, result, explorer)).toBe(true);
   });
 
+  it("the same reader with an \"I don't know\" that still binds on that route is not", () => {
+    // Every path failure is a hard fail today, and a hard-failed route has no
+    // live unknown, so the engine never hands over this row: it is the engine's
+    // result with the hard fail lifted, the shape the day a path failure leaves
+    // a route alive.
+    const unsure: Profile = { ...explorer, recognition_de: "unknown" };
+    const evaluated = resultOf(dataset, unsure, "de-skilled-academic");
+    expect(evaluated.hard_fail).toBe(true);
+    expect(evaluated.unknown_fields).toContain("recognition_de");
+    expect(isStepGated(dataset, { ...evaluated, hard_fail: false }, unsure)).toBe(false);
+  });
+
   it("a route failing on the situation answer and on an improvable answer is not", () => {
     // The general Blue Card asks this reader for an offer and for more salary.
     const result = resultOf(dataset, explorer, "de-blue-card-general");
