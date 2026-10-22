@@ -6,7 +6,7 @@ import type {
   AskingRoutes, Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef, OpenRoute,
   FieldOption, Notice,
   PointsBreakdown, PointsItem, PointsRow, Profile, ProvenancedText, Route, RouteReading, RouteResult,
-  RouteStatement, RouteStatus, RoutesFreedByAnOffer, StatementException,
+  RouteStatement, RouteStatus, StatementException,
 } from "./types.js";
 
 export function formatEUR(amount: number): string {
@@ -750,36 +750,6 @@ export function unlocks(dataset: Dataset, profile: Profile): import("./types.js"
         }
       }
     }
-  }
-  return out;
-}
-
-/**
- * What a job offer would free for a reader who has none: per country, the
- * routes an offer there lifts out of a hard fail, and the fields they would
- * then be checked on — unanswered, or answered "I don't know". A route the
- * offer meets or brings within reach is a step (`unlocks`); the routes here
- * rest on what the reader has not told us. The job offer is the one situation
- * answer neither arranged, the fallback nor "I don't know" — read from the
- * marks, so no answer's value is typed here.
- */
-export function routesAnOfferFrees(dataset: Dataset, profile: Profile): RoutesFreedByAnOffer[] {
-  const situations = fieldOptions(dataset, SITUATION_FIELD);
-  const offers = situations.filter((o) => !o.is_arranged && !o.is_fallback && !o.is_unknown);
-  if (offers.length !== 1) throw new Error(`"${SITUATION_FIELD}" must offer exactly one job offer; it offers ${offers.length}`);
-  if (!situations.find((o) => o.value === profile[SITUATION_FIELD])?.is_fallback) return [];
-  const hardFailed = new Set(evaluate(dataset, profile).filter((r) => r.hard_fail).map((r) => r.route.id));
-  const out: RoutesFreedByAnOffer[] = [];
-  for (const country of dataset.countries) {
-    const place = fieldOptions(dataset, "situation_country").find((o) => o.value.toUpperCase() === country.code);
-    if (!place) throw new Error(`"situation_country" has no answer for ${country.code}`);
-    const hypo: Profile = { ...profile, [SITUATION_FIELD]: offers[0]!.value, situation_country: place.value };
-    const isFreedHere = (r: RouteResult) =>
-      r.country === country.code && hardFailed.has(r.route.id) && !r.hard_fail && r.status === "hold";
-    const routes = evaluate(dataset, hypo).filter(isFreedHere);
-    if (!routes.length) continue;
-    const open = new Set(routes.flatMap((r) => r.unknown_fields));
-    out.push({ country: country.code, routes, fieldsLeftOpen: dataset.fields.map((f) => f.id).filter((f) => open.has(f)) });
   }
   return out;
 }
