@@ -68,8 +68,15 @@ describe("a within-reach card names the rule it is short of", () => {
         const rule = shortLabelOf(dataset, measured!.field).toLowerCase();
         expect(said, `${r.route.id} @ ${where}`).toContain(rule);
         // The card's own "up to" travels with it: the sentence a reader takes
-        // away carries the distance, not just the direction.
-        expect(said, `${r.route.id} @ ${where}`).toContain("Up to ");
+        // away carries the distance, not just the direction. The ladder's
+        // first band is open at the bottom (engine.test.ts pins the ladder):
+        // it has no lower edge to measure one from, and names the line. Any
+        // other answer is measured as bounded. Only the words tell the two
+        // sentences apart.
+        if (profile[measured!.field] === deriveBands(dataset, measured!.field)[0]!.id) {
+          expect(said, `${r.route.id} @ ${where}`).toContain(" or more on ");
+          expect(said, `${r.route.id} @ ${where}`).not.toContain("Up to ");
+        } else expect(said, `${r.route.id} @ ${where}`).toContain("Up to ");
         // And it never names a rule the reader was not measured against.
         for (const other of MONEY_FIELDS) {
           if (other.id === measured!.field) continue;

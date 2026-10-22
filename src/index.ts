@@ -2,10 +2,11 @@ export type * from "./types.js";
 export type { ProvenanceEntry } from "./engine.js";
 export { decidingCriteria } from "./disjunction.js";
 export { evaluate, deriveBands, thresholdsForField, routeProvenance, resultProvenance, routeStatements, routeReadings, statementSources, noticeSources, carveOutFor, bindsReader, closedBy, isClosed, provenancedValuesOf, datasetMeta, formatEUR, formatEURPer, notices, matchOptions, foldForSearch, isRouteAlive, isScored, informativeFields, reckonAskingRoutes, referencedFields, forEachCriterion, unlocks, fieldOptions, optionEquivalenceClasses, contradictionsIn, situationsAsked, itemRows, itemFields } from "./engine.js";
+export { routesAnOfferFrees } from "./offer-frees.js";
 export { deriveQuestions, remainingQuestions } from "./questions.js";
 export {
   reasonFor, criterionPhrase, subjectOf, learnLinkOf, shortLabelOf, answerLabel, unlockTitleOf,
-  declaredPlace, optionMeans, unlockProfile, unlockMeansOf, gapCriterionOf, isLocalization, isPlacedElsewhere, liveUnknowns, mootWith, joinOr, joinAnd,
+  declaredPlace, optionMeans, unlockProfile, unlockMeansOf, gapCriterionOf, isLocalization, isPlacedElsewhere, isStepGated, liveUnknowns, mootWith, joinOr, joinAnd,
 } from "./verdict.js";
 export type { Reason, ReasonRow } from "./verdict.js";
 export { quotedSpans, hasUnbalancedQuotationMark, quotedWithoutProvenance, renderableTexts, offenceMessage, proseProvenance } from "./prose.js";

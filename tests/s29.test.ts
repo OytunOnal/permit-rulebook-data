@@ -196,8 +196,9 @@ describe("s29 — the dataset says so in its version, and the schema did not mov
   it("the schema did not move: three data changes on the day, none of them a shape", () => {
     // The version is a date and already read the day (s23 pins it); the
     // convention keeps one stamp for every change of the same day. 0.8.1
-    // when this was written; 0.8.2 since s32, for a reason of its own.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.2");
+    // when this was written; 0.8.2 since s32 and 0.8.3 since #169, each for a
+    // reason of its own.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.3");
   });
 
   it("the newest read at a source is stamped with its day", () => {

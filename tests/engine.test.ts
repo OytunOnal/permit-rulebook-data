@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { datasetMeta, deriveBands, evaluate, formatEUR, formatEURPer, isRouteAlive, routeProvenance } from "../src/engine.js";
+import { datasetMeta, deriveBands, evaluate, formatEURPer, isRouteAlive, routeProvenance } from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
@@ -66,9 +66,9 @@ describe("evaluate — engineer with a German offer", () => {
     expect(byId["de-experienced-worker"].status).toBe("met");
   });
 
-  it("general Blue Card within reach with the €4,766 gap", () => {
+  it("general Blue Card within reach with the €4,765.80/year gap", () => {
     expect(byId["de-blue-card-general"].status).toBe("near");
-    expect(formatEUR(Math.round(byId["de-blue-card-general"].gap_max!))).toBe("€4,766");
+    expect(formatEURPer(byId["de-blue-card-general"].gap_max!, "year")).toBe("€4,765.80/year");
   });
 
   it("situational routes (research, ICT, Chancenkarte) are hold", () => {
@@ -245,8 +245,9 @@ describe("provenance and meta", () => {
       // 0.8.0 since s19: a quoted route may say which situations it would ask
       // about, an optional field on routes nothing is asked about — additive.
       // 0.8.2 since s32: a statement may name the question that asks it
-      // (`field`) — additive again.
-      schema_version: "0.8.2",
+      // (`field`) — additive again. 0.8.3 since #169: an option may be marked
+      // an arranged answer (`is_arranged`), optional — additive.
+      schema_version: "0.8.3",
       // 2026.10.21: the shortage Blue Card's IT path (#134), its two criteria
       // and two preconditions quoted from the ZAV page that day.
       dataset_version: "2026.10.21",

@@ -4,7 +4,7 @@ import { decidingCriteria } from "./disjunction.js";
 import { fillRouteSlots } from "./route-slots.js";
 import { closedBy, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields, } from "./engine.js";
 import type {
-  Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
+  Band, Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
 } from "./types.js";
 
 /**
@@ -25,6 +25,11 @@ function fieldOf(dataset: Dataset, id: string): FieldDef | undefined {
   let index = fieldCache.get(dataset);
   if (!index) fieldCache.set(dataset, (index = new Map(dataset.fields.map((f) => [f.id, f]))));
   return index.get(id);
+}
+
+/** The money band the reader declared on a field; none where the answer is not a band ("I don't know"). */
+function declaredBandOf(dataset: Dataset, field: string, profile: Profile): Band | undefined {
+  return deriveBands(dataset, field).find((b) => b.id === profile[field]);
 }
 
 const join = (xs: string[], last: string): string =>
@@ -190,6 +195,25 @@ export function isPlacedElsewhere(r: RouteResult, profile: Profile): boolean {
     liveUnknowns(r, profile).length === 0;
 }
 
+/**
+ * A not-yet route whose only genuine failure is a path answer: nothing on it
+ * is left to find out or to improve, so the one thing between the reader and
+ * the route is an arrangement (a job offer, a transfer, a hosting agreement).
+ * Such rows say one thing, and the not-yet group collapses them into one line
+ * naming the path answers they ask for. A moot criterion is failed by having
+ * more than the route wants, the opposite story, so it never files a row here;
+ * a criterion reading no field asks for no path answer.
+ */
+export function isStepGated(dataset: Dataset, r: RouteResult, profile: Profile): boolean {
+  const fails = r.criteria.filter((cr) => cr.outcome === "fail");
+  if (!fails.length || liveUnknowns(r, profile).length) return false;
+  if (fails.some((cr) => mootWith(dataset, cr, profile) !== null)) return false;
+  return fails.every((cr) => {
+    const fields = referencedFields(cr.criterion);
+    return fields.length > 0 && fields.every((f) => fieldOf(dataset, f)?.kind === "path");
+  });
+}
+
 export interface ReasonRow {
   /** needs: a shortfall · moot: already covered · where: another country ·
    * unknown: an answer of "I don't know" that still binds · closed: the
@@ -328,7 +352,7 @@ type Gte = Extract<Criterion, { op: "gte" }>;
 
 /** How far the declared band sits below one threshold, worst case. */
 function gapAgainst(dataset: Dataset, c: Gte, profile: Profile): number | undefined {
-  const band = deriveBands(dataset, c.field).find((b) => b.id === profile[c.field]);
+  const band = declaredBandOf(dataset, c.field, profile);
   if (!band || band.max === undefined || band.max > c.threshold.amount) return undefined;
   return c.threshold.amount - (band.min ?? 0);
 }
@@ -370,16 +394,22 @@ export function gapCriterionOf(dataset: Dataset, r: RouteResult, profile: Profil
  * distance the card shows beside it.
  *
  * "Up to", because a band is a range: the reader declared somewhere inside it,
- * and the worst case is the only honest number.
+ * and the worst case is the only honest number. It is exact, cents only where
+ * it has them: rounded down, "up to" would understate it. A band open at the
+ * bottom has no lower edge to measure a gap from, so the sentence names the
+ * line the route asks instead — that line is not the reader's shortfall.
  */
 function shortfallLine(dataset: Dataset, r: RouteResult, profile: Profile): string {
   const measured = gapCriterionOf(dataset, r, profile);
   if (!measured || r.gap_max === undefined)
     return "One rule on this route is within reach — the card below shows which.";
   const rule = shortLabelOf(dataset, measured.field).toLowerCase();
-  const amount = formatEURPer(Math.round(r.gap_max), fieldOf(dataset, measured.field)?.period);
+  const period = fieldOf(dataset, measured.field)?.period;
   const named = measured.threshold_label ? ` — ${measured.threshold_label}` : "";
-  return `Up to ${amount} short of the ${rule} this route asks for${named}.`;
+  const band = declaredBandOf(dataset, measured.field, profile);
+  if (band && band.min === undefined)
+    return `Needs ${formatEURPer(measured.threshold.amount, period)} or more on ${rule}${named}.`;
+  return `Up to ${formatEURPer(r.gap_max, period)} short of the ${rule} this route asks for${named}.`;
 }
 
 /**
@@ -403,13 +433,12 @@ export function unlockTitleOf(dataset: Dataset, u: Unlock, profile: Profile = {}
     // (isolated v1-gate critique, 2026-09-08, B3). Where the declared answer
     // has no floor — the bottom band, or "I don't know" — there is no distance
     // to state, so the step is the amount the rule asks for.
-    const bands = deriveBands(dataset, u.field);
-    const step = bands.find((b) => b.id === u.option.value);
-    const declared = bands.find((b) => b.id === profile[u.field]);
+    const step = deriveBands(dataset, u.field).find((b) => b.id === u.option.value);
+    const declared = declaredBandOf(dataset, u.field, profile);
     if (step?.min !== undefined)
       title = declared?.min === undefined
         ? `at least ${formatEURPer(step.min, def.period)}`
-        : `${formatEURPer(Math.round(step.min - declared.min), def.period)} more`;
+        : `${formatEURPer(step.min - declared.min, def.period)} more`;
     title += ` — ${shortLabelOf(dataset, u.field).toLowerCase()}`;
   }
   if (u.qualifier) {

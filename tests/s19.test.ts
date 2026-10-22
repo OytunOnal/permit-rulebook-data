@@ -145,8 +145,9 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
 
   it("the dataset says so in its version", () => {
     // 0.8.1 since s25: a points item may key its rows on two fields; 0.8.2
-    // since s32: a statement may name the question that asks it.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.2");
+    // since s32: a statement may name the question that asks it; 0.8.3 since
+    // #169: an option may be marked an arranged answer.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.3");
     // 2026-10-21 since #134: the shortage card's IT path, read that day.
     expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });

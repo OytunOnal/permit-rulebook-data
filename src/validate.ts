@@ -64,12 +64,14 @@ export function validateDataset(data: unknown): ValidationResult {
  * - a criterion accepting two or more rungs of an ordered question says the
  *   range in its own `short_reason` (`unwordedRangeErrors`);
  * - a question names a route only through a filled slot, never by the route's
- *   plain name typed by hand (`routeSlotErrors`).
+ *   plain name typed by hand (`routeSlotErrors`);
+ * - an answer is marked arranged only on a path question
+ *   (`arrangedOffAPathErrors`).
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
   const errors: ValidationError[] = [
     ...vocabularyErrors(countryVocabulary), ...territoryErrors(countryVocabulary),
-    ...unwordedRangeErrors(dataset), ...routeSlotErrors(dataset),
+    ...unwordedRangeErrors(dataset), ...routeSlotErrors(dataset), ...arrangedOffAPathErrors(dataset),
   ];
 
   /**
@@ -422,6 +424,22 @@ function unwordedRangeErrors(dataset: Dataset): ValidationError[] {
         });
       });
   return errors;
+}
+
+/**
+ * The answers marked arranged on a question that is not a path. An arranged
+ * answer is a path answer someone else arranges, kept out of the steps; on an
+ * attribute or an improvable question the mark would mean nothing a reader is
+ * shown.
+ */
+function arrangedOffAPathErrors(dataset: Dataset): ValidationError[] {
+  return dataset.fields
+    .filter((f) => f.kind !== "path")
+    .flatMap((f) => (f.options ?? []).filter((o) => o.is_arranged).map((o) => ({
+      path: `/fields/${f.id}`,
+      message: `${f.id} = "${o.value}" is marked is_arranged, but ${f.id} is not a path question — the mark belongs on a path answer only`,
+      keyword: "arrangedOnAPathOnly",
+    })));
 }
 
 export function assertValidDataset(data: unknown): Dataset {

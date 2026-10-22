@@ -169,8 +169,9 @@ describe("s32 — the verbatim cross-check runs the other way: a shared sentence
 });
 
 describe("s32 — the dataset says so in its version", () => {
-  it("schema 0.8.2 for the field; the version and the newest read are the latest data change's day", () => {
-    expect(datasetMeta(ds).schema_version).toBe("0.8.2");
+  it("schema 0.8.3, the arranged mark's; the version and the newest read are the latest data change's day", () => {
+    // 0.8.3 since #169: an option may be marked an arranged answer.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.3");
     // 2026.10.21 since #134, the shortage card's IT path.
     expect(datasetMeta(ds).dataset_version).toBe("2026.10.21");
     // Every quote keeps its date: the decision is which question covers a

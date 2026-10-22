@@ -510,6 +510,12 @@ export interface FieldOption {
   is_unknown?: boolean;
   /** "None of these"-style absence answers — never a counterfactual target. */
   is_fallback?: boolean;
+  /** A path answer someone else arranges for the reader (a transfer is the
+   * employer's decision, a hosting agreement the host's) — never offered as a
+   * step. A path answer that carries none of this, `is_fallback` and
+   * `is_unknown` is one the reader can go and get (on the situation question,
+   * the job offer). */
+  is_arranged?: boolean;
   /** Values this answer ALSO satisfies: a country implies its class, so
    * `citizenship eq third_country` keeps passing on an answer of "TR". One
    * predicate serves criteria and notices alike, so a country can never
@@ -547,7 +553,9 @@ export interface FieldDef {
   period?: "month" | "year";
   /**
    * attribute (default): a fixed fact (age, citizenship) — never counterfactualed.
-   * path: a step one can take (get an offer, a transfer…).
+   * path: the arrangement a route is built on (an offer, a transfer…); each
+   * answer is a step the reader can take or one someone else arranges
+   * (`is_arranged`).
    * improvable: changeable through effort/time (language, funds, recognition,
    * experience). path and improvable are both eligible for "what would this
    * unlock" analysis; useless directions drop out because they open nothing.
@@ -584,6 +592,18 @@ export interface Unlock {
    */
   qualifier?: { field: string; option: FieldOption };
   routes: RouteResult[];
+}
+
+/** What a job offer in one country would free for a reader who has none. */
+export interface RoutesFreedByAnOffer {
+  /** The country's code, as `Country.code`. */
+  country: string;
+  /** The routes there whose hard fail the offer lifts, evaluated with the
+   * offer: each is still "hold", resting on what the reader has not told us. */
+  routes: RouteResult[];
+  /** The fields those routes would then be checked on — unanswered, or
+   * answered "I don't know" — each once, in dataset order. */
+  fieldsLeftOpen: string[];
 }
 
 /**
