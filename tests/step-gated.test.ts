@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { evaluate, isStepGated } from "../src/index.js";
+import { evaluate, isStepGated, mootWith } from "../src/index.js";
 import type { Dataset, Profile, RouteResult } from "../src/types.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
@@ -37,6 +38,23 @@ describe("a step-gated row: a not-yet route whose only genuine failure is a path
     expect(evaluated.hard_fail).toBe(true);
     expect(evaluated.unknown_fields).toContain("recognition_de");
     expect(isStepGated(dataset, { ...evaluated, hard_fail: false }, unsure)).toBe(false);
+  });
+
+  it("the Opportunity Card for an offer-holder, whose situation criterion is moot, is not", () => {
+    // No shipped route asks for the absence of a step (verdict.test.ts), so the
+    // case writes its own dataset: the card with the criterion it once had,
+    // wanting no job offer yet, failed by a reader who has one.
+    const written = structuredClone(dataset);
+    routeOf(written, "de-chancenkarte").criteria.push({ field: "situation", op: "eq", value: "none" });
+    const offerHolder: Profile = {
+      destination: "de", citizenship: "TR", situation: "offer", qualification: "degree",
+      german: "a1", funds_eur_month: "band_1", recognition_de: "recognized",
+    };
+    const result = resultOf(written, offerHolder, "de-chancenkarte");
+    const failing = result.criteria.filter((cr) => cr.outcome === "fail");
+    expect(failing.length).toBe(1);
+    expect(mootWith(written, failing[0]!, offerHolder)).not.toBeNull();
+    expect(isStepGated(written, result, offerHolder)).toBe(false);
   });
 
   it("a route failing on the situation answer and on an improvable answer is not", () => {
