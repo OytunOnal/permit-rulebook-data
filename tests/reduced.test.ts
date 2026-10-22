@@ -52,10 +52,11 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
     expect(r.status).toBe("near");
     const bandFloor = deriveBands(dataset, "salary_eur_month").find((b) => b.id === bandFor("salary_eur_month", 2900))!.min!;
     expect(r.gap_max).toBeCloseTo(3122 - bandFloor, 2);
-    // Never the full criterion's distance, and never a bare number.
+    // Never the full criterion's distance, and never a bare number: printed
+    // exact, with its period.
     expect(r.gap_max).toBeLessThan(4357 - bandFloor);
-    expect(formatEURPer(Math.round(r.gap_max!), dataset.fields.find((f) => f.id === "salary_eur_month")!.period))
-      .toMatch(/\/month$/);
+    expect(formatEURPer(r.gap_max!, dataset.fields.find((f) => f.id === "salary_eur_month")!.period))
+      .toBe("€1,254.98/month");
   });
 
   it("step 3: without a qualifying institution the lower-salary path is closed and the card names the fact", () => {

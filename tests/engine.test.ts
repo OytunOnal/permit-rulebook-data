@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { datasetMeta, deriveBands, evaluate, formatEUR, formatEURPer, isRouteAlive, routeProvenance } from "../src/engine.js";
+import { datasetMeta, deriveBands, evaluate, formatEURPer, isRouteAlive, routeProvenance } from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 
@@ -66,9 +66,9 @@ describe("evaluate — engineer with a German offer", () => {
     expect(byId["de-experienced-worker"].status).toBe("met");
   });
 
-  it("general Blue Card within reach with the €4,766 gap", () => {
+  it("general Blue Card within reach with the €4,765.80/year gap", () => {
     expect(byId["de-blue-card-general"].status).toBe("near");
-    expect(formatEUR(Math.round(byId["de-blue-card-general"].gap_max!))).toBe("€4,766");
+    expect(formatEURPer(byId["de-blue-card-general"].gap_max!, "year")).toBe("€4,765.80/year");
   });
 
   it("situational routes (research, ICT, Chancenkarte) are hold", () => {
