@@ -48,6 +48,35 @@ describe("what a job offer frees for a reader who has none", () => {
       expect([...fieldsLeftOpen].sort((a, b) => order.indexOf(a) - order.indexOf(b)), country).toEqual(fieldsLeftOpen);
     }
   });
+
+  it("an offer-holder, and a reader whose situation is a transfer, get nothing", () => {
+    const situations = fieldOptions(ds, SITUATION_FIELD);
+    const offer = situations.find((o) => !o.is_arranged && !o.is_fallback && !o.is_unknown)!;
+    const transfer = situations.find((o) => o.value === "ict")!;
+    expect(transfer.is_arranged, "precondition: a transfer is an arranged answer").toBe(true);
+    expect(routesAnOfferFrees(ds, PRIYA).length, "precondition: the explorer is freed something").toBeGreaterThan(0);
+    for (const held of [offer, transfer])
+      expect(routesAnOfferFrees(ds, { ...PRIYA, [SITUATION_FIELD]: held.value }), held.value).toEqual([]);
+  });
+});
+
+describe("the job offer is read from the dataset's marks", () => {
+  /** What an offer frees, as country and route ids — comparable across datasets. */
+  const freedIdsOf = (dataset: Dataset) =>
+    routesAnOfferFrees(dataset, PRIYA).map((f) => [f.country, f.routes.map((r) => r.route.id)]);
+
+  it("a dataset with the situation's answers reordered still finds the job offer", () => {
+    const reordered = load();
+    situationOptionsOf(reordered).reverse();
+    expect(situationOptionsOf(reordered)[0]!["is_fallback"], "precondition: the order moved").toBe(true);
+    expect(freedIdsOf(reordered)).toEqual(freedIdsOf(ds));
+  });
+
+  it("a dataset whose situation question has no answer a reader can go and get is refused", () => {
+    const noOffer = load();
+    for (const o of situationOptionsOf(noOffer)) if (!o["is_fallback"]) o["is_arranged"] = true;
+    expect(() => routesAnOfferFrees(noOffer, PRIYA)).toThrow(/exactly one job offer/);
+  });
 });
 
 /** The situation question's options in a copied dataset, to break or reorder in a test. */
