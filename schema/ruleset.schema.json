@@ -190,6 +190,10 @@
               "is_fallback": {
                 "type": "boolean"
               },
+              "is_arranged": {
+                "type": "boolean",
+                "description": "A path answer someone else arranges for the reader — an intra-corporate transfer is the employer's decision, a research hosting agreement the host's — so it is never offered as a step. Absent means the reader can go and get it, or it is no arrangement at all."
+              },
               "implies": {
                 "type": "array",
                 "minItems": 1,

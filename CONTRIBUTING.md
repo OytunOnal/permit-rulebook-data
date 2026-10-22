@@ -191,7 +191,12 @@ they leave one dataset sentence unverifiable by machine.
    A question whose options run from least to most of one amount (years of
    experience) is marked `ordered`, and a criterion accepting two or more of
    its rungs carries a `short_reason` that says the range ("at least 3 years
-   of related experience in the last seven"), or the build fails. A criterion
+   of related experience in the last seven"), or the build fails. An option
+   carries its marks as booleans: `is_unknown` for "I don't know",
+   `is_fallback` for the "none of these" answer, and, on a path question,
+   `is_arranged` for an answer someone else arranges for the reader (an
+   intra-corporate transfer, a research hosting agreement), which is never
+   offered as a step. A criterion
    with paths, and each of its paths, carries a `label`: the criterion is
    named by its label wherever it is named in one line, and each path's line
    opens with the path's. A question that names a route writes

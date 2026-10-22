@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.8.2",
+  "schema_version": "0.8.3",
   "dataset_version": "2026.10.21",
   "fields": [
     {
@@ -63,12 +63,14 @@
           "value": "ict",
           "label": "My employer is transferring me to a branch there",
           "short": "an intra-corporate transfer",
-          "means": "Your contract stays with the company abroad and it moves you to its branch {place}."
+          "means": "Your contract stays with the company abroad and it moves you to its branch {place}.",
+          "is_arranged": true
         },
         {
           "value": "research",
           "label": "I have (or expect) a hosting agreement with a research institution there",
-          "short": "a research hosting agreement"
+          "short": "a research hosting agreement",
+          "is_arranged": true
         },
         {
           "value": "none",

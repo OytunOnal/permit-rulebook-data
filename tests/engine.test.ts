@@ -245,8 +245,9 @@ describe("provenance and meta", () => {
       // 0.8.0 since s19: a quoted route may say which situations it would ask
       // about, an optional field on routes nothing is asked about — additive.
       // 0.8.2 since s32: a statement may name the question that asks it
-      // (`field`) — additive again.
-      schema_version: "0.8.2",
+      // (`field`) — additive again. 0.8.3 since #169: an option may be marked
+      // an arranged answer (`is_arranged`), optional — additive.
+      schema_version: "0.8.3",
       // 2026.10.21: the shortage Blue Card's IT path (#134), its two criteria
       // and two preconditions quoted from the ZAV page that day.
       dataset_version: "2026.10.21",
