@@ -1,0 +1,9 @@
+{
+  "stack": "js-ts",
+  "green": [
+    ["npm", "run", "check"]
+  ],
+  "tests": "tests/**/*.test.ts",
+  "runTests": ["npx", "vitest", "run", "--reporter=junit", "--outputFile={out}", "{files}"],
+  "beforeTests": [["npm", "run", "build"]]
+}
