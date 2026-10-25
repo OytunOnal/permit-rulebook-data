@@ -476,13 +476,8 @@
       "history": []
     }
   },
-  "last_run": "2026-10-24",
-  "unread": [
-    {
-      "id": "wetten-wav-artikel-8",
-      "url": "https://wetten.overheid.nl/BWBR0007149"
-    }
-  ],
+  "last_run": "2026-10-25",
+  "unread": [],
   "lapses": {
     "wetten-wav-artikel-8": [
       "2026-10-21",
@@ -490,7 +485,6 @@
       "2026-10-24"
     ],
     "de-bmi-chancenkarte": [
-      "2026-10-18",
       "2026-10-19",
       "2026-10-20",
       "2026-10-21"
