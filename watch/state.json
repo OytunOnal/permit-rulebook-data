@@ -476,8 +476,13 @@
       "history": []
     }
   },
-  "last_run": "2026-10-25",
-  "unread": [],
+  "last_run": "2026-10-26",
+  "unread": [
+    {
+      "id": "de-bmi-chancenkarte",
+      "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html"
+    }
+  ],
   "lapses": {
     "wetten-wav-artikel-8": [
       "2026-10-21",
@@ -485,9 +490,9 @@
       "2026-10-24"
     ],
     "de-bmi-chancenkarte": [
-      "2026-10-19",
       "2026-10-20",
-      "2026-10-21"
+      "2026-10-21",
+      "2026-10-26"
     ]
   }
 }
