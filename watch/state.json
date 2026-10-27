@@ -476,8 +476,32 @@
       "history": []
     }
   },
-  "last_run": "2026-10-26",
+  "last_run": "2026-10-27",
   "unread": [
+    {
+      "id": "nl-ind-orientation-year",
+      "url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year"
+    },
+    {
+      "id": "nl-ind-blue-card",
+      "url": "https://ind.nl/en/residence-permits/work/european-blue-card-residence-permit"
+    },
+    {
+      "id": "nl-ind-highly-skilled-migrant",
+      "url": "https://ind.nl/en/residence-permits/work/highly-skilled-migrant"
+    },
+    {
+      "id": "nl-ind-ict",
+      "url": "https://ind.nl/en/residence-permits/work/intra-corporate-transferee-residence-permit-directive-201466eu"
+    },
+    {
+      "id": "nl-ind-researcher",
+      "url": "https://ind.nl/en/residence-permits/work/residence-permit-researcher-directive-eu-2016801"
+    },
+    {
+      "id": "eur-lex-blue-card-directive",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883"
+    },
     {
       "id": "de-bmi-chancenkarte",
       "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html"
@@ -490,9 +514,27 @@
       "2026-10-24"
     ],
     "de-bmi-chancenkarte": [
-      "2026-10-20",
       "2026-10-21",
-      "2026-10-26"
+      "2026-10-26",
+      "2026-10-27"
+    ],
+    "nl-ind-orientation-year": [
+      "2026-10-27"
+    ],
+    "nl-ind-blue-card": [
+      "2026-10-27"
+    ],
+    "nl-ind-highly-skilled-migrant": [
+      "2026-10-27"
+    ],
+    "nl-ind-ict": [
+      "2026-10-27"
+    ],
+    "nl-ind-researcher": [
+      "2026-10-27"
+    ],
+    "eur-lex-blue-card-directive": [
+      "2026-10-27"
     ]
   }
 }
