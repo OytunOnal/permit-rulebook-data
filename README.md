@@ -78,7 +78,7 @@ The site that reads this data lives in the
 [permit-rulebook](https://github.com/OytunOnal/permit-rulebook) repository;
 this one is the data and the engine, usable on its own. The shape of the two,
 the boundary between them and what crosses it:
-[docs/spine/ARCHITECTURE.md](https://github.com/OytunOnal/permit-rulebook/blob/master/docs/spine/ARCHITECTURE.md).
+[docs/roadkeeper/ARCHITECTURE.md](https://github.com/OytunOnal/permit-rulebook/blob/master/docs/roadkeeper/ARCHITECTURE.md).
 
 - `schema/ruleset.schema.json` — the public contract (JSON Schema 2020-12)
 - `data/dataset.json` — the dataset (DE · FR · ES · NL, 28 employment-based routes: 23 scored, 5 quoted and dated but not scored)
