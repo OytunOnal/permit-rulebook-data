@@ -242,8 +242,8 @@ describe("unlocks across countries", () => {
     const forked = rows.filter((u) => u.qualifier?.field === "situation_country");
     expect(forked.length).toBeGreaterThan(0);
     // "a job offer — in Germany" provably opens §18b (no salary threshold).
-    const offerDe = forked.find((u) => u.option.value === "offer" && u.qualifier!.option.value === "de")!;
-    expect(offerDe.routes.map((r) => r.route.id)).toContain("de-skilled-academic");
+    const jobOfferStepInGermany = forked.find((u) => u.option.value === "offer" && u.qualifier!.option.value === "de")!;
+    expect(jobOfferStepInGermany.routes.map((r) => r.route.id)).toContain("de-skilled-academic");
     // "an intra-corporate transfer — in Spain" opens es-ict (degree, no threshold).
     const ictEs = forked.find((u) => u.option.value === "ict" && u.qualifier!.option.value === "es")!;
     expect(ictEs.routes.map((r) => r.route.id)).toEqual(["es-ict"]);

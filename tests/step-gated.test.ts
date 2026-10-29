@@ -46,15 +46,15 @@ describe("a step-gated row: a not-yet route whose only genuine failure is a path
     // offer yet, failed by a reader who has one.
     const written = structuredClone(dataset);
     routeOf(written, "de-chancenkarte").criteria.push({ field: "situation", op: "eq", value: "none" });
-    const offerHolder: Profile = {
+    const readerWithJobOffer: Profile = {
       destination: "de", citizenship: "TR", situation: "offer", qualification: "degree",
       german: "a1", funds_eur_month: "band_1", recognition_de: "recognized",
     };
-    const result = resultOf(written, offerHolder, "de-chancenkarte");
+    const result = resultOf(written, readerWithJobOffer, "de-chancenkarte");
     const failing = result.criteria.filter((cr) => cr.outcome === "fail");
     expect(failing.length).toBe(1);
-    expect(mootWith(written, failing[0]!, offerHolder)).not.toBeNull();
-    expect(isStepGated(written, result, offerHolder)).toBe(false);
+    expect(mootWith(written, failing[0]!, readerWithJobOffer)).not.toBeNull();
+    expect(isStepGated(written, result, readerWithJobOffer)).toBe(false);
   });
 
   it("a route failing on the situation answer and on an improvable answer is not", () => {

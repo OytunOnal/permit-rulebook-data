@@ -22,7 +22,7 @@ const membersOf = (cls: string) => vocabulary.classes[cls].members ?? [];
 const thirdCountries = () =>
   vocabulary.countries.map((c) => c.code).filter((c) => !membersOf("eu_eea_ch").includes(c));
 
-const baseOffer: Profile = {
+const baseJobOffer: Profile = {
   destination: "de", situation: "offer", qualification: "degree",
   occupation_shortage: "no", occupation_it: "no", experience_5y: "2plus", experience_7y: "3to5", age_band: "a30to35",
 };
@@ -45,8 +45,8 @@ describe("s5c — a passport is a country, and the rules read it through classes
 
   it("a country answer satisfies the class criterion its `implies` names", () => {
     // Not one route criterion changed: they still read `eq third_country`.
-    expect(statusMap({ ...baseOffer, citizenship: "TR" })).toEqual(statusMap({ ...baseOffer, citizenship: "third_country" }));
-    expect(statusMap({ ...baseOffer, citizenship: "IE" })).toEqual(statusMap({ ...baseOffer, citizenship: "eu_eea_ch" }));
+    expect(statusMap({ ...baseJobOffer, citizenship: "TR" })).toEqual(statusMap({ ...baseJobOffer, citizenship: "third_country" }));
+    expect(statusMap({ ...baseJobOffer, citizenship: "IE" })).toEqual(statusMap({ ...baseJobOffer, citizenship: "eu_eea_ch" }));
   });
 
   it("only the fields that declare a hierarchy carry `implies` — the list is an inventory", () => {
@@ -65,9 +65,9 @@ describe("s5c — a passport is a country, and the rules read it through classes
         .map((o) => `${def.id}:${o.value} -> ${o.implies!.join(",")}`));
     expect(declared.filter((d) => !d.startsWith("citizenship:"))).toEqual([]);
     // `situation eq offer` must not start passing for an intra-corporate transfer.
-    const offer = statusMap({ ...baseOffer, citizenship: "TR" });
-    const ict = statusMap({ ...baseOffer, citizenship: "TR", situation: "ict" });
-    expect(offer).not.toEqual(ict);
+    const statusesWithJobOffer = statusMap({ ...baseJobOffer, citizenship: "TR" });
+    const statusesWithTransfer = statusMap({ ...baseJobOffer, citizenship: "TR", situation: "ict" });
+    expect(statusesWithJobOffer).not.toEqual(statusesWithTransfer);
   });
 });
 

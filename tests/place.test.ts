@@ -62,9 +62,9 @@ describe("a leverage row names its place once", () => {
   it("still deciding: every offer row is forked, each on its own country", () => {
     // The step only opens routes somewhere, so the engine offers it per country
     // rather than once with no place. Each fork says which.
-    const offers = unlocks(dataset, EXPLORER).filter((u) => u.option.value === "offer");
-    expect(offers.length).toBeGreaterThan(0);
-    for (const u of offers) {
+    const jobOfferSteps = unlocks(dataset, EXPLORER).filter((u) => u.option.value === "offer");
+    expect(jobOfferSteps.length).toBeGreaterThan(0);
+    for (const u of jobOfferSteps) {
       expect(u.qualifier?.field).toBe("situation_country");
       const place = phraseOf(u.qualifier!.option.value.toUpperCase())!;
       expect(unlockTitleOf(dataset, u, EXPLORER)).toBe(`a job offer in ${place}`);
@@ -75,9 +75,9 @@ describe("a leverage row names its place once", () => {
   it("nowhere declared at all: the sentence keeps the fallback rather than inventing a place", () => {
     const nowhere: Profile = { destination: "all", situation: "none" };
     expect(declaredPlace(dataset, nowhere)).toBe("");
-    const offer = dataset.fields.find((f) => f.id === "situation")!.options!
+    const jobOfferAnswer = dataset.fields.find((f) => f.id === "situation")!.options!
       .find((o) => o.value === "offer")!;
-    expect(optionMeans(offer, dataset, nowhere)).toContain("an employer in the country you move to");
+    expect(optionMeans(jobOfferAnswer, dataset, nowhere)).toContain("an employer in the country you move to");
   });
 
   it("an offer already placed: that country wins over the destination, and carries its article", () => {

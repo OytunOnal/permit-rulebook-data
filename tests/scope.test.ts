@@ -254,13 +254,13 @@ describe("an answer a reader can mistake for the one they hold says what it mean
   });
 
   it("the place is filled in from what was declared, with its article", () => {
-    const offer = optionsOf("situation").find((o) => o.value === "offer")!;
-    expect(optionMeans(offer, ds, { destination: "nl" }))
+    const jobOfferAnswer = optionsOf("situation").find((o) => o.value === "offer")!;
+    expect(optionMeans(jobOfferAnswer, ds, { destination: "nl" }))
       .toBe("An employment contract directly with an employer in the Netherlands — including one you already hold — not a transfer to a branch on a contract you hold abroad.");
-    expect(optionMeans(offer, ds, { destination: "de" })).toContain("an employer in Germany");
+    expect(optionMeans(jobOfferAnswer, ds, { destination: "de" })).toContain("an employer in Germany");
     // Nothing declared yet: the sentence still reads, and names no place it
     // has not been given.
-    expect(optionMeans(offer, ds, {})).toContain("an employer in the country you move to");
+    expect(optionMeans(jobOfferAnswer, ds, {})).toContain("an employer in the country you move to");
     // No token survives rendering, ever.
     const profiles: Profile[] = [{}, { destination: "nl" }, { destination: "all" }, { situation_country: "NL" }];
     for (const profile of profiles)
@@ -285,13 +285,13 @@ describe("an answer a reader can mistake for the one they hold says what it mean
       salary_eur_month: "band_6", nl_recent_grad: "no", top200_grad: "no", age_band: "a30to35",
     };
     const rows = unlocks(ds, profile);
-    const offer = rows.find((u) => u.field === "situation" && u.option.value === "offer");
-    expect(offer, "the job-offer step is the one the walk turned on").toBeDefined();
+    const jobOfferStep = rows.find((u) => u.field === "situation" && u.option.value === "offer");
+    expect(jobOfferStep, "the job-offer step is the one the walk turned on").toBeDefined();
     // The row is still scanned by its short step.
-    expect(unlockTitleOf(ds, offer!)).toBe("a job offer");
+    expect(unlockTitleOf(ds, jobOfferStep!)).toBe("a job offer");
     // And the sentence beside it says which offer.
-    expect(optionMeans(offer!.option, ds, profile)).toContain("an employer in the Netherlands");
-    expect(offer!.routes.some((r) => r.route.id === "nl-hsm-30plus" && r.status === "met")).toBe(true);
+    expect(optionMeans(jobOfferStep!.option, ds, profile)).toContain("an employer in the Netherlands");
+    expect(jobOfferStep!.routes.some((r) => r.route.id === "nl-hsm-30plus" && r.status === "met")).toBe(true);
   });
 });
 
