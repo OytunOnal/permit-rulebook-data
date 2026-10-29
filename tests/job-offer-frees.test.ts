@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { validateDataset } from "../src/validate.js";
-import { evaluate, fieldOptions, routesAJobOfferFrees, SITUATION_FIELD } from "../src/index.js";
+import { evaluate, fieldOptions, findJobOfferAnswer, routesAJobOfferFrees, SITUATION_FIELD } from "../src/index.js";
 import type { Dataset, Profile } from "../src/index.js";
 
 /** A fresh parse of the shipped dataset, for a case to break or reorder. */
@@ -32,7 +32,7 @@ describe("what a job offer frees for a reader who has none", () => {
   });
 
   it("a freed route is only checked under the offer: none is met or within reach", () => {
-    const jobOfferAnswer = fieldOptions(ds, SITUATION_FIELD).find((o) => !o.is_arranged && !o.is_fallback && !o.is_unknown)!;
+    const jobOfferAnswer = fieldOptions(ds, SITUATION_FIELD).find((o) => o.value === "offer")!;
     let failedToday = 0;
     for (const place of fieldOptions(ds, "situation_country")) {
       const withAJobOffer: Profile = { ...PRIYA, [SITUATION_FIELD]: jobOfferAnswer.value, situation_country: place.value };
@@ -59,7 +59,7 @@ describe("what a job offer frees for a reader who has none", () => {
 
   it("an offer-holder, and a reader whose situation is a transfer, get nothing", () => {
     const situations = fieldOptions(ds, SITUATION_FIELD);
-    const jobOfferAnswer = situations.find((o) => !o.is_arranged && !o.is_fallback && !o.is_unknown)!;
+    const jobOfferAnswer = situations.find((o) => o.value === "offer")!;
     const transfer = situations.find((o) => o.value === "ict")!;
     expect(transfer.is_arranged, "precondition: a transfer is an arranged answer").toBe(true);
     expect(routesAJobOfferFrees(ds, PRIYA).length, "precondition: the explorer is freed something").toBeGreaterThan(0);
@@ -84,6 +84,19 @@ describe("the job offer is read from the dataset's marks", () => {
     const datasetWithNoJobOffer = shippedDatasetCopy();
     for (const o of situationOptionsOf(datasetWithNoJobOffer)) if (!o["is_fallback"]) o["is_arranged"] = true;
     expect(() => routesAJobOfferFrees(datasetWithNoJobOffer, PRIYA)).toThrow(/exactly one job offer/);
+    expect(() => findJobOfferAnswer(datasetWithNoJobOffer)).toThrow(/exactly one job offer/);
+  });
+
+  it("the job offer is the one answer a reader can go and get", () => {
+    expect(findJobOfferAnswer(ds).value).toBe("offer");
+  });
+
+  it("a dataset with a second answer a reader could go and get is refused", () => {
+    const datasetWithTwoJobOffers = shippedDatasetCopy();
+    const transfer = situationOptionsOf(datasetWithTwoJobOffers).find((o) => o["value"] === "ict")!;
+    expect(transfer["is_arranged"], "precondition: a transfer is an arranged answer").toBe(true);
+    transfer["is_arranged"] = false;
+    expect(() => findJobOfferAnswer(datasetWithTwoJobOffers)).toThrow(/exactly one job offer/);
   });
 });
 
@@ -94,7 +107,7 @@ const situationOptionsOf = (data: { fields: { id: string; options?: Record<strin
 describe("an arranged answer is a mark the schema declares", () => {
   it("a boolean is_arranged is accepted and a non-boolean one is refused", () => {
     const data = shippedDatasetCopy();
-    const jobOfferAnswer = situationOptionsOf(data).find((o) => !o["is_arranged"] && !o["is_fallback"])!;
+    const jobOfferAnswer = situationOptionsOf(data).find((o) => o["value"] === "offer")!;
     jobOfferAnswer["is_arranged"] = false;
     expect(validateDataset(data).errors).toEqual([]);
     jobOfferAnswer["is_arranged"] = "yes";
