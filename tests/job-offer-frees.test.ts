@@ -19,6 +19,7 @@ const PRIYA: Profile = {
 describe("what a job offer frees for a reader who has none", () => {
   const freedForPriya = () => routesAJobOfferFrees(ds, PRIYA);
   const baseline = new Map(evaluate(ds, PRIYA).map((r) => [r.route.id, r]));
+  const jobOfferAnswer = fieldOptions(ds, SITUATION_FIELD).find((o) => o.value === "offer")!;
 
   it("an offer in each of the four countries frees a hard-failed route there", () => {
     expect(freedForPriya().map((f) => f.country).sort()).toEqual(ds.countries.map((c) => c.code).sort());
@@ -32,7 +33,6 @@ describe("what a job offer frees for a reader who has none", () => {
   });
 
   it("a freed route is only checked under the offer: none is met or within reach", () => {
-    const jobOfferAnswer = fieldOptions(ds, SITUATION_FIELD).find((o) => o.value === "offer")!;
     let failedToday = 0;
     for (const place of fieldOptions(ds, "situation_country")) {
       const withAJobOffer: Profile = { ...PRIYA, [SITUATION_FIELD]: jobOfferAnswer.value, situation_country: place.value };
@@ -59,7 +59,6 @@ describe("what a job offer frees for a reader who has none", () => {
 
   it("an offer-holder, and a reader whose situation is a transfer, get nothing", () => {
     const situations = fieldOptions(ds, SITUATION_FIELD);
-    const jobOfferAnswer = situations.find((o) => o.value === "offer")!;
     const transfer = situations.find((o) => o.value === "ict")!;
     expect(transfer.is_arranged, "precondition: a transfer is an arranged answer").toBe(true);
     expect(routesAJobOfferFrees(ds, PRIYA).length, "precondition: the explorer is freed something").toBeGreaterThan(0);
