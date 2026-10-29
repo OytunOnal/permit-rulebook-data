@@ -15,8 +15,8 @@ const ids = (routes: OpenRoute[]): string[] => routes.map((r) => r.route.id);
 
 describe("the routes a question is asked for", () => {
   it("funds on a Germany-offer profile: asked for the Opportunity Card alone, among more open routes", () => {
-    const offer = { destination: "de", citizenship: "IN", situation: "offer" };
-    const { asked_for, open } = reckonAskingRoutes(dataset, offer, "funds_eur_month");
+    const readerWithJobOffer = { destination: "de", citizenship: "IN", situation: "offer" };
+    const { asked_for, open } = reckonAskingRoutes(dataset, readerWithJobOffer, "funds_eur_month");
     expect(ids(asked_for)).toEqual(["de-chancenkarte"]);
     expect(asked_for[0]!.country).toBe("DE");
     expect(open.length).toBeGreaterThan(1);

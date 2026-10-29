@@ -40,10 +40,10 @@ describe("unlocks — counterfactual leverage over path fields", () => {
   });
 
   it("an offer-holder gets no unlock section (no 'give up your offer' advice)", () => {
-    const withOffer: Profile = { ...explorer, situation: "offer" };
+    const readerWithJobOffer: Profile = { ...explorer, situation: "offer" };
     // ict/research counterfactuals would open ICT/researcher — those are real
     // alternatives and may appear; but the fallback 'none' must never appear.
-    expect(unlocks(dataset, withOffer).every((u) => u.option.value !== "none")).toBe(true);
+    expect(unlocks(dataset, readerWithJobOffer).every((u) => u.option.value !== "none")).toBe(true);
   });
 
   it("attribute fields are never counterfactualed", () => {

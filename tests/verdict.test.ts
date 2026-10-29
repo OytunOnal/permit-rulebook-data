@@ -319,15 +319,15 @@ describe("the moot criterion: unreachable today, alive the day a route asks for 
     // wanting the absence answer, and a person who declared a real step.
     // Without this the assertion above would equally well describe code that
     // had been deleted.
-    const offer = fieldOptions(dataset, "situation").find((o) => o.value === "offer")!;
+    const jobOfferAnswer = fieldOptions(dataset, "situation").find((o) => o.value === "offer")!;
     const wantsNone = { criterion: { field: "situation", op: "eq", value: "none" }, outcome: "fail" } as const;
-    expect(mootWith(dataset, wantsNone, { situation: "offer" })).toBe(offer.short);
+    expect(mootWith(dataset, wantsNone, { situation: "offer" })).toBe(jobOfferAnswer.short);
   });
 
   it("and stays silent where the failure is a genuine shortfall", () => {
     // A criterion wanting a real step, failed by someone who has none, is a
     // miss and must read as one — never as "not needed, you already have it".
-    const wantsOffer = { criterion: { field: "situation", op: "eq", value: "offer" }, outcome: "fail" } as const;
-    expect(mootWith(dataset, wantsOffer, { situation: "none" })).toBeNull();
+    const jobOfferCriterion = { criterion: { field: "situation", op: "eq", value: "offer" }, outcome: "fail" } as const;
+    expect(mootWith(dataset, jobOfferCriterion, { situation: "none" })).toBeNull();
   });
 });

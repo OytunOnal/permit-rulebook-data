@@ -595,7 +595,7 @@ export interface Unlock {
 }
 
 /** What a job offer in one country would free for a reader who has none. */
-export interface RoutesFreedByAnOffer {
+export interface RoutesFreedByAJobOffer {
   /** The country's code, as `Country.code`. */
   country: string;
   /** The routes there whose hard fail the offer lifts, evaluated with the
