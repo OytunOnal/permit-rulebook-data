@@ -70,6 +70,11 @@ export function shortLabelOf(dataset: Dataset, field: string): string {
   return fieldOf(dataset, field)?.short_label ?? field;
 }
 
+/** The period the field's amount is stated per; none where it states none. */
+export function periodOf(dataset: Dataset, field: string): FieldDef["period"] {
+  return fieldOf(dataset, field)?.period;
+}
+
 /** The fact as a noun phrase inside a sentence, with any route it names said
  * in full. */
 export function subjectOf(dataset: Dataset, field: string): string {

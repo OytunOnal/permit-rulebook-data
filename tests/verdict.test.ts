@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { evaluate, fieldOptions, forEachCriterion, routeStatements, unlocks } from "../src/engine.js";
 import { deriveQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
-import { answerLabel, criterionPhrase, mootWith, reasonFor, shortLabelOf, subjectOf, unlockTitleOf } from "../src/verdict.js";
+import { answerLabel, criterionPhrase, mootWith, periodOf, reasonFor, shortLabelOf, subjectOf, unlockTitleOf } from "../src/verdict.js";
 import { fillRouteSlots } from "../src/route-slots.js";
 import type { Dataset, Profile } from "../src/types.js";
 import { lcg, optionValues, randomProfile } from "./random-profile.js";
@@ -329,5 +329,13 @@ describe("the moot criterion: unreachable today, alive the day a route asks for 
     // miss and must read as one — never as "not needed, you already have it".
     const jobOfferCriterion = { criterion: { field: "situation", op: "eq", value: "offer" }, outcome: "fail" } as const;
     expect(mootWith(dataset, jobOfferCriterion, { situation: "none" })).toBeNull();
+  });
+});
+
+describe("the period an amount is stated per", () => {
+  it("is the field's own, and none where the field states no amount", () => {
+    expect(periodOf(dataset, "salary_eur_year")).toBe("year");
+    expect(periodOf(dataset, "funds_eur_month")).toBe("month");
+    expect(periodOf(dataset, "situation")).toBeUndefined();
   });
 });

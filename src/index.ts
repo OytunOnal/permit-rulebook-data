@@ -5,7 +5,7 @@ export { evaluate, deriveBands, thresholdsForField, routeProvenance, resultProve
 export { findJobOfferAnswer, routesAJobOfferFrees } from "./job-offer-frees.js";
 export { deriveQuestions, remainingQuestions } from "./questions.js";
 export {
-  reasonFor, criterionPhrase, subjectOf, learnLinkOf, shortLabelOf, answerLabel, unlockTitleOf,
+  reasonFor, criterionPhrase, subjectOf, learnLinkOf, shortLabelOf, periodOf, answerLabel, unlockTitleOf,
   declaredPlace, optionMeans, unlockProfile, unlockMeansOf, gapCriterionOf, isLocalization, isPlacedElsewhere, isStepGated, liveUnknowns, mootWith, joinOr, joinAnd,
 } from "./verdict.js";
 export type { Reason, ReasonRow } from "./verdict.js";
