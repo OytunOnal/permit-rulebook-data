@@ -207,6 +207,9 @@ export type Criterion =
    */
   | ({ op: "any"; label: string; paths: { label: string; criteria: Criterion[] }[] } & CriterionExtras);
 
+/** A criterion that states a threshold: an official minimum amount on one field. */
+export type ThresholdCriterion = Extract<Criterion, { op: "gte" }>;
+
 /**
  * What a source says about one route that no criterion can compute.
  *
