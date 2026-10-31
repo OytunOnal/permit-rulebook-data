@@ -2,9 +2,9 @@ import { countryClasses, phraseOf } from "./countries.js";
 import { DEFAULT_UNKNOWN_LABEL, UNKNOWN_BAND } from "./questions.js";
 import { decidingCriteria } from "./disjunction.js";
 import { fillRouteSlots } from "./route-slots.js";
-import { closedBy, deriveBands, fieldOptions, forEachCriterion, formatEURPer, referencedFields, } from "./engine.js";
+import { closedBy, deriveBands, fieldOptions, formatEURPer, referencedFields, thresholdsUnder, } from "./engine.js";
 import type {
-  Band, Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, Route, RouteResult, Unlock,
+  Band, Criterion, CriterionResult, Dataset, FieldDef, FieldOption, Profile, RouteResult, ThresholdCriterion, Unlock,
 } from "./types.js";
 
 /**
@@ -353,20 +353,11 @@ export function reasonFor(dataset: Dataset, r: RouteResult, profile: Profile): R
   };
 }
 
-type Gte = Extract<Criterion, { op: "gte" }>;
-
 /** How far the declared band sits below one threshold, worst case. */
-function gapAgainst(dataset: Dataset, c: Gte, profile: Profile): number | undefined {
+function gapAgainst(dataset: Dataset, c: ThresholdCriterion, profile: Profile): number | undefined {
   const band = declaredBandOf(dataset, c.field, profile);
   if (!band || band.max === undefined || band.max > c.threshold.amount) return undefined;
   return c.threshold.amount - (band.min ?? 0);
-}
-
-/** Every gte criterion in a route, at any depth. */
-function gteCriteriaOf(route: Route): Gte[] {
-  const out: Gte[] = [];
-  forEachCriterion(route.criteria, (c) => { if (c.op === "gte") out.push(c); });
-  return out;
 }
 
 /**
@@ -384,14 +375,15 @@ function gteCriteriaOf(route: Route): Gte[] {
  * choice of paths yet, it names a threshold the person can at least locate
  * their band against.
  */
-export function gapCriterionOf(dataset: Dataset, r: RouteResult, profile: Profile): Gte | undefined {
+export function gapCriterionOf(dataset: Dataset, r: RouteResult, profile: Profile): ThresholdCriterion | undefined {
   const decided = decidingCriteria(r.criteria)
     .flatMap((cr) => (cr.criterion.op === "gte" ? [cr.criterion] : []))
     .filter((c) => profile[c.field] !== undefined);
   const gapped = r.gap_max === undefined
     ? undefined
     : decided.find((c) => Math.abs((gapAgainst(dataset, c, profile) ?? NaN) - r.gap_max!) < 0.005);
-  return gapped ?? decided[0] ?? gteCriteriaOf(r.route).find((c) => profile[c.field] !== undefined);
+  return gapped ?? decided[0]
+    ?? r.route.criteria.flatMap(thresholdsUnder).find((c) => profile[c.field] !== undefined);
 }
 
 /**
