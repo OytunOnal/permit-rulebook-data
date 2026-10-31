@@ -133,7 +133,7 @@ export function criterionPhrase(dataset: Dataset, c: Criterion): string {
     case "not-in":
       return joinOr(c.values.map((v) => valuePhrase(dataset, c.field, v)));
     case "gte":
-      return `at least ${formatEURPer(c.threshold.amount, fieldOf(dataset, c.field)?.period)}`;
+      return `at least ${formatEURPer(c.threshold.amount, periodOf(dataset, c.field))}`;
     case "points":
       return `${c.required.value} points from the official table`;
     case "any":
@@ -401,7 +401,7 @@ function shortfallLine(dataset: Dataset, r: RouteResult, profile: Profile): stri
   if (!measured || r.gap_max === undefined)
     return "One rule on this route is within reach — the card below shows which.";
   const rule = shortLabelOf(dataset, measured.field).toLowerCase();
-  const period = fieldOf(dataset, measured.field)?.period;
+  const period = periodOf(dataset, measured.field);
   const named = measured.threshold_label ? ` — ${measured.threshold_label}` : "";
   const band = declaredBandOf(dataset, measured.field, profile);
   if (band && band.min === undefined)
