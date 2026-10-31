@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { datasetMeta, deriveBands, evaluate, formatEURPer, isRouteAlive, routeProvenance } from "../src/engine.js";
+import { datasetMeta, deriveBands, evaluate, formatEURPer, isRouteAlive, routeProvenance, thresholdsUnder } from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
-import type { Dataset, Profile } from "../src/types.js";
+import type { Criterion, Dataset, Profile } from "../src/types.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 
@@ -297,5 +298,24 @@ describe("money carries its period (s5b, critique #7)", () => {
       const def = dataset.fields.find((f) => f.id === id)!;
       expect(def.period, id).toBe(id.endsWith("_year") ? "year" : "month");
     }
+  });
+});
+
+describe("the thresholds under a criterion", () => {
+  const route = routeOf(dataset, "es-blue-card");
+  /** The route's choice of paths under a label. Throws where it holds none. */
+  function pathsLabelled(label: string): Extract<Criterion, { op: "any" }> {
+    const found = route.criteria.find((c) => c.op === "any" && c.label === label);
+    if (found?.op !== "any") throw new Error(`precondition: es-blue-card holds a choice of paths "${label}"`);
+    return found;
+  }
+
+  it("are every threshold on its paths, in order; a threshold is its own; a criterion with none gives none", () => {
+    const salary = pathsLabelled("the salary this route asks for");
+    const thresholds = thresholdsUnder(salary);
+    expect(thresholds.map((t) => t.field)).toEqual(["salary_eur_year", "salary_eur_year"]);
+    expect(thresholds).toEqual(salary.paths.flatMap((p) => p.criteria.filter((c) => c.op === "gte")));
+    expect(thresholdsUnder(thresholds[0])).toEqual([thresholds[0]]);
+    expect(thresholdsUnder(pathsLabelled("qualification or experience"))).toEqual([]);
   });
 });

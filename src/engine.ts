@@ -6,7 +6,7 @@ import type {
   AskingRoutes, Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef, OpenRoute,
   FieldOption, Notice,
   PointsBreakdown, PointsItem, PointsRow, Profile, ProvenancedText, Route, RouteReading, RouteResult,
-  RouteStatement, RouteStatus, StatementException,
+  RouteStatement, RouteStatus, StatementException, ThresholdCriterion,
 } from "./types.js";
 
 export function formatEUR(amount: number): string {
@@ -788,6 +788,14 @@ export function forEachCriterion(criteria: Criterion[], fn: (c: Criterion) => vo
       }
     }
   }
+}
+
+/** Every threshold under a criterion, at any depth and in walk order: a
+ * threshold is its own, and a criterion with none under it gives none. */
+export function thresholdsUnder(criterion: Criterion): ThresholdCriterion[] {
+  const thresholds: ThresholdCriterion[] = [];
+  forEachCriterion([criterion], (c) => { if (c.op === "gte") thresholds.push(c); });
+  return thresholds;
 }
 
 /**

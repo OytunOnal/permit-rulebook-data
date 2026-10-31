@@ -1,7 +1,7 @@
 export type * from "./types.js";
 export type { ProvenanceEntry } from "./engine.js";
 export { decidingCriteria } from "./disjunction.js";
-export { evaluate, deriveBands, thresholdsForField, routeProvenance, resultProvenance, routeStatements, routeReadings, statementSources, noticeSources, carveOutFor, bindsReader, closedBy, isClosed, provenancedValuesOf, datasetMeta, formatEUR, formatEURPer, notices, matchOptions, foldForSearch, isRouteAlive, isScored, informativeFields, reckonAskingRoutes, referencedFields, forEachCriterion, unlocks, fieldOptions, optionEquivalenceClasses, contradictionsIn, situationsAsked, itemRows, itemFields } from "./engine.js";
+export { evaluate, deriveBands, thresholdsForField, routeProvenance, resultProvenance, routeStatements, routeReadings, statementSources, noticeSources, carveOutFor, bindsReader, closedBy, isClosed, provenancedValuesOf, datasetMeta, formatEUR, formatEURPer, notices, matchOptions, foldForSearch, isRouteAlive, isScored, informativeFields, reckonAskingRoutes, referencedFields, forEachCriterion, thresholdsUnder, unlocks, fieldOptions, optionEquivalenceClasses, contradictionsIn, situationsAsked, itemRows, itemFields } from "./engine.js";
 export { findJobOfferAnswer, routesAJobOfferFrees } from "./job-offer-frees.js";
 export { deriveQuestions, remainingQuestions } from "./questions.js";
 export {
