@@ -506,30 +506,17 @@
       "history": []
     }
   },
-  "last_run": "2026-11-02",
-  "unread": [],
+  "last_run": "2026-11-03",
+  "unread": [
+    {
+      "id": "de-bmi-chancenkarte",
+      "url": "https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html"
+    }
+  ],
   "lapses": {
     "de-bmi-chancenkarte": [
-      "2026-10-27",
-      "2026-10-29"
-    ],
-    "nl-ind-orientation-year": [
-      "2026-10-27"
-    ],
-    "nl-ind-blue-card": [
-      "2026-10-27"
-    ],
-    "nl-ind-highly-skilled-migrant": [
-      "2026-10-27"
-    ],
-    "nl-ind-ict": [
-      "2026-10-27"
-    ],
-    "nl-ind-researcher": [
-      "2026-10-27"
-    ],
-    "eur-lex-blue-card-directive": [
-      "2026-10-27"
+      "2026-10-29",
+      "2026-11-03"
     ]
   }
 }
