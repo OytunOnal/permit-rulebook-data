@@ -250,9 +250,13 @@ describe("provenance and meta", () => {
       // an arranged answer (`is_arranged`), optional — additive. 0.8.4 since
       // OytunOnal/permit-rulebook#313: a path may carry its words (`subject`)
       // and a precondition may name its path (`path`), both optional — additive.
-      schema_version: "0.8.4",
+      // 0.8.5 since ruling 28 of OytunOnal/permit-rulebook#310: an option may
+      // be marked an answer a reader can reach by acting (`is_attainable`),
+      // optional — additive.
+      schema_version: "0.8.5",
       // 2026.11.10: the nine ways in carry their path words and three
-      // preconditions name their path (OytunOnal/permit-rulebook#313).
+      // preconditions name their path (OytunOnal/permit-rulebook#313), and the
+      // improvable questions mark their attainable answers the same day.
       dataset_version: "2026.11.10",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two

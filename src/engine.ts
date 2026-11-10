@@ -662,7 +662,9 @@ export function evaluate(dataset: Dataset, profile: Profile): RouteResult[] {
  * Nothing below is a step — the rail offered "under €33,085.09" as a way to
  * unlock more (B3) — and an answer that is not an amount ("I don't know")
  * has no floor to climb from, so every rung that names one is a candidate and
- * the lowest that changes a verdict is the step.
+ * the lowest that changes a verdict is the step. Each is an amount a reader
+ * can reach by acting (`is_attainable`): a band is derived, so the dataset
+ * has no answer of its own to mark.
  */
 function bandSteps(dataset: Dataset, field: string, profile: Profile): FieldOption[] {
   const bands = deriveBands(dataset, field);
@@ -670,7 +672,7 @@ function bandSteps(dataset: Dataset, field: string, profile: Profile): FieldOpti
   const floor = declared?.min ?? 0;
   return bands
     .filter((b) => b.min !== undefined && b.min > floor)
-    .map((b) => ({ value: b.id, label: b.label }));
+    .map((b) => ({ value: b.id, label: b.label, is_attainable: true }));
 }
 
 /**

@@ -367,9 +367,10 @@ describe("s25 — the dataset says so in its version, and nothing else moved", (
     // 0.8.1 was this slice's (the two-field item); 0.8.2 is s32's (a
     // statement names its question), 0.8.3 #169's (an arranged answer), 0.8.4
     // OytunOnal/permit-rulebook#313's (a path's words and a precondition's
-    // path), and the day is #313's too — s23's test pins it. What this case
-    // holds is that nothing here undid the item.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.4");
+    // path), 0.8.5 ruling 28's of OytunOnal/permit-rulebook#310 (an
+    // attainable answer), and the day is #313's too — s23's test pins it.
+    // What this case holds is that nothing here undid the item.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.5");
     expect(datasetMeta(ds).dataset_version).toBe("2026.11.10");
     // Nothing was read at a source by the re-keying: the rules moved against
     // snapshots already held, and every quote keeps its date. The newest read

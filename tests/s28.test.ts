@@ -86,8 +86,9 @@ describe("a learn label is what the reader does there", () => {
   it("the schema did not move: a label change is a data change", () => {
     // The version is a date and already read today's (s23); the schema's own
     // `required` and `additionalProperties: false` hold a door to label + url.
-    // 0.8.1 when this was written; 0.8.2 since s32, 0.8.3 since #169 and
-    // 0.8.4 since OytunOnal/permit-rulebook#313, each for a reason of its own.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.4");
+    // 0.8.1 when this was written; 0.8.2 since s32, 0.8.3 since #169, 0.8.4
+    // since OytunOnal/permit-rulebook#313 and 0.8.5 since ruling 28 of
+    // OytunOnal/permit-rulebook#310, each for a reason of its own.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.5");
   });
 });

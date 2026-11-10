@@ -536,6 +536,11 @@ export interface FieldOption {
    * `is_unknown` is one the reader can go and get (on the situation question,
    * the job offer). */
   is_arranged?: boolean;
+  /** On an improvable question, an answer the reader can reach by acting
+   * (full or partial recognition, a higher language level, more experience):
+   * only these are offered as a step. "I don't know" is never one. A money
+   * step's band carries it from the engine, since bands are derived. */
+  is_attainable?: boolean;
   /** Values this answer ALSO satisfies: a country implies its class, so
    * `citizenship eq third_country` keeps passing on an answer of "TR". One
    * predicate serves criteria and notices alike, so a country can never

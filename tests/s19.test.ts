@@ -148,8 +148,9 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
     // since s32: a statement may name the question that asks it; 0.8.3 since
     // #169: an option may be marked an arranged answer; 0.8.4 since
     // OytunOnal/permit-rulebook#313: a path carries its words and a
-    // precondition names its path.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.4");
+    // precondition names its path; 0.8.5 since ruling 28 of
+    // OytunOnal/permit-rulebook#310: an answer a reader can reach by acting.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.5");
     // 2026-10-21 since #134: the shortage card's IT path, read that day.
     expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });

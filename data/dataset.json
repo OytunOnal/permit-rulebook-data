@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.8.4",
+  "schema_version": "0.8.5",
   "dataset_version": "2026.11.10",
   "fields": [
     {
@@ -145,7 +145,8 @@
         {
           "value": "yes",
           "label": "Yes",
-          "short": "a qualification from the last 3 years"
+          "short": "a qualification from the last 3 years",
+          "is_attainable": true
         },
         {
           "value": "no",
@@ -169,12 +170,14 @@
         {
           "value": "recognized",
           "label": "Fully recognised (or a German qualification)",
-          "short": "full German recognition"
+          "short": "full German recognition",
+          "is_attainable": true
         },
         {
           "value": "partial",
           "label": "Assessed as partial — additional measures required",
-          "short": "a partial recognition decision"
+          "short": "a partial recognition decision",
+          "is_attainable": true
         },
         {
           "value": "not_assessed",
@@ -210,7 +213,8 @@
         {
           "value": "2plus",
           "label": "2 years or more",
-          "short": "2+ years of related experience in the last five"
+          "short": "2+ years of related experience in the last five",
+          "is_attainable": true
         }
       ]
     },
@@ -231,12 +235,14 @@
         {
           "value": "3to5",
           "label": "3 to under 5 years",
-          "short": "3 to under 5 years of related experience in the last seven"
+          "short": "3 to under 5 years of related experience in the last seven",
+          "is_attainable": true
         },
         {
           "value": "5plus",
           "label": "5 years or more",
-          "short": "5+ years of related experience in the last seven"
+          "short": "5+ years of related experience in the last seven",
+          "is_attainable": true
         }
       ]
     },
@@ -437,22 +443,26 @@
         {
           "value": "a1",
           "label": "A1",
-          "short": "German at A1 (beginner)"
+          "short": "German at A1 (beginner)",
+          "is_attainable": true
         },
         {
           "value": "a2",
           "label": "A2",
-          "short": "German at A2 (elementary)"
+          "short": "German at A2 (elementary)",
+          "is_attainable": true
         },
         {
           "value": "b1",
           "label": "B1",
-          "short": "German at B1 (intermediate)"
+          "short": "German at B1 (intermediate)",
+          "is_attainable": true
         },
         {
           "value": "b2plus",
           "label": "B2 or higher",
-          "short": "German at B2 (upper intermediate) or higher"
+          "short": "German at B2 (upper intermediate) or higher",
+          "is_attainable": true
         }
       ]
     },
@@ -473,12 +483,14 @@
         {
           "value": "b2",
           "label": "B2",
-          "short": "English at B2 (upper intermediate)"
+          "short": "English at B2 (upper intermediate)",
+          "is_attainable": true
         },
         {
           "value": "c1",
           "label": "C1 or higher",
-          "short": "English at C1 (advanced) or higher"
+          "short": "English at C1 (advanced) or higher",
+          "is_attainable": true
         }
       ]
     },

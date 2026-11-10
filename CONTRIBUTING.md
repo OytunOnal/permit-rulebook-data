@@ -196,7 +196,12 @@ they leave one dataset sentence unverifiable by machine.
    `is_fallback` for the "none of these" answer, and, on a path question,
    `is_arranged` for an answer someone else arranges for the reader (an
    intra-corporate transfer, a research hosting agreement), which is never
-   offered as a step. A criterion
+   offered as a step. On a question marked `improvable`, `is_attainable`
+   marks each answer a reader can reach by acting (full or partial
+   recognition, a higher language level, more experience): only those are
+   offered as a step. Every improvable question with answers of its own marks
+   at least one, and "I don't know" is never one; a money question's bands are
+   derived, so the engine marks them. A criterion
    with paths, and each of its paths, carries a `label`: the criterion is
    named by its label wherever it is named in one line, and each path's line
    opens with the path's. Where a card names the path a route was met
