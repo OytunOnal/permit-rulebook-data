@@ -10,7 +10,8 @@ import type { Country, Dataset, Route } from "./types.js";
  * some do not, since a card would name one path and fall silent on another;
  * two paths of one route with the same words, which a link could not tell
  * apart; a link from a caveat, which binds no path; and a link to words no
- * path of the route carries, since a typo would hide the condition.
+ * path of the route carries, since a typo would keep the condition on the card
+ * whichever path the route was met through.
  */
 
 export interface PathWordsError {
@@ -55,7 +56,7 @@ function statementPathErrors(where: string, route: Route, words: string[]): Path
     if (s.kind !== "precondition")
       return [{ path: at, message: `${route.id}: "${s.id}" is a ${s.kind} and names the path "${s.path}" — only a precondition belongs to a path`, keyword: "statementPathOnPreconditionOnly" }];
     if (!words.includes(s.path))
-      return [{ path: at, message: `${route.id}: "${s.id}" belongs to the path "${s.path}", which no path of this route is — the card would never show it`, keyword: "knownStatementPath" }];
+      return [{ path: at, message: `${route.id}: "${s.id}" belongs to the path "${s.path}", which no path of this route is — the card could never drop it, and would show it whichever path the route was met through`, keyword: "knownStatementPath" }];
     return [];
   });
 }
