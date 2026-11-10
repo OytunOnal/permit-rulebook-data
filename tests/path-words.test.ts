@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { forEachCriterion, routeStatements } from "../src/engine.js";
+import { routeStatements } from "../src/engine.js";
+import { disjunctionsOf } from "../src/path-words.js";
 import { validateDataset } from "../src/validate.js";
 import type { Disjunction } from "../src/disjunction.js";
 import type { Dataset, Route, RouteStatement } from "../src/types.js";
@@ -15,13 +16,6 @@ import { routeOf } from "./route-of.js";
 
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 const copy = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
-
-/** Every criterion with paths in a route, nested ones included. */
-function disjunctionsOf(route: Route): Disjunction[] {
-  const found: Disjunction[] = [];
-  forEachCriterion(route.criteria, (c) => { if (c.op === "any") found.push(c); });
-  return found;
-}
 
 /** The route's criterion with paths whose label is `label`. Throws where it has none. */
 function disjunctionOf(route: Route, label: string): Disjunction {

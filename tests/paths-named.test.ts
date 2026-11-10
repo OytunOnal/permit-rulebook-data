@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { criterionPhrase, deriveBands, evaluate, forEachCriterion, reasonFor } from "../src/index.js";
+import { disjunctionsOf } from "../src/path-words.js";
 import { validateDataset } from "../src/validate.js";
+import type { Disjunction } from "../src/disjunction.js";
 import type { Criterion, Dataset, Profile } from "../src/index.js";
 import { routeOf } from "./route-of.js";
 
@@ -15,15 +17,8 @@ import { routeOf } from "./route-of.js";
 const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
 const copy = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 
-type Disjunction = Extract<Criterion, { op: "any" }>;
-
 /** Every criterion with paths in a dataset, nested ones included. */
-function disjunctionsOf(ds: Dataset): Disjunction[] {
-  const out: Disjunction[] = [];
-  for (const route of ds.countries.flatMap((c) => c.routes))
-    forEachCriterion(route.criteria, (c) => { if (c.op === "any") out.push(c); });
-  return out;
-}
+const datasetDisjunctionsOf = (ds: Dataset): Disjunction[] => ds.countries.flatMap((c) => c.routes).flatMap(disjunctionsOf);
 
 /** The shortage Blue Card's choice between a recognised degree and IT experience. */
 function degreeOrIt(ds: Dataset): Disjunction {
@@ -49,7 +44,7 @@ const gateSays = (ds: Dataset): string[] =>
 
 describe("#155 a criterion with paths is named by its label", () => {
   it("every criterion with paths and no short_reason of its own is named, in one line, by its label", () => {
-    const named = disjunctionsOf(dataset).filter((c) => !c.short_reason);
+    const named = datasetDisjunctionsOf(dataset).filter((c) => !c.short_reason);
     expect(named.length, "precondition: the dataset has criteria with paths to name").toBeGreaterThan(0);
     for (const c of named) expect(criterionPhrase(dataset, c)).toBe(c.label);
   });

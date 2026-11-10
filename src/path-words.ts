@@ -19,7 +19,8 @@ export interface PathWordsError {
   keyword: "pathWordsOnEveryPath" | "pathWordsDistinct" | "statementPathOnPreconditionOnly" | "knownStatementPath";
 }
 
-function disjunctionsOf(route: Route): Disjunction[] {
+/** Every criterion with paths in a route, nested ones included. */
+export function disjunctionsOf(route: Route): Disjunction[] {
   const found: Disjunction[] = [];
   forEachCriterion(route.criteria, (c) => { if (c.op === "any") found.push(c); });
   return found;
