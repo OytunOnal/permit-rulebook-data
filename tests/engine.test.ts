@@ -247,11 +247,13 @@ describe("provenance and meta", () => {
       // about, an optional field on routes nothing is asked about — additive.
       // 0.8.2 since s32: a statement may name the question that asks it
       // (`field`) — additive again. 0.8.3 since #169: an option may be marked
-      // an arranged answer (`is_arranged`), optional — additive.
-      schema_version: "0.8.3",
-      // 2026.10.21: the shortage Blue Card's IT path (#134), its two criteria
-      // and two preconditions quoted from the ZAV page that day.
-      dataset_version: "2026.10.21",
+      // an arranged answer (`is_arranged`), optional — additive. 0.8.4 since
+      // OytunOnal/permit-rulebook#313: a path may carry its words (`subject`)
+      // and a precondition may name its path (`path`), both optional — additive.
+      schema_version: "0.8.4",
+      // 2026.11.10: the nine ways in carry their path words and three
+      // preconditions name their path (OytunOnal/permit-rulebook#313).
+      dataset_version: "2026.11.10",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two
       // authorities disagreeing (s8). The freshest are the IT path's four

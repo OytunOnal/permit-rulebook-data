@@ -6,6 +6,7 @@ import { askedByCriterion } from "./scope.js";
 import { unlistedHostMessageOf, unlistedLinkHostsOf } from "./hosts.js";
 import { territoryErrors } from "./territories.js";
 import { routeSlotErrors } from "./route-slots.js";
+import { pathWordsErrors } from "./path-words.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
@@ -66,12 +67,15 @@ export function validateDataset(data: unknown): ValidationResult {
  * - a question names a route only through a filled slot, never by the route's
  *   plain name typed by hand (`routeSlotErrors`);
  * - an answer is marked arranged only on a path question
- *   (`arrangedOffAPathErrors`).
+ *   (`arrangedOffAPathErrors`);
+ * - a criterion's paths carry words all or none, and a precondition names
+ *   only a worded path of its own route (`pathWordsErrors`).
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
   const errors: ValidationError[] = [
     ...vocabularyErrors(countryVocabulary), ...territoryErrors(countryVocabulary),
     ...unwordedRangeErrors(dataset), ...routeSlotErrors(dataset), ...arrangedOffAPathErrors(dataset),
+    ...pathWordsErrors(dataset),
   ];
 
   /**

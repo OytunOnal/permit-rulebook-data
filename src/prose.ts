@@ -208,6 +208,7 @@ export function renderableTexts(dataset: Dataset): RenderableText[] {
         label(`${p}/label`, c.label, { quotes });
         c.paths.forEach((path, j) => {
           label(`${p}/paths/${j}/label`, path.label, { quotes });
+          label(`${p}/paths/${j}/subject`, path.subject, { quotes });
           walkCriteria(path.criteria, `${p}/paths/${j}`);
         });
       }

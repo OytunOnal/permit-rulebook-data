@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.8.3",
-  "dataset_version": "2026.10.21",
+  "schema_version": "0.8.4",
+  "dataset_version": "2026.11.10",
   "fields": [
     {
       "id": "destination",
@@ -772,6 +772,7 @@
               "paths": [
                 {
                   "label": "recognised degree",
+                  "subject": "the recognised-degree path",
                   "criteria": [
                     {
                       "field": "qualification",
@@ -792,6 +793,7 @@
                 },
                 {
                   "label": "IT specialist",
+                  "subject": "the IT-specialist path",
                   "criteria": [
                     {
                       "field": "occupation_it",
@@ -865,6 +867,7 @@
               "id": "academic-level-it-job",
               "kind": "precondition",
               "text": "Without a degree, in IT: the job must be a qualified IT job at academic level",
+              "path": "the IT-specialist path",
               "source": {
                 "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
                 "quote": "Es muss sich um eine qualifizierte Beschäftigung auf akademischem Niveau in einem IT-Beruf handeln",
@@ -876,6 +879,7 @@
               "id": "federal-employment-agency-approval",
               "kind": "precondition",
               "text": "Without a degree, in IT: the Federal Employment Agency must approve the employment, after checking its terms",
+              "path": "the IT-specialist path",
               "source": {
                 "source_url": "https://www.arbeitsagentur.de/vor-ort/zav/working-and-living-in-germany/newsletter-iss/03-2026/blaue-karte",
                 "quote": "die Zustimmung der Bundesagentur für Arbeit (Prüfung der Beschäftigungsbedingungen) ist erforderlich",
@@ -1261,6 +1265,7 @@
               "paths": [
                 {
                   "label": "state-recognised qualification",
+                  "subject": "the qualification path",
                   "criteria": [
                     {
                       "field": "qualification",
@@ -1280,6 +1285,7 @@
                 },
                 {
                   "label": "IT specialist",
+                  "subject": "the IT-specialist path",
                   "criteria": [
                     {
                       "field": "occupation_it",
@@ -1605,6 +1611,7 @@
               "paths": [
                 {
                   "label": "fully recognised (direct)",
+                  "subject": "the fully-recognised path",
                   "criteria": [
                     {
                       "field": "recognition_de",
@@ -1621,6 +1628,7 @@
                 },
                 {
                   "label": "points route",
+                  "subject": "the points path",
                   "criteria": [
                     {
                       "op": "points",
@@ -2064,6 +2072,7 @@
               "paths": [
                 {
                   "label": "3-year higher-education diploma",
+                  "subject": "the diploma path",
                   "criteria": [
                     {
                       "field": "qualification",
@@ -2074,6 +2083,7 @@
                 },
                 {
                   "label": "5 years of comparable experience",
+                  "subject": "the experience path",
                   "criteria": [
                     {
                       "field": "experience_7y",
@@ -2844,6 +2854,7 @@
               "paths": [
                 {
                   "label": "higher-education qualification",
+                  "subject": "the higher-education path",
                   "criteria": [
                     {
                       "field": "qualification",
@@ -2854,6 +2865,7 @@
                 },
                 {
                   "label": "5 years of comparable experience",
+                  "subject": "the experience path",
                   "criteria": [
                     {
                       "field": "experience_7y",
@@ -3070,6 +3082,7 @@
               "paths": [
                 {
                   "label": "higher-education qualification",
+                  "subject": "the higher-education path",
                   "criteria": [
                     {
                       "field": "qualification",
@@ -3080,6 +3093,7 @@
                 },
                 {
                   "label": "professional experience",
+                  "subject": "the experience path",
                   "criteria": [
                     {
                       "field": "experience_7y",
@@ -3223,6 +3237,7 @@
               "paths": [
                 {
                   "label": "higher-education qualification",
+                  "subject": "the higher-education path",
                   "criteria": [
                     {
                       "field": "qualification",
@@ -3233,6 +3248,7 @@
                 },
                 {
                   "label": "professional experience",
+                  "subject": "the experience path",
                   "criteria": [
                     {
                       "field": "experience_7y",
@@ -4253,6 +4269,7 @@
               "paths": [
                 {
                   "label": "higher-education diploma",
+                  "subject": "the diploma path",
                   "criteria": [
                     {
                       "field": "qualification",
@@ -4263,6 +4280,7 @@
                 },
                 {
                   "label": "5 years of relevant experience",
+                  "subject": "the experience path",
                   "criteria": [
                     {
                       "field": "experience_7y",
@@ -4288,6 +4306,7 @@
                 },
                 {
                   "label": "IT role with 3 years in the last 7",
+                  "subject": "the IT-role path",
                   "criteria": [
                     {
                       "field": "occupation_it",
@@ -4876,6 +4895,7 @@
               "paths": [
                 {
                   "label": "a Dutch university or research institution",
+                  "subject": "the Dutch-institution path",
                   "criteria": [
                     {
                       "field": "nl_recent_grad",
@@ -4891,6 +4911,7 @@
                 },
                 {
                   "label": "a foreign institution the Dutch immigration service designates",
+                  "subject": "the designated-foreign-institution path",
                   "criteria": [
                     {
                       "field": "top200_grad",
@@ -4951,6 +4972,7 @@
               "id": "english-where-the-institution-was-abroad",
               "kind": "precondition",
               "text": "If you studied at a foreign educational institution the Dutch immigration service (IND) designates, you must also meet one of its further requirements: a score of at least 6.0 on IELTS or another accepted English test, or a programme that was taught in English or Dutch",
+              "path": "the designated-foreign-institution path",
               "source": {
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
                 "quote": "If you have completed your course or programme at a designated foreign educational institution, you must also meet one of the following requirements: You obtained a minimum score of 6.0 on a test in the International English Language Testing System (IELTS).",

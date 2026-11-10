@@ -205,7 +205,19 @@ export type Criterion =
    * §20a "Fachkraft ODER Punktzahl"). `label` is its one-line name; each path's
    * `label` heads that path's own line where the paths are listed.
    */
-  | ({ op: "any"; label: string; paths: { label: string; criteria: Criterion[] }[] } & CriterionExtras);
+  | ({ op: "any"; label: string; paths: DisjunctionPath[] } & CriterionExtras);
+
+/** One way through a disjunction: the criteria that all pass on it. */
+export interface DisjunctionPath {
+  label: string;
+  /** The path as a noun phrase inside a card's sentence: "the IT-specialist
+   * path". A card names the path a route was met through by these words, so
+   * they mark the criteria whose path a card names; either every path of a
+   * criterion carries them or none does, and no two paths of a route share
+   * them, so a precondition's `path` names one. */
+  subject?: string;
+  criteria: Criterion[];
+}
 
 /** A criterion that states a threshold: an official minimum amount on one field. */
 export type ThresholdCriterion = Extract<Criterion, { op: "gte" }>;
@@ -241,6 +253,11 @@ export interface RouteStatement {
    * 0.8.2). The build holds it to the dataset's fields and to the fields this
    * route's own rules read. */
   field?: string;
+  /** The path this precondition belongs to, named by that path's `subject`:
+   * the card lists it only when that path decided the route. Absent means it
+   * binds every path. The build holds it to a precondition, and to the paths
+   * of this route that carry words. */
+  path?: string;
   /** The source's own words. Absent only where they could not be found: then
    * `unsourced` says why, and the card says so too. Borrowing a neighbouring
    * quote that does not cover the sentence would be inventing provenance. */

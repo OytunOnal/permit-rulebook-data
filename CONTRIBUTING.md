@@ -199,7 +199,13 @@ they leave one dataset sentence unverifiable by machine.
    offered as a step. A criterion
    with paths, and each of its paths, carries a `label`: the criterion is
    named by its label wherever it is named in one line, and each path's line
-   opens with the path's. A question that names a route writes
+   opens with the path's. Where a card names the path a route was met
+   through (a way in, such as a degree or IT experience), each path carries
+   its `subject`, the words the card says ("the IT-specialist path"); every
+   path of the criterion carries one or none does, and no two paths of a
+   route share them. A precondition that binds only one path names it in
+   `path`, by that path's `subject`, and the card shows it only when that
+   path decided the route. A question that names a route writes
    `{route:<route id>}` in its `label`, its `learn` label or its `subject`,
    and the route carries `what_it_is`, a short phrase saying what it is; the
    slot fills as "Germany's Opportunity Card — the permit to come and look for

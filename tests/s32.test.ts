@@ -169,13 +169,16 @@ describe("s32 — the verbatim cross-check runs the other way: a shared sentence
 });
 
 describe("s32 — the dataset says so in its version", () => {
-  it("schema 0.8.3, the arranged mark's; the version and the newest read are the latest data change's day", () => {
-    // 0.8.3 since #169: an option may be marked an arranged answer.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.3");
-    // 2026.10.21 since #134, the shortage card's IT path.
-    expect(datasetMeta(ds).dataset_version).toBe("2026.10.21");
+  it("schema 0.8.4, the path words'; the version is the latest data change's day, the newest read #134's", () => {
+    // 0.8.3 since #169: an option may be marked an arranged answer; 0.8.4
+    // since OytunOnal/permit-rulebook#313: a path carries its words and a
+    // precondition names its path.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.4");
+    // 2026.11.10 since OytunOnal/permit-rulebook#313, the path words.
+    expect(datasetMeta(ds).dataset_version).toBe("2026.11.10");
     // Every quote keeps its date: the decision is which question covers a
-    // sentence already held, not a new read of it. The newest read is #134's.
+    // sentence already held, not a new read of it. The newest read is #134's,
+    // since #313 read nothing at a source.
     expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });
 });
