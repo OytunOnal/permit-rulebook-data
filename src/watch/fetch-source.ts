@@ -41,15 +41,9 @@ const WATCH_NAME = "permit-rulebook-watch/0.1";
 const WATCH_CONTACT = "https://github.com/OytunOnal/permit-rulebook-data";
 
 /**
- * How long one source gets, on either tier — the whole of it, redirects
- * included.
- *
- * The fetcher is where this number lives because the scenario put it there:
- * point 5 asks the browser for "a per-entry budget of 30 s, like the
- * fetcher's", which makes the fetcher the origin of the figure and the
- * browser a borrower of it. `core.ts` would be the wrong home — it is the
- * engine both readers are injected into and knows nothing about sockets or
- * browsers — so the browser imports it from here.
+ * How long one fetched source gets — the whole of it, redirects included.
+ * A browser entry has its own, longer budget (`BROWSER_BUDGET_MS` in
+ * `browser.ts`); a plain request that hangs costs what this says.
  *
  * It is a budget per SOURCE and not per request. Armed once outside the hop
  * loop, because arming it inside let one source hold six of them

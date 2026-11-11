@@ -293,7 +293,7 @@ describe("s35 — a transient failure is read again, after the pass", () => {
     // One more open, on the same reader the pass was given: a browser entry's
     // second try is a second render, not a fetch of the shell behind it.
     const { fetcher, browser, asked } = scripted({
-      [addressOf("rendered")]: [fail("transient", "the browser did not finish this page within 30s"), page("rendered words")],
+      [addressOf("rendered")]: [fail("transient", "the browser did not finish this page within 60s"), page("rendered words")],
     });
     const { reports } = await runWatch(
       { entries: [entry("rendered", { strategy: "browser" })] }, emptyState, fetcher, TODAY, browser,

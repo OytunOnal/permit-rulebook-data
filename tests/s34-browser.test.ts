@@ -1,7 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { chromePath, openBrowserReader } from "../src/watch/browser.js";
+import { BROWSER_BUDGET_MS, chromePath, openBrowserReader } from "../src/watch/browser.js";
+import { BUDGET_MS } from "../src/watch/fetch-source.js";
 import { hasControl, hasSteering, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD, NOTE_AFTER } from "../src/watch/failure.js";
 import { ADDRESS_LENGTH_LIMIT } from "../src/watch/trust-line.js";
 import { runWatch, type BrowserReader, type Fetcher, type WatchEntry } from "../src/watch/core.js";
@@ -1482,5 +1483,12 @@ describe("#49 — a browser entry on a link-local address is refused before Chro
       await runWatch({ entries: [entry()] }, emptyState, refuse, "2026-10-17", reader.read);
       expect(asked.times, "a loopback entry was refused before the browser").toBe(1);
     } finally { await reader.close(); }
+  });
+});
+
+describe("a browser entry has its own budget, twice the fetcher's", () => {
+  it("gives a browser read 60 s per try and a fetch 30 s", () => {
+    expect(BROWSER_BUDGET_MS, "the browser reader's default budget").toBe(60_000);
+    expect(BUDGET_MS, "the fetcher's budget").toBe(30_000);
   });
 });
