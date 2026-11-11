@@ -20,9 +20,17 @@ export interface KeepIssueRun { events: LogEvent[]; exitCode: 0 | 1 }
 interface KeepRequest { issue: KeptIssue; labelLook: LabelLook; finding: RunFinding }
 
 const ARGUMENTS = {
-  required: ["--title", "--label", "--label-color", "--label-description"],
+  required: ["--title", "--label", "--label-color", "--label-description", "--owner"],
   optional: ["--finding", "--body", "--closing", "--finding-file"],
 };
+
+/**
+ * A GitHub login: 1 to 39 letters, digits and hyphens, not starting with a
+ * hyphen. A double or trailing hyphen passes, because older accounts carry
+ * them. Nothing else can be assigned or mentioned, so a step naming anything
+ * else would reach no one.
+ */
+const GITHUB_LOGIN = /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/;
 
 /** Above any body the tracker takes (65,536 characters), so a finding file larger is not one. */
 const FINDING_FILE_LIMIT_BYTES = 262_144;
@@ -58,10 +66,11 @@ function readRequest(argv: readonly string[]): KeepRequest | string {
   const given = readArguments(argv, ARGUMENTS);
   if (typeof given === "string") return given;
   const value = (name: string) => given.get(name)!;
+  if (!GITHUB_LOGIN.test(value("--owner"))) return "--owner is not a GitHub login";
   const finding = given.has("--finding-file") ? readFindingFile(value("--finding-file")) : findingOfFlags(given);
   if (typeof finding === "string") return finding;
   return {
-    issue: { title: value("--title"), label: value("--label") },
+    issue: { title: value("--title"), label: value("--label"), owner: value("--owner") },
     labelLook: { color: value("--label-color"), description: value("--label-description") },
     finding,
   };

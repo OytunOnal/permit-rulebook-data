@@ -281,6 +281,14 @@ and closes it itself, through the kept-issue CLI. That CLI is built on its own,
 from its own files, before anything else in the job (`npm run
 build:kept-issue`), so a master whose build breaks elsewhere still says so.
 
+A kept issue reaches the repository's owner whenever it says the run was red:
+the run assigns the issue to them and opens its words with `@<owner>`, so it
+lands in their notifications even when the issue was already theirs. A green
+closing assigns and mentions no one. Each step names the owner from the run
+(`--owner "${{ github.repository_owner }}"`), never in code, and the CLI
+refuses a step that names no one or names something that is not a GitHub
+login.
+
 ## The daily watch and the site rebuild
 
 `.github/workflows/watch.yml` runs at 05:17 UTC, re-reads every watched source,

@@ -11,12 +11,21 @@ export type RunFinding =
   | { kind: "green"; closing: string }
   | { kind: "unsaid" };
 
-/** The issue a run keeps, as written in its workflow. */
-export interface KeptIssue { title: string; label: string }
+/**
+ * The issue a run keeps, as written in its workflow, and the login of the
+ * repository's owner, whom every red finding reaches: the issue is assigned to
+ * them and its red words open with their @mention.
+ */
+export interface KeptIssue { title: string; label: string; owner: string }
 
+/**
+ * A create's assignee is optional because flag issues (`flag-issues.ts`) are
+ * created through the same argument lists and are assigned to no one; every
+ * kept issue's create carries one.
+ */
 export type KeptIssueAction =
-  | { kind: "create"; title: string; label: string; body: string }
-  | { kind: "comment"; number: number; reopen: boolean; body: string }
+  | { kind: "create"; title: string; label: string; assignee?: string; body: string }
+  | { kind: "comment"; number: number; reopen: boolean; assignee: string; body: string }
   | { kind: "close"; number: number; comment: string }
   | { kind: "nothing" }
   | { kind: "unread"; reason: string };
@@ -41,8 +50,10 @@ export function actionOnKeptIssue(issue: KeptIssue, finding: RunFinding, listed:
   const named = read.issues.filter((l) => l.title === issue.title);
   const found = named.find((l) => l.state === "OPEN") ?? named[0];
   if (finding.kind === "red") {
-    if (!found) return { kind: "create", title: issue.title, label: issue.label, body: finding.body };
-    return { kind: "comment", number: found.number, reopen: found.state === "CLOSED", body: finding.body };
+    // The mention on a line of its own, then the run's words as they came.
+    const ownerReached = { assignee: issue.owner, body: `@${issue.owner}\n\n${finding.body}` };
+    if (!found) return { kind: "create", title: issue.title, label: issue.label, ...ownerReached };
+    return { kind: "comment", number: found.number, reopen: found.state === "CLOSED", ...ownerReached };
   }
   if (finding.kind === "green" && found?.state === "OPEN") return { kind: "close", number: found.number, comment: finding.closing };
   return { kind: "nothing" };
@@ -60,17 +71,27 @@ export function ghListArgumentsOf(issue: KeptIssue): string[] {
   return ["issue", "list", "--label", issue.label, "--state", "all", "--json", "number,state,title", "--limit", String(TRACKER_READ_LIMIT)];
 }
 
-/** The exact `gh` argument lists that carry an action out, in order. */
+/**
+ * The exact `gh` argument lists that carry an action out, in order. Adding an
+ * assignee already assigned changes nothing, so a comment assigns every time.
+ */
 export function ghArgumentsOf(action: KeptIssueAction, labelLook: LabelLook): string[][] {
   switch (action.kind) {
     case "create":
       return [
         ["label", "create", action.label, "--color", labelLook.color, "--description", labelLook.description, "--force"],
-        ["issue", "create", "--title", action.title, "--label", action.label, "--body", action.body],
+        [
+          "issue", "create", "--title", action.title, "--label", action.label,
+          ...(action.assignee === undefined ? [] : ["--assignee", action.assignee]), "--body", action.body,
+        ],
       ];
     case "comment": {
-      const comment = ["issue", "comment", String(action.number), "--body", action.body];
-      return action.reopen ? [["issue", "reopen", String(action.number)], comment] : [comment];
+      const number = String(action.number);
+      const assignAndComment = [
+        ["issue", "edit", number, "--add-assignee", action.assignee],
+        ["issue", "comment", number, "--body", action.body],
+      ];
+      return action.reopen ? [["issue", "reopen", number], ...assignAndComment] : assignAndComment;
     }
     case "close":
       return [["issue", "close", String(action.number), "--comment", action.comment]];

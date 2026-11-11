@@ -74,4 +74,4 @@ jobs:
           # head when the watch run completed.
           BODY: "The data check on master went red after the watch: the check job ended ${{ needs.check.result }} on commit ${{ github.sha }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           CLOSING: "The data check on master is green again on commit ${{ github.sha }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        run: node dist/kept-issue-cli/src/watch/cli-kept-issue.js --title "check failed on master" --label check --label-color b60205 --label-description "The data repository's own suite" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
+        run: node dist/kept-issue-cli/src/watch/cli-kept-issue.js --title "check failed on master" --label check --label-color b60205 --label-description "The data repository's own suite" --owner "${{ github.repository_owner }}" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"

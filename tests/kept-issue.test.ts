@@ -8,8 +8,10 @@ import {
  * found × the issue's state in the tracker → the action.
  */
 
-const issue: KeptIssue = { title: "overdue flags", label: "watch" };
+const issue: KeptIssue = { title: "overdue flags", label: "watch", owner: "octo-owner" };
 const red: RunFinding = { kind: "red", body: "Flags no person has walked." };
+/** The red body as the issue carries it: the owner's @mention on a line of its own, then the run's words. */
+const mentionedRed = "@octo-owner\n\nFlags no person has walked.";
 const green: RunFinding = { kind: "green", closing: "No overdue flag this morning." };
 const unsaid: RunFinding = { kind: "unsaid" };
 
@@ -20,16 +22,17 @@ const open = answer({ number: 3, state: "OPEN", title: "watch run failed" }, { n
 const closed = answer({ number: 40, state: "CLOSED", title: "overdue flags" });
 
 describe("actionOnKeptIssue — a red run", () => {
-  it("creates the issue when the tracker has none by its title", () => {
-    expect(actionOnKeptIssue(issue, red, none)).toEqual({ kind: "create", title: "overdue flags", label: "watch", body: red.body });
+  it("creates the issue, assigned to the owner and mentioning them, when the tracker has none by its title", () => {
+    expect(actionOnKeptIssue(issue, red, none))
+      .toEqual({ kind: "create", title: "overdue flags", label: "watch", assignee: "octo-owner", body: mentionedRed });
   });
 
-  it("comments on the open issue, and does not reopen it", () => {
-    expect(actionOnKeptIssue(issue, red, open)).toEqual({ kind: "comment", number: 40, reopen: false, body: red.body });
+  it("assigns the open issue to the owner and comments on it mentioning them, and does not reopen it", () => {
+    expect(actionOnKeptIssue(issue, red, open)).toEqual({ kind: "comment", number: 40, reopen: false, assignee: "octo-owner", body: mentionedRed });
   });
 
-  it("reopens the closed issue and comments on it", () => {
-    expect(actionOnKeptIssue(issue, red, closed)).toEqual({ kind: "comment", number: 40, reopen: true, body: red.body });
+  it("reopens the closed issue, assigns it to the owner and comments on it mentioning them", () => {
+    expect(actionOnKeptIssue(issue, red, closed)).toEqual({ kind: "comment", number: 40, reopen: true, assignee: "octo-owner", body: mentionedRed });
   });
 
   it("finds the issue by its exact title, never by a title that only contains it", () => {
@@ -39,7 +42,7 @@ describe("actionOnKeptIssue — a red run", () => {
     );
     expect(actionOnKeptIssue(issue, red, nearMiss)).toMatchObject({ kind: "create" });
     expect(actionOnKeptIssue(issue, red, answer({ number: 41, state: "OPEN", title: "overdue flags (old)" }, ...JSON.parse(closed))))
-      .toEqual({ kind: "comment", number: 40, reopen: true, body: red.body });
+      .toEqual({ kind: "comment", number: 40, reopen: true, assignee: "octo-owner", body: mentionedRed });
   });
 });
 
@@ -92,7 +95,7 @@ describe("actionOnKeptIssue — a tracker answer it cannot read", () => {
 describe("actionOnKeptIssue — two issues under one title", () => {
   it("speaks on the open one, so a red run never reopens a second", () => {
     const both = answer({ number: 12, state: "CLOSED", title: "overdue flags" }, { number: 40, state: "OPEN", title: "overdue flags" });
-    expect(actionOnKeptIssue(issue, red, both)).toEqual({ kind: "comment", number: 40, reopen: false, body: red.body });
+    expect(actionOnKeptIssue(issue, red, both)).toEqual({ kind: "comment", number: 40, reopen: false, assignee: "octo-owner", body: mentionedRed });
     expect(actionOnKeptIssue(issue, green, both)).toEqual({ kind: "close", number: 40, comment: green.closing });
   });
 });
@@ -101,22 +104,24 @@ describe("actionOnKeptIssue — two issues under one title", () => {
 describe("ghArgumentsOf — the gh commands for an action", () => {
   const look: LabelLook = { color: "b60205", description: "The daily source watch itself" };
 
-  it("creates the label before it creates an issue under it", () => {
-    expect(ghArgumentsOf({ kind: "create", title: "overdue flags", label: "watch", body: "B" }, look)).toEqual([
+  it("creates the label before it creates an issue under it, assigned", () => {
+    expect(ghArgumentsOf({ kind: "create", title: "overdue flags", label: "watch", assignee: "octo-owner", body: "B" }, look)).toEqual([
       ["label", "create", "watch", "--color", "b60205", "--description", "The daily source watch itself", "--force"],
-      ["issue", "create", "--title", "overdue flags", "--label", "watch", "--body", "B"],
+      ["issue", "create", "--title", "overdue flags", "--label", "watch", "--assignee", "octo-owner", "--body", "B"],
     ]);
   });
 
-  it("reopens a closed issue before it comments on it", () => {
-    expect(ghArgumentsOf({ kind: "comment", number: 40, reopen: true, body: "B" }, look)).toEqual([
+  it("reopens a closed issue, then assigns it, before it comments on it", () => {
+    expect(ghArgumentsOf({ kind: "comment", number: 40, reopen: true, assignee: "octo-owner", body: "B" }, look)).toEqual([
       ["issue", "reopen", "40"],
+      ["issue", "edit", "40", "--add-assignee", "octo-owner"],
       ["issue", "comment", "40", "--body", "B"],
     ]);
   });
 
-  it("only comments on an open one", () => {
-    expect(ghArgumentsOf({ kind: "comment", number: 40, reopen: false, body: "B" }, look)).toEqual([
+  it("assigns an open one, then comments on it", () => {
+    expect(ghArgumentsOf({ kind: "comment", number: 40, reopen: false, assignee: "octo-owner", body: "B" }, look)).toEqual([
+      ["issue", "edit", "40", "--add-assignee", "octo-owner"],
       ["issue", "comment", "40", "--body", "B"],
     ]);
   });
@@ -135,7 +140,7 @@ describe("ghArgumentsOf — the gh commands for an action", () => {
   it("passes a title and a body each as one argument, whatever they hold", () => {
     const title = "flags $(touch pwned) `id` \"quoted\" 'single'; rm -rf ~";
     const body = "line one\n$(touch pwned)\n`id` \"q\" 'q' && echo done\n--repo someone/else";
-    const lists = ghArgumentsOf({ kind: "create", title, label: "watch", body }, look);
-    expect(lists[1]).toEqual(["issue", "create", "--title", title, "--label", "watch", "--body", body]);
+    const lists = ghArgumentsOf({ kind: "create", title, label: "watch", assignee: "octo-owner", body }, look);
+    expect(lists[1]).toEqual(["issue", "create", "--title", title, "--label", "watch", "--assignee", "octo-owner", "--body", body]);
   });
 });

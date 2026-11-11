@@ -524,6 +524,13 @@ describe("a broken build elsewhere cannot silence a kept issue", () => {
     }
   });
 
+  /** A red kept issue reaches the repository's owner, named by the run and never typed here (ruling 3 on #283). */
+  it("names the run's owner in every call that keeps an issue", () => {
+    const keeping = oneLineCommandsOf(watch).filter((command) => command.includes("cli-kept-issue.js"));
+    expect(keeping, "the watch keeps fewer issues than its two").toHaveLength(2);
+    for (const command of keeping) expect(command).toContain('--owner "${{ github.repository_owner }}"');
+  });
+
   it("builds that copy from a config of its own, at the path the steps run", () => {
     const packageJson = JSON.parse(readText(fileURLToPath(new URL("../package.json", import.meta.url))));
     const config = /^tsc -p (\S+)$/.exec(packageJson.scripts["build:kept-issue"] ?? "");
