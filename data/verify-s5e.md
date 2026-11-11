@@ -612,11 +612,20 @@ JavaScript) — a smaller step than the headless browser data #17 asks for.
 > re-reads it by hand**. Nothing here is deleted — it stays as the record of
 > the read of 2026-09-17, and of why a fetcher could not make it.
 
+> **REOPENED — 2026-11-11 (OytunOnal/permit-rulebook#337, ruling 14 on
+> OytunOnal/permit-rulebook#342).** `de-bmi-chancenkarte` is a `human` entry
+> again, due every 90 days. Not for the cookie check this time: from GitHub's
+> runner the page's connection never answers (`net::ERR_TIMED_OUT` at about
+> 30 s, Chrome's own network timeout, on both tries of run 43038236585), which
+> a longer budget does not reach, while a browser elsewhere reads it in 12 s.
+> The item below is a person's again.
+
 ### Launch of opportunity card — `de-chancenkarte` (info page)
 
 https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html
 
-- [x] **NEW with s29.** Read 2026-09-17. Open the page in a browser (the
+- [x] **NEW with s29.** Read 2026-09-17; read again 2026-11-11 by the watch's own browser off the runner, unchanged
+  against the watch's last machine reading. Open the page in a browser (the
   cookie check passes by itself). Under "Requirements for the opportunity
   card", find this sentence and confirm it is still there: "The opportunity
   card is a new type of residence permit for those coming to Germany to look

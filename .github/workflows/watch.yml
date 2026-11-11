@@ -89,11 +89,12 @@ jobs:
       - name: Coverage gate (every dataset source is watched)
         run: node dist/src/watch/cli-coverage.js
 
-      # Seven entries are read by opening them in a browser, and a run that
-      # cannot open one has not read them — it reports them unreachable and
-      # goes red, which is right and is also indistinguishable, in the log,
-      # from seven pages that went down. So the browser is named before the
-      # run: one line that turns "unreachable" into a diagnosis (s34).
+      # The browser entries are read by opening them in a browser, and a run
+      # that cannot open one has not read them — it reports them unreachable
+      # and goes red, which is right and is also indistinguishable, in the log,
+      # from every one of those pages going down. So the browser is named
+      # before the run: one line that turns "unreachable" into a diagnosis
+      # (s34).
       - name: Say which Chrome the watch will use
         run: node -e "import('./dist/src/watch/browser.js').then(m => console.log(m.chromePath()))"
 
