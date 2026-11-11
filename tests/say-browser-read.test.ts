@@ -17,4 +17,21 @@ describe("sayBrowserRead — the line a browser read logs", () => {
       fields: { id: "de-bmi-chancenkarte", seconds: 48.8, steps: 1, ok: true, paused: 2, pausedMs: 40 },
     });
   });
+
+  /**
+   * A try that ends under its budget with nothing read says why, on its own
+   * line: a try its retry recovers prints no other (ruling 10 on
+   * OytunOnal/permit-rulebook#341).
+   */
+  it("logs a failed read as an error carrying the reader's error and failure", () => {
+    const result = { ok: false as const, error: "the page closed its connection", failure: "transient" as const };
+    expect(sayBrowserRead({ entry, result, milliseconds: 31_400, cost })).toEqual({
+      level: "error",
+      msg: "watch:browser-read",
+      fields: {
+        id: "de-bmi-chancenkarte", seconds: 31.4, steps: 1, ok: false,
+        error: "the page closed its connection", failure: "transient", paused: 2, pausedMs: 40,
+      },
+    });
+  });
 });

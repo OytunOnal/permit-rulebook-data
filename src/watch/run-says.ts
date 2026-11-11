@@ -290,14 +290,19 @@ export interface TimedBrowserRead {
  * The line every browser read logs, `watch:browser-read`: the number the
  * browser tier is answerable for, seven rendered pages added to a daily job,
  * read from the run's own log (s34 point 6).
+ *
+ * A failed try carries the reader's error and failure class, because a try its
+ * retry recovers prints no other line, and its cause would go unsaid.
  */
 export function sayBrowserRead(read: TimedBrowserRead): LogEvent {
+  const { result } = read;
   return {
-    level: read.result.ok ? "info" : "error",
+    level: result.ok ? "info" : "error",
     msg: "watch:browser-read",
     fields: {
       id: read.entry.id, seconds: Number((read.milliseconds / 1000).toFixed(1)),
-      steps: read.entry.steps?.length ?? 0, ok: read.result.ok,
+      steps: read.entry.steps?.length ?? 0, ok: result.ok,
+      ...(result.ok ? {} : { error: result.error, failure: result.failure }),
       // What naming ourselves to the source alone costs this page.
       ...read.cost,
     },
