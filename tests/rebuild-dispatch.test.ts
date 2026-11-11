@@ -359,16 +359,12 @@ describe("a red run is never silent", () => {
 
   /**
    * An overdue flag is `overdue flags`'s to say (#117, user story 24). The
-   * clock's own step stays green on overdue (#118), and no step before this
-   * one reddens the run on it, so on a morning whose only news is an overdue
-   * flag the job is still green here, and the finding with it.
+   * clock's own step stays green on overdue (#118), and no step reddens the
+   * run on it (the case below), so on a morning whose only news is an overdue
+   * flag the job is green here, and the finding with it.
    */
   it("does not let an overdue flag alone make watch run failed's finding red", () => {
-    const names = stepNamesOf(watch);
     const say = stepOf(watch, "Say so when the run fails");
-    const before = names.slice(0, names.indexOf("Say so when the run fails"));
-    expect(before, "the clock is not read before the finding").toContain("Read the clock on open flags");
-    expect(before.filter(failsTheRunOnTheClock), "a step before the finding reddens the run on an overdue flag").toEqual([]);
     expect(findingOn(say, "success"), "a morning whose only news is an overdue flag is not green here").toBe("green");
   });
 
