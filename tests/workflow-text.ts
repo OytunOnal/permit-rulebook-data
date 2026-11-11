@@ -22,6 +22,37 @@ export const watchYaml = readText(join(workflowsDir, "watch.yml"));
  */
 export const KEPT_ISSUE_CLI_COPY = "dist/kept-issue-cli/src/watch/cli-kept-issue.js";
 
+/**
+ * How one step's call of the kept-issue CLI is handed the owner: what its
+ * `env:` sets `OWNER` to, quotes aside; what its command passes as `--owner`;
+ * and how many `${{ }}` expressions its command writes.
+ */
+export interface KeptIssueCall { ownerSet: string | undefined; ownerPassed: string | undefined; expressionsInCommand: number }
+
+/**
+ * The kept-issue calls of a workflow's text, in order: each step whose one-line
+ * `run:` runs the CLI, read from its list item's `- ` to the next one.
+ */
+export const keptIssueCallsOf = (yaml: string): KeptIssueCall[] =>
+  yaml.split(/^(?= *- )/m).flatMap((step) => {
+    const command = /^\s*-?\s*run:\s*(node \S*cli-kept-issue\.js .*)$/m.exec(step)?.[1];
+    if (command === undefined) return [];
+    return [{
+      ownerSet: /^\s*OWNER:\s*(.+)$/m.exec(step)?.[1]?.trim().replace(/^"(.*)"$/, "$1"),
+      ownerPassed: /--owner (\S+)/.exec(command)?.[1],
+      expressionsInCommand: command.match(/\$\{\{/g)?.length ?? 0,
+    }];
+  });
+
+/**
+ * The one way a kept-issue call is handed the owner (ruling 11 on
+ * OytunOnal/permit-rulebook#341): the run's owner through the step's `env:`,
+ * like every other value, and no expression written into the command.
+ */
+export const OWNER_THROUGH_THE_ENVIRONMENT: KeptIssueCall = {
+  ownerSet: "${{ github.repository_owner }}", ownerPassed: '"$OWNER"', expressionsInCommand: 0,
+};
+
 /** Every one-line `run:` command in a text, in order. */
 export const oneLineCommandsOf = (yaml: string): string[] =>
   [...yaml.matchAll(/^\s*-?\s*run:\s*([^|>\s].*)$/gm)].map((m) => m[1]!.replace(/\s+#.*$/, "").trim());

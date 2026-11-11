@@ -284,10 +284,11 @@ build:kept-issue`), so a master whose build breaks elsewhere still says so.
 A kept issue reaches the repository's owner whenever it says the run was red:
 the run assigns the issue to them and opens its words with `@<owner>`, so it
 lands in their notifications even when the issue was already theirs. A green
-closing assigns and mentions no one. Each step names the owner from the run
-(`--owner "${{ github.repository_owner }}"`), never in code, and the CLI
-refuses a step that names no one or names something that is not a GitHub
-login.
+closing assigns and mentions no one. Each step names the owner from the run,
+through its `env:` like every other value (`OWNER: "${{
+github.repository_owner }}"`, passed as `--owner "$OWNER"`), never in code,
+and the CLI refuses a step that names no one or names something that is not
+a GitHub login.
 
 ## The daily watch and the site rebuild
 

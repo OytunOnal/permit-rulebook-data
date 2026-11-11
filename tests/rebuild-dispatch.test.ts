@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  conditionOf, KEPT_ISSUE_CLI_COPY, oneLineCommandsOf, readText, stepNamesOf, stepOf, watchYaml as watch, workflowFiles,
-  workflowsDir,
+  conditionOf, KEPT_ISSUE_CLI_COPY, keptIssueCallsOf, oneLineCommandsOf, OWNER_THROUGH_THE_ENVIRONMENT, readText, stepNamesOf,
+  stepOf, watchYaml as watch, workflowFiles, workflowsDir,
 } from "./workflow-text.js";
 
 /**
@@ -531,10 +531,11 @@ describe("a broken build elsewhere cannot silence a kept issue", () => {
   });
 
   /** A red kept issue reaches the repository's owner, named by the run and never typed here (ruling 3 on #283). */
-  it("names the run's owner in every call that keeps an issue", () => {
-    const keeping = oneLineCommandsOf(watch).filter((command) => command.includes("cli-kept-issue.js"));
-    expect(keeping, "the watch keeps fewer issues than its two").toHaveLength(2);
-    for (const command of keeping) expect(command).toContain('--owner "${{ github.repository_owner }}"');
+  it("hands every call that keeps an issue the run's owner through its step's environment", () => {
+    const keptIssueCalls = keptIssueCallsOf(watch);
+    expect(keptIssueCalls, "the watch keeps two issues, overdue flags and watch run failed: fewer calls is one this case no longer finds, more a call it does not know")
+      .toHaveLength(2);
+    expect(keptIssueCalls).toEqual([OWNER_THROUGH_THE_ENVIRONMENT, OWNER_THROUGH_THE_ENVIRONMENT]);
   });
 
   it("builds that copy from a config of its own, at the path the steps run", () => {
