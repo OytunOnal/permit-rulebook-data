@@ -624,7 +624,7 @@ JavaScript) — a smaller step than the headless browser data #17 asks for.
 
 https://www.bmi.bund.de/SharedDocs/kurzmeldungen/EN/2024/05/chancenkarte.html
 
-- [x] **NEW with s29.** Read 2026-09-17; read again 2026-11-11, unchanged
+- [x] **NEW with s29.** Read 2026-09-17; read again 2026-11-11 by the watch's own browser off the runner, unchanged
   against the watch's last machine reading. Open the page in a browser (the
   cookie check passes by itself). Under "Requirements for the opportunity
   card", find this sentence and confirm it is still there: "The opportunity
