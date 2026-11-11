@@ -386,14 +386,14 @@ files no `watch run failed`, and metric 1 counts it. The run keeps one issue,
 `overdue flags`, names each overdue flag there with the day it was raised and
 its age, comments on it each morning a flag is overdue, and closes it itself on
 the first morning nothing is. A person walks the flags; the issue follows. If
-the tracker cannot be read, that
-is the check not finishing — `watch run failed`, and `overdue flags` is left as
-it was. A measurement run reads no clock. The decision is
-`src/watch/overdue.ts`; `src/watch/overdue-command.ts` reads the open flags
-under the label it is given through `gh`, and `cli-overdue.ts` is the one place
-its arguments and exit codes are written down. The issue
-itself is kept by the kept-issue CLI, `cli-kept-issue.ts`, which decides
-through `src/watch/kept-issue.ts`, the one table every kept issue goes through.
+the tracker cannot be read, that is the check not finishing —
+`watch run failed`, and `overdue flags` is left as it was. A measurement run
+reads no clock. The decision is `src/watch/overdue.ts`;
+`src/watch/overdue-command.ts` reads the open flags under the label it is given
+through `gh`, and `cli-overdue.ts` is the one place its arguments and exit
+codes are written down. The issue itself is kept by the kept-issue CLI,
+`cli-kept-issue.ts`, which decides through `src/watch/kept-issue.ts`, the one
+table every kept issue goes through.
 
 ### Moving a slice re-reads its baseline, in the same commit
 
