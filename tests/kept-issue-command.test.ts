@@ -25,9 +25,10 @@ function trackerAnswering(listed: string, failing?: string) {
   return { calls, runGh, writes: () => calls.filter((c) => c[1] !== "list") };
 }
 
-const keptIssueArgs = (title = "overdue flags") => [
+const keptIssueArgs = (title = "overdue flags", owner = "octo-owner") => [
   "--title", title, "--label", "watch",
   "--label-color", "b60205", "--label-description", "The daily source watch itself",
+  "--owner", owner,
 ];
 const red = ["--finding", "red", "--body", "Flags no person has walked."];
 const green = ["--finding", "green", "--closing", "No overdue flag this morning."];
@@ -43,33 +44,41 @@ describe("the kept-issue CLI — what reaches gh for each action", () => {
     expect(tracker.calls.filter((c) => c[1] === "list")).toHaveLength(1);
   });
 
-  it("creates the label, then the issue, on a red run with no such issue", async () => {
+  it("creates the label, then the issue assigned to the owner, its body opening with their @mention, on a red run with no such issue", async () => {
     const tracker = trackerAnswering("[]");
     const run = await keepIssue([...keptIssueArgs(), ...red], tracker.runGh);
     expect(tracker.writes()).toEqual([
       ["label", "create", "watch", "--color", "b60205", "--description", "The daily source watch itself", "--force"],
-      ["issue", "create", "--title", "overdue flags", "--label", "watch", "--body", "Flags no person has walked."],
+      ["issue", "create", "--title", "overdue flags", "--label", "watch", "--assignee", "octo-owner", "--body", "@octo-owner\n\nFlags no person has walked."],
     ]);
     expect(run.exitCode).toBe(0);
   });
 
-  it("comments on the open issue on a red run", async () => {
+  it("assigns the open issue to the owner, then comments with their @mention, on a red run", async () => {
     const tracker = trackerAnswering(openIssue);
     const run = await keepIssue([...keptIssueArgs(), ...red], tracker.runGh);
-    expect(tracker.writes()).toEqual([["issue", "comment", "40", "--body", "Flags no person has walked."]]);
+    expect(tracker.writes()).toEqual([
+      ["issue", "edit", "40", "--add-assignee", "octo-owner"],
+      ["issue", "comment", "40", "--body", "@octo-owner\n\nFlags no person has walked."],
+    ]);
     expect(run.exitCode).toBe(0);
   });
 
-  it("reopens the closed issue, then comments, on a red run", async () => {
+  it("reopens the closed issue, assigns it to the owner, then comments with their @mention, on a red run", async () => {
     const tracker = trackerAnswering(closedIssue);
     await keepIssue([...keptIssueArgs(), ...red], tracker.runGh);
-    expect(tracker.writes()).toEqual([["issue", "reopen", "40"], ["issue", "comment", "40", "--body", "Flags no person has walked."]]);
+    expect(tracker.writes()).toEqual([
+      ["issue", "reopen", "40"],
+      ["issue", "edit", "40", "--add-assignee", "octo-owner"],
+      ["issue", "comment", "40", "--body", "@octo-owner\n\nFlags no person has walked."],
+    ]);
   });
 
-  it("closes the open issue on a green run", async () => {
+  it("closes the open issue on a green run, assigning and mentioning no one", async () => {
     const tracker = trackerAnswering(openIssue);
     const run = await keepIssue([...keptIssueArgs(), ...green], tracker.runGh);
     expect(tracker.writes()).toEqual([["issue", "close", "40", "--comment", "No overdue flag this morning."]]);
+    expect(tracker.calls.flat().filter((argument) => argument.includes("@") || argument.includes("assignee"))).toEqual([]);
     expect(run.exitCode).toBe(0);
   });
 
@@ -78,9 +87,14 @@ describe("the kept-issue CLI — what reaches gh for each action", () => {
     const run = await keepIssue([...keptIssueArgs(), ...green], tracker.runGh);
     expect(tracker.writes()).toEqual([]);
     expect(run.exitCode).toBe(0);
-    const unsaid = trackerAnswering(openIssue);
-    expect((await keepIssue([...keptIssueArgs(), "--finding", "unsaid"], unsaid.runGh)).exitCode).toBe(0);
-    expect(unsaid.writes()).toEqual([]);
+    const none = trackerAnswering("[]");
+    expect((await keepIssue([...keptIssueArgs(), ...green], none.runGh)).exitCode).toBe(0);
+    expect(none.writes()).toEqual([]);
+    for (const listed of ["[]", openIssue, closedIssue]) {
+      const unsaid = trackerAnswering(listed);
+      expect((await keepIssue([...keptIssueArgs(), "--finding", "unsaid"], unsaid.runGh)).exitCode).toBe(0);
+      expect(unsaid.writes()).toEqual([]);
+    }
   });
 
   it("fails, writing nothing, when the tracker's answer cannot be read", async () => {
@@ -110,7 +124,7 @@ describe("the kept-issue CLI — what reaches gh for each action", () => {
     const body = "line one\n$(touch pwned)\n`id` \"q\" 'q' && echo done";
     const tracker = trackerAnswering("[]");
     await keepIssue([...keptIssueArgs(title), "--finding", "red", "--body", body], tracker.runGh);
-    expect(tracker.writes()[1]).toEqual(["issue", "create", "--title", title, "--label", "watch", "--body", body]);
+    expect(tracker.writes()[1]).toEqual(["issue", "create", "--title", title, "--label", "watch", "--assignee", "octo-owner", "--body", `@octo-owner\n\n${body}`]);
   });
 
   it("takes the finding from a file, as the clock writes it", async () => {
@@ -118,7 +132,10 @@ describe("the kept-issue CLI — what reaches gh for each action", () => {
     writeFileSync(file, JSON.stringify({ kind: "red", body: "From the clock.\n\nRun: https://example.test/runs/1\n" }));
     const tracker = trackerAnswering(openIssue);
     await keepIssue([...keptIssueArgs(), "--finding-file", file], tracker.runGh);
-    expect(tracker.writes()).toEqual([["issue", "comment", "40", "--body", "From the clock.\n\nRun: https://example.test/runs/1\n"]]);
+    expect(tracker.writes()).toEqual([
+      ["issue", "edit", "40", "--add-assignee", "octo-owner"],
+      ["issue", "comment", "40", "--body", "@octo-owner\n\nFrom the clock.\n\nRun: https://example.test/runs/1\n"],
+    ]);
   });
 
   it.each([
@@ -133,6 +150,33 @@ describe("the kept-issue CLI — what reaches gh for each action", () => {
     const run = await keepIssue(argv, tracker.runGh);
     expect(tracker.calls).toEqual([]);
     expect(run.exitCode).toBe(1);
+  });
+
+  /**
+   * The owner is who a red issue reaches (ruling 3 on #283): a step that
+   * names no one, or names something no GitHub account can be called, would
+   * reach no one, so it fails loudly before the tracker is asked.
+   */
+  it.each([
+    ["no owner", keptIssueArgs().slice(0, -2)],
+    ["an empty owner", keptIssueArgs("overdue flags", "")],
+    ["an owner written as a mention", keptIssueArgs("overdue flags", "@x")],
+    ["an owner with a space", keptIssueArgs("overdue flags", "a b")],
+    ["an owner starting with a hyphen", keptIssueArgs("overdue flags", "-x")],
+    ["an owner of 40 characters", keptIssueArgs("overdue flags", "a".repeat(40))],
+  ])("refuses to run, asking gh nothing, given %s", async (_, args) => {
+    const tracker = trackerAnswering(openIssue);
+    const run = await keepIssue([...args, ...red], tracker.runGh);
+    expect(tracker.calls).toEqual([]);
+    expect(run.exitCode).toBe(1);
+    expect(run.events).toContainEqual(expect.objectContaining({ level: "error", msg: "kept issue: the arguments were refused" }));
+  });
+
+  it.each(["a--b", "x-", "a".repeat(39)])("takes %s as the owner, as older accounts carry such logins", async (owner) => {
+    const tracker = trackerAnswering(openIssue);
+    const run = await keepIssue([...keptIssueArgs("overdue flags", owner), ...red], tracker.runGh);
+    expect(run.exitCode).toBe(0);
+    expect(tracker.writes()[0]).toEqual(["issue", "edit", "40", "--add-assignee", owner]);
   });
 
   it("refuses a finding file it cannot read as a finding", async () => {
@@ -200,13 +244,13 @@ describe.skipIf(childProcessCasesSkipped("kept-issue CLI"))("the kept-issue CLI 
     const title = "flags $(touch pwned) `touch pwned` \"quoted\" 'single'; touch pwned";
     const run = runCli(entry, [
       "--title", title, "--label", "watch", "--label-color", "b60205",
-      "--label-description", "The daily source watch itself", "--finding", "red", "--body", "Body; $(touch pwned)",
+      "--label-description", "The daily source watch itself", "--owner", "octo-owner", "--finding", "red", "--body", "Body; $(touch pwned)",
     ]);
     expect(run.status, run.stderr).toBe(0);
     expect(run.calls).toEqual([
       ["issue", "list", "--label", "watch", "--state", "all", "--json", "number,state,title", "--limit", "100"],
       ["label", "create", "watch", "--color", "b60205", "--description", "The daily source watch itself", "--force"],
-      ["issue", "create", "--title", title, "--label", "watch", "--body", "Body; $(touch pwned)"],
+      ["issue", "create", "--title", title, "--label", "watch", "--assignee", "octo-owner", "--body", "@octo-owner\n\nBody; $(touch pwned)"],
     ]);
     expect(existsSync(join(run.underCheck, "pwned")), "a title or body was run as a command").toBe(false);
   });
@@ -216,14 +260,14 @@ describe.skipIf(childProcessCasesSkipped("kept-issue CLI"))("the kept-issue CLI 
     const body = "The data check on master went red after the watch: the check job ended failure on commit 0123abc. Run: https://example.test/runs/1";
     const run = runCli(entry, [
       "--title", "check failed on master", "--label", "check", "--label-color", "b60205",
-      "--label-description", "The data repository's own suite", "--finding", "red", "--body", body,
+      "--label-description", "The data repository's own suite", "--owner", "octo-owner", "--finding", "red", "--body", body,
       "--closing", "The data check on master is green again on commit 0123abc. Run: https://example.test/runs/1",
     ]);
     expect(run.status, run.stderr).toBe(0);
     expect(run.calls).toEqual([
       ["issue", "list", "--label", "check", "--state", "all", "--json", "number,state,title", "--limit", "100"],
       ["label", "create", "check", "--color", "b60205", "--description", "The data repository's own suite", "--force"],
-      ["issue", "create", "--title", "check failed on master", "--label", "check", "--body", body],
+      ["issue", "create", "--title", "check failed on master", "--label", "check", "--assignee", "octo-owner", "--body", `@octo-owner\n\n${body}`],
     ]);
   });
 });

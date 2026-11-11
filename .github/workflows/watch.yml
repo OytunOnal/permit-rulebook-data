@@ -194,7 +194,7 @@ jobs:
       - name: Say which flags are overdue
         if: ${{ !cancelled() && (steps.clock.outputs.reading == 'overdue' || steps.clock.outputs.reading == 'clear') }}
         env: { GH_TOKEN: "${{ github.token }}" }
-        run: node dist/kept-issue-cli/src/watch/cli-kept-issue.js --title "overdue flags" --label "$WATCH_LABEL" --label-color "$WATCH_LABEL_COLOR" --label-description "$WATCH_LABEL_DESCRIPTION" --finding-file "$RUNNER_TEMP/overdue-finding.json"
+        run: node dist/kept-issue-cli/src/watch/cli-kept-issue.js --title "overdue flags" --label "$WATCH_LABEL" --label-color "$WATCH_LABEL_COLOR" --label-description "$WATCH_LABEL_DESCRIPTION" --owner "${{ github.repository_owner }}" --finding-file "$RUNNER_TEMP/overdue-finding.json"
 
       - name: Fail the run if any source was unreachable
         if: steps.watch.outcome == 'failure'
@@ -295,4 +295,4 @@ jobs:
             Commit: ${{ github.sha }}
             Nothing here says a source changed — it says the check did not finish, or the audit found a known advisory; the failed step in the run says which.
           CLOSING: "Closed by a morning on which every step passed. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        run: node dist/kept-issue-cli/src/watch/cli-kept-issue.js --title "watch run failed" --label "$WATCH_LABEL" --label-color "$WATCH_LABEL_COLOR" --label-description "$WATCH_LABEL_DESCRIPTION" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
+        run: node dist/kept-issue-cli/src/watch/cli-kept-issue.js --title "watch run failed" --label "$WATCH_LABEL" --label-color "$WATCH_LABEL_COLOR" --label-description "$WATCH_LABEL_DESCRIPTION" --owner "${{ github.repository_owner }}" --finding "$FINDING" --body "$BODY" --closing "$CLOSING"
