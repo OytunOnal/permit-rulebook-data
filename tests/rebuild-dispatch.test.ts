@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  conditionOf, KEPT_ISSUE_CLI_COPY, oneLineCommandsOf, readText, stepNamesOf, stepOf, watchYaml as watch, workflowFiles,
-  workflowsDir,
+  conditionOf, KEPT_ISSUE_CLI_COPY, keptIssueCallsOf, oneLineCommandsOf, OWNER_THROUGH_THE_ENVIRONMENT, readText, stepNamesOf,
+  stepOf, watchYaml as watch, workflowFiles, workflowsDir,
 } from "./workflow-text.js";
 
 /**
@@ -99,6 +99,17 @@ function findingOn(step: string, jobStatus: string): string {
   return jobStatus === status ? finding! : otherwise!;
 }
 
+/** The watch's step of that name without its comment lines, which are prose and say nothing the step does. */
+const stepWithoutComments = (name: string): string =>
+  stepOf(watch, name).split("\n").filter((line) => !/^\s*#/.test(line)).join("\n");
+
+/** Whether the watch's step of that name reads the clock's reading, in its condition or its script. */
+const readsTheClockReading = (name: string): boolean => stepWithoutComments(name).includes("steps.clock.outputs.reading");
+
+/** Whether the watch's step of that name fails the run on the clock's reading: it reads the reading and exits 1. */
+const failsTheRunOnTheClock = (name: string): boolean =>
+  readsTheClockReading(name) && /\bexit 1\b/.test(stepWithoutComments(name));
+
 /** The value a step's one-line `run:` command gives an argument, as written; undefined when it gives none. */
 function argumentOf(step: string, name: string): string | undefined {
   const command = /^\s*run:\s*(.+)$/m.exec(step)?.[1] ?? "";
@@ -170,11 +181,9 @@ describe("a new dataset state wakes the site", () => {
     const names = stepNamesOf(watch);
     // The dispatch is the last step that DOES anything; the only thing after it
     // is the notice that says whether a step failed — including the dispatch
-    // itself, when its token has expired (Standards review, 2026-09-08). Behind
-    // the notice stands only the overdue gate, which acts on nothing (#62).
-    expect(names[names.length - 1], "the overdue gate is not last").toBe("Fail the run on an overdue flag");
-    expect(names[names.length - 2], "the failure notice is not behind every acting step").toBe("Say so when the run fails");
-    expect(names[names.length - 3], "the dispatch is not the last acting step").toBe("Tell the site to rebuild");
+    // itself, when its token has expired (Standards review, 2026-09-08).
+    expect(names[names.length - 1], "the failure notice is not behind every acting step").toBe("Say so when the run fails");
+    expect(names[names.length - 2], "the dispatch is not the last acting step").toBe("Tell the site to rebuild");
 
     // Every step that acts on the flags comes before it — by position, not by
     // reputation: any step whose condition or body names the flags folder.
@@ -315,15 +324,11 @@ describe("a red run is never silent", () => {
     expect(findingOn(say, "failure"), "a red run does not say so").toBe("red");
     expect(findingOn(say, "success"), "a green run does not close the issue").toBe("green");
     expect(say).toContain("actions/runs/${{ github.run_id }}");
-    // It sits after everything that can fail, or it cannot see the failure.
-    // After everything, the dispatch included — everything but the overdue
-    // gate, which stands behind it so that it is NOT seen (#62): an overdue
-    // flag is red, but it is not the check failing, and it has its own issue.
-    expect(names.indexOf("Say so when the run fails")).toBe(names.length - 2);
+    // It sits after everything that can fail, the dispatch included, or it
+    // cannot see the failure.
+    expect(names.indexOf("Say so when the run fails")).toBe(names.length - 1);
     expect(names.indexOf("Say so when the run fails"))
       .toBeGreaterThan(names.indexOf("Tell the site to rebuild"));
-    const gate = stepOf(watch,"Fail the run on an overdue flag");
-    expect(gate).not.toContain("gh ");
   });
 
   /**
@@ -355,46 +360,46 @@ describe("a red run is never silent", () => {
 
   /**
    * An overdue flag is `overdue flags`'s to say (#117, user story 24). The
-   * clock's own step stays green on overdue (#118), and the gate that reddens
-   * the run on it stands behind this step, so on a morning where only the clock
-   * is red the job is still green here, and the finding with it.
+   * clock's own step stays green on overdue (#118), and no step reddens the
+   * run on it (the case below), so on a morning whose only news is an overdue
+   * flag the job is green here, and the finding with it.
    */
   it("does not let an overdue flag alone make watch run failed's finding red", () => {
-    const names = stepNamesOf(watch);
     const say = stepOf(watch, "Say so when the run fails");
-    const gates = names.filter((name) => {
-      const step = stepOf(watch, name);
-      return step.includes("steps.clock.outputs.reading == 'overdue'") && step.includes("exit 1");
-    });
-    expect(gates, "no step reddens the run on an overdue flag").toEqual(["Fail the run on an overdue flag"]);
-    expect(names.indexOf(gates[0]!), "the overdue gate runs before the finding is read")
-      .toBeGreaterThan(names.indexOf("Say so when the run fails"));
-    expect(findingOn(say, "success"), "a morning red only on the clock is not green here").toBe("green");
+    expect(findingOn(say, "success"), "a morning whose only news is an overdue flag is not green here").toBe("green");
+  });
+
+  /**
+   * An overdue flag never makes the run red (ruling 1 on
+   * OytunOnal/permit-rulebook#283): it is named in `overdue flags`, metric 1
+   * counts it, and no step fails the run on it.
+   */
+  it("lets no step redden the run on an overdue flag", () => {
+    const names = stepNamesOf(watch);
+    expect(names.filter(readsTheClockReading), "the scan's clause finds no step reading the clock, so it would pass vacuously")
+      .toContain("Say which flags are overdue");
+    expect(names.filter(failsTheRunOnTheClock)).toEqual([]);
   });
 
   /**
    * The clock (#62), kept through the kept-issue CLI (#117): it reads after the
    * state is pushed, and not on a measurement run; `overdue flags` is spoken to
    * only on a reading the clock could make, so an unread clock leaves it as it
-   * was; and the overdue gate stands behind `watch run failed`, so an overdue
-   * flag alone never files it.
+   * was.
    */
-  it("reads the clock after the push, keeps overdue flags on a reading, and gates last", () => {
+  it("reads the clock after the push, and keeps overdue flags on a reading", () => {
     const names = stepNamesOf(watch);
     const at = (name: string) => names.indexOf(name);
     const order = [
       "Persist state + flags BEFORE issue creation (nothing depends on gh succeeding)",
       "Read the clock on open flags",
       "Say which flags are overdue",
-      "Say so when the run fails",
-      "Fail the run on an overdue flag",
     ];
     for (const name of order) expect(at(name), `no step named "${name}"`).toBeGreaterThan(-1);
     expect(order.map(at)).toEqual([...order.map(at)].sort((a, b) => a - b));
     expect(conditionOf(watch, "Read the clock on open flags")).toBe("!cancelled() && github.event.inputs.commit != 'false'");
     expect(conditionOf(watch, "Say which flags are overdue"))
       .toBe("!cancelled() && (steps.clock.outputs.reading == 'overdue' || steps.clock.outputs.reading == 'clear')");
-    expect(conditionOf(watch, "Fail the run on an overdue flag")).toBe("!cancelled() && steps.clock.outputs.reading == 'overdue'");
     expect(stepOf(watch, "Read the clock on open flags")).toContain("id: clock");
   });
 
@@ -522,6 +527,14 @@ describe("a broken build elsewhere cannot silence a kept issue", () => {
       const command = /^\s*run:\s*(.+)$/m.exec(stepOf(watch, name))?.[1] ?? "";
       expect(command.startsWith(`node ${KEPT_ISSUE_CLI_COPY} `), `${name} runs ${command}`).toBe(true);
     }
+  });
+
+  /** A red kept issue reaches the repository's owner, named by the run and never typed here (ruling 3 on #283). */
+  it("hands every call that keeps an issue the run's owner through its step's environment", () => {
+    const keptIssueCalls = keptIssueCallsOf(watch);
+    expect(keptIssueCalls, "the watch keeps two issues, overdue flags and watch run failed: fewer calls is one this case no longer finds, more a call it does not know")
+      .toHaveLength(2);
+    expect(keptIssueCalls).toEqual([OWNER_THROUGH_THE_ENVIRONMENT, OWNER_THROUGH_THE_ENVIRONMENT]);
   });
 
   it("builds that copy from a config of its own, at the path the steps run", () => {

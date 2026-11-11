@@ -278,6 +278,37 @@ export function settleState(settle: PassToSettle): SettledState {
   };
 }
 
+/** One browser read as the run timed it: the entry, what the reader handed back, how long it took, and what the interception cost the page. */
+export interface TimedBrowserRead {
+  entry: Pick<WatchEntry, "id" | "steps">;
+  result: FetchResult;
+  milliseconds: number;
+  cost: { paused: number; pausedMs: number };
+}
+
+/**
+ * The line every browser read logs, `watch:browser-read`: the number the
+ * browser tier is answerable for, seven rendered pages added to a daily job,
+ * read from the run's own log (s34 point 6).
+ *
+ * A failed try carries the reader's error and failure class, because a try its
+ * retry recovers prints no other line, and its cause would go unsaid.
+ */
+export function sayBrowserRead(read: TimedBrowserRead): LogEvent {
+  const { result } = read;
+  return {
+    level: result.ok ? "info" : "error",
+    msg: "watch:browser-read",
+    fields: {
+      id: read.entry.id, seconds: Number((read.milliseconds / 1000).toFixed(1)),
+      steps: read.entry.steps?.length ?? 0, ok: result.ok,
+      ...(result.ok ? {} : { error: result.error, failure: result.failure }),
+      // What naming ourselves to the source alone costs this page.
+      ...read.cost,
+    },
+  };
+}
+
 /**
  * Where the reading was actually taken, when that is not where it was asked
  * for — on either tier, by the same rule.

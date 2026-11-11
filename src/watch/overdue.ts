@@ -3,10 +3,10 @@
  *
  * The watch files a flag and stops; a flag nobody reads stays open, and in
  * October five of them did, for up to ten days, while the site said a person
- * reads them (#12). What reached the human that week was a red run. So a flag
- * no person has walked by the second morning after the day it was raised turns
- * the morning red, as a refusal by us does: waiting another day changes
- * nothing about a flag nobody is reading.
+ * reads them (#12). So a flag no person has walked by the second morning after
+ * the day it was raised is overdue, and is named in the kept issue `overdue
+ * flags`. It never makes a run red: metric 1 counts the flags a person has not
+ * walked (ruling 1 on OytunOnal/permit-rulebook#283).
  *
  * The count is in UTC days and not in hours. The 05:17 schedule has filed its
  * flags anywhere between 09:47 and 12:07 UTC, and a clock of 48 hours would
@@ -33,7 +33,7 @@ export interface OverdueFlag {
   days: number;
 }
 
-/** The days a flag has before the morning that finds it unread turns red. */
+/** The days a flag has before the morning that finds it unread names it overdue. */
 const OVERDUE_AFTER_DAYS = 2;
 
 const DAY_MS = 86_400_000;

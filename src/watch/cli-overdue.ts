@@ -16,11 +16,10 @@ import { print } from "./print.js";
  * `overdue flags` with. Everything it decides is in `overdue-command.ts` and
  * `overdue.ts`.
  *
- * Exit 0 when it read the clock, clear or overdue: an overdue flag reddens the
- * run at the workflow's last step, behind `watch run failed`, because it is
- * not the check failing. Exit 1 when it did not: `gh` was not found, or the
- * tracker, its answer or the arguments could not be read, and that is the
- * check not finishing.
+ * Exit 0 when it read the clock, clear or overdue: an overdue flag is named in
+ * `overdue flags` and reddens no run, because it is not the check failing.
+ * Exit 1 when it did not: `gh` was not found, or the tracker, its answer or
+ * the arguments could not be read, and that is the check not finishing.
  */
 
 const runGh = ghRunnerFromPath();

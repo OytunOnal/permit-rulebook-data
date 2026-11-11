@@ -1,5 +1,4 @@
 import { chromePath, launch } from "./chrome.js";
-import { BUDGET_MS } from "./fetch-source.js";
 import { classOfThrown, MOST_OF_A_FAILURE, printableWithin, ReadFailure, saidByThrown } from "./failure.js";
 import { refusalOfEntryAddress } from "./trust-line.js";
 import type { Session } from "./cdp.js";
@@ -63,6 +62,12 @@ import type { BrowserReader, FetchResult, WatchEntry } from "./core.js";
 export { chromePath } from "./chrome.js";
 export type { WatchStep } from "./core.js";
 
+/**
+ * How long one browser entry gets per try, and the bound on Chrome's launch:
+ * twice the fetcher's, so an official page the runner renders in 26 s or 40 s
+ * is read rather than counted as an outage (OytunOnal/permit-rulebook#283, ruling 2).
+ */
+export const BROWSER_BUDGET_MS = 60_000;
 
 export interface BrowserReaderOptions {
   /** Where Chrome is. Injected so a test can ask what a run with no browser
@@ -96,7 +101,7 @@ export interface BrowserReaderHandle {
  * runner without a browser would otherwise spend seven timeouts proving it.
  */
 export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserReaderHandle {
-  const budgetMs = options.budgetMs ?? BUDGET_MS;
+  const budgetMs = options.budgetMs ?? BROWSER_BUDGET_MS;
   const findChrome = options.chromeAt ?? chromePath;
   let session: Session | undefined;
   let launchFailure: string | undefined;
@@ -192,8 +197,8 @@ export function openBrowserReader(options: BrowserReaderOptions = {}): BrowserRe
  * A promise with a bound on it, so one page cannot hold the whole run.
  *
  * The budget running out is transient on either tier: the page did not
- * settle in thirty seconds, which says nothing about whether it will settle
- * in the next thirty.
+ * settle within its budget, which says nothing about whether it will settle
+ * within the next one.
  */
 async function withDeadline<T>(work: Promise<T>, ms: number, timedOut: string): Promise<T> {
   let timer: NodeJS.Timeout | undefined;

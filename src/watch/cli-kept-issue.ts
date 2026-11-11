@@ -13,8 +13,11 @@ import { print } from "./print.js";
  *     --label <name>               the label it lives under
  *     --label-color <hex>          the label's colour, and
  *     --label-description <text>   its description, for when the run creates it
+ *     --owner <login>              the repository's owner, as the run names it:
+ *                                  a red finding assigns the issue to them and
+ *                                  opens its words with their @mention
  *   and the run's finding, one of:
- *     --finding red --body <text>         comment, or create, or reopen + comment
+ *     --finding red --body <text>         create, or assign + comment, or reopen + assign + comment
  *     --finding green --closing <text>    close an open issue with this line
  *     --finding unsaid                    leave the issue as it is
  *     --finding-file <path>               a JSON RunFinding a step before wrote
@@ -25,7 +28,8 @@ import { print } from "./print.js";
  * (`GH_TOKEN`, and `GH_REPO` or the checkout).
  *
  * Exit 0: the issue was kept (or there was nothing to do). Exit 1: it was not:
- * the arguments were refused, `gh` was not found, the tracker could not be
+ * the arguments were refused (an owner that is not a GitHub login among
+ * them), `gh` was not found, the tracker could not be
  * read, or a `gh` command failed. Its log line says which.
  */
 

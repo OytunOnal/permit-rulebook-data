@@ -267,7 +267,7 @@ an issue came from, not what kind of thing it is, and nobody picks them by hand
   `watch run failed` says the check did not finish, or that `npm audit` found a
   known advisory at high or above in an installed dependency, which is not the
   same as a source having changed, and it closes itself on the next morning on
-  which every step but the overdue clock passed; `overdue flags` says a flag
+  which every step passed; `overdue flags` says a flag
   has waited two days for a person (below). Only a run on master keeps
   `watch run failed`.
 - **`check`** — the data repository's own suite, run by the check workflow
@@ -280,6 +280,15 @@ Every one of these issues is a kept issue: the run opens, comments on, reopens
 and closes it itself, through the kept-issue CLI. That CLI is built on its own,
 from its own files, before anything else in the job (`npm run
 build:kept-issue`), so a master whose build breaks elsewhere still says so.
+
+A kept issue reaches the repository's owner whenever it says the run was red:
+the run assigns the issue to them and opens its words with `@<owner>`, so it
+lands in their notifications even when the issue was already theirs. A green
+closing assigns and mentions no one. Each step names the owner from the run,
+through its `env:` like every other value (`OWNER: "${{
+github.repository_owner }}"`, passed as `--owner "$OWNER"`), never in code,
+and the CLI refuses a step that names no one or names something that is not
+a GitHub login.
 
 ## The daily watch and the site rebuild
 
@@ -313,7 +322,7 @@ are the whole of why a morning is the colour it is:
 
 | class | what it means | asked again? | red? |
 |---|---|---|---|
-| `transient` | Nothing refused anything; the reading did not happen. A network error (the cause code is printed — `fetch failed (ECONNRESET)`), the 30 s budget spent, `408`, `425`, `429`, any `5xx`, an empty body. | yes, once | on a second silent morning inside the week |
+| `transient` | Nothing refused anything; the reading did not happen. A network error (the cause code is printed — `fetch failed (ECONNRESET)`), the budget spent (30 s for a fetch, 60 s for a browser read), `408`, `425`, `429`, any `5xx`, an empty body. | yes, once | on a second silent morning inside the week |
 | `refused-by-source` | The source answered, and the answer was no or was not the page: any other `4xx`, a bot wall, a page that moved; a browser step that finds no field. | no — the same answer comes back in three minutes | on a second silent morning inside the week |
 | `refused-by-us` | The watch declined to make the request at all: the trust line refused it (a credentialled or malformed address, an off-origin redirect or navigation, a private, loopback or link-local target — spelled as an address or arrived at by resolving a name), too many hops, no Chrome on the runner. | no | the same morning |
 
@@ -366,22 +375,24 @@ in the log and not only in the state. The workflow does not count any of this:
 the CLI's exit code is the one signal it reads, and nothing in `watch.yml`
 counts a lapse or an outage.
 
-**An overdue flag is the other red** (#62). The site says a flag is read
-within two days, so a `source-change` issue still open on the second morning
-after the day it was raised — counted in UTC days, a flag raised on the 16th is
-overdue on the 18th whatever hour either run kept — turns the run red, a due
-reminder as much as a detected change. It is not the check failing, so it files
-no `watch run failed`: the run keeps one issue, `overdue flags`, names each
-overdue flag there with the day it was raised and its age, comments on it each
-red morning, and closes it itself on the first morning nothing is overdue. A
-person walks the flags; the issue follows. If the tracker cannot be read, that
-is the check not finishing — `watch run failed`, and `overdue flags` is left as
-it was. A measurement run reads no clock. The decision is
-`src/watch/overdue.ts`; `src/watch/overdue-command.ts` reads the open flags
-under the label it is given through `gh`, and `cli-overdue.ts` is the one place
-its arguments and exit codes are written down. The issue
-itself is kept by the kept-issue CLI, `cli-kept-issue.ts`, which decides
-through `src/watch/kept-issue.ts`, the one table every kept issue goes through.
+**An overdue flag reddens nothing** (#62; ruling 1 on
+OytunOnal/permit-rulebook#283). The site says a flag is read within two days,
+so a `source-change` issue, a due reminder as much as a detected change, is
+overdue when it is still open on the second morning after the day it was
+raised: counted in UTC days, a flag raised on the 16th is overdue on the 18th
+whatever hour either run kept. An overdue flag never makes the run red: it
+files no `watch run failed`, and metric 1 counts it. The run keeps one issue,
+`overdue flags`, names each overdue flag there with the day it was raised and
+its age, comments on it each morning a flag is overdue, and closes it itself on
+the first morning nothing is. A person walks the flags; the issue follows. If
+the tracker cannot be read, that is the check not finishing —
+`watch run failed`, and `overdue flags` is left as it was. A measurement run
+reads no clock. The decision is `src/watch/overdue.ts`;
+`src/watch/overdue-command.ts` reads the open flags under the label it is given
+through `gh`, and `cli-overdue.ts` is the one place its arguments and exit
+codes are written down. The issue itself is kept by the kept-issue CLI,
+`cli-kept-issue.ts`, which decides through `src/watch/kept-issue.ts`, the one
+table every kept issue goes through.
 
 ### Moving a slice re-reads its baseline, in the same commit
 

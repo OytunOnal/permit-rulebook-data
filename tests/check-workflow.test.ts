@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
-import { KEPT_ISSUE_CLI_COPY, readText, stepOf, watchYaml, workflowFiles, workflowsDir } from "./workflow-text.js";
+import {
+  KEPT_ISSUE_CLI_COPY, keptIssueCallsOf, OWNER_THROUGH_THE_ENVIRONMENT, readText, stepOf, watchYaml, workflowFiles, workflowsDir,
+} from "./workflow-text.js";
 
 /**
  * The data repository checks itself (#117, decisions 8, 9 and 16), so a red
@@ -173,5 +175,13 @@ describe("after a watch run, and only then, the check keeps `check failed on mas
     // environment, one of two literals.
     expect(step).toContain("FINDING: \"${{ needs.check.result == 'success' && 'green' || 'red' }}\"");
     expect(step).toContain('--finding "$FINDING"');
+  });
+
+  /** A red check reaches the repository's owner, named by the run and never typed here (ruling 3 on #283). */
+  it("hands the call that keeps the issue the run's owner through its step's environment", () => {
+    const keptIssueCalls = keptIssueCallsOf(checkYaml());
+    expect(keptIssueCalls, "the check keeps one issue, check failed on master: none is a call this case no longer finds, two or more a call it does not know")
+      .toHaveLength(1);
+    expect(keptIssueCalls).toEqual([OWNER_THROUGH_THE_ENVIRONMENT]);
   });
 });

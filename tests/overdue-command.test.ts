@@ -65,7 +65,7 @@ describe("the clock's CLI — what it hands the run", () => {
     expect(finding.kind).toBe("red");
     expect(finding.body).toContain("#23");
     expect(finding.body).toContain(RUN);
-    // An overdue flag reddens the run at the workflow's last step, not here.
+    // An overdue flag is named in `overdue flags` and reddens no run.
     expect(run.exitCode).toBe(0);
     expect(run.events).toContainEqual(expect.objectContaining({ level: "error", msg: "overdue clock" }));
   });
