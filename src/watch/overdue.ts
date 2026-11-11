@@ -5,9 +5,8 @@
  * October five of them did, for up to ten days, while the site said a person
  * reads them (#12). So a flag no person has walked by the second morning after
  * the day it was raised is overdue, and is named in the kept issue `overdue
- * flags`. It reddens no run: a red run means the watch did not read its
- * sources, and metric 1 counts the flags a person has not walked (ruling 1 on
- * OytunOnal/permit-rulebook#283).
+ * flags`. It never makes a run red: metric 1 counts the flags a person has not
+ * walked (ruling 1 on OytunOnal/permit-rulebook#283).
  *
  * The count is in UTC days and not in hours. The 05:17 schedule has filed its
  * flags anywhere between 09:47 and 12:07 UTC, and a clock of 48 hours would

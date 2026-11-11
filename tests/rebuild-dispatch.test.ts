@@ -370,10 +370,9 @@ describe("a red run is never silent", () => {
   });
 
   /**
-   * A red run means the watch did not read its sources (ruling 1 on
-   * OytunOnal/permit-rulebook#283): an
-   * overdue flag is named in `overdue flags`, metric 1 counts it, and no step
-   * fails the run on it.
+   * An overdue flag never makes the run red (ruling 1 on
+   * OytunOnal/permit-rulebook#283): it is named in `overdue flags`, metric 1
+   * counts it, and no step fails the run on it.
    */
   it("lets no step redden the run on an overdue flag", () => {
     const names = stepNamesOf(watch);

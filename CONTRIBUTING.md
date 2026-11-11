@@ -380,8 +380,7 @@ OytunOnal/permit-rulebook#283). The site says a flag is read within two days,
 so a `source-change` issue, a due reminder as much as a detected change, is
 overdue when it is still open on the second morning after the day it was
 raised: counted in UTC days, a flag raised on the 16th is overdue on the 18th
-whatever hour either run kept. A red run means the watch did not read its
-sources, and an overdue flag is not that: it leaves the run's colour alone,
+whatever hour either run kept. An overdue flag never makes the run red: it
 files no `watch run failed`, and metric 1 counts it. The run keeps one issue,
 `overdue flags`, names each overdue flag there with the day it was raised and
 its age, comments on it each morning a flag is overdue, and closes it itself on

@@ -163,9 +163,8 @@ jobs:
       # The clock on a flag (#62). A flag no person has walked by the second
       # morning after the day it was raised is overdue, and is named in one
       # issue, `overdue flags`; every open `source-change` flag counts, a due
-      # reminder as much as a detected change. It reddens nothing: a red run
-      # means the watch did not read its sources, and metric 1 counts the
-      # flags a person has not walked (ruling 1 on
+      # reminder as much as a detected change. It never makes the run red:
+      # metric 1 counts the flags a person has not walked (ruling 1 on
       # OytunOnal/permit-rulebook#283).
       #
       # The clock reads the open flags through gh itself, and says what it
