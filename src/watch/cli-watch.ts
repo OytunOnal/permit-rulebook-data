@@ -6,7 +6,7 @@ import {
 import { openBrowserReader } from "./browser.js";
 import { fetchSource } from "./fetch-source.js";
 import {
-  chooseEntries, parseJsonText, readRunArgs, sayRun, sayWhereItRead, settleState,
+  chooseEntries, parseJsonText, readRunArgs, sayBrowserRead, sayRun, sayWhereItRead, settleState,
 } from "./run-says.js";
 import { readBoundedFile } from "./cli-io.js";
 import { FLAG_FILE_LIMIT_BYTES, newFlagsListOf } from "./flag-issues.js";
@@ -55,25 +55,14 @@ const readSourceOverHttp: Fetcher = async (url, redirects) => {
  * The browser half of the run: one Chrome, opened by the first entry that
  * needs one and closed on the way out, with what each page cost written down.
  *
- * The cost is logged rather than measured afterwards because it is the number
- * the browser tier is answerable for — seven rendered pages added to a daily
- * job — and a number nobody can read from the run's own log is a number
- * nobody checks (s34 point 6).
+ * The cost is logged rather than measured afterwards because a number nobody
+ * can read from the run's own log is a number nobody checks (`sayBrowserRead`).
  */
 const browser = openBrowserReader();
 const openInBrowser: BrowserReader = async (entry, redirects) => {
   const started = Date.now();
   const result = await browser.read(entry, redirects);
-  print({
-    level: result.ok ? "info" : "error",
-    msg: "watch:browser-read",
-    fields: {
-      id: entry.id, seconds: Number(((Date.now() - started) / 1000).toFixed(1)),
-      steps: entry.steps?.length ?? 0, ok: result.ok,
-      // What naming ourselves to the source alone costs this page.
-      ...browser.lastCost(),
-    },
-  });
+  print(sayBrowserRead({ entry, result, milliseconds: Date.now() - started, cost: browser.lastCost() }));
   printWhereItRead(entry, result);
   return result;
 };
