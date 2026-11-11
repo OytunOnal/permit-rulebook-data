@@ -55,7 +55,7 @@ const entryOf = (id: string) => watchlist.entries.find((e) => e.id === id)!;
 describe("s14 — what is left of the form-gated tier after s34 took the five back", () => {
   // RETIRED BY s34: "each takes the human strategy, a quarterly age and a read
   // date, and loses its slice". The five are browser entries now, with a slice
-  // and no verification age — replaced by s34's "each of the seven is a
+  // and no verification age — replaced by s34's "each of the six is a
   // browser entry with a slice, a history line and no verification age".
   //
   // RETIRED BY s34: "each note says what it backs, why a person, the
@@ -102,7 +102,7 @@ describe("s14 — what is left of the form-gated tier after s34 took the five ba
 // person reads was never a machine read" were promises that the state holds
 // nothing for these pages. It holds a text snapshot for each of them now,
 // which is the point of s34 — replaced by s34's "the state carries a text
-// snapshot for each of the seven, and the quote gate reads it".
+// snapshot for each of the six, and the quote gate reads it".
 
 describe("s14 — the quote gate stays green through the move", () => {
   const result = checkQuotes(dataset, watchlist, state);
@@ -117,7 +117,7 @@ describe("s14 — the quote gate stays green through the move", () => {
   // RETIRED BY s34: "the unverifiable set is exactly the form-gated quotes
   // plus the two bot-gated ones, all with the human reason". Thirty-nine of
   // those forty quotes are verified against a browser snapshot now, and the
-  // tier holds one — replaced by s34's "the quote gate reads the seven:
+  // tier holds one — replaced by s34's "the quote gate reads the six:
   // human_tier falls to one, and verified rises by exactly the thirty-nine".
   // The count the case established — the five pages back 38 quotes, 12/8/7/6/5
   // — moved there with it, still counted from the dataset.
@@ -126,7 +126,7 @@ describe("s14 — the quote gate stays green through the move", () => {
   // been vouching for". The number it pinned, 145 + 9 + 2, was the count with
   // the thirty-eight IND sentences off the books; they are back on them, and
   // pinning the new total here would be pinning it twice — s34 asserts the
-  // decision instead (nothing unverifiable on the seven, one sentence left on
+  // decision instead (nothing unverifiable on the six, one sentence left on
   // the tier). The history the comment carried stays worth reading: 171 before
   // the move, 145 after the stale snapshots left, +9 at s19, +2 at s29.
 });

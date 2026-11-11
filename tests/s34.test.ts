@@ -366,16 +366,22 @@ describe("s34 — the steps are data in a closed vocabulary the validator checks
   });
 });
 
-/** The seven that move, and the sentence count each one takes off the tier. */
-const MOVED = [
+/**
+ * The browser entries: six of the seven that moved here at s34. The seventh,
+ * the Opportunity Card's notice, left the runner on 2026-11-11 and is a
+ * reminder a person reads again (LEFT_THE_RUNNER, below).
+ */
+const BROWSER_ENTRIES = [
   "nl-ind-highly-skilled-migrant",
   "nl-ind-orientation-year",
   "nl-ind-blue-card",
   "nl-ind-ict",
   "nl-ind-researcher",
-  "de-bmi-chancenkarte",
   "eur-lex-blue-card-directive",
 ];
+
+/** The one of s34's seven whose page the runner's connection never reaches. */
+const LEFT_THE_RUNNER = "de-bmi-chancenkarte";
 
 /** The five whose requirements render behind the IND's "Your situation" form. */
 const FORM_WALLED = [
@@ -393,12 +399,13 @@ const watchlist = readJson("../watch/watchlist.json") as Watchlist;
 const entryOf = (id: string) => watchlist.entries.find((e) => e.id === id)!;
 
 describe("s34 — seven entries move to the browser and two stay with a person", () => {
-  it("each of the seven is a browser entry with a slice, a history line and no verification age", () => {
+  it("each of the six is a browser entry with a slice, a history line and no verification age", () => {
     // RETIRES s14's "each takes the human strategy, a quarterly age and a read
-    // date, and loses its slice" for the five IND pages, and s29's equivalent
-    // for the Opportunity Card's notice. The two bot-gated cases of s14 keep
-    // Legifrance; EUR-Lex moves here.
-    for (const id of MOVED) {
+    // date, and loses its slice" for the five IND pages. The two bot-gated
+    // cases of s14 keep Legifrance; EUR-Lex moves here. The Opportunity Card's
+    // notice was the seventh until 2026-11-11, and its shape is asserted below,
+    // under "the Opportunity Card's notice is a reminder a person reads".
+    for (const id of BROWSER_ENTRIES) {
       const entry = entryOf(id);
       expect(entry, id).toBeDefined();
       expect(entry.strategy, id).toBe("browser");
@@ -416,8 +423,8 @@ describe("s34 — seven entries move to the browser and two stay with a person",
   it("the five form-walled pages carry the recipe a person follows, as steps", () => {
     // s5e §3's "How to reach the requirements", in the vocabulary: the
     // nationality, the two permit questions, the button, and the blocks a
-    // person opens. The other two browser entries need none — nothing on them
-    // has to be answered, only rendered.
+    // person opens. EUR-Lex, the one other browser entry, needs none — nothing
+    // on it has to be answered, only rendered.
     for (const id of FORM_WALLED) {
       const steps = entryOf(id).steps ?? [];
       expect(steps.map((s) => s.step), id).toEqual(["select", "answer", "answer", "press", "expand"]);
@@ -428,8 +435,7 @@ describe("s34 — seven entries move to the browser and two stay with a person",
       expect(steps.filter((s) => s.step === "answer").every((s) => s.answer === "no"), id).toBe(true);
       expect(steps[3], id).toMatchObject({ button: "View information" });
     }
-    for (const id of ["de-bmi-chancenkarte", "eur-lex-blue-card-directive"])
-      expect(entryOf(id).steps, `${id}: a page that renders itself carries steps`).toBeUndefined();
+    expect(entryOf("eur-lex-blue-card-directive").steps, "a page that renders itself carries steps").toBeUndefined();
   });
 
   it("every declared step is in the vocabulary, on every entry in the watchlist", () => {
@@ -445,29 +451,73 @@ describe("s34 — seven entries move to the browser and two stay with a person",
     }
   });
 
-  it("leaves exactly those two on the human tier", () => {
+  it("leaves those two on the human tier, and the Opportunity Card's notice beside them", () => {
+    // s34 left exactly the two; the notice joined them on 2026-11-11.
     const human = watchlist.entries.filter((e) => e.strategy === "human").map((e) => e.id).sort();
-    expect(human).toEqual([...STAY_HUMAN].sort());
+    expect(human).toEqual([...STAY_HUMAN, LEFT_THE_RUNNER].sort());
   });
 });
 
-describe("s34 — the quote gate reads the seven", () => {
-  const state = readJson("../watch/state.json") as WatchState;
-  const sevenUrls = new Set(MOVED.map((id) => entryOf(id).url));
-  const onTheSeven = datasetQuotes(dataset).filter((q) => sevenUrls.has(q.source_url));
+describe("the Opportunity Card's notice is a reminder a person reads", () => {
+  /**
+   * Ruling 14 on OytunOnal/permit-rulebook#342 takes ruling 2's fallback on
+   * OytunOnal/permit-rulebook#337: from GitHub's runner the page's connection
+   * never answers (Chrome's own network timeout at about 30 s, on both tries,
+   * under a 60 s budget), so no budget of the watch's reaches it, and a person
+   * reads it every 90 days instead. The run is then not red for it every
+   * morning, and the reader's "Official page" link is still checked.
+   */
+  const entry = entryOf(LEFT_THE_RUNNER);
 
-  it("counts, from the dataset, the thirty-nine sentences the seven were carrying", () => {
-    // 38 on the five IND pages (12 + 8 + 7 + 6 + 5, the count s14 established
-    // and this slice inherits) and 1 on EUR-Lex, Article 3(1). The BMI notice
-    // is a sentinel and backs none — which is why 39 and not 40: the fortieth
-    // quote on the old tier was Legifrance's, and it stays.
-    expect(onTheSeven.length).toBe(39);
+  it("is a sentinel on the human tier, with the 90-day age and the day it was last read unchanged", () => {
+    expect(entry.strategy).toBe("human");
+    expect(entry.kind).toBe("sentinel");
+    expect(entry.max_age_days).toBe(90);
+    expect(entry.last_verified).toBe("2026-11-11");
+    // Its slice stays, with the snapshot read through it: watch.test.ts's
+    // "every shipped snapshot was read through the slice the watchlist names
+    // today" holds that pair, on this entry as on every other.
   });
 
-  it("the state carries a text snapshot for each of the seven, and the quote gate reads it", () => {
+  it("keeps its history, adds the day it left the runner, and says that day's reason in its note", () => {
+    expect((entry.history ?? []).map((h) => h.changed_at)).toEqual(["2026-09-17", "2026-09-23", "2026-11-11"]);
+    expect(entry.note, "the note does not re-state the reason on the day it moved").toMatch(/2026-11-11/);
+  });
+
+  it("is read by nobody on the runner, and the week of silent mornings it carries reddens no run", async () => {
+    // The shipped state still names it unread, with seven silent mornings up
+    // to 2026-11-11. A reminder is never `unreachable`, so the next run's
+    // unread list drops it and the verdict, which reads that list, is green.
+    const state = readJson("../watch/state.json") as WatchState;
+    const { reports, nextState, verdict } = await runWatch(
+      { entries: [entry] }, state, refuse, "2026-11-12",
+    );
+    expect(reports.map((r) => r.outcome)).toEqual(["ok"]);
+    expect(nextState.unread).toEqual([]);
+    expect(verdict.red).toBe(false);
+    // Its last machine reading is left as it was.
+    expect(nextState.entries[LEFT_THE_RUNNER]).toEqual(state.entries[LEFT_THE_RUNNER]);
+  });
+});
+
+describe("s34 — the quote gate reads the six", () => {
+  const state = readJson("../watch/state.json") as WatchState;
+  const browserUrls = new Set(BROWSER_ENTRIES.map((id) => entryOf(id).url));
+  const onTheBrowserEntries = datasetQuotes(dataset).filter((q) => browserUrls.has(q.source_url));
+
+  it("counts, from the dataset, the thirty-nine sentences the six carry", () => {
+    // 38 on the five IND pages (12 + 8 + 7 + 6 + 5, the count s14 established
+    // and this slice inherits) and 1 on EUR-Lex, Article 3(1). The BMI notice,
+    // the seventh until 2026-11-11, is a sentinel and backs none — which is
+    // why 39 and not 40: the fortieth quote on the old tier was Legifrance's,
+    // and it stays.
+    expect(onTheBrowserEntries.length).toBe(39);
+  });
+
+  it("the state carries a text snapshot for each of the six, and the quote gate reads it", () => {
     // REPLACES s14's "represents the five the way it represents every
     // human-tier entry: absent" and "the state carries no stale IND snapshot".
-    for (const id of MOVED) {
+    for (const id of BROWSER_ENTRIES) {
       const snapshot = state.entries[id];
       expect(snapshot, `${id}: no snapshot`).toBeDefined();
       expect(snapshot!.text, `${id}: a browser snapshot with no text`).toBeTruthy();
@@ -491,11 +541,11 @@ describe("s34 — the quote gate reads the seven", () => {
 
   it("every one of the thirty-nine is verified against a rendered page, not merely not-missing", () => {
     const result = checkQuotes(dataset, watchlist, state);
-    const stillUnverifiable = result.unverifiable.filter((u) => sevenUrls.has(u.source_url));
+    const stillUnverifiable = result.unverifiable.filter((u) => browserUrls.has(u.source_url));
     expect(stillUnverifiable).toEqual([]);
     // And they are counted: `verified` covers all of them plus everything the
     // html and pdf-text arms already vouched for.
-    expect(result.verified).toBeGreaterThanOrEqual(onTheSeven.length);
+    expect(result.verified).toBeGreaterThanOrEqual(onTheBrowserEntries.length);
   });
 });
 

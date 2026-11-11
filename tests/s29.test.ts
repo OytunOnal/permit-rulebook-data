@@ -71,10 +71,13 @@ describe("s29 #13 — the Opportunity Card's official page is an authority's", (
     // tier, with the sentinel sentence a person confirms", and asserted the
     // human strategy, the quarterly age, the 2026-09-17 read date and the
     // absence of a snapshot. The cookie round-trip that put the page on that
-    // tier is one a browser makes without being asked, so the entry is a
-    // browser entry now and `tests/s34.test.ts` holds its shape. What does not
-    // change is the sentence this sentinel exists to watch for, so that half
-    // of the promise stays here.
+    // tier is one a browser makes without being asked, so the entry was a
+    // browser entry from s34. Since 2026-11-11 it is on the human tier again,
+    // because the runner's connection to the page never answers, and
+    // `tests/s34.test.ts` ("the Opportunity Card's notice is a reminder a
+    // person reads") holds its shape. What does not change is the sentence
+    // this sentinel exists to watch for, so that half of the promise stays
+    // here.
     const entry = entryFor(BMI_CHANCENKARTE)!;
     expect(entry.note).toContain(
       "The opportunity card is a new type of residence permit for those coming to Germany to look for work.",

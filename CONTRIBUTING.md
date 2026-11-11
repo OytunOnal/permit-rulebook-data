@@ -82,7 +82,7 @@ A `human` entry is fetched by nobody, so it never has a bad morning; a browser
 entry opens a real page, performs steps against controls an authority may
 rename, and waits for a render that may not come. Some of those mornings will
 be red, and a red morning is the price of the sentence being machine-checked
-the other mornings — not a fault to be silenced. When one of the seven goes
+the other mornings — not a fault to be silenced. When a browser entry goes
 `unreachable`, read the error before anything else: it names the step, the
 label, what the page offered instead and what it asked the network for, which
 is usually the whole diagnosis. Since s35 (2026-09-24) one failure is not
@@ -98,7 +98,11 @@ and holds **two** since s34 (2026-09-23): `legifrance-ce-algerian-titles`,
 where headless Chrome from the runner met a Cloudflare challenge on 2026-09-15
 — a client wall a browser does not pass — and `gesetze-official-recheck`, which
 is reachable only through a VPN, a geography rather than a client. Between them
-they leave one dataset sentence unverifiable by machine.
+they leave one dataset sentence unverifiable by machine. A third joined them on
+2026-11-11 (OytunOnal/permit-rulebook#337): `de-bmi-chancenkarte`, a sentinel
+backing no sentence, whose page a browser elsewhere reads in 12 s while from
+the runner its connection never answers (`net::ERR_TIMED_OUT` at about 30 s,
+Chrome's own timeout, which no budget of the watch's reaches).
 
 ## How a route is added
 
