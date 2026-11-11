@@ -99,15 +99,16 @@ function findingOn(step: string, jobStatus: string): string {
   return jobStatus === status ? finding! : otherwise!;
 }
 
-/**
- * Whether the watch's step of that name fails the run on the clock's reading:
- * it reads the reading, in its condition or its script, and exits 1. Comment
- * lines are prose and say neither.
- */
-function failsTheRunOnTheClock(name: string): boolean {
-  const stepWithoutComments = stepOf(watch, name).split("\n").filter((line) => !/^\s*#/.test(line)).join("\n");
-  return stepWithoutComments.includes("steps.clock.outputs.reading") && /\bexit 1\b/.test(stepWithoutComments);
-}
+/** The watch's step of that name without its comment lines, which are prose and say nothing the step does. */
+const stepWithoutComments = (name: string): string =>
+  stepOf(watch, name).split("\n").filter((line) => !/^\s*#/.test(line)).join("\n");
+
+/** Whether the watch's step of that name reads the clock's reading, in its condition or its script. */
+const readsTheClockReading = (name: string): boolean => stepWithoutComments(name).includes("steps.clock.outputs.reading");
+
+/** Whether the watch's step of that name fails the run on the clock's reading: it reads the reading and exits 1. */
+const failsTheRunOnTheClock = (name: string): boolean =>
+  readsTheClockReading(name) && /\bexit 1\b/.test(stepWithoutComments(name));
 
 /** The value a step's one-line `run:` command gives an argument, as written; undefined when it gives none. */
 function argumentOf(step: string, name: string): string | undefined {
@@ -376,7 +377,8 @@ describe("a red run is never silent", () => {
    */
   it("lets no step redden the run on an overdue flag", () => {
     const names = stepNamesOf(watch);
-    expect(names, "the watch reads no clock, so this case would pass vacuously").toContain("Read the clock on open flags");
+    expect(names.filter(readsTheClockReading), "the scan's clause finds no step reading the clock, so it would pass vacuously")
+      .toContain("Say which flags are overdue");
     expect(names.filter(failsTheRunOnTheClock)).toEqual([]);
   });
 
