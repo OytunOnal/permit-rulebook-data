@@ -1,7 +1,7 @@
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { BROWSER_BUDGET_MS, chromePath, openBrowserReader } from "../src/watch/browser.js";
+import { chromePath, openBrowserReader } from "../src/watch/browser.js";
 import { BUDGET_MS } from "../src/watch/fetch-source.js";
 import { hasControl, hasSteering, MOST_OF_A_FAILURE, MOST_OF_A_PAGE_WORD, NOTE_AFTER } from "../src/watch/failure.js";
 import { ADDRESS_LENGTH_LIMIT } from "../src/watch/trust-line.js";
@@ -1487,8 +1487,29 @@ describe("#49 — a browser entry on a link-local address is refused before Chro
 });
 
 describe("a browser entry has its own budget, twice the fetcher's", () => {
-  it("gives a browser read 60 s per try and a fetch 30 s", () => {
-    expect(BROWSER_BUDGET_MS, "the browser reader's default budget").toBe(60_000);
+  /**
+   * The reader's default, not the constant alone: a reader opened with no
+   * budget, over a Chrome whose launch never becomes usable, which the budget
+   * bounds. Its read ends when that default runs out, on a clock the case moves.
+   */
+  it("gives a browser read 60 s per try and a fetch 30 s", async () => {
+    vi.doMock("../src/watch/chrome.js", () => ({ chromePath: () => "chrome", launch: () => new Promise(() => {}) }));
+    vi.resetModules();
+    const { openBrowserReader: openOverAnUnusableChrome } = await import("../src/watch/browser.js");
+    vi.useFakeTimers();
+    try {
+      let ended = false;
+      const reading = openOverAnUnusableChrome().read(entry({ steps: [] }), "same-origin").finally(() => { ended = true; });
+      await vi.advanceTimersByTimeAsync(59_999);
+      expect(ended, "the browser reader's default budget ran out before 60 s").toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(ended, "the browser reader's default budget outlasts 60 s").toBe(true);
+      expect((await reading).ok).toBe(false);
+    } finally {
+      vi.useRealTimers();
+      vi.doUnmock("../src/watch/chrome.js");
+      vi.resetModules();
+    }
     expect(BUDGET_MS, "the fetcher's budget").toBe(30_000);
   });
 });
