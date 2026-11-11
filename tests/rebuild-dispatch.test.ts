@@ -105,8 +105,8 @@ function findingOn(step: string, jobStatus: string): string {
  * lines are prose and say neither.
  */
 function failsTheRunOnTheClock(name: string): boolean {
-  const acted = stepOf(watch, name).split("\n").filter((line) => !/^\s*#/.test(line)).join("\n");
-  return acted.includes("steps.clock.outputs.reading") && /\bexit 1\b/.test(acted);
+  const stepWithoutComments = stepOf(watch, name).split("\n").filter((line) => !/^\s*#/.test(line)).join("\n");
+  return stepWithoutComments.includes("steps.clock.outputs.reading") && /\bexit 1\b/.test(stepWithoutComments);
 }
 
 /** The value a step's one-line `run:` command gives an argument, as written; undefined when it gives none. */

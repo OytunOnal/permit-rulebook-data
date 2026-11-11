@@ -51,9 +51,9 @@ export function actionOnKeptIssue(issue: KeptIssue, finding: RunFinding, listed:
   const found = named.find((l) => l.state === "OPEN") ?? named[0];
   if (finding.kind === "red") {
     // The mention on a line of its own, then the run's words as they came.
-    const ownerReached = { assignee: issue.owner, body: `@${issue.owner}\n\n${finding.body}` };
-    if (!found) return { kind: "create", title: issue.title, label: issue.label, ...ownerReached };
-    return { kind: "comment", number: found.number, reopen: found.state === "CLOSED", ...ownerReached };
+    const assigneeAndBody = { assignee: issue.owner, body: `@${issue.owner}\n\n${finding.body}` };
+    if (!found) return { kind: "create", title: issue.title, label: issue.label, ...assigneeAndBody };
+    return { kind: "comment", number: found.number, reopen: found.state === "CLOSED", ...assigneeAndBody };
   }
   if (finding.kind === "green" && found?.state === "OPEN") return { kind: "close", number: found.number, comment: finding.closing };
   return { kind: "nothing" };
@@ -86,12 +86,12 @@ export function ghArgumentsOf(action: KeptIssueAction, labelLook: LabelLook): st
         ],
       ];
     case "comment": {
-      const number = String(action.number);
+      const issueNumberAsText = String(action.number);
       const assignAndComment = [
-        ["issue", "edit", number, "--add-assignee", action.assignee],
-        ["issue", "comment", number, "--body", action.body],
+        ["issue", "edit", issueNumberAsText, "--add-assignee", action.assignee],
+        ["issue", "comment", issueNumberAsText, "--body", action.body],
       ];
-      return action.reopen ? [["issue", "reopen", number], ...assignAndComment] : assignAndComment;
+      return action.reopen ? [["issue", "reopen", issueNumberAsText], ...assignAndComment] : assignAndComment;
     }
     case "close":
       return [["issue", "close", String(action.number), "--comment", action.comment]];
