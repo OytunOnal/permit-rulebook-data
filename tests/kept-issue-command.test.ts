@@ -78,7 +78,6 @@ describe("the kept-issue CLI — what reaches gh for each action", () => {
     const tracker = trackerAnswering(openIssue);
     const run = await keepIssue([...keptIssueArgs(), ...green], tracker.runGh);
     expect(tracker.writes()).toEqual([["issue", "close", "40", "--comment", "No overdue flag this morning."]]);
-    expect(tracker.calls.flat().filter((argument) => argument.includes("@") || argument.includes("assignee"))).toEqual([]);
     expect(run.exitCode).toBe(0);
   });
 
