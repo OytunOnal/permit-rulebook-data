@@ -313,7 +313,7 @@ are the whole of why a morning is the colour it is:
 
 | class | what it means | asked again? | red? |
 |---|---|---|---|
-| `transient` | Nothing refused anything; the reading did not happen. A network error (the cause code is printed — `fetch failed (ECONNRESET)`), the 30 s budget spent, `408`, `425`, `429`, any `5xx`, an empty body. | yes, once | on a second silent morning inside the week |
+| `transient` | Nothing refused anything; the reading did not happen. A network error (the cause code is printed — `fetch failed (ECONNRESET)`), the budget spent (30 s for a fetch, 60 s for a browser read), `408`, `425`, `429`, any `5xx`, an empty body. | yes, once | on a second silent morning inside the week |
 | `refused-by-source` | The source answered, and the answer was no or was not the page: any other `4xx`, a bot wall, a page that moved; a browser step that finds no field. | no — the same answer comes back in three minutes | on a second silent morning inside the week |
 | `refused-by-us` | The watch declined to make the request at all: the trust line refused it (a credentialled or malformed address, an off-origin redirect or navigation, a private, loopback or link-local target — spelled as an address or arrived at by resolving a name), too many hops, no Chrome on the runner. | no | the same morning |
 

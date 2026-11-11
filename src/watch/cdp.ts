@@ -58,17 +58,16 @@ const MIN_SETTLE_MS = 1_000;
  *
  * Measured on a fixture that mirrors the IND's form and blocks its main thread
  * after every click (2026-09-23): the five-step recipe cost 16.7 s with a full
- * window between every step and 10.1 s with this one, and the entry's 30 s
- * budget went from surviving 2 s of freeze per click to surviving 4 s (29.6 s
- * at four, over at five). The reading itself is unchanged — the settle before
- * the HTML is read is still the long one.
+ * window between every step and 10.1 s with this one, and a 30 s budget went
+ * from surviving 2 s of freeze per click to surviving 4 s (29.6 s at four,
+ * over at five). The reading itself is unchanged — the settle before the HTML
+ * is read is still the long one.
  *
  * What this does NOT buy is patience with a page that freezes for the 30-50 s
  * a real browser showed on 2026-09-23: five clicks of that is three minutes,
- * and no wait-shortening reaches it. If the runner sees that too, the answer
- * is a bigger budget for browser entries and a slower job, which is a decision
- * with a cost and belongs to whoever is holding the five-minute line — not to
- * this constant.
+ * and no wait-shortening reaches it. What a browser entry is given is its
+ * budget (`BROWSER_BUDGET_MS` in `browser.ts`), a decision with a cost on the
+ * job's length — not this constant.
  */
 const STEP_QUIET_MS = 800;
 
@@ -135,10 +134,9 @@ export function attach(socket: WebSocket, close: () => void): Session {
    * What the interception cost this tab: how many requests it paused, and how
    * long they spent paused in total.
    *
-   * Measured rather than assumed, because the reading of a page is now on the
-   * far side of a round-trip per request and the entry's budget is 30 s — and
-   * two entries have already moved close enough to it to be worth watching
-   * (s34, 2026-09-25).
+   * Measured rather than assumed, because the reading of a page is on the far
+   * side of a round-trip per request, and every one of those waits is spent
+   * from the entry's budget.
    *
    * `paused` counts every request this driver was handed to decide about,
    * including one that turned out to be gone by the time it was let go.
@@ -288,7 +286,7 @@ export function attach(socket: WebSocket, close: () => void): Session {
       // when a navigation cancels them, and a request counted as in flight
       // for ever keeps the settle rule waiting for ever — which turned a page
       // that meta-refreshed to another site from "refused, and here is where
-      // it went" into "the browser did not finish this page within 30s"
+      // it went" into "the browser did not finish this page within <budget>"
       // (measured 2026-09-24).
       requestsOf(message.sessionId).clear();
       return;
@@ -367,7 +365,7 @@ export function attach(socket: WebSocket, close: () => void): Session {
     async render(entry, budgetMs, redirects) {
       // When this page's budget runs out, measured from the top of the read —
       // the same clock `withDeadline` is holding over this call. A step that
-      // bounded its own work by a fresh 30 s would be cut off mid-diagnosis by
+      // bounded its own work by a fresh budget would be cut off mid-diagnosis by
       // that outer timeout, which is the one way a diagnosis is worse than
       // useless: it costs the run and says nothing.
       const renderBy = Date.now() + budgetMs;
