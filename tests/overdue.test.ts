@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { findingOfClock, OPEN_FLAGS_READ_LIMIT, overdueFlags, readClock, type OpenFlag } from "../src/watch/overdue.js";
 
 /**
- * #62 — an overdue flag turns the morning red.
+ * #62 — an overdue flag is named in `overdue flags`.
  *
  * The site promises that a flag is read within two days, and five flags sat
  * for up to ten (#12) because nothing counted. A flag raised on the 16th is
