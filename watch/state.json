@@ -538,24 +538,10 @@
       "history": []
     }
   },
-  "last_run": "2026-11-12",
-  "unread": [
-    {
-      "id": "uwv-reguliere-arbeidsplaats",
-      "url": "https://www.uwv.nl/nl/werkvergunning/reguliere-arbeidsplaats"
-    },
-    {
-      "id": "uwv-twv-voorwaarden",
-      "url": "https://www.uwv.nl/nl/werkvergunning/twv-voorwaarden"
-    },
-    {
-      "id": "uwv-wanneer-geen-werkvergunning",
-      "url": "https://www.uwv.nl/nl/werkvergunning/wanneer-geen-werkvergunning"
-    }
-  ],
+  "last_run": "2026-11-13",
+  "unread": [],
   "lapses": {
     "de-bmi-chancenkarte": [
-      "2026-11-06",
       "2026-11-07",
       "2026-11-08",
       "2026-11-09",
