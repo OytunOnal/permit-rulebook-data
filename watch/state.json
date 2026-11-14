@@ -538,11 +538,15 @@
       "history": []
     }
   },
-  "last_run": "2026-11-13",
-  "unread": [],
+  "last_run": "2026-11-14",
+  "unread": [
+    {
+      "id": "eur-lex-blue-card-directive",
+      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883"
+    }
+  ],
   "lapses": {
     "de-bmi-chancenkarte": [
-      "2026-11-07",
       "2026-11-08",
       "2026-11-09",
       "2026-11-10",
@@ -559,6 +563,9 @@
     ],
     "uwv-wanneer-geen-werkvergunning": [
       "2026-11-12"
+    ],
+    "eur-lex-blue-card-directive": [
+      "2026-11-14"
     ]
   }
 }
