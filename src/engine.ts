@@ -993,8 +993,8 @@ export function resultProvenance(r: RouteResult, profile: Profile): ProvenanceEn
       entries.push(applied === undefined ? { ...e } : { ...e, applied });
   });
   // A statement is not a path anyone could have missed: it stands on every
-  // card the route produces. Where the authority sets it aside for this
-  // reader's passport, the card shows the carve-out instead of the condition,
+  // card the route produces. Where the authority releases this reader's
+  // passport from it, the card shows the carve-out instead of the condition,
   // and the quote list follows the card: one sentence per statement, the one
   // the reader was actually shown. Printing both would put the exemption list
   // under a condition it does not lift for them, and the condition's own words

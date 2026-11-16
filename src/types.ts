@@ -293,7 +293,7 @@ export interface BoundPassports {
  * routes — `eq third_country` — so no route COULD say "for nationals of X this
  * does not apply", even where an authority says exactly that, and the product
  * asked which passport a reader would apply with and then scored them against
- * conditions the IND sets aside for that passport (human walk on the live
+ * conditions the IND releases that passport from (human walk on the live
  * site, diagnosed as a class in issue #8). The only field a carve-out may key
  * on today is the passport, because that is the only nationality answer the
  * interview has; a carve-out that had to key on anything else would be a
