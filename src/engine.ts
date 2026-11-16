@@ -537,14 +537,20 @@ function equivalenceKey(dataset: Dataset, field: string, value: string): string 
   // residence permit set aside for one of them; a Turkish passport and a
   // Brazilian one too, on a route whose statement is about Turkish passports
   // alone. Membership is exact, as `bindsReader` reads it.
-  if (field === CITIZENSHIP_FIELD)
-    for (const country of dataset.countries)
-      for (const route of country.routes)
-        for (const s of routeStatements(route)) {
-          if (s.except) parts.push(s.except.citizenship.includes(value) ? `x${route.id}/${s.id}` : "-");
-          if (s.onlyFor) parts.push(s.onlyFor.citizenship.includes(value) ? `o${route.id}/${s.id}` : "-");
-        }
+  if (field === CITIZENSHIP_FIELD) parts.push(...statementKeyParts(dataset, value));
   return parts.join("|");
+}
+
+/** The parts of a passport's key the route statements decide: whether each
+ * carve-out names it, and whether each Passport-only statement does. */
+function statementKeyParts(dataset: Dataset, passport: string): string[] {
+  const parts: string[] = [];
+  for (const route of dataset.countries.flatMap((c) => c.routes))
+    for (const s of routeStatements(route)) {
+      if (s.except) parts.push(s.except.citizenship.includes(passport) ? `x${route.id}/${s.id}` : "-");
+      if (s.onlyFor) parts.push(s.onlyFor.citizenship.includes(passport) ? `o${route.id}/${s.id}` : "-");
+    }
+  return parts;
 }
 
 /**

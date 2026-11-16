@@ -9,6 +9,7 @@ import { routeSlotErrors } from "./route-slots.js";
 import { pathWordsErrors } from "./path-words.js";
 import { attainableAnswerErrors } from "./attainable-answers.js";
 import { screenPlaceErrors } from "./screen-place.js";
+import { onlyForErrors } from "./only-for.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import { CITIZENSHIP_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
@@ -75,13 +76,16 @@ export function validateDataset(data: unknown): ValidationResult {
  * - an improvable question marks the answers a reader can reach by acting,
  *   and "I don't know" is never one (`attainableAnswerErrors`);
  * - no notice or statement text points at a place on the screen
- *   (`screenPlaceErrors`).
+ *   (`screenPlaceErrors`);
+ * - a Passport-only statement names only passports the citizenship question
+ *   offers, and never stands beside a carve-out (`onlyForErrors`).
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
   const errors: ValidationError[] = [
     ...vocabularyErrors(countryVocabulary), ...territoryErrors(countryVocabulary),
     ...unwordedRangeErrors(dataset), ...routeSlotErrors(dataset), ...arrangedOffAPathErrors(dataset),
     ...pathWordsErrors(dataset), ...attainableAnswerErrors(dataset), ...screenPlaceErrors(dataset),
+    ...onlyForErrors(dataset),
   ];
 
   /**
@@ -344,35 +348,6 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
           });
         checkVocabulary(where, CITIZENSHIP_FIELD, s.except.citizenship);
       }
-
-      /**
-       * A Passport-only statement may only name a passport the citizenship
-       * question offers. Its membership is exact, so a class or an unknown code
-       * would match no declared passport, and the statement would vanish from
-       * every reader who answered — with nothing saying so.
-       */
-      const passports = new Set(fieldOptions(dataset, CITIZENSHIP_FIELD).map((o) => o.value));
-      for (const s of routeStatements(route))
-        for (const v of s.onlyFor?.citizenship ?? [])
-          if (!passports.has(v))
-            errors.push({
-              path: `${path}/statements/${s.id}/onlyFor`,
-              message: `${route.id}: "${s.id}" is only for ${CITIZENSHIP_FIELD} "${v}", which the ${CITIZENSHIP_FIELD} question does not offer — no declared passport could match it`,
-              keyword: "offeredPassport",
-            });
-
-      /**
-       * A statement names either whom it leaves out (a carve-out) or whom it is
-       * about (`onlyFor`), never both: the two together would leave the card
-       * to decide which one a reader's passport answers to.
-       */
-      for (const s of routeStatements(route))
-        if (s.except && s.onlyFor)
-          errors.push({
-            path: `${path}/statements/${s.id}`,
-            message: `${route.id}: "${s.id}" names both the passports it does not bind (except) and the only passports it is about (onlyFor) — keep one`,
-            keyword: "carveOutOrOnlyFor",
-          });
     }
 
   for (const n of dataset.notices ?? []) {
