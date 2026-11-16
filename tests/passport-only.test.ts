@@ -69,6 +69,14 @@ describe("a Passport-only statement binds only the passports it names", () => {
     const classes = optionEquivalenceClasses(ds, "citizenship", ["TR", "BR"]);
     expect(classes.map((c) => c.value)).toEqual(["TR", "BR"]);
   });
+
+  it("keeps a passport a carve-out names apart from one it does not, as for a Passport-only statement", () => {
+    // OytunOnal/permit-rulebook#407, ruling 18: the Dutch provisional residence permit binds an Afghan
+    // passport and not a Japanese one, and a Swiss passport and not an Austrian
+    // one, so their cards differ.
+    for (const pair of [["AF", "JP"], ["AT", "CH"]])
+      expect(optionEquivalenceClasses(dataset, "citizenship", pair).map((c) => c.value), pair.join("/")).toEqual(pair);
+  });
 });
 
 describe("the dataset check holds a Passport-only statement to the passports the interview offers", () => {
@@ -92,6 +100,17 @@ describe("the dataset check holds a Passport-only statement to the passports the
       expect(result.ok, unknown).toBe(false);
       expect(result.errors.map((e) => e.message).join(" "), unknown).toContain(unknown);
     }
+  });
+
+  it("refuses a statement that names both whom it leaves out and whom it is about", () => {
+    // OytunOnal/permit-rulebook#407, ruling 17: a statement carries a carve-out or `onlyFor`, never both.
+    const ds = structuredClone(dataset);
+    const sponsor = routeStatements(routeIn(ds, "nl-hsm-30plus")).find((s) => s.id === "employer-must-be-a-recognised-sponsor")!;
+    expect(sponsor.except).toBeDefined();
+    sponsor.onlyFor = { citizenship: ["JP"] };
+    const result = validateDataset(ds);
+    expect(result.ok).toBe(false);
+    expect(result.errors.map((e) => e.path)).toContain("/countries/NL/routes/nl-hsm-30plus/statements/employer-must-be-a-recognised-sponsor");
   });
 
   it("passes the shipped dataset", () => {

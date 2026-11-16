@@ -137,7 +137,8 @@ Chrome's own timeout, which no budget of the watch's reaches).
    fails nobody. A statement the source says is about certain passports alone
    ("different requirements may apply to Turkish citizens") names them in
    `onlyFor`: a reader who declared another passport is not shown it, and the
-   build refuses a passport the citizenship question does not offer. Our own
+   build refuses a passport the citizenship question does not offer, and a
+   statement that carries both `onlyFor` and a carve-out (`except`). Our own
    reading of the route goes in `readings`, where the page shows it as ours.
 5. **Declare the scope statement.** Every route carries exactly one value, and
    the build fails without it:

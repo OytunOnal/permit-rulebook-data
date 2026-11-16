@@ -357,6 +357,19 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
               message: `${route.id}: "${s.id}" is only for ${CARVE_OUT_FIELD} "${v}", which the ${CARVE_OUT_FIELD} question does not offer — no declared passport could match it`,
               keyword: "offeredPassport",
             });
+
+      /**
+       * A statement names either whom it leaves out (a carve-out) or whom it is
+       * about (`onlyFor`), never both: the two together would leave the card
+       * to decide which one a reader's passport answers to.
+       */
+      for (const s of routeStatements(route))
+        if (s.except && s.onlyFor)
+          errors.push({
+            path: `${path}/statements/${s.id}`,
+            message: `${route.id}: "${s.id}" names both the passports it does not bind (except) and the only passports it is about (onlyFor) — keep one`,
+            keyword: "carveOutOrOnlyFor",
+          });
     }
 
   for (const n of dataset.notices ?? []) {
