@@ -68,6 +68,10 @@ export function validateDataset(data: unknown): ValidationResult {
  *   territory without a sourced passport on the list (`territoryErrors`);
  * - a criterion accepting two or more rungs of an ordered question says the
  *   range in its own `short_reason` (`unwordedRangeErrors`);
+ * - a statement names only a question its route reads, is never named "not
+ *   asked" while a question asks it, and where a criterion of its route
+ *   quotes its sentence, says which question asks it or is named "not asked"
+ *   (`statementAskingErrors`);
  * - a question names a route only through a filled slot, never by the route's
  *   plain name typed by hand (`routeSlotErrors`);
  * - an answer is marked arranged only on a path question
