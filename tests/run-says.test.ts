@@ -445,7 +445,7 @@ describe("sayWhereItRead — the read_at decision", () => {
 describe("parseJsonText — a hand-edited file", () => {
   it("parses a text with a leading BOM the same as one without", () => {
     const text = '{"entries":[{"id":"a"}]}';
-    expect(parseJsonText("﻿" + text)).toEqual({ entries: [{ id: "a" }] });
+    expect(parseJsonText("\uFEFF" + text)).toEqual({ entries: [{ id: "a" }] });
     expect(parseJsonText(text)).toEqual({ entries: [{ id: "a" }] });
   });
 });

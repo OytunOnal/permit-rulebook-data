@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { contradictionsIn, evaluate } from "../src/engine.js";
 import { deriveQuestions } from "../src/questions.js";
 import { proseProvenance, renderableTexts } from "../src/prose.js";
 import { validateDataset } from "../src/validate.js";
 import type { Dataset, Profile } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * A reader declared "no completed qualification" and, two questions later, that

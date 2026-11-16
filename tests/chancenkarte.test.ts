@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { evaluate, forEachCriterion, referencedFields, routeStatements } from "../src/engine.js";
 import type { Dataset, Profile, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
-
-const routeOf = (id: string): Route =>
-  dataset.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 function fieldsOf(route: Route): string[] {
   const out = new Set<string>();
@@ -45,17 +43,17 @@ describe("the Opportunity Card asks about the applicant, not about their luck so
   });
 
   it("no criterion of the card reads what the person has arranged", () => {
-    expect(fieldsOf(routeOf("de-chancenkarte"))).not.toContain("situation");
+    expect(fieldsOf(routeOf(dataset, "de-chancenkarte"))).not.toContain("situation");
   });
 
   it("the guidance survives as words a reader can weigh, not as a rule that fails them", () => {
-    const summary = routeOf("de-chancenkarte").summary!;
+    const summary = routeOf(dataset, "de-chancenkarte").summary!;
     expect(summary).toMatch(/offer/i);
     expect(summary).toMatch(/compare|fit you directly/i);
   });
 
   it("the 20-hour limit is a caveat with its quote — what the card ALLOWS, never a condition of getting it", () => {
-    const statement = routeStatements(routeOf("de-chancenkarte")).find((s) => /20 hours/.test(s.text))!;
+    const statement = routeStatements(routeOf(dataset, "de-chancenkarte")).find((s) => /20 hours/.test(s.text))!;
     expect(statement, "the card says nothing about the 20-hour limit").toBeDefined();
     expect(statement.kind).toBe("caveat");
     expect(statement.source!.quote).toContain("20 Stunden je Woche");
@@ -64,8 +62,8 @@ describe("the Opportunity Card asks about the applicant, not about their luck so
     // It was removed once for reading as a requirement (human catch
     // 2026-09-04); nothing may put it back under that heading.
     const required = [
-      ...(routeOf("de-chancenkarte").preconditions ?? []),
-      ...routeStatements(routeOf("de-chancenkarte")).filter((s) => s.kind === "precondition").map((s) => s.text),
+      ...(routeOf(dataset, "de-chancenkarte").preconditions ?? []),
+      ...routeStatements(routeOf(dataset, "de-chancenkarte")).filter((s) => s.kind === "precondition").map((s) => s.text),
     ];
     expect(required).toEqual([]);
   });

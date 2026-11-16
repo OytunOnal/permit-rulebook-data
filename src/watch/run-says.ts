@@ -333,5 +333,5 @@ function addressReadElsewhere(entry: { url: string }, result: FetchResult): stri
 
 /** Windows editors love BOMs; a hand-edited watchlist/state must not crash the watch. */
 export function parseJsonText(text: string): unknown {
-  return JSON.parse(text.replace(/^﻿/, ""));
+  return JSON.parse(text.replace(/^\uFEFF/, ""));
 }

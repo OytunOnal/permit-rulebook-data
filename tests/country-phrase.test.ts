@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import {
   phraseOf, phraseAtStartOf, possessiveOf, possessiveAtStartOf, countryVocabulary, evaluate,
   reasonFor,
 } from "../src/index.js";
 import type { CountryVocabulary, Dataset, Profile } from "../src/index.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * A country's name in running text (#152; #151, ruling 6): one phrase from the

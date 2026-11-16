@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, forEachCriterion, referencedFields, routeProvenance, routeReadings, routeStatements } from "../src/engine.js";
 import type { Criterion, Dataset, Profile, Route, RouteResult } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /** The band a euro figure falls in — band ids shift whenever a threshold is
  * added, and a test that names a number should not have to know that. */
@@ -15,9 +17,6 @@ function bandFor(field: string, amount: number): string {
 
 const byId = (profile: Profile): Record<string, RouteResult> =>
   Object.fromEntries(evaluate(dataset, profile).map((r) => [r.route.id, r]));
-
-const routeOf = (id: string): Route =>
-  dataset.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 
 /** Every field id any criterion of a route reads, at any depth. */
 function fieldsOf(route: Route): string[] {
@@ -70,12 +69,12 @@ describe("s5d — the Dutch reduced salary criterion asks where you studied", ()
 
   it("the country-less recent-qualification fact no longer governs any Dutch route", () => {
     for (const id of NL_REDUCED_ROUTES)
-      expect(fieldsOf(routeOf(id)), id).not.toContain("qualification_recent");
+      expect(fieldsOf(routeOf(dataset, id)), id).not.toContain("qualification_recent");
   });
 
   it("each Dutch reduced path is a disjunction over the two facts that name an institution", () => {
     for (const id of NL_REDUCED_ROUTES) {
-      const fields = fieldsOf(routeOf(id));
+      const fields = fieldsOf(routeOf(dataset, id));
       expect(fields, id).toContain("nl_recent_grad");
       expect(fields, id).toContain("top200_grad");
     }
@@ -98,11 +97,11 @@ describe("s5d — the Dutch reduced salary criterion asks where you studied", ()
     // limbs; the Blue Card carries the limbs its OWN source states, which say
     // nothing about an orientation year.
     const caveats = (id: string) =>
-      routeStatements(routeOf(id)).filter((s) => s.kind === "caveat").map((s) => s.text).join(" · ").toLowerCase();
+      routeStatements(routeOf(dataset, id)).filter((s) => s.kind === "caveat").map((s) => s.text).join(" · ").toLowerCase();
     for (const id of ["nl-hsm-30plus", "nl-hsm-under30"]) expect(caveats(id), id).toContain("orientation year");
     expect(caveats("nl-blue-card")).toMatch(/extend|change employer/);
     for (const id of NL_REDUCED_ROUTES)
-      expect(routeStatements(routeOf(id)).filter((s) => s.kind === "precondition")
+      expect(routeStatements(routeOf(dataset, id)).filter((s) => s.kind === "precondition")
         .map((s) => s.text).join(" · ").toLowerCase(), id).not.toContain("orientation year");
   });
 
@@ -118,7 +117,7 @@ describe("s5d — the Dutch reduced salary criterion asks where you studied", ()
 
 describe("s5d — Spain is not swept along with the Dutch change", () => {
   it("es-blue-card keeps the qualification-within-3-years fact", () => {
-    const fields = fieldsOf(routeOf("es-blue-card"));
+    const fields = fieldsOf(routeOf(dataset, "es-blue-card"));
     expect(fields).toContain("qualification_recent");
     expect(fields).not.toContain("nl_recent_grad");
     expect(fields).not.toContain("top200_grad");
@@ -129,7 +128,7 @@ describe("s5d — Spain is not swept along with the Dutch change", () => {
     // declared no kind; the reader was never told. It is a reading now: our
     // own words, on the card, under a heading that says they are ours
     // (review 2026-09-07).
-    const readings = routeReadings(routeOf("es-blue-card")).map((r) => r.text).join(" ");
+    const readings = routeReadings(routeOf(dataset, "es-blue-card")).map((r) => r.text).join(" ");
     expect(readings).toMatch(/did not settle|no such limit/i);
     const text = readFileSync(new URL("../data/exclusions.md", import.meta.url), "utf8");
     expect(text).toMatch(/es-blue-card/);
@@ -148,7 +147,7 @@ describe("s5d — Spain is not swept along with the Dutch change", () => {
 describe("s5d — the values the routes quote are the ones they quoted before", () => {
   it("the three Dutch routes still rest on exactly their published amounts and read dates", () => {
     const shape = (id: string) =>
-      routeProvenance(routeOf(id))
+      routeProvenance(routeOf(dataset, id))
         .filter((p) => p.amount !== undefined) // a caveat's quote is not an amount
         .map((p) => `${p.amount} ${p.value.quote} ${p.value.retrieved_at}`)
         .sort();

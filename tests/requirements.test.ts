@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { routeStatements } from "../src/engine.js";
 import { UNSOURCED_REASONS } from "../src/types.js";
 import type { Dataset, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 const routes = (): Route[] => dataset.countries.flatMap((c) => c.routes);
-const routeOf = (id: string): Route => routes().find((r) => r.id === id)!;
 
 /** Everything a card lists under "Also required — not checked here": the plain
  * lines and the ones that carry a quote. */
@@ -125,7 +125,7 @@ describe("a precondition is linted for the assertion voice — a closed list, no
     // The voice changed; the substance did not. A route that listed
     // requirements before still lists them.
     for (const id of ["nl-hsm-under30", "de-ict-card", "fr-talent-innovante", "es-highly-qualified"])
-      expect(requirementsOf(routeOf(id)).length, id).toBeGreaterThan(0);
+      expect(requirementsOf(routeOf(dataset, id)).length, id).toBeGreaterThan(0);
   });
 });
 
@@ -144,19 +144,19 @@ describe("a statement in the reader's favour is never a requirement", () => {
 
   it("none of them appears under \"Also required\" any more", () => {
     for (const [id, what] of MOVED)
-      expect(requirementsOf(routeOf(id)).join(" · "), id).not.toMatch(what);
+      expect(requirementsOf(routeOf(dataset, id)).join(" · "), id).not.toMatch(what);
   });
 
   it("each one survives as a caveat, which fails nobody", () => {
     for (const [id, what] of MOVED)
-      expect(caveatsOf(routeOf(id)).join(" · "), id).toMatch(what);
+      expect(caveatsOf(routeOf(dataset, id)).join(" · "), id).toMatch(what);
   });
 
   it("the Dutch Blue Card states the limb its OWN source states, not the one next door", () => {
     // The page's Blue Card section says nothing about an orientation year: the
     // sentence copied onto this route belongs to the highly skilled migrant
     // rows above it (snapshot read 2026-09-02).
-    const caveats = caveatsOf(routeOf("nl-blue-card")).join(" · ");
+    const caveats = caveatsOf(routeOf(dataset, "nl-blue-card")).join(" · ");
     expect(caveats).not.toMatch(/orientation year/i);
     expect(caveats).toMatch(/change|extend/i);
   });
@@ -187,7 +187,7 @@ describe("a statement in the reader's favour is never a requirement", () => {
     // The schema gates the dataset, the type gates the code, and the watch
     // says one of these words about a PDF it found no text in. Three spellings
     // of one fact is three facts to the next reader (review 2026-09-07, S2).
-    const schema = JSON.parse(readFileSync(new URL("../schema/ruleset.schema.json", import.meta.url), "utf8"));
+    const schema = readJson<{ $defs: { unsourcedReason: { properties: { reason: { enum: string[] } } } } }>("../schema/ruleset.schema.json");
     expect(schema.$defs.unsourcedReason.properties.reason.enum).toEqual([...UNSOURCED_REASONS]);
   });
 

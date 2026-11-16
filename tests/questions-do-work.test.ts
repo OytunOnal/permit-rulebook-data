@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { bindsReader, deriveBands, evaluate, fieldOptions, routeStatements } from "../src/engine.js";
 import { remainingQuestions } from "../src/questions.js";
 import { classOfCountry, countryOptions } from "../src/countries.js";
 import type { CriterionResult, Dataset, FieldDef, FieldOption, Profile } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 /**
  * Every question the interview asks changes something the reader sees.
@@ -21,7 +21,7 @@ import type { CriterionResult, Dataset, FieldDef, FieldOption, Profile } from ".
  * the pool is third-country passports only, because a free-movement passport
  * changing everything was already true when #8 was open.
  */
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 function lcg(seed: number) {
   let s = seed >>> 0;

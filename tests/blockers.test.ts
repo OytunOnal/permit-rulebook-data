@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { evaluate, fieldOptions, matchOptions, notices, routeStatements } from "../src/engine.js";
 import { countryVocabulary } from "../src/countries.js";
 import { UNSOURCED_REASONS } from "../src/types.js";
 import type { Dataset, Profile, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 /** Everything a card lists under "Also required — not checked here": the plain
  * lines and the ones that carry a quote. */
 const preconditionsOf = (route: Route): string[] =>
   [...(route.preconditions ?? []), ...routeStatements(route).filter((s) => s.kind === "precondition").map((s) => s.text)];
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * Permanent checks for blockers that were cleared once. Each targets the

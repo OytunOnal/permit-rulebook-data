@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { unlocks } from "../src/engine.js";
 import { declaredPlace, optionMeans, unlockMeansOf, unlockProfile, unlockTitleOf } from "../src/verdict.js";
 import { phraseOf } from "../src/countries.js";
 import type { Dataset, Profile, Unlock } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * The human's phone walk, 2026-09-08. A reader still deciding where to go was

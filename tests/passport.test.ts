@@ -1,18 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, fieldOptions, informativeFields, isRouteAlive, isScored, matchOptions, notices } from "../src/engine.js";
+import {
+  deriveBands, evaluate, fieldOptions, informativeFields, isRouteAlive, isScored, matchOptions, notices, optionEquivalenceClasses,
+} from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
 import { vocabularyErrors, type CountryVocabulary } from "../src/countries.js";
 import { checkCoverage, checkQuotes, datasetQuotes, datasetSourceUrls, type WatchState, type Watchlist } from "../src/watch/core.js";
 import type { Dataset, Profile, Question } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
-const shippedWatchlist = JSON.parse(readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
-const shippedState = JSON.parse(readFileSync(new URL("../watch/state.json", import.meta.url), "utf8")) as WatchState;
-const vocabulary = JSON.parse(readFileSync(new URL("../data/countries.json", import.meta.url), "utf8")) as CountryVocabulary;
+const dataset = readJson<Dataset>("../data/dataset.json");
+const shippedWatchlist = readJson<Watchlist>("../watch/watchlist.json");
+const shippedState = readJson<WatchState>("../watch/state.json");
+const vocabulary = readJson<CountryVocabulary>("../data/countries.json");
 
-const load = () => JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8"));
+/** A fresh parse of the shipped dataset, for a case to break. */
+const load = (): Dataset => readJson<Dataset>("../data/dataset.json");
 
 const statusMap = (p: Profile) =>
   Object.fromEntries(evaluate(dataset, p).map((r) => [r.route.id, `${r.status}|${r.gap_max ?? ""}|${r.gap_points ?? ""}`]));
@@ -234,6 +237,18 @@ describe("s5c — question ordering scores equivalence classes, not two hundred 
       expect(remainingQuestions(dataset, p).map((q) => q.field)).toEqual(naiveOrder(p));
     });
   }
+
+  it("hands back the classes a fresh dataset computes, whichever value list was asked before", () => {
+    // Each call on a clone of its own reads no cache; the shared clone is asked
+    // the whole list first, then a subset, then the whole list again.
+    const fresh = (values: string[]) => optionEquivalenceClasses(structuredClone(dataset), "citizenship", values);
+    const every = fieldOptions(dataset, "citizenship").map((o) => o.value);
+    const subset = ["TR", "BR", "JP", "DZ"];
+    const shared = structuredClone(dataset);
+    expect(optionEquivalenceClasses(shared, "citizenship", every)).toEqual(fresh(every));
+    expect(optionEquivalenceClasses(shared, "citizenship", subset)).toEqual(fresh(subset));
+    expect(optionEquivalenceClasses(shared, "citizenship", every)).toEqual(fresh(every));
+  });
 });
 
 describe("s5c — validation: a class is a rule, so the boundary enforces it", () => {
@@ -243,8 +258,9 @@ describe("s5c — validation: a class is a rule, so the boundary enforces it", (
 
   it("a criterion referencing an unknown class fails", () => {
     const data = load();
-    const nl = data.countries.find((c: { code: string }) => c.code === "NL");
-    nl.routes[0].criteria[0].value = "schengen_only";
+    const criterion = data.countries.find((c) => c.code === "NL")!.routes[0].criteria[0];
+    if (criterion.op !== "eq") throw new Error("precondition: the first Dutch route's first criterion asks for one answer");
+    criterion.value = "schengen_only";
     const result = validateDataset(data);
     expect(result.ok).toBe(false);
     expect(result.errors.some((e: { keyword: string }) => e.keyword === "knownCountryValue")).toBe(true);
@@ -252,7 +268,7 @@ describe("s5c — validation: a class is a rule, so the boundary enforces it", (
 
   it("a notice whose `when` value is neither a country nor a class fails", () => {
     const data = load();
-    data.notices[0].when.value = "ankara_agreement";
+    data.notices![0].when.value = "ankara_agreement";
     const result = validateDataset(data);
     expect(result.ok).toBe(false);
     expect(result.errors.some((e: { keyword: string }) => e.keyword === "knownCountryValue")).toBe(true);

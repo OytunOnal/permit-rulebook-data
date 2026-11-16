@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { validateDataset } from "../src/validate.js";
 import { evaluate, fieldOptions, findJobOfferAnswer, routesAJobOfferFrees, SITUATION_FIELD } from "../src/index.js";
-import type { Dataset, Profile } from "../src/index.js";
+import type { Dataset, FieldOption, Profile } from "../src/index.js";
+import { readJson } from "./read-json.js";
 
 /** A fresh parse of the shipped dataset, for a case to break or reorder. */
-const shippedDatasetCopy = () => JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8"));
-const ds = shippedDatasetCopy() as Dataset;
+const shippedDatasetCopy = (): Dataset => readJson<Dataset>("../data/dataset.json");
+const ds = shippedDatasetCopy();
 
 /** The explorer persona of the site's s23: all four countries, no offer, and
  * none of the questions only an offer would raise answered. */
@@ -75,13 +75,13 @@ describe("the job offer is read from the dataset's marks", () => {
   it("a dataset with the situation's answers reordered still finds the job offer", () => {
     const reordered = shippedDatasetCopy();
     situationOptionsOf(reordered).reverse();
-    expect(situationOptionsOf(reordered)[0]!["is_fallback"], "precondition: the order moved").toBe(true);
+    expect(situationOptionsOf(reordered)[0]!.is_fallback, "precondition: the order moved").toBe(true);
     expect(freedIdsOf(reordered)).toEqual(freedIdsOf(ds));
   });
 
   it("a dataset whose situation question has no answer a reader can go and get is refused", () => {
     const datasetWithNoJobOffer = shippedDatasetCopy();
-    for (const o of situationOptionsOf(datasetWithNoJobOffer)) if (!o["is_fallback"]) o["is_arranged"] = true;
+    for (const o of situationOptionsOf(datasetWithNoJobOffer)) if (!o.is_fallback) o.is_arranged = true;
     expect(() => routesAJobOfferFrees(datasetWithNoJobOffer, PRIYA)).toThrow(/exactly one job offer/);
     expect(() => findJobOfferAnswer(datasetWithNoJobOffer)).toThrow(/exactly one job offer/);
   });
@@ -92,33 +92,33 @@ describe("the job offer is read from the dataset's marks", () => {
 
   it("a dataset with a second answer a reader could go and get is refused", () => {
     const datasetWithTwoJobOffers = shippedDatasetCopy();
-    const transfer = situationOptionsOf(datasetWithTwoJobOffers).find((o) => o["value"] === "ict")!;
-    expect(transfer["is_arranged"], "precondition: a transfer is an arranged answer").toBe(true);
-    transfer["is_arranged"] = false;
+    const transfer = situationOptionsOf(datasetWithTwoJobOffers).find((o) => o.value === "ict")!;
+    expect(transfer.is_arranged, "precondition: a transfer is an arranged answer").toBe(true);
+    transfer.is_arranged = false;
     expect(() => findJobOfferAnswer(datasetWithTwoJobOffers)).toThrow(/exactly one job offer/);
   });
 });
 
 /** The situation question's options in a copied dataset, to break or reorder in a test. */
-const situationOptionsOf = (data: { fields: { id: string; options?: Record<string, unknown>[] }[] }) =>
+const situationOptionsOf = (data: Dataset): FieldOption[] =>
   data.fields.find((f) => f.id === "situation")!.options!;
 
 describe("an arranged answer is a mark the schema declares", () => {
   it("a boolean is_arranged is accepted and a non-boolean one is refused", () => {
     const data = shippedDatasetCopy();
-    const jobOfferAnswer = situationOptionsOf(data).find((o) => o["value"] === "offer")!;
-    jobOfferAnswer["is_arranged"] = false;
+    const jobOfferAnswer = situationOptionsOf(data).find((o) => o.value === "offer")!;
+    jobOfferAnswer.is_arranged = false;
     expect(validateDataset(data).errors).toEqual([]);
-    jobOfferAnswer["is_arranged"] = "yes";
+    const answer: { is_arranged?: unknown } = jobOfferAnswer;
+    answer.is_arranged = "yes";
     expect(validateDataset(data).ok).toBe(false);
   });
 
   it("an arranged answer on a question that is not a path is refused", () => {
     const data = shippedDatasetCopy();
     expect(validateDataset(data).errors, "precondition: the shipped dataset is valid").toEqual([]);
-    const notAPath = (data.fields as { id: string; kind?: string; options?: Record<string, unknown>[] }[])
-      .find((f) => f.kind !== "path" && f.options?.length)!;
-    notAPath.options![0]!["is_arranged"] = true;
+    const notAPath = data.fields.find((f) => f.kind !== "path" && f.options?.length)!;
+    notAPath.options![0]!.is_arranged = true;
     const result = validateDataset(data);
     expect(result.ok, `${notAPath.id} is not a path question`).toBe(false);
     expect(result.errors.map((e) => e.keyword)).toContain("arrangedOnAPathOnly");

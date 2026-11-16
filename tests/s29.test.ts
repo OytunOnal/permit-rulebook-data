@@ -4,13 +4,13 @@ import dataset from "../data/dataset.json" with { type: "json" };
 import { checkCoverage, checkQuotes, type Watchlist } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 import { datasetMeta, noticeSources } from "../src/engine.js";
-import type { Dataset, Route } from "../src/types.js";
+import type { Dataset } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
-const readJson = (name: string) =>
-  JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8").replace(/^﻿/, ""));
-const watchlist = readJson("../watch/watchlist.json") as Watchlist;
-const state = readJson("../watch/state.json") as WatchState;
+const watchlist = readJson<Watchlist>("../watch/watchlist.json");
+const state = readJson<WatchState>("../watch/state.json");
 
 /**
  * s29 — three data corrections (v1.2: data #13, data #15, the s28 light
@@ -23,7 +23,6 @@ const state = readJson("../watch/state.json") as WatchState;
  * site changes by rebuilding against the pin.
  */
 
-const routeOf = (id: string): Route => ds.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 const noticeOf = (id: string) => ds.notices!.find((n) => n.id === id)!;
 const entryOf = (id: string) => watchlist.entries.find((e) => e.id === id);
 const entryFor = (url: string) => watchlist.entries.find((e) => e.url === url);
@@ -44,7 +43,7 @@ describe("s29 #13 — the Opportunity Card's official page is an authority's", (
   const NON_AUTHORITIES = ["handbookgermany.de"];
 
   it("points at the Federal Ministry of the Interior's own English page", () => {
-    expect(routeOf("de-chancenkarte").info_url).toBe(BMI_CHANCENKARTE);
+    expect(routeOf(ds, "de-chancenkarte").info_url).toBe(BMI_CHANCENKARTE);
   });
 
   it("no route's info_url host is on the declared non-authority list", () => {
@@ -200,9 +199,10 @@ describe("s29 — the dataset says so in its version, and the schema did not mov
     // The version is a date and already read the day (s23 pins it); the
     // convention keeps one stamp for every change of the same day. 0.8.1
     // when this was written; 0.8.2 since s32, 0.8.3 since #169, 0.8.4 since
-    // OytunOnal/permit-rulebook#313 and 0.8.5 since ruling 28 of
-    // OytunOnal/permit-rulebook#310, each for a reason of its own.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.5");
+    // OytunOnal/permit-rulebook#313, 0.8.5 since ruling 28 of
+    // OytunOnal/permit-rulebook#310 and 0.8.6 since
+    // OytunOnal/permit-rulebook#408, each for a reason of its own.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.6");
   });
 
   it("the newest read at a source is stamped with its day", () => {

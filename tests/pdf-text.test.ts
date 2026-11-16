@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { deflateSync } from "node:zlib";
-import { readFileSync } from "node:fs";
 import { pdfToText, WIN_ANSI_HIGH } from "../src/watch/pdf-text.js";
 import { repairKnownGlyphs, unboundedReason, type GlyphSubstitution } from "../src/watch/corrections.js";
 import { checkCoverage, checkQuotes, runWatch, sha256, type Watchlist, type WatchState } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const watchlist = JSON.parse(readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
+const watchlist = readJson<Watchlist>("../watch/watchlist.json");
 const entryOf = (id: string) => watchlist.entries.find((e) => e.id === id)!;
 
 /**

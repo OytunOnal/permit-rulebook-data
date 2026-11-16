@@ -9,6 +9,8 @@ import { excludedLimbs } from "../src/exclusions.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
 import { QUOTED_NOT_SCORED } from "../src/types.js";
 import type { Dataset, Profile, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
 const routes = (): Route[] => ds.countries.flatMap((c) => c.routes);
@@ -18,8 +20,6 @@ const clone = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 const QUOTED_ONLY = [
   "fr-salarie", "es-cuenta-ajena", "es-teletrabajo", "de-selbstaendige-taetigkeit", "nl-gvva",
 ] as const;
-
-const routeOf = (id: string): Route => routes().find((r) => r.id === id)!;
 
 /**
  * s9 — five routes the product will not score, quoted and dated anyway.
@@ -34,7 +34,7 @@ const routeOf = (id: string): Route => routes().find((r) => r.id === id)!;
 describe("s9 — a route may be quoted and dated without being scored", () => {
   it("the five are in the dataset, each declaring that nothing is asked", () => {
     for (const id of QUOTED_ONLY) {
-      const route = routeOf(id);
+      const route = routeOf(ds, id);
       expect(route, id).toBeDefined();
       expect(route.scope.value, id).toBe(QUOTED_NOT_SCORED);
       expect(scopeLine(route, { reader: "not-answered" }), id).toBe("quoted and dated · the checker does not ask about it");
@@ -47,7 +47,7 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
 
   it("each states its rules as the authority does, with a quote and a day", () => {
     for (const id of QUOTED_ONLY) {
-      const route = routeOf(id);
+      const route = routeOf(ds, id);
       const quoted = routeStatements(route).flatMap(statementSources);
       expect(quoted.length, id).toBeGreaterThan(0);
       for (const source of quoted) {
@@ -62,7 +62,7 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
       // a padded sentence (Standards review, 2026-09-10).
       expect(route.scope.reason.trim().length, id).toBeGreaterThan(0);
     }
-    const reasons = QUOTED_ONLY.map((id) => routeOf(id).scope.reason);
+    const reasons = QUOTED_ONLY.map((id) => routeOf(ds, id).scope.reason);
     expect(new Set(reasons).size).toBe(reasons.length);
   });
 
@@ -74,7 +74,7 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
    */
   it("a route that asks nothing may not carry a deciding rule", () => {
     const bad = clone();
-    const route = bad.countries.flatMap((c) => c.routes).find((r) => r.id === "nl-gvva")!;
+    const route = routeOf(bad, "nl-gvva");
     route.criteria = [{ field: "citizenship", op: "eq", value: "third_country" }];
     const result = validateDataset(bad);
     expect(result.ok).toBe(false);
@@ -84,7 +84,7 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
 
   it("a route with deciding rules may not claim that nothing is asked", () => {
     const bad = clone();
-    const route = bad.countries.flatMap((c) => c.routes).find((r) => r.id === "nl-researcher")!;
+    const route = routeOf(bad, "nl-researcher");
     route.scope.value = QUOTED_NOT_SCORED;
     const result = validateDataset(bad);
     expect(result.ok).toBe(false);
@@ -93,7 +93,7 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
 
   it("a scored route may not ship with no rules at all", () => {
     const bad = clone();
-    const route = bad.countries.flatMap((c) => c.routes).find((r) => r.id === "nl-researcher")!;
+    const route = routeOf(bad, "nl-researcher");
     route.criteria = [];
     expect(validateDataset(bad).ok).toBe(false);
   });
@@ -137,21 +137,20 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
       expect(twin.has(id), id).toBe(true);
       // Nothing of these routes is asked, so every limb the page names is a
       // limb the file records.
-      expect([...twin.get(id)!].sort(), id).toEqual([...routeOf(id).scope.not_asked].sort());
+      expect([...twin.get(id)!].sort(), id).toEqual([...routeOf(ds, id).scope.not_asked].sort());
     }
   });
 
   it("every new source is watched, and every new quote is still on its page", () => {
-    const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
-    const watchlist = readJson(new URL("../watch/watchlist.json", import.meta.url)) as Watchlist;
-    const state = readJson(new URL("../watch/state.json", import.meta.url)) as WatchState;
+    const watchlist = readJson<Watchlist>("../watch/watchlist.json");
+    const state = readJson<WatchState>("../watch/state.json");
     expect(checkCoverage(ds, watchlist).ok).toBe(true);
     const quotes = checkQuotes(ds, watchlist, state);
     expect(quotes.missing).toEqual([]);
     // The five stand on sources a machine here can re-read: none of them is a
     // human-tier entry.
     const unscoredSources = new Set(
-      QUOTED_ONLY.flatMap((id) => routeStatements(routeOf(id)).flatMap(statementSources))
+      QUOTED_ONLY.flatMap((id) => routeStatements(routeOf(ds, id)).flatMap(statementSources))
         .map((s) => s.source_url),
     );
     expect(quotes.unverifiable.filter((u) => unscoredSources.has(u.source_url))).toEqual([]);

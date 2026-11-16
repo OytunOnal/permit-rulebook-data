@@ -1017,6 +1017,9 @@
         },
         "except": {
           "$ref": "#/$defs/statementException"
+        },
+        "bindsOnly": {
+          "$ref": "#/$defs/boundPassports"
         }
       },
       "allOf": [
@@ -1051,6 +1054,25 @@
         },
         "source": {
           "$ref": "#/$defs/provenancedText"
+        }
+      }
+    },
+    "boundPassports": {
+      "type": "object",
+      "description": "The only passports this statement binds: a Passport-only statement, the mirror of a carve-out. A reader who declared another passport is not bound by it; a reader who has declared none is, and so is a route page, which has no reader. It carries no quote of its own: the statement's own quote is the sentence that names the passports. Added in 0.8.6.",
+      "required": [
+        "citizenship"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "citizenship": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Passport countries, as the `citizenship` field answers them; a class is not a passport. Whether each one is an answer that field offers is checked by the build."
         }
       }
     },

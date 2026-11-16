@@ -134,8 +134,20 @@ Chrome's own timeout, which no budget of the watch's reaches).
    question or be listed in `not_asked` below, and the build refuses the
    blank; a `field` no rule of the route reads is refused too (s32). A
    qualification the source puts on its own answer goes in as a `caveat` — it
-   fails nobody. Our own reading of the route goes in `readings`, where the
-   page shows it as ours.
+   fails nobody. A statement the source says is about certain passports alone
+   ("different requirements may apply to Turkish citizens") names them in
+   `bindsOnly`: a reader who declared another passport is not shown it, and the
+   build refuses a passport the citizenship question does not offer, and a
+   statement that carries both `bindsOnly` and a carve-out (`except`). A
+   statement's text, a carve-out's sentence, and a notice's title and body
+   never point at a place on the screen — an answer, a question, a result, a
+   route or a card "above" or "below": each is drawn on the result screen and
+   on a route page, which has none of them. Say what the site does instead
+   ("our check", "our questions"); the build refuses the phrases
+   `SCREEN_PLACE_PHRASES` declares (`src/screen-place.ts`). It refuses a
+   comparison whose noun is in that set too ("a route below the French minimum
+   wage"): reword it ("a route paying less than the minimum wage"). Our own
+   reading of the route goes in `readings`, where the page shows it as ours.
 5. **Declare the scope statement.** Every route carries exactly one value, and
    the build fails without it:
 

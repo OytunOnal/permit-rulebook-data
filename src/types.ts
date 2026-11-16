@@ -268,6 +268,22 @@ export interface RouteStatement {
   /** The passports the authority itself says this statement does not bind.
    * A carve-out is a rule like any other, so it carries its own quote. */
   except?: StatementException;
+  /** The only passports the authority says this statement binds: a
+   * Passport-only statement. Its own quote is the source that names them. */
+  bindsOnly?: BoundPassports;
+}
+
+/**
+ * The only passports a Passport-only statement binds: the mirror of a
+ * carve-out, keyed on the same one answer. A reader who declared another
+ * passport is not bound by it; a reader who has declared none is, and so is a
+ * route page, which has no reader. It carries no quote of its own, because the
+ * statement's quote is the sentence that names the passports.
+ */
+export interface BoundPassports {
+  /** Passport countries, as the `citizenship` field answers them. A class is
+   * not a passport. */
+  citizenship: string[];
 }
 
 /**
@@ -277,7 +293,7 @@ export interface RouteStatement {
  * routes — `eq third_country` — so no route COULD say "for nationals of X this
  * does not apply", even where an authority says exactly that, and the product
  * asked which passport a reader would apply with and then scored them against
- * conditions the IND sets aside for that passport (human walk on the live
+ * conditions the IND releases that passport from (human walk on the live
  * site, diagnosed as a class in issue #8). The only field a carve-out may key
  * on today is the passport, because that is the only nationality answer the
  * interview has; a carve-out that had to key on anything else would be a
@@ -298,11 +314,12 @@ export interface StatementException {
 }
 
 /**
- * The one answer a carve-out reads. Named here rather than spelled at each
- * site that reads it, so the narrowness above is a fact the type system and
- * the validator share rather than a string three files agree on by habit.
+ * The one answer a carve-out and a Passport-only statement read. Named here
+ * rather than spelled at each site that reads it, so the narrowness above is a
+ * fact the type system and the validator share rather than a string three
+ * files agree on by habit.
  */
-export const CARVE_OUT_FIELD = "citizenship";
+export const CITIZENSHIP_FIELD = "citizenship";
 
 /**
  * The two answers the interview takes before any route is scored, and the two
@@ -418,7 +435,7 @@ export type ScopeValue = (typeof SCOPE_VALUES)[number];
  * what `evaluate` returns, the interview's list of what it asks about, and the
  * site's list of what it offers — and a string spelled out at four call sites
  * is a fact four files agree on by habit. It is the same reason
- * `CARVE_OUT_FIELD` is a constant (s9).
+ * `CITIZENSHIP_FIELD` is a constant (s9).
  */
 export const QUOTED_NOT_SCORED: ScopeValue = "rules-quoted-nothing-asked";
 

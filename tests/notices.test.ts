@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { datasetMeta, notices } from "../src/engine.js";
 import { checkCoverage, datasetSourceUrls, type Watchlist } from "../src/watch/core.js";
 import type { Dataset, Profile } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
-const shippedWatchlist = JSON.parse(readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
+const dataset = readJson<Dataset>("../data/dataset.json");
+const shippedWatchlist = readJson<Watchlist>("../watch/watchlist.json");
 
 const euPassport: Profile = { destination: "de", citizenship: "eu_eea_ch", situation: "offer" };
 

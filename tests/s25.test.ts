@@ -7,10 +7,10 @@ import {
 import { deriveQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
 import type { Criterion, Dataset, PointsRow, Profile, ProvenancedText, Route, RouteResult } from "../src/types.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
 const routes = (): Route[] => ds.countries.flatMap((c) => c.routes);
-const routeOf = (id: string): Route => routes().find((r) => r.id === id)!;
 const clone = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 
 const FIVE = "experience_5y";
@@ -116,17 +116,17 @@ describe("s25 — every rule reads the rung it names", () => {
   const inn = (c: Criterion) => c as Extract<Criterion, { op: "in" }>;
 
   it("§ 6 BeschV (DE experienced worker): 2 in the last 5", () => {
-    const [c, ...rest] = reading(routeOf("de-experienced-worker"), FIVE);
+    const [c, ...rest] = reading(routeOf(ds, "de-experienced-worker"), FIVE);
     expect(rest).toEqual([]);
     expect(c!.op).toBe("eq");
     expect(eq(c!).value).toBe("2plus");
     expect(c!.source?.quote).toContain("Innerhalb der letzten fünf Jahren muss eine mindestens zweijährige");
     expect(c!.source?.retrieved_at).toBe("2026-09-02");
-    expect(reading(routeOf("de-experienced-worker"), SEVEN)).toEqual([]);
+    expect(reading(routeOf(ds, "de-experienced-worker"), SEVEN)).toEqual([]);
   });
 
   it("§ 20b Abs. 1 Nr. 7 and Nr. 6 (DE Opportunity Card): one item, two rows, the best of them", () => {
-    const [c, ...rest] = reading(routeOf("de-chancenkarte"), FIVE);
+    const [c, ...rest] = reading(routeOf(ds, "de-chancenkarte"), FIVE);
     expect(rest).toEqual([]);
     expect(c!.op).toBe("points");
     const table = (c as Extract<Criterion, { op: "points" }>).table;
@@ -145,24 +145,24 @@ describe("s25 — every rule reads the rung it names", () => {
 
   it("Ley 14/2013 art. 71.2 and 73.2.b (ES highly qualified, ICT): at least 3, read as 3 in the last 7", () => {
     for (const id of ["es-highly-qualified", "es-ict"]) {
-      const [c, ...rest] = reading(routeOf(id), SEVEN);
+      const [c, ...rest] = reading(routeOf(ds, id), SEVEN);
       expect(rest, id).toEqual([]);
       expect(c!.op, id).toBe("in");
       expect(inn(c!).values, id).toEqual(["3to5", "5plus"]);
       expect(c!.source?.quote, id).toMatch(/al menos (tres|3) años/);
       expect(c!.source?.retrieved_at, id).toBe("2026-09-07");
-      expect(reading(routeOf(id), FIVE), id).toEqual([]);
+      expect(reading(routeOf(ds, id), FIVE), id).toEqual([]);
     }
   });
 
   it("Ley 14/2013 art. 71.2 a), IND, F16922 (the three Blue Cards): 5 years, read as 5 in the last 7", () => {
     for (const id of ["es-blue-card", "nl-blue-card", "fr-talent-blue-card"]) {
-      const five = reading(routeOf(id), SEVEN).filter((c) => c.op === "eq");
+      const five = reading(routeOf(ds, id), SEVEN).filter((c) => c.op === "eq");
       expect(five.length, id).toBe(1);
       expect(eq(five[0]!).value, id).toBe("5plus");
-      expect(reading(routeOf(id), FIVE), id).toEqual([]);
+      expect(reading(routeOf(ds, id), FIVE), id).toEqual([]);
     }
-    const es = reading(routeOf("es-blue-card"), SEVEN)[0]!.source!;
+    const es = reading(routeOf(ds, "es-blue-card"), SEVEN)[0]!.source!;
     expect(es.quote).toContain("un mínimo de cinco años");
     // The sentence lives in art. 71.2 a); 71 bis.1 a) only refers back to it.
     // The citation said 71 bis.2 until 2026-09-17 and the correction is a
@@ -171,12 +171,12 @@ describe("s25 — every rule reads the rung it names", () => {
     const corrected = es.history!.find((h) => h.reason === "citation-corrected")!;
     expect(corrected.checked_at).toBe("2026-09-17");
     expect(corrected.quote).toBe(es.quote);
-    expect(reading(routeOf("nl-blue-card"), SEVEN).find((c) => c.op === "eq")!.source?.quote)
+    expect(reading(routeOf(ds, "nl-blue-card"), SEVEN).find((c) => c.op === "eq")!.source?.quote)
       .toBe("you have a minimum of 5 years of relevant work experience");
   });
 
   it("IND (NL Blue Card, IT): 3 in the last 7", () => {
-    const it3 = reading(routeOf("nl-blue-card"), SEVEN).filter((c) => c.op === "in");
+    const it3 = reading(routeOf(ds, "nl-blue-card"), SEVEN).filter((c) => c.op === "in");
     expect(it3.length).toBe(1);
     expect(inn(it3[0]!).values).toEqual(["3to5", "5plus"]);
     expect(it3[0]!.source?.quote).toContain("during the period of 7 years before the application");
@@ -191,32 +191,32 @@ describe("s25 — every rule reads the rung it names", () => {
     // modelled. So the seven-year answer is a lower bound the reader can give
     // honestly, and each route says so in its own words.
     for (const id of ["es-highly-qualified", "es-ict", "es-blue-card", "fr-talent-blue-card"]) {
-      const floor = routeReadings(routeOf(id)).find((r) => r.id === "seven-year-answer-is-a-floor");
+      const floor = routeReadings(routeOf(ds, id)).find((r) => r.id === "seven-year-answer-is-a-floor");
       expect(floor, id).toBeDefined();
       // It opens with OUR reading; what the law requires is the criterion's
       // quote, one line above, and is not restated in our own slot.
       expect(floor!.text, id).toMatch(/^Our question asks about the last seven years; .* names no window/);
       // Named to the reader and never asked: the scope says so in ids and words.
-      expect(routeOf(id).scope.not_asked, id).toContain("seven-year-answer-is-a-floor");
-      expect(routeOf(id).scope.reason, id).toMatch(/last seven years/);
+      expect(routeOf(ds, id).scope.not_asked, id).toContain("seven-year-answer-is-a-floor");
+      expect(routeOf(ds, id).scope.reason, id).toMatch(/last seven years/);
     }
   });
 
   it("every re-keyed rule keeps its quote and date and carries a history line saying why", () => {
     const lines: NonNullable<ProvenancedText["history"]> = [];
     for (const id of ["de-experienced-worker", "es-highly-qualified", "es-ict", "es-blue-card", "fr-talent-blue-card", "nl-blue-card"])
-      for (const c of [...reading(routeOf(id), FIVE), ...reading(routeOf(id), SEVEN)]) {
+      for (const c of [...reading(routeOf(ds, id), FIVE), ...reading(routeOf(ds, id), SEVEN)]) {
         // The rule's own quote, or — for the French rule — the quote on the
         // disjunction above it; the disjunction's source is read either way,
         // since a citation corrected there is a line of this slice too.
-        const above = routeOf(id).criteria.flatMap((x) => (x.op === "any" && x.paths.some((p) => p.criteria.includes(c)) ? [x.source] : []))[0];
+        const above = routeOf(ds, id).criteria.flatMap((x) => (x.op === "any" && x.paths.some((p) => p.criteria.includes(c)) ? [x.source] : []))[0];
         const source = c.source ?? above;
         expect(source, `${id} reads experience with no source`).toBeDefined();
         expect(source!.history?.length, `${id}: no history line`).toBeGreaterThan(0);
         lines.push(...source!.history!);
         if (c.source && above?.history) lines.push(...above.history);
       }
-    const ck = reading(routeOf("de-chancenkarte"), FIVE)[0] as Extract<Criterion, { op: "points" }>;
+    const ck = reading(routeOf(ds, "de-chancenkarte"), FIVE)[0] as Extract<Criterion, { op: "points" }>;
     expect(ck.table.history?.length, "the points table: no history line").toBeGreaterThan(0);
     lines.push(...ck.table.history!);
     // One re-key line per rule, written today, and the two lines on the
@@ -368,10 +368,11 @@ describe("s25 — the dataset says so in its version, and nothing else moved", (
     // statement names its question), 0.8.3 #169's (an arranged answer), 0.8.4
     // OytunOnal/permit-rulebook#313's (a path's words and a precondition's
     // path), 0.8.5 ruling 28's of OytunOnal/permit-rulebook#310 (an
-    // attainable answer), and the day is #313's too — s23's test pins it.
-    // What this case holds is that nothing here undid the item.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.5");
-    expect(datasetMeta(ds).dataset_version).toBe("2026.11.10");
+    // attainable answer), 0.8.6 OytunOnal/permit-rulebook#408's (a
+    // Passport-only statement), and the day is #408's too — s23's test pins
+    // it. What this case holds is that nothing here undid the item.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.6");
+    expect(datasetMeta(ds).dataset_version).toBe("2026.11.16");
     // Nothing was read at a source by the re-keying: the rules moved against
     // snapshots already held, and every quote keeps its date. The newest read
     // came later, with the shortage card's IT path (#134).

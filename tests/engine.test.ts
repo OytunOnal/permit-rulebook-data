@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { datasetMeta, deriveBands, evaluate, formatEURPer, isRouteAlive, routeProvenance, thresholdsUnder } from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import type { Criterion, Dataset, Profile } from "../src/types.js";
 import { routeOf } from "./route-of.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 // Annual salary bands (all four countries' thresholds, half-open): <33,085.09 /
 // 33,085.09–under 39,582 / 39,582–under 41,356.36 / 41,356.36–under 45,630 /
@@ -252,12 +252,13 @@ describe("provenance and meta", () => {
       // and a precondition may name its path (`path`), both optional — additive.
       // 0.8.5 since ruling 28 of OytunOnal/permit-rulebook#310: an option may
       // be marked an answer a reader can reach by acting (`is_attainable`),
+      // optional — additive. 0.8.6 since OytunOnal/permit-rulebook#408: a
+      // statement may name the only passports it binds (`bindsOnly`),
       // optional — additive.
-      schema_version: "0.8.5",
-      // 2026.11.10: the nine ways in carry their path words and three
-      // preconditions name their path (OytunOnal/permit-rulebook#313), and the
-      // improvable questions mark their attainable answers the same day.
-      dataset_version: "2026.11.10",
+      schema_version: "0.8.6",
+      // 2026.11.16: the orientation year's caveat about Turkish passports names
+      // the only passports it binds (OytunOnal/permit-rulebook#408).
+      dataset_version: "2026.11.16",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two
       // authorities disagreeing (s8). The freshest are the IT path's four

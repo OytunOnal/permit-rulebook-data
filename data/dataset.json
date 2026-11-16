@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.8.5",
-  "dataset_version": "2026.11.10",
+  "schema_version": "0.8.6",
+  "dataset_version": "2026.11.16",
   "fields": [
     {
       "id": "destination",
@@ -675,8 +675,8 @@
         "value": "DZ"
       },
       "kind": "open-question",
-      "title": "Algeria: France applies a different agreement to you",
-      "body": "For Algerian nationals, France applies the agreement of 27 December 1968 instead of its own immigration code — the Conseil d'État said so, in a case about a shopkeeper's permit rather than a talent card. The page France sends an Algerian reader to offers a one-year certificat de résidence: no passeport talent, no EU Blue Card. Against that, the EU directive behind the Blue Card covers third-country nationals and names no exception. We searched the official sites on 2026-09-10 and found no page that settles it — so we do not guess. The four routes below are shown with their rules, and whether they are open to your passport is not something this site can tell you.",
+      "title": "If you hold an Algerian passport: France applies a different agreement",
+      "body": "If you hold an Algerian passport, France applies the agreement of 27 December 1968 instead of its own immigration code — the Conseil d'État said so, in a case about a shopkeeper's permit rather than a talent card. The page France sends an Algerian reader to offers a one-year certificat de résidence: no passeport talent, no EU Blue Card. Against that, the EU directive behind the Blue Card covers third-country nationals and names no exception. We searched the official sites on 2026-09-10 and found no page that settles it — so we do not guess. Whether France's four talent cards for employees — qualified employee, EU Blue Card, employee of an innovative company and employee on assignment — are open to an Algerian passport is not something this site can tell you.",
       "source": {
         "source_url": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000053612496",
         "quote": "Il suit de là que les dispositions du code de l'entrée et du séjour des étrangers et du droit d'asile qui sont relatives aux différents titres de séjour qui peuvent être délivrés aux étrangers en général et aux conditions de leur délivrance, ne sont pas applicables aux ressortissants algériens, lesquels relèvent à cet égard des règles fixées par l'accord précité.",
@@ -3852,7 +3852,7 @@
             {
               "id": "reduced-also-for-orientation-year-permit-holders",
               "kind": "caveat",
-              "text": "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people. We do not ask about permits you already hold, so the answer above does not count one.",
+              "text": "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people. We do not ask about permits you already hold, so our check does not count one.",
               "source": {
                 "source_url": "https://ind.nl/en/required-amounts-income-requirements",
                 "quote": "The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit.",
@@ -4104,7 +4104,7 @@
             {
               "id": "reduced-also-for-orientation-year-permit-holders",
               "kind": "caveat",
-              "text": "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people. We do not ask about permits you already hold, so the answer above does not count one.",
+              "text": "The lower salary also applies if you hold, or have held, a Dutch orientation year permit for highly educated people. We do not ask about permits you already hold, so our check does not count one.",
               "source": {
                 "source_url": "https://ind.nl/en/required-amounts-income-requirements",
                 "quote": "The reduced salary criterion applies in these 3 cases: The residence permit for a highly skilled migrant is applied for during the residence permit for an orientation year for highly educated persons. The highly skilled migrant no longer has a residence permit for an orientation year for highly educated persons, but did have this permit.",
@@ -4446,7 +4446,7 @@
             {
               "id": "reduced-also-on-extension-or-employer-change",
               "kind": "caveat",
-              "text": "The lower salary can also apply if you extend this permit, or change employer, within three years of graduating — cases the questions above do not cover.",
+              "text": "The lower salary can also apply if you extend this permit, or change employer, within three years of graduating — cases our questions do not cover.",
               "source": {
                 "source_url": "https://ind.nl/en/required-amounts-income-requirements",
                 "quote": "The lower salary criterion may also apply if you extend the residence permit or change your employer within 3 years after graduation or promotion.",
@@ -4961,13 +4961,18 @@
             {
               "id": "turkish-citizens-differ",
               "kind": "caveat",
-              "text": "If you hold a Turkish passport, the Dutch immigration service says the requirements for you and your family may be different. It does not say how, so read its own page before relying on the answer above.",
+              "text": "If you hold a Turkish passport, the Dutch immigration service says the requirements for you and your family may be different. It does not say how, so read its own page before relying on what this site says.",
               "source": {
                 "source_url": "https://ind.nl/en/residence-permits/work/residence-permit-for-orientation-year",
                 "quote": "Different requirements may apply to Turkish citizens and their family members.",
                 "retrieved_at": "2026-09-07",
                 "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements",
                 "history": []
+              },
+              "bindsOnly": {
+                "citizenship": [
+                  "TR"
+                ]
               }
             },
             {

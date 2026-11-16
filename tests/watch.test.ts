@@ -12,11 +12,13 @@ import {
   type Fetcher, type WatchState, type Watchlist,
 } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
-const shippedWatchlist = JSON.parse(readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
+const dataset = readJson<Dataset>("../data/dataset.json");
+const shippedWatchlist = readJson<Watchlist>("../watch/watchlist.json");
 
-const shippedState = JSON.parse(readFileSync(new URL("../watch/state.json", import.meta.url), "utf8")) as WatchState;
+const shippedState = readJson<WatchState>("../watch/state.json");
 
 const enc = (s: string) => new TextEncoder().encode(s);
 const okFetcher = (pages: Record<string, string | Uint8Array>): Fetcher => async (url) => {
@@ -531,9 +533,8 @@ describe("the highly-skilled-migrant slice", () => {
   });
 
   it("the quote the widened slice exists for is in the dataset, dated the day it was read", () => {
-    const routes = dataset.countries.flatMap((c) => c.routes);
     for (const id of ["nl-hsm-30plus", "nl-hsm-under30"]) {
-      const statement = routes.find((r) => r.id === id)!
+      const statement = routeOf(dataset, id)
         .statements!.find((s) => s.id === "a-contract-abroad-is-a-transfer");
       expect(statement, `${id} does not carry it`).toBeDefined();
       expect(statement!.source!.quote).toBe(SENTENCE);

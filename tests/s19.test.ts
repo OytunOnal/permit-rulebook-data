@@ -10,12 +10,12 @@ import { askedByCriterion, scopeLine } from "../src/scope.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
 import { QUOTED_NOT_SCORED } from "../src/types.js";
 import type { Dataset, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
 const routes = (): Route[] => ds.countries.flatMap((c) => c.routes);
 const clone = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
-const routeOf = (d: Dataset, id: string): Route => d.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
-const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
 
 /** The route s19 publishes: France's researcher card, quoted and not scored. */
 const CHERCHEUR = "fr-talent-chercheur";
@@ -124,8 +124,8 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
   });
 
   it("every quote verifies against the fiche's snapshot — the watch reads the chercheur section", () => {
-    const watchlist = readJson(new URL("../watch/watchlist.json", import.meta.url)) as Watchlist;
-    const state = readJson(new URL("../watch/state.json", import.meta.url)) as WatchState;
+    const watchlist = readJson<Watchlist>("../watch/watchlist.json");
+    const state = readJson<WatchState>("../watch/state.json");
     expect(checkCoverage(ds, watchlist).ok).toBe(true);
     const result = checkQuotes(ds, watchlist, state);
     expect(result.missing.filter((m) => m.where.startsWith(CHERCHEUR))).toEqual([]);
@@ -149,8 +149,9 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
     // #169: an option may be marked an arranged answer; 0.8.4 since
     // OytunOnal/permit-rulebook#313: a path carries its words and a
     // precondition names its path; 0.8.5 since ruling 28 of
-    // OytunOnal/permit-rulebook#310: an answer a reader can reach by acting.
-    expect(datasetMeta(ds).schema_version).toBe("0.8.5");
+    // OytunOnal/permit-rulebook#310: an answer a reader can reach by acting;
+    // 0.8.6 since OytunOnal/permit-rulebook#408: a Passport-only statement.
+    expect(datasetMeta(ds).schema_version).toBe("0.8.6");
     // 2026-10-21 since #134: the shortage card's IT path, read that day.
     expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });

@@ -1,7 +1,7 @@
 import { countryOptions } from "./countries.js";
 import { evalDisjunction, hasNoOpenPath, isPathOpen, pathResultsOf, stillReachable } from "./disjunction.js";
 import type { CriterionJudge } from "./disjunction.js";
-import { CARVE_OUT_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
+import { CITIZENSHIP_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type {
   AskingRoutes, Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef, OpenRoute,
   FieldOption, Notice,
@@ -532,7 +532,25 @@ function equivalenceKey(dataset: Dataset, field: string, value: string): string 
   for (const n of dataset.notices ?? [])
     if (n.when.field === field)
       parts.push(satisfies(dataset, field, value, n.when.value !== undefined ? [n.when.value] : (n.when.values ?? [])) ? `n${n.id}` : "-");
+  // The same holds for a carve-out and a Passport-only statement: a Japanese
+  // passport and an Afghan one draw different Dutch cards, a carve-out
+  // releasing one of them from the provisional residence permit; a Turkish
+  // passport and a Brazilian one too, on a route whose statement binds only
+  // Turkish passports. Membership is exact, as `bindsReader` reads it.
+  if (field === CITIZENSHIP_FIELD) parts.push(...statementKeyParts(dataset, value));
   return parts.join("|");
+}
+
+/** The parts of a passport's key the route statements decide: whether each
+ * carve-out names it, and whether each Passport-only statement does. */
+function statementKeyParts(dataset: Dataset, passport: string): string[] {
+  const parts: string[] = [];
+  for (const route of dataset.countries.flatMap((c) => c.routes))
+    for (const s of routeStatements(route)) {
+      if (s.except) parts.push(s.except.citizenship.includes(passport) ? `x${route.id}/${s.id}` : "-");
+      if (s.bindsOnly) parts.push(s.bindsOnly.citizenship.includes(passport) ? `o${route.id}/${s.id}` : "-");
+    }
+  return parts;
 }
 
 /**
@@ -550,7 +568,7 @@ export function optionEquivalenceClasses(dataset: Dataset, field: string, values
   // Keyed on the value list too: a caller may ask about a subset, and keying on
   // the field alone handed back the full-list weights for a two-value request
   // (review).
-  const cacheKey = `${field} ${values.join(",")}`;
+  const cacheKey = `${field}\u0000${values.join(",")}`;
   const cached = perField.get(cacheKey);
   if (cached) return cached;
   const byKey = new Map<string, OptionClass>();
@@ -870,10 +888,10 @@ export function statementSources(s: RouteStatement): ProvenancedText[] {
  * reader at all. The membership test is exact rather than `satisfies` — a
  * carve-out names passports, and a class is not one.
  */
-export function carveOutFor(s: RouteStatement, profile: Profile): StatementException | undefined {
-  const answer = profile[CARVE_OUT_FIELD];
-  if (answer === undefined || !s.except) return undefined;
-  return s.except.citizenship.includes(answer) ? s.except : undefined;
+export function carveOutFor(statement: RouteStatement, profile: Profile): StatementException | undefined {
+  const answer = profile[CITIZENSHIP_FIELD];
+  if (answer === undefined || !statement.except) return undefined;
+  return statement.except.citizenship.includes(answer) ? statement.except : undefined;
 }
 
 /**
@@ -909,9 +927,20 @@ export function isClosed(r: RouteResult): boolean {
   return closedBy(r).length > 0;
 }
 
+/**
+ * Whether a Passport-only statement leaves this reader out: they declared a
+ * passport it does not name. A silence is not a passport, so a reader who has
+ * not answered, and a route page, are never left out.
+ */
+function bindsOnlyOtherPassports(statement: RouteStatement, profile: Profile): boolean {
+  const answer = profile[CITIZENSHIP_FIELD];
+  if (answer === undefined || !statement.bindsOnly) return false;
+  return !statement.bindsOnly.citizenship.includes(answer);
+}
+
 /** Whether this statement is one of the conditions this reader is told about. */
-export function bindsReader(s: RouteStatement, profile: Profile): boolean {
-  return carveOutFor(s, profile) === undefined;
+export function bindsReader(statement: RouteStatement, profile: Profile): boolean {
+  return carveOutFor(statement, profile) === undefined && !bindsOnlyOtherPassports(statement, profile);
 }
 
 /** All provenanced values a route rests on — what the UI must show, quoted and
@@ -964,16 +993,17 @@ export function resultProvenance(r: RouteResult, profile: Profile): ProvenanceEn
       entries.push(applied === undefined ? { ...e } : { ...e, applied });
   });
   // A statement is not a path anyone could have missed: it stands on every
-  // card the route produces. Where the authority sets it aside for this
-  // reader's passport, the card shows the carve-out instead of the condition,
+  // card the route produces. Where the authority releases this reader's
+  // passport from it, the card shows the carve-out instead of the condition,
   // and the quote list follows the card: one sentence per statement, the one
   // the reader was actually shown. Printing both would put the exemption list
   // under a condition it does not lift for them, and the condition's own words
-  // under a sentence saying it does not apply (s7).
+  // under a sentence saying it does not apply (s7). A Passport-only statement
+  // about other passports is not on the card, so its quote is not either.
   for (const s of routeStatements(r.route)) {
     const except = carveOutFor(s, profile);
     if (except) entries.push({ value: except.source, applied: true });
-    else if (s.source) entries.push({ value: s.source, applied: true });
+    else if (s.source && !bindsOnlyOtherPassports(s, profile)) entries.push({ value: s.source, applied: true });
   }
   return entries;
 }

@@ -13,18 +13,15 @@ import {
   checkCoverage, checkQuotes, datasetQuotes, datasetSourceUrls, sliceFingerprint,
   type WatchState, type Watchlist,
 } from "../src/watch/core.js";
-import type { Criterion, Dataset, Profile, Route } from "../src/types.js";
+import type { Criterion, Dataset, Profile } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
-const readJson = (p: string) =>
-  JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8").replace(/^﻿/, ""));
-
-const dataset = readJson("../data/dataset.json") as Dataset;
-const watchlist = readJson("../watch/watchlist.json") as Watchlist;
-const state = readJson("../watch/state.json") as WatchState;
+const dataset = readJson<Dataset>("../data/dataset.json");
+const watchlist = readJson<Watchlist>("../watch/watchlist.json");
+const state = readJson<WatchState>("../watch/state.json");
 const exclusionsMd = readFileSync(new URL("../data/exclusions.md", import.meta.url), "utf8");
 
-const routes = (): Route[] => dataset.countries.flatMap((c) => c.routes);
-const routeOf = (id: string): Route => routes().find((r) => r.id === id)!;
 const clone = (): Dataset => structuredClone(dataset);
 
 /** The four passeport-talent routes the sources do not settle. */
@@ -53,7 +50,7 @@ const statusOf = (profile: Profile, id: string): string =>
   evaluate(dataset, profile).find((r) => r.route.id === id)!.status;
 
 const closingCriterion = (): Extract<Criterion, { op: "not-in" }> =>
-  routeOf("fr-ict").criteria.find((c): c is Extract<Criterion, { op: "not-in" }> => c.op === "not-in")!;
+  routeOf(dataset, "fr-ict").criteria.find((c): c is Extract<Criterion, { op: "not-in" }> => c.op === "not-in")!;
 
 /**
  * s8 — "A route the authority closes to a passport, and a question the sources
@@ -77,7 +74,7 @@ describe("s8 — the transfer card France closes to an Algerian passport", () =>
   it("does not offer it to an Algerian passport, and does to a Turkish one", () => {
     const algerian = transferring("DZ");
     const turkish = transferring("TR");
-    expect(isRouteAlive(dataset, routeOf("fr-ict"), algerian)).toBe(false);
+    expect(isRouteAlive(dataset, routeOf(dataset, "fr-ict"), algerian)).toBe(false);
     expect(statusOf(turkish, "fr-ict")).toBe("met");
     // Closed is its own answer: it is not "not yet", and the criterion that
     // says so is the one a screen must read to keep the route off the list.
@@ -107,7 +104,7 @@ describe("s8 — the transfer card France closes to an Algerian passport", () =>
   });
 
   it("puts the closure's quote among the route's own provenance", () => {
-    expect(routeProvenance(routeOf("fr-ict")).map((e) => e.value.quote))
+    expect(routeProvenance(routeOf(dataset, "fr-ict")).map((e) => e.value.quote))
       .toContain(closingCriterion().source.quote);
   });
 });
@@ -115,7 +112,7 @@ describe("s8 — the transfer card France closes to an Algerian passport", () =>
 describe("s8 — a criterion may exclude answers, and only on the authority's word", () => {
   const withClosure = (patch: Record<string, unknown>): Dataset => {
     const ds = clone();
-    const route = ds.countries.flatMap((c) => c.routes).find((r) => r.id === "fr-talent-qualifie")!;
+    const route = routeOf(ds, "fr-talent-qualifie");
     route.criteria.push(patch as unknown as Criterion);
     return ds;
   };

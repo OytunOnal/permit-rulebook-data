@@ -92,9 +92,9 @@ export function scopeWords(value: ScopeValue, unasked: UnaskedCount, o: { reader
  * `statedNotAsked`, so the sentence and the evidence behind it cannot disagree.
  *
  * The answered form takes the reader's answers, because a condition the
- * authority sets aside for their passport is not one of the conditions stated
- * to them (s7). A page with no answers has no reader to set anything aside
- * for, so every condition stands.
+ * authority releases their passport from is not one of the conditions stated
+ * to them (s7). A page with no answers has no reader to release from
+ * anything, so every condition stands.
  */
 export function scopeLine(
   route: Route, o: { reader: "answered"; profile: Profile } | { reader: "not-answered" },
@@ -149,10 +149,10 @@ export function statedNotAsked(
 export function statedNotAsked(
   route: Route, o: { split?: true; profile?: Profile } = {},
 ): string[] | { stated: string[]; noted: string[] } {
-  // A statement the authority itself sets aside for this reader's passport is
+  // A statement the authority itself releases this reader's passport from is
   // not among the conditions stated to them — the carve-out stands in its
-  // place, and it is a release, not a bar (s7). With no profile nothing is set
-  // aside, which is what a route page and a reader who has not answered the
+  // place, and it is a release, not a bar (s7). With no profile nothing is
+  // released, which is what a route page and a reader who has not answered the
   // passport question both need.
   const statements: RouteStatement[] = routeStatements(route)
     .filter((s) => bindsReader(s, o.profile ?? {}))

@@ -7,7 +7,7 @@ import {
 import { datasetSourceCountries, unreadSources, type WatchState } from "../src/watch/state.js";
 import type { Dataset } from "../src/types.js";
 import { fetchSource } from "../src/watch/fetch-source.js";
-import { readFileSync } from "node:fs";
+import { readJson } from "./read-json.js";
 
 /**
  * s34 — the watch reads the IND itself again.
@@ -107,12 +107,9 @@ const htmlEntry: WatchEntry = {
   kind: "value-source",
 };
 
-const readJson = (name: string) =>
-  JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8").replace(/^﻿/, ""));
-
 const encode = (s: string) => new TextEncoder().encode(s);
 const emptyState: WatchState = { entries: {} };
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 const refuse: Fetcher = async (url) => ({ ok: false, error: `nothing may fetch ${url}`, failure: "refused-by-us" });
 
 describe("s34 — a browser reading is read exactly as html is", () => {
@@ -395,7 +392,7 @@ const FORM_WALLED = [
 /** The two the browser does not reach: a challenge it fails, and a geography. */
 const STAY_HUMAN = ["legifrance-ce-algerian-titles", "gesetze-official-recheck"];
 
-const watchlist = readJson("../watch/watchlist.json") as Watchlist;
+const watchlist = readJson<Watchlist>("../watch/watchlist.json");
 const entryOf = (id: string) => watchlist.entries.find((e) => e.id === id)!;
 
 describe("s34 — seven entries move to the browser and two stay with a person", () => {
@@ -488,7 +485,7 @@ describe("the Opportunity Card's notice is a reminder a person reads", () => {
     // The shipped state still names it unread, with seven silent mornings up
     // to 2026-11-11. A reminder is never `unreachable`, so the next run's
     // unread list drops it and the verdict, which reads that list, is green.
-    const state = readJson("../watch/state.json") as WatchState;
+    const state = readJson<WatchState>("../watch/state.json");
     const { reports, nextState, verdict } = await runWatch(
       { entries: [entry] }, state, refuse, "2026-11-12",
     );
@@ -501,7 +498,7 @@ describe("the Opportunity Card's notice is a reminder a person reads", () => {
 });
 
 describe("s34 — the quote gate reads the six", () => {
-  const state = readJson("../watch/state.json") as WatchState;
+  const state = readJson<WatchState>("../watch/state.json");
   const browserUrls = new Set(BROWSER_ENTRIES.map((id) => entryOf(id).url));
   const onTheBrowserEntries = datasetQuotes(dataset).filter((q) => browserUrls.has(q.source_url));
 
@@ -561,9 +558,9 @@ describe("s34 — no slice of the five can match the form the runner is served",
    * absent. A read that reaches the wrong page must go red, and the only thing
    * standing between those two outcomes is whether a marker can match a shell.
    */
-  const shells = readJson("./fixtures/ind-form-shell.json") as {
+  const shells = readJson<{
     entries: Record<string, string>;
-  };
+  }>("./fixtures/ind-form-shell.json");
 
   it("keeps the shell that caused this, so the check has something to fail against", () => {
     expect(Object.keys(shells.entries).sort()).toEqual([...FORM_WALLED].sort());

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import dataset from "../data/dataset.json" with { type: "json" };
 import { datasetMeta, forEachCriterion, notices, routeStatements } from "../src/engine.js";
 import { hostKindOf } from "../src/hosts.js";
@@ -8,10 +7,11 @@ import { criterionPhrase } from "../src/verdict.js";
 import { renderableTexts } from "../src/prose.js";
 import type { Watchlist } from "../src/watch/core.js";
 import type { Criterion, Dataset, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
-const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
-const watchlist = readJson(new URL("../watch/watchlist.json", import.meta.url)) as Watchlist;
+const watchlist = readJson<Watchlist>("../watch/watchlist.json");
 
 /**
  * s23 — the copy pass, data half.
@@ -62,7 +62,7 @@ describe("s23 P3 — the curator's note leaves the card", () => {
   });
 
   it("the § 20a caveat still discloses the mirror, the way the § 21 citations do: its source is a consolidated text", () => {
-    const route = ds.countries.flatMap((c) => c.routes).find((r) => r.id === "de-chancenkarte")!;
+    const route = routeOf(ds, "de-chancenkarte");
     const caveat = routeStatements(route).find((s) => s.source?.legal_basis?.startsWith("§ 20a Absatz 2"));
     expect(caveat, "the Opportunity Card's 20-hour caveat").toBeDefined();
     expect(hostKindOf(caveat!.source!.source_url)).toBe("consolidated-text");
@@ -83,9 +83,10 @@ describe("s23 — the dataset says so in its version", () => {
     // The day of the copy pass until s32 moved it on 2026-09-18 (nine
     // statements name their question), #134 on 2026-10-21 (the shortage
     // card's IT path), and OytunOnal/permit-rulebook#313 on 2026-11-10 (the
-    // path words); the same-day convention keeps one stamp for every change
-    // of a day.
-    expect(datasetMeta(ds).dataset_version).toBe("2026.11.10");
+    // path words), and OytunOnal/permit-rulebook#408 on 2026-11-16 (a caveat
+    // names the only passports it binds); the same-day convention keeps one
+    // stamp for every change of a day.
+    expect(datasetMeta(ds).dataset_version).toBe("2026.11.16");
     // Nothing was read at a source by the copy pass: two of our own sentences
     // moved. The newest read came later, with #134's IT path; #313 read none.
     expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
@@ -93,7 +94,6 @@ describe("s23 — the dataset says so in its version", () => {
 });
 
 describe("s23 P2 — a rule with two limbs is one sentence", () => {
-  const routeOf = (id: string): Route => ds.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
   const inCriterion = (route: Route, field: string): Criterion => {
     let found: Criterion | undefined;
     forEachCriterion(route.criteria, (c) => { if (c.op === "in" && c.field === field && !found) found = c; });
@@ -110,7 +110,7 @@ describe("s23 P2 — a rule with two limbs is one sentence", () => {
     // in s25 when the experience ladder was split in two.) The shipped rule
     // says its range in its own short_reason, which the gate asks of a range
     // on an ordered question, so the composition is read without it.
-    const { short_reason: _, ...composed } = inCriterion(routeOf("nl-blue-card"), "experience_7y");
+    const { short_reason: _, ...composed } = inCriterion(routeOf(ds, "nl-blue-card"), "experience_7y");
     expect(composed.op).toBe("in");
     expect(criterionPhrase(ds, composed)).toBe("3 to under 5 or 5+ years of related experience in the last seven");
   });
@@ -153,14 +153,13 @@ describe("s23 P2 — a rule with two limbs is one sentence", () => {
   });
 
   it("a short_reason still wins over the composed phrase", () => {
-    const c = inCriterion(routeOf("es-highly-qualified"), "experience_7y");
+    const c = inCriterion(routeOf(ds, "es-highly-qualified"), "experience_7y");
     expect(c.short_reason).toBeDefined();
     expect(criterionPhrase(ds, c)).toBe(c.short_reason);
   });
 });
 
 describe("s23 P4 — the scope line speaks the reader's language", () => {
-  const routeOf = (id: string): Route => ds.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 
   const answered = { reader: "answered" } as const;
 
@@ -188,9 +187,9 @@ describe("s23 P4 — the scope line speaks the reader's language", () => {
       const line = scopeLine(route, { reader: "not-answered" });
       expect(line, route.id).not.toMatch(/stated but not asked|in our own reading/);
     }
-    expect(scopeLine(routeOf("nl-blue-card"), { reader: "not-answered" }))
+    expect(scopeLine(routeOf(ds, "nl-blue-card"), { reader: "not-answered" }))
       .toBe("quoted and dated · the checker asks about it, except 3 conditions");
-    expect(scopeLine(routeOf("fr-talent-qualifie"), { reader: "not-answered" }))
+    expect(scopeLine(routeOf(ds, "fr-talent-qualifie"), { reader: "not-answered" }))
       .toBe("quoted and dated · the checker asks about it, except 1 condition, in our own words, not the authority's");
   });
 });

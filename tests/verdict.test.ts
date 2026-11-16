@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { evaluate, fieldOptions, forEachCriterion, routeStatements, unlocks } from "../src/engine.js";
 import { deriveQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
@@ -7,8 +6,9 @@ import { answerLabel, criterionPhrase, mootWith, periodOf, reasonFor, shortLabel
 import { fillRouteSlots } from "../src/route-slots.js";
 import type { Dataset, Profile } from "../src/types.js";
 import { lcg, optionValues, randomProfile } from "./random-profile.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /** Everything a person could read on a result screen for one profile. */
 function userFacingFor(profile: Profile): string[] {
