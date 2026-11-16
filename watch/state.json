@@ -538,16 +538,10 @@
       "history": []
     }
   },
-  "last_run": "2026-11-15",
-  "unread": [
-    {
-      "id": "eur-lex-blue-card-directive",
-      "url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32021L1883"
-    }
-  ],
+  "last_run": "2026-11-16",
+  "unread": [],
   "lapses": {
     "de-bmi-chancenkarte": [
-      "2026-11-09",
       "2026-11-10",
       "2026-11-11"
     ],
