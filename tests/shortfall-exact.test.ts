@@ -19,7 +19,7 @@ import { readJson } from "./read-json.js";
  * them; every amount they look for is computed from the dataset's thresholds.
  */
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /** The v1.2.1 gate's hostile walk: a Nigerian passport, Germany, a job offer,
  * no completed qualification, IT, two years in the last five. One route stands

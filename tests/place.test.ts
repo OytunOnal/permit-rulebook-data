@@ -5,7 +5,7 @@ import { phraseOf } from "../src/countries.js";
 import type { Dataset, Profile, Unlock } from "../src/types.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * The human's phone walk, 2026-09-08. A reader still deciding where to go was

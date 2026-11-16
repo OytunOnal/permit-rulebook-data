@@ -12,9 +12,9 @@ import type { Criterion, Dataset, FieldDef, Profile, Route, RouteReading, RouteR
 import { readJson } from "./read-json.js";
 import { routeOf } from "./route-of.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
-const watchlist = readJson("../watch/watchlist.json") as Watchlist;
-const state = readJson("../watch/state.json") as WatchState;
+const dataset = readJson<Dataset>("../data/dataset.json");
+const watchlist = readJson<Watchlist>("../watch/watchlist.json");
+const state = readJson<WatchState>("../watch/state.json");
 
 const routes = (): Route[] => dataset.countries.flatMap((c) => c.routes);
 

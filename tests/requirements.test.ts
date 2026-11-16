@@ -5,7 +5,7 @@ import type { Dataset, Route } from "../src/types.js";
 import { readJson } from "./read-json.js";
 import { routeOf } from "./route-of.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 const routes = (): Route[] => dataset.countries.flatMap((c) => c.routes);
 

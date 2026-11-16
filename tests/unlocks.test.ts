@@ -5,7 +5,7 @@ import { remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 // Explorer with strong credentials: everything is there except a situation.
 const explorer: Profile = {

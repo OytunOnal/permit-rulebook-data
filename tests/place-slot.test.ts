@@ -3,7 +3,7 @@ import { phraseOf, optionMeans, renderableTexts } from "../src/index.js";
 import type { Dataset, FieldOption, Profile } from "../src/index.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * A phrase built for a place is never handed "there" (#154; #151, ruling 7).

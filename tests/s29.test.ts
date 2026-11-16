@@ -9,8 +9,8 @@ import { readJson } from "./read-json.js";
 import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
-const watchlist = readJson("../watch/watchlist.json") as Watchlist;
-const state = readJson("../watch/state.json") as WatchState;
+const watchlist = readJson<Watchlist>("../watch/watchlist.json");
+const state = readJson<WatchState>("../watch/state.json");
 
 /**
  * s29 — three data corrections (v1.2: data #13, data #15, the s28 light

@@ -15,10 +15,10 @@ import type { Dataset } from "../src/types.js";
 import { readJson } from "./read-json.js";
 import { routeOf } from "./route-of.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
-const shippedWatchlist = readJson("../watch/watchlist.json") as Watchlist;
+const dataset = readJson<Dataset>("../data/dataset.json");
+const shippedWatchlist = readJson<Watchlist>("../watch/watchlist.json");
 
-const shippedState = readJson("../watch/state.json") as WatchState;
+const shippedState = readJson<WatchState>("../watch/state.json");
 
 const enc = (s: string) => new TextEncoder().encode(s);
 const okFetcher = (pages: Record<string, string | Uint8Array>): Fetcher => async (url) => {

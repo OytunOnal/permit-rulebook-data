@@ -10,7 +10,7 @@ import { readJson } from "./read-json.js";
  * (#92, ruling 9).
  */
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 const FIELD = "recognition_de";
 const NOT_ASSESSED = "not_assessed";

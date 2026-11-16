@@ -11,7 +11,7 @@ import { readJson } from "./read-json.js";
  * and the gate refuses an improvable question whose answers carry no mark.
  */
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 const copy = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 
 /** The field with this id. Throws where the dataset has none. */

@@ -4,8 +4,8 @@ import { checkCoverage, datasetSourceUrls, type Watchlist } from "../src/watch/c
 import type { Dataset, Profile } from "../src/types.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
-const shippedWatchlist = readJson("../watch/watchlist.json") as Watchlist;
+const dataset = readJson<Dataset>("../data/dataset.json");
+const shippedWatchlist = readJson<Watchlist>("../watch/watchlist.json");
 
 const euPassport: Profile = { destination: "de", citizenship: "eu_eea_ch", situation: "offer" };
 

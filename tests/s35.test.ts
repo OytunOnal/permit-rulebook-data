@@ -966,7 +966,7 @@ describe("s35 — the verdict is the run's, in one place", () => {
 });
 
 describe("s35 — the site reads what it read", () => {
-  const dataset = readJson("../data/dataset.json") as Dataset;
+  const dataset = readJson<Dataset>("../data/dataset.json");
   /** Spain's salary-threshold PDF — five dataset values rest on it. */
   const UMBRAL = "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf";
 

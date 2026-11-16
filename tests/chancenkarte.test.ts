@@ -4,7 +4,7 @@ import type { Dataset, Profile, Route } from "../src/types.js";
 import { readJson } from "./read-json.js";
 import { routeOf } from "./route-of.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 function fieldsOf(route: Route): string[] {
   const out = new Set<string>();

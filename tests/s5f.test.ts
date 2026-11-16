@@ -7,7 +7,7 @@ import { lcg, randomProfile } from "./random-profile.js";
 import { readJson } from "./read-json.js";
 import { routeOf } from "./route-of.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * The option decision 1 added, and the route that reads it.

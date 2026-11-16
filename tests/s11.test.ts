@@ -22,8 +22,8 @@ import { readJson } from "./read-json.js";
  * looking at was actually taken.
  */
 
-const dataset = readJson("../data/dataset.json") as Dataset;
-const shippedState = readJson("../watch/state.json") as WatchState;
+const dataset = readJson<Dataset>("../data/dataset.json");
+const shippedState = readJson<WatchState>("../watch/state.json");
 const shippedWatchlist = JSON.parse(
   readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
 

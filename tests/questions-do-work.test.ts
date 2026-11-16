@@ -21,7 +21,7 @@ import { readJson } from "./read-json.js";
  * the pool is third-country passports only, because a free-movement passport
  * changing everything was already true when #8 was open.
  */
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 function lcg(seed: number) {
   let s = seed >>> 0;

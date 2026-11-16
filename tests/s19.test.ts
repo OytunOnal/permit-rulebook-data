@@ -124,8 +124,8 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
   });
 
   it("every quote verifies against the fiche's snapshot — the watch reads the chercheur section", () => {
-    const watchlist = readJson("../watch/watchlist.json") as Watchlist;
-    const state = readJson("../watch/state.json") as WatchState;
+    const watchlist = readJson<Watchlist>("../watch/watchlist.json");
+    const state = readJson<WatchState>("../watch/state.json");
     expect(checkCoverage(ds, watchlist).ok).toBe(true);
     const result = checkQuotes(ds, watchlist, state);
     expect(result.missing.filter((m) => m.where.startsWith(CHERCHEUR))).toEqual([]);

@@ -142,8 +142,8 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
   });
 
   it("every new source is watched, and every new quote is still on its page", () => {
-    const watchlist = readJson("../watch/watchlist.json") as Watchlist;
-    const state = readJson("../watch/state.json") as WatchState;
+    const watchlist = readJson<Watchlist>("../watch/watchlist.json");
+    const state = readJson<WatchState>("../watch/state.json");
     expect(checkCoverage(ds, watchlist).ok).toBe(true);
     const quotes = checkQuotes(ds, watchlist, state);
     expect(quotes.missing).toEqual([]);

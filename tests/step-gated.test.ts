@@ -4,7 +4,7 @@ import type { Dataset, Profile, RouteResult } from "../src/types.js";
 import { routeOf } from "./route-of.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /** The result the engine gives a route for a profile. Throws where it gives
  * none, so a case never reads a property of nothing. */

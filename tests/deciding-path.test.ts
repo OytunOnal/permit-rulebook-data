@@ -4,7 +4,7 @@ import { deriveBands, evaluate, resultProvenance } from "../src/engine.js";
 import type { CriterionResult, Dataset, Profile, RouteResult } from "../src/types.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /** The band a euro figure falls in — band ids shift whenever a threshold is
  * added, and a test that names a number should not have to know that. */

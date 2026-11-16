@@ -11,7 +11,7 @@ import { readJson } from "./read-json.js";
 import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
-const watchlist = readJson("../watch/watchlist.json") as Watchlist;
+const watchlist = readJson<Watchlist>("../watch/watchlist.json");
 
 /**
  * s23 — the copy pass, data half.

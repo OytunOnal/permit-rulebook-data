@@ -7,7 +7,7 @@ import type { Dataset } from "../src/types.js";
 import { readJson } from "./read-json.js";
 import { routeOf } from "./route-of.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /** The paths of the errors the dataset check reports on `ds`. */
 const refusedPaths = (ds: Dataset): string[] => validateDataset(ds).errors.map((e) => e.path);

@@ -14,7 +14,7 @@ import { readJson } from "./read-json.js";
  * one phrase of its own. Both are held by the gate.
  */
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 const copy = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 
 /** Every criterion with paths in a dataset, nested ones included. */

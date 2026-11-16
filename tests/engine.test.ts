@@ -5,7 +5,7 @@ import type { Criterion, Dataset, Profile } from "../src/types.js";
 import { routeOf } from "./route-of.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 // Annual salary bands (all four countries' thresholds, half-open): <33,085.09 /
 // 33,085.09–under 39,582 / 39,582–under 41,356.36 / 41,356.36–under 45,630 /

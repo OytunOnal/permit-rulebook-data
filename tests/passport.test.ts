@@ -9,10 +9,10 @@ import { checkCoverage, checkQuotes, datasetQuotes, datasetSourceUrls, type Watc
 import type { Dataset, Profile, Question } from "../src/types.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
-const shippedWatchlist = readJson("../watch/watchlist.json") as Watchlist;
-const shippedState = readJson("../watch/state.json") as WatchState;
-const vocabulary = readJson("../data/countries.json") as CountryVocabulary;
+const dataset = readJson<Dataset>("../data/dataset.json");
+const shippedWatchlist = readJson<Watchlist>("../watch/watchlist.json");
+const shippedState = readJson<WatchState>("../watch/state.json");
+const vocabulary = readJson<CountryVocabulary>("../data/countries.json");
 
 /** A fresh parse of the shipped dataset, for a case to break. */
 const load = (): Dataset => readJson<Dataset>("../data/dataset.json");

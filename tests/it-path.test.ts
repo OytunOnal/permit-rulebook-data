@@ -3,7 +3,7 @@ import { criterionPhrase, deriveBands, evaluate, reasonFor, reckonAskingRoutes, 
 import type { Criterion, CriterionResult, Dataset, Profile, RouteResult } from "../src/index.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 const SHORTAGE_CARD = "de-blue-card-shortage";
 

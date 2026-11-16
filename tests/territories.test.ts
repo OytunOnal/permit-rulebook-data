@@ -6,7 +6,7 @@ import { checkQuotes, datasetQuotes, datasetSourceUrls, type WatchState, type Wa
 import type { Dataset } from "../src/types.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * #160 — a territory typed in the passport search names its passport.

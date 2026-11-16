@@ -10,7 +10,7 @@ import { readJson } from "./read-json.js";
 const preconditionsOf = (route: Route): string[] =>
   [...(route.preconditions ?? []), ...routeStatements(route).filter((s) => s.kind === "precondition").map((s) => s.text)];
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * Permanent checks for blockers that were cleared once. Each targets the

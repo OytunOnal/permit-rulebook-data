@@ -14,7 +14,7 @@ import { readJson } from "./read-json.js";
  * path names it by those words. The gate holds both.
  */
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 const copy = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 
 /** The route's criterion with paths whose label is `label`. Throws where it has none. */

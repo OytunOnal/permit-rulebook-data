@@ -6,7 +6,7 @@ import { checkCoverage, checkQuotes, runWatch, sha256, type Watchlist, type Watc
 import type { Dataset } from "../src/types.js";
 import { readJson } from "./read-json.js";
 
-const watchlist = readJson("../watch/watchlist.json") as Watchlist;
+const watchlist = readJson<Watchlist>("../watch/watchlist.json");
 const entryOf = (id: string) => watchlist.entries.find((e) => e.id === id)!;
 
 /**

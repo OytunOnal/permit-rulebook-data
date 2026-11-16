@@ -6,7 +6,7 @@ import {
 import type { CountryVocabulary, Dataset, Profile } from "../src/index.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /**
  * A country's name in running text (#152; #151, ruling 6): one phrase from the

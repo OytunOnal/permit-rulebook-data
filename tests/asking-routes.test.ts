@@ -9,7 +9,7 @@ import { readJson } from "./read-json.js";
  * that decides to ask it — so the asked-for line can never name a route that
  * does not read the answer (#133, decision 6).
  */
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 const ids = (routes: OpenRoute[]): string[] => routes.map((r) => r.route.id);
 

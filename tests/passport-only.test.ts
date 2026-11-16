@@ -6,7 +6,7 @@ import type { Dataset, Profile, RouteStatement } from "../src/types.js";
 import { readJson } from "./read-json.js";
 import { routeOf } from "./route-of.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 // The route whose caveat the IND writes about Turkish passports alone.
 const ORIENTATION_YEAR = "nl-orientation-year";

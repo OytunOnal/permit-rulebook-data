@@ -8,7 +8,7 @@ import type { Dataset, Profile } from "../src/types.js";
 import { lcg, optionValues, randomProfile } from "./random-profile.js";
 import { readJson } from "./read-json.js";
 
-const dataset = readJson("../data/dataset.json") as Dataset;
+const dataset = readJson<Dataset>("../data/dataset.json");
 
 /** Everything a person could read on a result screen for one profile. */
 function userFacingFor(profile: Profile): string[] {
