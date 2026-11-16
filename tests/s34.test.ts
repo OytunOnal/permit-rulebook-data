@@ -7,7 +7,7 @@ import {
 import { datasetSourceCountries, unreadSources, type WatchState } from "../src/watch/state.js";
 import type { Dataset } from "../src/types.js";
 import { fetchSource } from "../src/watch/fetch-source.js";
-import { readFileSync } from "node:fs";
+import { readJson } from "./read-json.js";
 
 /**
  * s34 — the watch reads the IND itself again.
@@ -106,9 +106,6 @@ const htmlEntry: WatchEntry = {
   strategy: "html",
   kind: "value-source",
 };
-
-const readJson = (name: string) =>
-  JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8").replace(/^﻿/, ""));
 
 const encode = (s: string) => new TextEncoder().encode(s);
 const emptyState: WatchState = { entries: {} };

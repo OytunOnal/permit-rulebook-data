@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import dataset from "../data/dataset.json" with { type: "json" };
 import { datasetMeta, forEachCriterion, notices, routeStatements } from "../src/engine.js";
 import { hostKindOf } from "../src/hosts.js";
@@ -8,10 +7,10 @@ import { criterionPhrase } from "../src/verdict.js";
 import { renderableTexts } from "../src/prose.js";
 import type { Watchlist } from "../src/watch/core.js";
 import type { Criterion, Dataset, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 const ds = dataset as unknown as Dataset;
-const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
-const watchlist = readJson(new URL("../watch/watchlist.json", import.meta.url)) as Watchlist;
+const watchlist = readJson("../watch/watchlist.json") as Watchlist;
 
 /**
  * s23 — the copy pass, data half.

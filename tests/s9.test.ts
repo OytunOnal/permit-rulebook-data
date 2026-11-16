@@ -9,6 +9,7 @@ import { excludedLimbs } from "../src/exclusions.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
 import { QUOTED_NOT_SCORED } from "../src/types.js";
 import type { Dataset, Profile, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 const ds = dataset as unknown as Dataset;
 const routes = (): Route[] => ds.countries.flatMap((c) => c.routes);
@@ -142,9 +143,8 @@ describe("s9 — a route may be quoted and dated without being scored", () => {
   });
 
   it("every new source is watched, and every new quote is still on its page", () => {
-    const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
-    const watchlist = readJson(new URL("../watch/watchlist.json", import.meta.url)) as Watchlist;
-    const state = readJson(new URL("../watch/state.json", import.meta.url)) as WatchState;
+    const watchlist = readJson("../watch/watchlist.json") as Watchlist;
+    const state = readJson("../watch/state.json") as WatchState;
     expect(checkCoverage(ds, watchlist).ok).toBe(true);
     const quotes = checkQuotes(ds, watchlist, state);
     expect(quotes.missing).toEqual([]);

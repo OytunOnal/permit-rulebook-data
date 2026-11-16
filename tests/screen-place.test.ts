@@ -1,16 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { SCREEN_PLACE_PHRASES } from "../src/index.js";
 import { textsCheckedForScreenPlace } from "../src/screen-place.js";
 import { validateDataset } from "../src/validate.js";
-import type { Dataset, Route } from "../src/types.js";
-
-const readJson = (p: string) =>
-  JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8").replace(/^\uFEFF/, ""));
+import type { Dataset } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
-
-const routeIn = (ds: Dataset, id: string): Route => ds.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 
 /** The paths of the errors the dataset check reports on `ds`. */
 const refusedPaths = (ds: Dataset): string[] => validateDataset(ds).errors.map((e) => e.path);
@@ -36,7 +32,7 @@ describe("the dataset check refuses screen-place words", () => {
       expect(refusedPaths(inBody), phrase).toContain(`/notices/${bodied.id}/body`);
 
       const inStatement = structuredClone(dataset);
-      const statement = routeIn(inStatement, "nl-ict").statements![0]!;
+      const statement = routeOf(inStatement, "nl-ict").statements![0]!;
       statement.text = `${statement.text} — see the ${phrase}`;
       expect(refusedPaths(inStatement), phrase).toContain(`/countries/NL/routes/nl-ict/statements/${statement.id}/text`);
     }
@@ -44,7 +40,7 @@ describe("the dataset check refuses screen-place words", () => {
 
   it("lets a legal test above and a comparison below a wage stand", () => {
     const ds = structuredClone(dataset);
-    const statement = routeIn(ds, "nl-ict").statements![0]!;
+    const statement = routeOf(ds, "nl-ict").statements![0]!;
     statement.text = `${statement.text} — the test above; a salary below the French minimum wage`;
     expect(validateDataset(ds).errors).toEqual([]);
   });

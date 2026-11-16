@@ -5,10 +5,9 @@ import { checkCoverage, checkQuotes, type Watchlist } from "../src/watch/core.js
 import type { WatchState } from "../src/watch/state.js";
 import { datasetMeta, noticeSources } from "../src/engine.js";
 import type { Dataset, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 const ds = dataset as unknown as Dataset;
-const readJson = (name: string) =>
-  JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8").replace(/^﻿/, ""));
 const watchlist = readJson("../watch/watchlist.json") as Watchlist;
 const state = readJson("../watch/state.json") as WatchState;
 

@@ -4,6 +4,7 @@ import { checkCoverage, checkQuotes, datasetQuotes, runWatch, STRATEGIES, type F
 import { unreadNeverRead, unreadSentence, unreadSources, type WatchState } from "../src/watch/state.js";
 import { countryAdjective } from "../src/countries.js";
 import type { Dataset } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 /**
  * s14 — the IND's requirements moved behind a form.
@@ -31,8 +32,6 @@ import type { Dataset } from "../src/types.js";
  * records the human read, and s11's sentence.
  */
 
-const readJson = (name: string) =>
-  JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8").replace(/^﻿/, ""));
 const dataset = readJson("../data/dataset.json") as Dataset;
 const watchlist = readJson("../watch/watchlist.json") as Watchlist;
 const state = readJson("../watch/state.json") as WatchState;

@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { countryVocabulary, type CountryVocabulary } from "../src/countries.js";
 import { findTerritory, territoryErrors, territoryPhraseOf, territoryPhraseAtStartOf } from "../src/territories.js";
 import { validateDataset } from "../src/validate.js";
 import { checkQuotes, datasetQuotes, datasetSourceUrls, type WatchState, type Watchlist } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const readJson = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const dataset = readJson("../data/dataset.json") as Dataset;
 
 /**

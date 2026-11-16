@@ -10,12 +10,12 @@ import { askedByCriterion, scopeLine } from "../src/scope.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
 import { QUOTED_NOT_SCORED } from "../src/types.js";
 import type { Dataset, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 const ds = dataset as unknown as Dataset;
 const routes = (): Route[] => ds.countries.flatMap((c) => c.routes);
 const clone = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 const routeOf = (d: Dataset, id: string): Route => d.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
-const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
 
 /** The route s19 publishes: France's researcher card, quoted and not scored. */
 const CHERCHEUR = "fr-talent-chercheur";
@@ -124,8 +124,8 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
   });
 
   it("every quote verifies against the fiche's snapshot — the watch reads the chercheur section", () => {
-    const watchlist = readJson(new URL("../watch/watchlist.json", import.meta.url)) as Watchlist;
-    const state = readJson(new URL("../watch/state.json", import.meta.url)) as WatchState;
+    const watchlist = readJson("../watch/watchlist.json") as Watchlist;
+    const state = readJson("../watch/state.json") as WatchState;
     expect(checkCoverage(ds, watchlist).ok).toBe(true);
     const result = checkQuotes(ds, watchlist, state);
     expect(result.missing.filter((m) => m.where.startsWith(CHERCHEUR))).toEqual([]);

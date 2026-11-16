@@ -14,9 +14,7 @@ import {
   type WatchState, type Watchlist,
 } from "../src/watch/core.js";
 import type { Criterion, Dataset, Profile, Route } from "../src/types.js";
-
-const readJson = (p: string) =>
-  JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8").replace(/^﻿/, ""));
+import { readJson } from "./read-json.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
 const watchlist = readJson("../watch/watchlist.json") as Watchlist;

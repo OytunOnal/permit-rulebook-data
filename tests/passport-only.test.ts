@@ -1,22 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { bindsReader, evaluate, optionEquivalenceClasses, resultProvenance, routeStatements } from "../src/engine.js";
 import { scopeLine, statedNotAsked } from "../src/scope.js";
 import { validateDataset } from "../src/validate.js";
-import type { Dataset, Profile, Route, RouteStatement } from "../src/types.js";
-
-const readJson = (p: string) =>
-  JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8").replace(/^﻿/, ""));
+import type { Dataset, Profile, RouteStatement } from "../src/types.js";
+import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
 
 const ORIENTATION_YEAR = "nl-orientation-year";
 const TURKISH_CAVEAT = "turkish-citizens-differ";
 
-const routeIn = (ds: Dataset, id: string): Route => ds.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
-const routeOf = (id: string): Route => routeIn(dataset, id);
 const turkishCaveat = (): RouteStatement =>
-  routeStatements(routeOf(ORIENTATION_YEAR)).find((s) => s.id === TURKISH_CAVEAT)!;
+  routeStatements(routeOf(dataset, ORIENTATION_YEAR)).find((s) => s.id === TURKISH_CAVEAT)!;
 
 const turkish: Profile = { destination: "nl", citizenship: "TR" };
 const brazilian: Profile = { destination: "nl", citizenship: "BR" };
@@ -38,7 +34,7 @@ describe("a Passport-only statement binds only the passports it names", () => {
   });
 
   it("leaves the scope line's count of a reader it does not bind", () => {
-    const route = routeOf(ORIENTATION_YEAR);
+    const route = routeOf(dataset, ORIENTATION_YEAR);
     const caveat = turkishCaveat();
     expect(statedNotAsked(route, { profile: turkish })).toContain(caveat.text);
     expect(statedNotAsked(route, { profile: brazilian })).not.toContain(caveat.text);
@@ -82,7 +78,7 @@ describe("a Passport-only statement binds only the passports it names", () => {
 describe("the dataset check holds a Passport-only statement to the passports the interview offers", () => {
   const withOnlyFor = (onlyFor: unknown): Dataset => {
     const ds = structuredClone(dataset);
-    routeIn(ds, "nl-ict").statements![0].onlyFor = onlyFor as RouteStatement["onlyFor"];
+    routeOf(ds, "nl-ict").statements![0].onlyFor = onlyFor as RouteStatement["onlyFor"];
     return ds;
   };
 
@@ -105,7 +101,7 @@ describe("the dataset check holds a Passport-only statement to the passports the
   it("refuses a statement that names both whom it leaves out and whom it is about", () => {
     // OytunOnal/permit-rulebook#407, ruling 17: a statement carries a carve-out or `onlyFor`, never both.
     const ds = structuredClone(dataset);
-    const sponsor = routeStatements(routeIn(ds, "nl-hsm-30plus")).find((s) => s.id === "employer-must-be-a-recognised-sponsor")!;
+    const sponsor = routeStatements(routeOf(ds, "nl-hsm-30plus")).find((s) => s.id === "employer-must-be-a-recognised-sponsor")!;
     expect(sponsor.except).toBeDefined();
     sponsor.onlyFor = { citizenship: ["JP"] };
     const result = validateDataset(ds);
