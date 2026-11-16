@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { criterionPhrase, deriveBands, evaluate, reasonFor, reckonAskingRoutes, remainingQuestions } from "../src/index.js";
 import type { Criterion, CriterionResult, Dataset, Profile, RouteResult } from "../src/index.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 const SHORTAGE_CARD = "de-blue-card-shortage";
 

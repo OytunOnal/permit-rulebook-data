@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { evaluate, isScored, referencedFields, unlocks } from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import type { Dataset, Profile } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 /** Greedy wizard simulation: always answer the first remaining question. */
 function runFlow(answers: Profile): { asked: string[]; profile: Profile } {

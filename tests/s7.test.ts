@@ -12,17 +12,17 @@ import {
 } from "../src/watch/core.js";
 import type { Dataset, Profile, Route, RouteStatement } from "../src/types.js";
 import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
 const watchlist = readJson("../watch/watchlist.json") as Watchlist;
 const state = readJson("../watch/state.json") as WatchState;
 
 const routes = (): Route[] => dataset.countries.flatMap((c) => c.routes);
-const routeOf = (id: string): Route => routes().find((r) => r.id === id)!;
 const clone = (): Dataset => structuredClone(dataset);
 
 const statementOf = (route: string, id: string): RouteStatement =>
-  routeStatements(routeOf(route)).find((s) => s.id === id)!;
+  routeStatements(routeOf(dataset, route)).find((s) => s.id === id)!;
 
 /** The three routes the IND's own carve-out names, by naming their permits. */
 const SPONSORED = [
@@ -61,7 +61,7 @@ describe("s7 — a carve-out names the passports a statement does not bind", () 
       expect(carveOutFor(s, turkish)?.source.source_url, route).toBe(TURKISH_SOURCE);
       // Not asked, not stated: the sentence leaves the conditions this reader
       // is told about, and the carve-out is what stands in its place.
-      expect(statedNotAsked(routeOf(route), { profile: turkish }), route).not.toContain(s.text);
+      expect(statedNotAsked(routeOf(dataset, route), { profile: turkish }), route).not.toContain(s.text);
     }
   });
 
@@ -70,16 +70,16 @@ describe("s7 — a carve-out names the passports a statement does not bind", () 
       const s = statementOf(route, statement);
       expect(bindsReader(s, japanese), route).toBe(true);
       expect(carveOutFor(s, japanese), route).toBeUndefined();
-      expect(statedNotAsked(routeOf(route), { profile: japanese }), route).toContain(s.text);
+      expect(statedNotAsked(routeOf(dataset, route), { profile: japanese }), route).toContain(s.text);
       // A reader who has not said which passport yet is bound by everything:
       // a carve-out releases a declared passport, never a silence.
-      expect(statedNotAsked(routeOf(route)), route).toContain(s.text);
+      expect(statedNotAsked(routeOf(dataset, route)), route).toContain(s.text);
     }
   });
 
   it("leaves the Blue Card and the intra-corporate transferee alone — their pages never name Turkish citizens", () => {
     for (const id of ["nl-blue-card", "nl-ict"])
-      for (const s of routeStatements(routeOf(id)))
+      for (const s of routeStatements(routeOf(dataset, id)))
         expect(s.except?.source.source_url, `${id}:${s.id}`).not.toBe(TURKISH_SOURCE);
   });
 
@@ -91,20 +91,20 @@ describe("s7 — a carve-out names the passports a statement does not bind", () 
       expect(mvv.kind, id).toBe("precondition");
       // The requirement is quoted from the route's OWN page, never borrowed
       // from a neighbour: each page states it in its own words.
-      expect(mvv.source?.source_url, id).toBe(routeOf(id).info_url);
+      expect(mvv.source?.source_url, id).toBe(routeOf(dataset, id).info_url);
       expect([...(mvv.except?.citizenship ?? [])].sort(), id)
         .toEqual(["AU", "CA", "CH", "GB", "JP", "KR", "MC", "NZ", "US", "VA"]);
       expect(mvv.except?.source.source_url, id).toBe(MVV_SOURCE);
       // Turkey is not on the IND's exemption list, so the requirement stands.
       expect(bindsReader(mvv, turkish), id).toBe(true);
       expect(bindsReader(mvv, japanese), id).toBe(false);
-      expect(statedNotAsked(routeOf(id), { profile: turkish }), id).toContain(mvv.text);
-      expect(statedNotAsked(routeOf(id), { profile: japanese }), id).not.toContain(mvv.text);
+      expect(statedNotAsked(routeOf(dataset, id), { profile: turkish }), id).toContain(mvv.text);
+      expect(statedNotAsked(routeOf(dataset, id), { profile: japanese }), id).not.toContain(mvv.text);
     }
   });
 
   it("counts a condition that does not bind this reader out of the scope line", () => {
-    const route = routeOf("nl-researcher");
+    const route = routeOf(dataset, "nl-researcher");
     // An Indian passport is on neither list, so every condition binds it.
     const indian: Profile = { destination: "nl", citizenship: "IN" };
     const bound = statedNotAsked(route, { split: true, profile: indian });
@@ -185,7 +185,7 @@ describe("s7 — a carve-out is watched and quote-checked like every other value
   });
 
   it("shows the carve-out's quote on the card and on the route page", () => {
-    const route = routeOf("nl-researcher");
+    const route = routeOf(dataset, "nl-researcher");
     const sponsor = statementOf("nl-researcher", "the-institute-must-be-a-recognised-sponsor");
     expect(statementSources(sponsor).map((v) => v.source_url))
       .toEqual([route.info_url, TURKISH_SOURCE]);

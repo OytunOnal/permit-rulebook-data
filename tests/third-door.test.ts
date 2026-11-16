@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { UNKNOWN_BAND, deriveQuestions, remainingQuestions } from "../src/questions.js";
 import { evaluate, referencedFields } from "../src/engine.js";
 import { answerLabel, liveUnknowns, reasonFor } from "../src/verdict.js";
 import { proseProvenance, renderableTexts } from "../src/prose.js";
 import type { Dataset, Profile } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 /**
  * A money question was worded for a situation the reader had already ruled out,

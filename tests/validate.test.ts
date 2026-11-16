@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { assertValidDataset, validateDataset } from "../src/validate.js";
+import { readJson } from "./read-json.js";
 
-const load = () =>
-  JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8"));
+// Untyped, as JSON.parse returns it: the cases edit the raw JSON freely.
+const load = (): any =>
+  readJson("../data/dataset.json");
 
 describe("boundary validation (scenario step 6)", () => {
   it("the shipped dataset is valid", () => {

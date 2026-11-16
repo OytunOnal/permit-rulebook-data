@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { evaluate, reckonAskingRoutes, remainingQuestions } from "../src/index.js";
 import type { Dataset, OpenRoute } from "../src/index.js";
 import { lcg, randomProfile } from "./random-profile.js";
+import { readJson } from "./read-json.js";
 
 /**
  * The routes a question is asked for, named by the engine from the same walk
  * that decides to ask it — so the asked-for line can never name a route that
  * does not read the answer (#133, decision 6).
  */
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 const ids = (routes: OpenRoute[]): string[] => routes.map((r) => r.route.id);
 

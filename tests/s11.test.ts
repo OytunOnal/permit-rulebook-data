@@ -7,6 +7,7 @@ import {
 } from "../src/watch/state.js";
 import { countryAdjective } from "../src/countries.js";
 import type { Dataset } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 /**
  * s11 — a partial run says so.
@@ -21,8 +22,8 @@ import type { Dataset } from "../src/types.js";
  * looking at was actually taken.
  */
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
-const shippedState = JSON.parse(readFileSync(new URL("../watch/state.json", import.meta.url), "utf8")) as WatchState;
+const dataset = readJson("../data/dataset.json") as Dataset;
+const shippedState = readJson("../watch/state.json") as WatchState;
 const shippedWatchlist = JSON.parse(
   readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
 

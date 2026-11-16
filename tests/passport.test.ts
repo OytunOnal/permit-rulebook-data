@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import {
   deriveBands, evaluate, fieldOptions, informativeFields, isRouteAlive, isScored, matchOptions, notices, optionEquivalenceClasses,
 } from "../src/engine.js";
@@ -8,13 +7,15 @@ import { validateDataset } from "../src/validate.js";
 import { vocabularyErrors, type CountryVocabulary } from "../src/countries.js";
 import { checkCoverage, checkQuotes, datasetQuotes, datasetSourceUrls, type WatchState, type Watchlist } from "../src/watch/core.js";
 import type { Dataset, Profile, Question } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
-const shippedWatchlist = JSON.parse(readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
-const shippedState = JSON.parse(readFileSync(new URL("../watch/state.json", import.meta.url), "utf8")) as WatchState;
-const vocabulary = JSON.parse(readFileSync(new URL("../data/countries.json", import.meta.url), "utf8")) as CountryVocabulary;
+const dataset = readJson("../data/dataset.json") as Dataset;
+const shippedWatchlist = readJson("../watch/watchlist.json") as Watchlist;
+const shippedState = readJson("../watch/state.json") as WatchState;
+const vocabulary = readJson("../data/countries.json") as CountryVocabulary;
 
-const load = () => JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8"));
+// Untyped, as JSON.parse returns it: the cases edit the raw JSON freely.
+const load = (): any => readJson("../data/dataset.json");
 
 const statusMap = (p: Profile) =>
   Object.fromEntries(evaluate(dataset, p).map((r) => [r.route.id, `${r.status}|${r.gap_max ?? ""}|${r.gap_points ?? ""}`]));

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { criterionPhrase, deriveBands, evaluate, forEachCriterion, reasonFor } from "../src/index.js";
 import { disjunctionsOf } from "../src/path-words.js";
 import { validateDataset } from "../src/validate.js";
 import type { Disjunction } from "../src/disjunction.js";
 import type { Criterion, Dataset, Profile } from "../src/index.js";
 import { routeOf } from "./route-of.js";
+import { readJson } from "./read-json.js";
 
 /**
  * #155 (rulings 12–13 of #92): a criterion with paths is named in one line by
@@ -14,7 +14,7 @@ import { routeOf } from "./route-of.js";
  * one phrase of its own. Both are held by the gate.
  */
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 const copy = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 
 /** Every criterion with paths in a dataset, nested ones included. */

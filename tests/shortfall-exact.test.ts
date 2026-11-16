@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import {
   deriveBands, evaluate, formatEURPer, gapCriterionOf, reasonFor, unlockTitleOf, unlocks,
   type Dataset, type Profile,
 } from "../src/index.js";
 import { routeOf } from "./route-of.js";
+import { readJson } from "./read-json.js";
 
 /**
  * A gap is said one way (#174; rulings 3 and 11 on #55).
@@ -19,7 +19,7 @@ import { routeOf } from "./route-of.js";
  * them; every amount they look for is computed from the dataset's thresholds.
  */
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 /** The v1.2.1 gate's hostile walk: a Nigerian passport, Germany, a job offer,
  * no completed qualification, IT, two years in the last five. One route stands

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { routeStatements } from "../src/engine.js";
 import { disjunctionsOf } from "../src/path-words.js";
 import { validateDataset } from "../src/validate.js";
 import type { Disjunction } from "../src/disjunction.js";
 import type { Dataset, Route, RouteStatement } from "../src/types.js";
 import { routeOf } from "./route-of.js";
+import { readJson } from "./read-json.js";
 
 /**
  * OytunOnal/permit-rulebook#313 (rulings 2, 5 and 17 of #187 and #310): the
@@ -14,7 +14,7 @@ import { routeOf } from "./route-of.js";
  * path names it by those words. The gate holds both.
  */
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 const copy = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 
 /** The route's criterion with paths whose label is `label`. Throws where it has none. */

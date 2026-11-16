@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, fieldOptions } from "../src/engine.js";
 import { gapCriterionOf, reasonFor, shortLabelOf } from "../src/verdict.js";
 import type { Dataset, Profile } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 /**
  * The one-line explanation on a "within reach" card said the gap was salary,

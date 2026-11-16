@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, forEachCriterion, referencedFields, routeProvenance, routeReadings, routeStatements } from "../src/engine.js";
 import type { Criterion, Dataset, Profile, Route, RouteResult } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 /** The band a euro figure falls in — band ids shift whenever a threshold is
  * added, and a test that names a number should not have to know that. */

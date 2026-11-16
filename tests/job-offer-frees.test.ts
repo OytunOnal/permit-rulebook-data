@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { validateDataset } from "../src/validate.js";
 import { evaluate, fieldOptions, findJobOfferAnswer, routesAJobOfferFrees, SITUATION_FIELD } from "../src/index.js";
 import type { Dataset, Profile } from "../src/index.js";
+import { readJson } from "./read-json.js";
 
 /** A fresh parse of the shipped dataset, for a case to break or reorder. */
-const shippedDatasetCopy = () => JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8"));
+// Untyped, as JSON.parse returns it: the cases edit the raw JSON freely.
+const shippedDatasetCopy = (): any => readJson("../data/dataset.json");
 const ds = shippedDatasetCopy() as Dataset;
 
 /** The explorer persona of the site's s23: all four countries, no offer, and

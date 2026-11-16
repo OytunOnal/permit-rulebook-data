@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { evaluate, forEachCriterion, referencedFields, routeStatements } from "../src/engine.js";
 import type { Dataset, Profile, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 const routeOf = (id: string): Route =>
   dataset.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { deriveBands, evaluate, fieldOptions, forEachCriterion, referencedFields, routeReadings, routeStatements } from "../src/engine.js";
 import { quotedWithoutProvenance } from "../src/prose.js";
 import { criterionPhrase } from "../src/verdict.js";
 import type { Criterion, Dataset, Profile, Route, RouteResult, RouteStatus } from "../src/types.js";
 import { lcg, randomProfile } from "./random-profile.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 /**
  * The option decision 1 added, and the route that reads it.

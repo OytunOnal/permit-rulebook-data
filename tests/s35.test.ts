@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import {
   atMostAWeek, mergeTargetedRun, runWatch, runSummary, unreadNotices, verdictOf,
   type BrowserReader, type Fetcher, type FetchResult, type WatchEntry, type Watchlist, type WatchReport,
@@ -12,6 +11,7 @@ import { servedFailure } from "../src/watch/cdp.js";
 import { unreadSources, type WatchState } from "../src/watch/state.js";
 import { readableAddressOf } from "../src/watch/trust-line.js";
 import type { Dataset } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 /**
  * s35 — a source that fails once is read again.
@@ -966,7 +966,7 @@ describe("s35 — the verdict is the run's, in one place", () => {
 });
 
 describe("s35 — the site reads what it read", () => {
-  const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+  const dataset = readJson("../data/dataset.json") as Dataset;
   /** Spain's salary-threshold PDF — five dataset values rest on it. */
   const UMBRAL = "https://www.inclusion.gob.es/documents/d/unidadgrandesempresas/umbral-salarial.pdf";
 

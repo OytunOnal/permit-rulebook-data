@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { evaluate, isStepGated, mootWith } from "../src/index.js";
 import type { Dataset, Profile, RouteResult } from "../src/types.js";
 import { routeOf } from "./route-of.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 /** The result the engine gives a route for a profile. Throws where it gives
  * none, so a case never reads a property of nothing. */

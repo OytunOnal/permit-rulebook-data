@@ -12,11 +12,12 @@ import {
   type Fetcher, type WatchState, type Watchlist,
 } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
-const shippedWatchlist = JSON.parse(readFileSync(new URL("../watch/watchlist.json", import.meta.url), "utf8")) as Watchlist;
+const dataset = readJson("../data/dataset.json") as Dataset;
+const shippedWatchlist = readJson("../watch/watchlist.json") as Watchlist;
 
-const shippedState = JSON.parse(readFileSync(new URL("../watch/state.json", import.meta.url), "utf8")) as WatchState;
+const shippedState = readJson("../watch/state.json") as WatchState;
 
 const enc = (s: string) => new TextEncoder().encode(s);
 const okFetcher = (pages: Record<string, string | Uint8Array>): Fetcher => async (url) => {

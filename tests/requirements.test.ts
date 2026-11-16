@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { routeStatements } from "../src/engine.js";
 import { UNSOURCED_REASONS } from "../src/types.js";
 import type { Dataset, Route } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 const routes = (): Route[] => dataset.countries.flatMap((c) => c.routes);
 const routeOf = (id: string): Route => routes().find((r) => r.id === id)!;
@@ -187,7 +187,7 @@ describe("a statement in the reader's favour is never a requirement", () => {
     // The schema gates the dataset, the type gates the code, and the watch
     // says one of these words about a PDF it found no text in. Three spellings
     // of one fact is three facts to the next reader (review 2026-09-07, S2).
-    const schema = JSON.parse(readFileSync(new URL("../schema/ruleset.schema.json", import.meta.url), "utf8"));
+    const schema = readJson("../schema/ruleset.schema.json") as { $defs: { unsourcedReason: { properties: { reason: { enum: string[] } } } } };
     expect(schema.$defs.unsourcedReason.properties.reason.enum).toEqual([...UNSOURCED_REASONS]);
   });
 

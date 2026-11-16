@@ -3,11 +3,11 @@ import { readFileSync } from "node:fs";
 import { evaluate, forEachCriterion, referencedFields, routeProvenance, routeReadings, routeStatements } from "../src/engine.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
 import type { Dataset, Profile, Route, RouteResult } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
-const read = (name: string) => JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8"));
-const dataset = read("../data/dataset.json") as Dataset;
-const watchlist = read("../watch/watchlist.json") as Watchlist;
-const state = read("../watch/state.json") as WatchState;
+const dataset = readJson("../data/dataset.json") as Dataset;
+const watchlist = readJson("../watch/watchlist.json") as Watchlist;
+const state = readJson("../watch/state.json") as WatchState;
 
 const routeOf = (id: string): Route =>
   dataset.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;

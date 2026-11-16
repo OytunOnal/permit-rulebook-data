@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { unlocks } from "../src/engine.js";
 import { validateDataset } from "../src/validate.js";
 import type { Dataset, FieldDef, Profile } from "../src/types.js";
+import { readJson } from "./read-json.js";
 
 /**
  * OytunOnal/permit-rulebook#310, ruling 28: on each question a reader can
@@ -11,7 +11,7 @@ import type { Dataset, FieldDef, Profile } from "../src/types.js";
  * and the gate refuses an improvable question whose answers carry no mark.
  */
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 const copy = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
 
 /** The field with this id. Throws where the dataset has none. */

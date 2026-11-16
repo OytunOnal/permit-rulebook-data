@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { evaluate, fieldOptions, isClosed, isRouteAlive } from "../src/index.js";
 import type { CriterionResult, Dataset, Profile, RouteResult } from "../src/index.js";
 import { lcg, randomProfile } from "./random-profile.js";
+import { readJson } from "./read-json.js";
 
 /**
  * A degree never assessed and a degree assessed and refused are two answers a
@@ -10,7 +10,7 @@ import { lcg, randomProfile } from "./random-profile.js";
  * (#92, ruling 9).
  */
 
-const dataset = JSON.parse(readFileSync(new URL("../data/dataset.json", import.meta.url), "utf8")) as Dataset;
+const dataset = readJson("../data/dataset.json") as Dataset;
 
 const FIELD = "recognition_de";
 const NOT_ASSESSED = "not_assessed";
