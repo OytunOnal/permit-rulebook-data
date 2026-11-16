@@ -49,7 +49,7 @@ const japanese: Profile = { destination: "nl", citizenship: "JP" };
  * third_country` — so no route COULD say "for nationals of X this does not
  * apply", even where the authority says exactly that. The product asked which
  * passport a reader would apply with and then scored them against conditions
- * the IND itself sets aside for that passport (found by the human on the live
+ * the IND itself releases that passport from (found by the human on the live
  * site, diagnosed as a class in issue #8).
  */
 describe("s7 — a carve-out names the passports a statement does not bind", () => {

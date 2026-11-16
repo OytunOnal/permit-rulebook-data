@@ -52,7 +52,7 @@ describe("#153 — the scope line in the reader's words", () => {
       .toBe("quoted and dated · the checker asks about it, except 2 conditions, in our own words, not the authority's");
   });
 
-  it("a route whose unasked conditions are all set aside reads as the first form, in either", () => {
+  it("a route that releases the reader from every unasked condition reads as the first form, in either", () => {
     expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 0 }, { reader: "answered" }))
       .toBe(scopeWords("every-deciding-rule-asked", { stated: 0, noted: 0 }, { reader: "answered" }));
     expect(scopeWords("some-conditions-stated-not-asked", { stated: 0, noted: 0 }, { reader: "not-answered" }))
