@@ -252,12 +252,13 @@ describe("provenance and meta", () => {
       // and a precondition may name its path (`path`), both optional — additive.
       // 0.8.5 since ruling 28 of OytunOnal/permit-rulebook#310: an option may
       // be marked an answer a reader can reach by acting (`is_attainable`),
+      // optional — additive. 0.8.6 since OytunOnal/permit-rulebook#408: a
+      // statement may name the only passports it is about (`onlyFor`),
       // optional — additive.
-      schema_version: "0.8.5",
-      // 2026.11.10: the nine ways in carry their path words and three
-      // preconditions name their path (OytunOnal/permit-rulebook#313), and the
-      // improvable questions mark their attainable answers the same day.
-      dataset_version: "2026.11.10",
+      schema_version: "0.8.6",
+      // 2026.11.16: the orientation year's caveat about Turkish passports names
+      // the passports it is about (OytunOnal/permit-rulebook#408).
+      dataset_version: "2026.11.16",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two
       // authorities disagreeing (s8). The freshest are the IT path's four

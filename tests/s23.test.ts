@@ -83,9 +83,10 @@ describe("s23 — the dataset says so in its version", () => {
     // The day of the copy pass until s32 moved it on 2026-09-18 (nine
     // statements name their question), #134 on 2026-10-21 (the shortage
     // card's IT path), and OytunOnal/permit-rulebook#313 on 2026-11-10 (the
-    // path words); the same-day convention keeps one stamp for every change
-    // of a day.
-    expect(datasetMeta(ds).dataset_version).toBe("2026.11.10");
+    // path words), and OytunOnal/permit-rulebook#408 on 2026-11-16 (a caveat
+    // names the passports it is about); the same-day convention keeps one
+    // stamp for every change of a day.
+    expect(datasetMeta(ds).dataset_version).toBe("2026.11.16");
     // Nothing was read at a source by the copy pass: two of our own sentences
     // moved. The newest read came later, with #134's IT path; #313 read none.
     expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");

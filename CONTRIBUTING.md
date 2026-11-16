@@ -134,8 +134,11 @@ Chrome's own timeout, which no budget of the watch's reaches).
    question or be listed in `not_asked` below, and the build refuses the
    blank; a `field` no rule of the route reads is refused too (s32). A
    qualification the source puts on its own answer goes in as a `caveat` — it
-   fails nobody. Our own reading of the route goes in `readings`, where the
-   page shows it as ours.
+   fails nobody. A statement the source says is about certain passports alone
+   ("different requirements may apply to Turkish citizens") names them in
+   `onlyFor`: a reader who declared another passport is not shown it, and the
+   build refuses a passport the citizenship question does not offer. Our own
+   reading of the route goes in `readings`, where the page shows it as ours.
 5. **Declare the scope statement.** Every route carries exactly one value, and
    the build fails without it:
 

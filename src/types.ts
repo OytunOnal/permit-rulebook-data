@@ -268,6 +268,22 @@ export interface RouteStatement {
   /** The passports the authority itself says this statement does not bind.
    * A carve-out is a rule like any other, so it carries its own quote. */
   except?: StatementException;
+  /** The only passports the authority says this statement is about: a
+   * Passport-only statement. Its own quote is the source that names them. */
+  onlyFor?: PassportOnly;
+}
+
+/**
+ * Whom a Passport-only statement is about: the mirror of a carve-out, keyed on
+ * the same one answer. A reader who declared another passport is not bound by
+ * it; a reader who has declared none is, and so is a route page, which has no
+ * reader. It carries no quote of its own, because the statement's quote is the
+ * sentence that names the passports.
+ */
+export interface PassportOnly {
+  /** Passport countries, as the `citizenship` field answers them. A class is
+   * not a passport. */
+  citizenship: string[];
 }
 
 /**

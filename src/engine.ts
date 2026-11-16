@@ -532,6 +532,14 @@ function equivalenceKey(dataset: Dataset, field: string, value: string): string 
   for (const n of dataset.notices ?? [])
     if (n.when.field === field)
       parts.push(satisfies(dataset, field, value, n.when.value !== undefined ? [n.when.value] : (n.when.values ?? [])) ? `n${n.id}` : "-");
+  // The same holds for a Passport-only statement: a Turkish passport and a
+  // Brazilian one draw different cards on a route whose statement is about
+  // Turkish passports alone. Membership is exact, as `bindsReader` reads it.
+  if (field === CARVE_OUT_FIELD)
+    for (const country of dataset.countries)
+      for (const route of country.routes)
+        for (const s of routeStatements(route))
+          if (s.onlyFor) parts.push(s.onlyFor.citizenship.includes(value) ? `o${route.id}/${s.id}` : "-");
   return parts.join("|");
 }
 
@@ -909,9 +917,20 @@ export function isClosed(r: RouteResult): boolean {
   return closedBy(r).length > 0;
 }
 
+/**
+ * Whether a Passport-only statement leaves this reader out: they declared a
+ * passport it does not name. A silence is not a passport, so a reader who has
+ * not answered, and a route page, are never left out.
+ */
+function isPassportOnlyForOthers(s: RouteStatement, profile: Profile): boolean {
+  const answer = profile[CARVE_OUT_FIELD];
+  if (answer === undefined || !s.onlyFor) return false;
+  return !s.onlyFor.citizenship.includes(answer);
+}
+
 /** Whether this statement is one of the conditions this reader is told about. */
 export function bindsReader(s: RouteStatement, profile: Profile): boolean {
-  return carveOutFor(s, profile) === undefined;
+  return carveOutFor(s, profile) === undefined && !isPassportOnlyForOthers(s, profile);
 }
 
 /** All provenanced values a route rests on — what the UI must show, quoted and
@@ -969,11 +988,12 @@ export function resultProvenance(r: RouteResult, profile: Profile): ProvenanceEn
   // and the quote list follows the card: one sentence per statement, the one
   // the reader was actually shown. Printing both would put the exemption list
   // under a condition it does not lift for them, and the condition's own words
-  // under a sentence saying it does not apply (s7).
+  // under a sentence saying it does not apply (s7). A Passport-only statement
+  // about other passports is not on the card, so its quote is not either.
   for (const s of routeStatements(r.route)) {
     const except = carveOutFor(s, profile);
     if (except) entries.push({ value: except.source, applied: true });
-    else if (s.source) entries.push({ value: s.source, applied: true });
+    else if (s.source && bindsReader(s, profile)) entries.push({ value: s.source, applied: true });
   }
   return entries;
 }

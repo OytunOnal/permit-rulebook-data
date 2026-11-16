@@ -341,6 +341,22 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
           });
         checkVocabulary(where, CARVE_OUT_FIELD, s.except.citizenship);
       }
+
+      /**
+       * A Passport-only statement may only name a passport the citizenship
+       * question offers. Its membership is exact, so a class or an unknown code
+       * would match no declared passport, and the statement would vanish from
+       * every reader who answered — with nothing saying so.
+       */
+      const passports = new Set(fieldOptions(dataset, CARVE_OUT_FIELD).map((o) => o.value));
+      for (const s of routeStatements(route))
+        for (const v of s.onlyFor?.citizenship ?? [])
+          if (!passports.has(v))
+            errors.push({
+              path: `${path}/statements/${s.id}/onlyFor`,
+              message: `${route.id}: "${s.id}" is only for ${CARVE_OUT_FIELD} "${v}", which the ${CARVE_OUT_FIELD} question does not offer — no declared passport could match it`,
+              keyword: "offeredPassport",
+            });
     }
 
   for (const n of dataset.notices ?? []) {

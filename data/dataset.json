@@ -1,6 +1,6 @@
 {
-  "schema_version": "0.8.5",
-  "dataset_version": "2026.11.10",
+  "schema_version": "0.8.6",
+  "dataset_version": "2026.11.16",
   "fields": [
     {
       "id": "destination",
@@ -4968,6 +4968,11 @@
                 "retrieved_at": "2026-09-07",
                 "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements",
                 "history": []
+              },
+              "onlyFor": {
+                "citizenship": [
+                  "TR"
+                ]
               }
             },
             {
