@@ -8,6 +8,7 @@ import { territoryErrors } from "./territories.js";
 import { routeSlotErrors } from "./route-slots.js";
 import { pathWordsErrors } from "./path-words.js";
 import { attainableAnswerErrors } from "./attainable-answers.js";
+import { screenPlaceErrors } from "./screen-place.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
@@ -72,13 +73,15 @@ export function validateDataset(data: unknown): ValidationResult {
  * - a criterion's paths carry words all or none, and a precondition names
  *   only a worded path of its own route (`pathWordsErrors`);
  * - an improvable question marks the answers a reader can reach by acting,
- *   and "I don't know" is never one (`attainableAnswerErrors`).
+ *   and "I don't know" is never one (`attainableAnswerErrors`);
+ * - no notice or statement text points at a place on the screen
+ *   (`screenPlaceErrors`).
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
   const errors: ValidationError[] = [
     ...vocabularyErrors(countryVocabulary), ...territoryErrors(countryVocabulary),
     ...unwordedRangeErrors(dataset), ...routeSlotErrors(dataset), ...arrangedOffAPathErrors(dataset),
-    ...pathWordsErrors(dataset), ...attainableAnswerErrors(dataset),
+    ...pathWordsErrors(dataset), ...attainableAnswerErrors(dataset), ...screenPlaceErrors(dataset),
   ];
 
   /**

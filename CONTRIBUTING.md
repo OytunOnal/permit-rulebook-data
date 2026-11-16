@@ -138,7 +138,13 @@ Chrome's own timeout, which no budget of the watch's reaches).
    ("different requirements may apply to Turkish citizens") names them in
    `onlyFor`: a reader who declared another passport is not shown it, and the
    build refuses a passport the citizenship question does not offer, and a
-   statement that carries both `onlyFor` and a carve-out (`except`). Our own
+   statement that carries both `onlyFor` and a carve-out (`except`). A
+   statement's text, and a notice's title and body, never point at a place on
+   the screen — an answer, a question, a result, a route or a card "above" or
+   "below": each is drawn on the result screen and on a route page, which has
+   none of them. Say what the site does instead ("our check", "our
+   questions"); the build refuses the phrases `SCREEN_PLACE_PHRASES` declares
+   (`src/screen-place.ts`). Our own
    reading of the route goes in `readings`, where the page shows it as ours.
 5. **Declare the scope statement.** Every route carries exactly one value, and
    the build fails without it:
