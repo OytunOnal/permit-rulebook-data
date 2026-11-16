@@ -1019,7 +1019,7 @@
           "$ref": "#/$defs/statementException"
         },
         "onlyFor": {
-          "$ref": "#/$defs/passportOnly"
+          "$ref": "#/$defs/onlyForPassports"
         }
       },
       "allOf": [
@@ -1057,7 +1057,7 @@
         }
       }
     },
-    "passportOnly": {
+    "onlyForPassports": {
       "type": "object",
       "description": "The only passports this statement is about: a Passport-only statement, the mirror of a carve-out. A reader who declared another passport is not bound by it; a reader who has declared none is, and so is a route page, which has no reader. It carries no quote of its own: the statement's own quote is the sentence that names the passports. Added in 0.8.6.",
       "required": [
