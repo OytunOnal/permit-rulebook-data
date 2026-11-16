@@ -5,7 +5,7 @@ import { print } from "./print.js";
 import { unreadNeverRead, unreadSources } from "./state.js";
 import type { Dataset } from "../types.js";
 
-const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^﻿/, ""));
+const readJson = (url: URL) => JSON.parse(readFileSync(url, "utf8").replace(/^\uFEFF/, ""));
 const dataset = readJson(new URL("../../../data/dataset.json", import.meta.url)) as Dataset;
 const watchlist = readJson(new URL("../../../watch/watchlist.json", import.meta.url)) as Watchlist;
 const state = readJson(new URL("../../../watch/state.json", import.meta.url)) as WatchState;

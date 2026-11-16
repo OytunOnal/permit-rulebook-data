@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { deriveBands, evaluate, fieldOptions, informativeFields, isRouteAlive, isScored, matchOptions, notices } from "../src/engine.js";
+import {
+  deriveBands, evaluate, fieldOptions, informativeFields, isRouteAlive, isScored, matchOptions, notices, optionEquivalenceClasses,
+} from "../src/engine.js";
 import { deriveQuestions, remainingQuestions } from "../src/questions.js";
 import { validateDataset } from "../src/validate.js";
 import { vocabularyErrors, type CountryVocabulary } from "../src/countries.js";
@@ -234,6 +236,18 @@ describe("s5c — question ordering scores equivalence classes, not two hundred 
       expect(remainingQuestions(dataset, p).map((q) => q.field)).toEqual(naiveOrder(p));
     });
   }
+
+  it("hands back the classes a fresh dataset computes, whichever value list was asked before", () => {
+    // Each call on a clone of its own reads no cache; the shared clone is asked
+    // the whole list first, then a subset, then the whole list again.
+    const fresh = (values: string[]) => optionEquivalenceClasses(structuredClone(dataset), "citizenship", values);
+    const every = fieldOptions(dataset, "citizenship").map((o) => o.value);
+    const subset = ["TR", "BR", "JP", "DZ"];
+    const shared = structuredClone(dataset);
+    expect(optionEquivalenceClasses(shared, "citizenship", every)).toEqual(fresh(every));
+    expect(optionEquivalenceClasses(shared, "citizenship", subset)).toEqual(fresh(subset));
+    expect(optionEquivalenceClasses(shared, "citizenship", every)).toEqual(fresh(every));
+  });
 });
 
 describe("s5c — validation: a class is a rule, so the boundary enforces it", () => {

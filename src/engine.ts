@@ -568,7 +568,7 @@ export function optionEquivalenceClasses(dataset: Dataset, field: string, values
   // Keyed on the value list too: a caller may ask about a subset, and keying on
   // the field alone handed back the full-list weights for a two-value request
   // (review).
-  const cacheKey = `${field} ${values.join(",")}`;
+  const cacheKey = `${field}\u0000${values.join(",")}`;
   const cached = perField.get(cacheKey);
   if (cached) return cached;
   const byKey = new Map<string, OptionClass>();
