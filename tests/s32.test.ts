@@ -6,11 +6,11 @@ import { validateDataset } from "../src/validate.js";
 import { datasetMeta, forEachCriterion, provenancedValuesOf, referencedFields, routeStatements } from "../src/engine.js";
 import { askedByCriterion, scopeLine, statedNotAsked } from "../src/scope.js";
 import { scopeDisagreesWithExclusions, twinDisagreesWithProse } from "../src/exclusions.js";
-import type { Dataset, Route, RouteStatement } from "../src/types.js";
+import type { Dataset, RouteStatement } from "../src/types.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
 const clone = (): Dataset => JSON.parse(JSON.stringify(dataset)) as Dataset;
-const routeOf = (d: Dataset, id: string): Route => d.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 const statementOf = (d: Dataset, route: string, id: string): RouteStatement =>
   routeStatements(routeOf(d, route)).find((s) => s.id === id)!;
 const exclusions = () => readFileSync(new URL("../data/exclusions.md", import.meta.url), "utf8");

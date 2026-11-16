@@ -13,6 +13,7 @@ import {
 } from "../src/watch/core.js";
 import type { Dataset } from "../src/types.js";
 import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
 const shippedWatchlist = readJson("../watch/watchlist.json") as Watchlist;
@@ -532,9 +533,8 @@ describe("the highly-skilled-migrant slice", () => {
   });
 
   it("the quote the widened slice exists for is in the dataset, dated the day it was read", () => {
-    const routes = dataset.countries.flatMap((c) => c.routes);
     for (const id of ["nl-hsm-30plus", "nl-hsm-under30"]) {
-      const statement = routes.find((r) => r.id === id)!
+      const statement = routeOf(dataset, id)
         .statements!.find((s) => s.id === "a-contract-abroad-is-a-transfer");
       expect(statement, `${id} does not carry it`).toBeDefined();
       expect(statement!.source!.quote).toBe(SENTENCE);

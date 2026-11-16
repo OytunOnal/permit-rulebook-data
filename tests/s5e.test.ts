@@ -10,13 +10,13 @@ import { validateDataset } from "../src/validate.js";
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
 import type { Criterion, Dataset, FieldDef, Profile, Route, RouteReading, RouteResult } from "../src/types.js";
 import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
 const watchlist = readJson("../watch/watchlist.json") as Watchlist;
 const state = readJson("../watch/state.json") as WatchState;
 
 const routes = (): Route[] => dataset.countries.flatMap((c) => c.routes);
-const routeOf = (id: string): Route => routes().find((r) => r.id === id)!;
 
 /** A fresh deep copy, so a mutation test can break the dataset without leaking. */
 const clone = (): Dataset => structuredClone(dataset);
@@ -205,7 +205,7 @@ describe("s5e — what is ours is marked as ours", () => {
 
   it("the schema refuses a reading that borrows a quote", () => {
     const ds = clone();
-    const route = ds.countries.flatMap((c) => c.routes).find((r) => r.id === "nl-hsm-under30")!;
+    const route = routeOf(ds, "nl-hsm-under30");
     route.readings = [
       ...(route.readings ?? []),
       {
@@ -385,7 +385,7 @@ describe("s5e — the euro figure", () => {
     // shipped as an editorial note: a euro figure with no quote and no source,
     // which is exactly what this product exists not to do. Either the Dutch
     // immigration service's own words carry it, or it is gone.
-    const route = routeOf("nl-hsm-under30");
+    const route = routeOf(dataset, "nl-hsm-under30");
     const prose = [
       ...(route.preconditions ?? []),
       ...routeReadings(route).map((r) => r.text),

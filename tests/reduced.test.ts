@@ -9,6 +9,7 @@ const requirementsOf = (route: { statements?: { kind: string; text: string }[] }
 import { remainingQuestions } from "../src/questions.js";
 import type { Criterion, Dataset, Profile, RouteResult } from "../src/types.js";
 import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
 
@@ -154,7 +155,7 @@ describe("s5c — a reduced threshold is a second path inside the same route", (
   });
 
   it("NL ICT keeps the standard amounts — no lower one is evidenced for it", () => {
-    const route = dataset.countries.flatMap((c) => c.routes).find((r) => r.id === "nl-ict")!;
+    const route = routeOf(dataset, "nl-ict");
     const quotes = routeProvenance(route).map((p) => p.value.quote);
     // The claim is about the data, not the prose: no reduced amount is modelled
     // on this route, and its thresholds are the full highly-skilled-migrant ones.

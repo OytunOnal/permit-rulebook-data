@@ -123,7 +123,7 @@ describe("s7 — a carve-out names the passports a statement does not bind", () 
 describe("s7 — a carve-out we cannot quote is a carve-out we do not ship", () => {
   const withExcept = (patch: Record<string, unknown>): Dataset => {
     const ds = clone();
-    const route = ds.countries.flatMap((c) => c.routes).find((r) => r.id === "nl-ict")!;
+    const route = routeOf(ds, "nl-ict");
     route.statements![0].except = patch as unknown as RouteStatement["except"];
     return ds;
   };

@@ -4,8 +4,9 @@ import dataset from "../data/dataset.json" with { type: "json" };
 import { checkCoverage, checkQuotes, type Watchlist } from "../src/watch/core.js";
 import type { WatchState } from "../src/watch/state.js";
 import { datasetMeta, noticeSources } from "../src/engine.js";
-import type { Dataset, Route } from "../src/types.js";
+import type { Dataset } from "../src/types.js";
 import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
 const watchlist = readJson("../watch/watchlist.json") as Watchlist;
@@ -22,7 +23,6 @@ const state = readJson("../watch/state.json") as WatchState;
  * site changes by rebuilding against the pin.
  */
 
-const routeOf = (id: string): Route => ds.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 const noticeOf = (id: string) => ds.notices!.find((n) => n.id === id)!;
 const entryOf = (id: string) => watchlist.entries.find((e) => e.id === id);
 const entryFor = (url: string) => watchlist.entries.find((e) => e.url === url);
@@ -43,7 +43,7 @@ describe("s29 #13 — the Opportunity Card's official page is an authority's", (
   const NON_AUTHORITIES = ["handbookgermany.de"];
 
   it("points at the Federal Ministry of the Interior's own English page", () => {
-    expect(routeOf("de-chancenkarte").info_url).toBe(BMI_CHANCENKARTE);
+    expect(routeOf(ds, "de-chancenkarte").info_url).toBe(BMI_CHANCENKARTE);
   });
 
   it("no route's info_url host is on the declared non-authority list", () => {

@@ -5,6 +5,7 @@ import { criterionPhrase } from "../src/verdict.js";
 import type { Criterion, Dataset, Profile, Route, RouteResult, RouteStatus } from "../src/types.js";
 import { lcg, randomProfile } from "./random-profile.js";
 import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
 
@@ -30,9 +31,6 @@ function bandFor(field: string, amount: number): string {
     (b) => (b.min === undefined || amount >= b.min) && (b.max === undefined || amount < b.max),
   )!.id;
 }
-
-const routeOf = (id: string): Route =>
-  dataset.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 
 /** Does any criterion of this route read the field at all? */
 function readsField(route: Route, field: string): boolean {
@@ -61,7 +59,7 @@ describe("s5f decision 1 — the three-year Spanish criterion", () => {
 
   it("the route reads it, and says what the law says", () => {
     let phrase: string | undefined;
-    forEachCriterion(routeOf(READS_IT).criteria, (c) => {
+    forEachCriterion(routeOf(dataset, READS_IT).criteria, (c) => {
       if (c.op === "in" && c.field === SEVEN) phrase = criterionPhrase(dataset, c);
     });
     expect(phrase, `${READS_IT} does not read ${SEVEN} with an in-criterion`).toBeDefined();
@@ -71,7 +69,7 @@ describe("s5f decision 1 — the three-year Spanish criterion", () => {
   it("the criterion carries article 71.2 in the authority's own words", () => {
     let quote: string | undefined;
     let basis: string | undefined;
-    forEachCriterion(routeOf(READS_IT).criteria, (c) => {
+    forEachCriterion(routeOf(dataset, READS_IT).criteria, (c) => {
       if (c.op === "in" && c.field === SEVEN) {
         quote = c.source?.quote;
         basis = c.source?.legal_basis;
@@ -82,7 +80,7 @@ describe("s5f decision 1 — the three-year Spanish criterion", () => {
   });
 
   it("the reading that apologised for the five-year answer is gone — it is no longer true", () => {
-    expect(routeReadings(routeOf(READS_IT)).map((r) => r.id))
+    expect(routeReadings(routeOf(dataset, READS_IT)).map((r) => r.id))
       .not.toContain("experience-answer-is-conservative");
   });
 
@@ -102,7 +100,7 @@ describe("s5f decision 1 — the three-year Spanish criterion", () => {
     expect(statusOn("5plus")).toBe("met");
     // The five-year question is not this route's business: the article
     // names no window, and the seven-year answer is read as a floor (s25).
-    expect(readsField(routeOf(READS_IT), FIVE)).toBe(false);
+    expect(readsField(routeOf(dataset, READS_IT), FIVE)).toBe(false);
   });
 });
 
@@ -141,7 +139,7 @@ describe("s5f — the ICT route reads the three years its own quote states", () 
 
   it("the criterion and the quote say the same number", () => {
     let criterion: Criterion | undefined;
-    forEachCriterion(routeOf(ICT).criteria, (c) => {
+    forEachCriterion(routeOf(dataset, ICT).criteria, (c) => {
       if ((c.op === "in" || c.op === "eq") && c.field === SEVEN) criterion = c;
     });
     expect(criterion, `${ICT} does not read ${SEVEN}`).toBeDefined();
@@ -232,7 +230,7 @@ describe("s5f — each experience question is ordinal: a longer record is never 
     expect([...movers[SEVEN]!].sort()).toEqual(["de-blue-card-shortage", "es-highly-qualified", "es-ict", "nl-blue-card"]);
     expect([...movers[FIVE]!].sort()).toEqual(["de-chancenkarte", "de-experienced-worker"]);
     for (const field of [FIVE, SEVEN])
-      for (const id of movers[field]!) expect(readsField(routeOf(id), field), `${id} moved on ${field}`).toBe(true);
+      for (const id of movers[field]!) expect(readsField(routeOf(dataset, id), field), `${id} moved on ${field}`).toBe(true);
   });
 });
 
@@ -244,11 +242,11 @@ describe("s5f step 2 — Germany reads the five-year window its sentence names",
 
   it("the experienced-worker route reads two years within five, and nothing about the last seven", () => {
     let value: string | undefined;
-    forEachCriterion(routeOf("de-experienced-worker").criteria, (c) => {
+    forEachCriterion(routeOf(dataset, "de-experienced-worker").criteria, (c) => {
       if (c.op === "eq" && c.field === FIVE) value = c.value;
     });
     expect(value).toBe("2plus");
-    expect(readsField(routeOf("de-experienced-worker"), SEVEN)).toBe(false);
+    expect(readsField(routeOf(dataset, "de-experienced-worker"), SEVEN)).toBe(false);
   });
 
   it("its verdict turns on the five-year answer alone, whatever the seven-year one", () => {
@@ -273,7 +271,7 @@ describe("s5f step 2 — Germany reads the five-year window its sentence names",
 
   it("the Chancenkarte points ladder carries the two rungs the Anlage names, on the two questions", () => {
     let rows: unknown;
-    forEachCriterion(routeOf("de-chancenkarte").criteria, (c) => {
+    forEachCriterion(routeOf(dataset, "de-chancenkarte").criteria, (c) => {
       if (c.op === "points")
         for (const item of c.table.items) if ("rows" in item) rows = item.rows;
     });

@@ -14,6 +14,7 @@ import {
   LANGUAGE_NAMES, QUOTE_LANGUAGES, quoteLanguage, sourceUrls, unmappedSources,
 } from "../src/lang.js";
 import type { Dataset, Profile, Route } from "../src/types.js";
+import { routeOf } from "./route-of.js";
 
 const ds = dataset as unknown as Dataset;
 const routes = (): Route[] => ds.countries.flatMap((c) => c.routes);
@@ -105,7 +106,7 @@ describe("s6 — every route declares what the checker asks of it", () => {
 
   it("a limb the file records and the page drops fails the build", () => {
     const dropped = clone();
-    const es = dropped.countries.flatMap((c) => c.routes).find((r) => r.id === "es-blue-card")!;
+    const es = routeOf(dropped, "es-blue-card");
     es.scope.not_asked = es.scope.not_asked.filter((id) => id !== "reduced-also-for-shortage-occupations");
     expect(scopeDisagreesWithExclusions(dropped, exclusions)).toContain(
       "es-blue-card: exclusions.md records \"reduced-also-for-shortage-occupations\" and the page never names it",
@@ -148,7 +149,7 @@ describe("s6 — every route declares what the checker asks of it", () => {
    * and names no unasked limb.
    */
   it("a route that asks everything it turns on says so, and names no limb", () => {
-    const ck = routes().find((r) => r.id === "de-chancenkarte")!;
+    const ck = routeOf(ds, "de-chancenkarte");
     expect(ck.scope.value).toBe("every-deciding-rule-asked");
     expect(ck.scope.not_asked).toEqual([]);
     // The caveat is still on the route, and still rendered: not naming it as
@@ -185,7 +186,7 @@ describe("s6 — every route declares what the checker asks of it", () => {
     // `de-chancenkarte`, until the step was corrected: the one thing that route
     // states is a limit on the card, not a condition of getting it.
     for (const id of ["nl-orientation-year", "es-highly-qualified"]) {
-      const r = routes().find((x) => x.id === id)!;
+      const r = routeOf(ds, id);
       expect(r.scope.value, id).toBe("some-conditions-stated-not-asked");
       expect(r.scope.not_asked.length, id).toBeGreaterThan(0);
       expect(statedNotAsked(r).length, id).toBeGreaterThan(0);
@@ -302,24 +303,22 @@ describe("an answer a reader can mistake for the one they hold says what it mean
  * both readings, and fr-talent-qualifie has one of each.
  */
 describe("a reading is ours, and the words say so", () => {
-  const of = (id: string) => routes().find((r) => r.id === id)!;
-
   it("splits what is stated from what is noted, and counts each", () => {
-    const vocational = statedNotAsked(of("de-skilled-vocational"), { split: true });
+    const vocational = statedNotAsked(routeOf(ds, "de-skilled-vocational"), { split: true });
     expect(vocational.stated, "a source statement appeared from nowhere").toEqual([]);
     expect(vocational.noted.length).toBe(2);
     // Figures, and whose words — "in our own reading" was the model's phrase
     // for the split, not the reader's.
-    expect(scopeLine(of("de-skilled-vocational"), { reader: "not-answered" }))
+    expect(scopeLine(routeOf(ds, "de-skilled-vocational"),{ reader: "not-answered" }))
       .toBe("quoted and dated · the checker asks about it, except 2 conditions, in our own words, not the authority's");
 
     // The one stated condition — the contract of more than three months — is
     // the sentence the situation gate quotes, and a sentence a criterion
     // quotes is asked (s19); what is left is the reading, which is ours.
-    const talent = statedNotAsked(of("fr-talent-qualifie"), { split: true });
+    const talent = statedNotAsked(routeOf(ds, "fr-talent-qualifie"), { split: true });
     expect(talent.stated.length).toBe(0);
     expect(talent.noted.length).toBe(1);
-    expect(scopeLine(of("fr-talent-qualifie"), { reader: "not-answered" }))
+    expect(scopeLine(routeOf(ds, "fr-talent-qualifie"),{ reader: "not-answered" }))
       .toBe("quoted and dated · the checker asks about it, except 1 condition, in our own words, not the authority's");
   });
 

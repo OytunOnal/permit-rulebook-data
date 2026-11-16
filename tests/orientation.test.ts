@@ -4,13 +4,11 @@ import { evaluate, forEachCriterion, referencedFields, routeProvenance, routeRea
 import { checkCoverage, checkQuotes, type WatchState, type Watchlist } from "../src/watch/core.js";
 import type { Dataset, Profile, Route, RouteResult } from "../src/types.js";
 import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
 const watchlist = readJson("../watch/watchlist.json") as Watchlist;
 const state = readJson("../watch/state.json") as WatchState;
-
-const routeOf = (id: string): Route =>
-  dataset.countries.flatMap((c) => c.routes).find((r) => r.id === id)!;
 
 const byId = (profile: Profile): Record<string, RouteResult> =>
   Object.fromEntries(evaluate(dataset, profile).map((r) => [r.route.id, r]));
@@ -56,11 +54,11 @@ describe("the orientation year is not closed by having a job offer", () => {
   });
 
   it("no rule of the route reads what the person has lined up", () => {
-    expect(fieldsOf(routeOf("nl-orientation-year"))).not.toContain("situation");
+    expect(fieldsOf(routeOf(dataset, "nl-orientation-year"))).not.toContain("situation");
   });
 
   it("the guidance survives as guidance — the card says it, the rules do not test it", () => {
-    const summary = routeOf("nl-orientation-year").summary!;
+    const summary = routeOf(dataset, "nl-orientation-year").summary!;
     expect(summary).toMatch(/offer/i);
     // Stated as a comparison to make, never as a bar to clear.
     expect(summary).toMatch(/does not stop you applying/i);
@@ -68,7 +66,7 @@ describe("the orientation year is not closed by having a job offer", () => {
 });
 
 describe("the orientation year states what the source states, and no more", () => {
-  const route = () => routeOf("nl-orientation-year");
+  const route = () => routeOf(dataset, "nl-orientation-year");
 
   it("the summary sends the reader to the list we do not check in full", () => {
     // The old summary named two cases as if they were the rule. The IND states
@@ -171,7 +169,7 @@ describe("a route statement is watched like every other value", () => {
     // the sentence is on the page, checked this morning.
     const result = checkQuotes(dataset, watchlist, state);
     expect(result.missing).toEqual([]);
-    for (const s of routeStatements(routeOf("nl-orientation-year")))
+    for (const s of routeStatements(routeOf(dataset, "nl-orientation-year")))
       if (s.source) {
         expect(result.missing.map((m) => m.quote), s.id).not.toContain(s.source.quote);
         expect(
