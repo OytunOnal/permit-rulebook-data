@@ -888,10 +888,10 @@ export function statementSources(s: RouteStatement): ProvenancedText[] {
  * reader at all. The membership test is exact rather than `satisfies` — a
  * carve-out names passports, and a class is not one.
  */
-export function carveOutFor(s: RouteStatement, profile: Profile): StatementException | undefined {
+export function carveOutFor(statement: RouteStatement, profile: Profile): StatementException | undefined {
   const answer = profile[CITIZENSHIP_FIELD];
-  if (answer === undefined || !s.except) return undefined;
-  return s.except.citizenship.includes(answer) ? s.except : undefined;
+  if (answer === undefined || !statement.except) return undefined;
+  return statement.except.citizenship.includes(answer) ? statement.except : undefined;
 }
 
 /**
@@ -939,8 +939,8 @@ function bindsOnlyOtherPassports(statement: RouteStatement, profile: Profile): b
 }
 
 /** Whether this statement is one of the conditions this reader is told about. */
-export function bindsReader(s: RouteStatement, profile: Profile): boolean {
-  return carveOutFor(s, profile) === undefined && !bindsOnlyOtherPassports(s, profile);
+export function bindsReader(statement: RouteStatement, profile: Profile): boolean {
+  return carveOutFor(statement, profile) === undefined && !bindsOnlyOtherPassports(statement, profile);
 }
 
 /** All provenanced values a route rests on — what the UI must show, quoted and
