@@ -1,7 +1,7 @@
 import { countryOptions } from "./countries.js";
 import { evalDisjunction, hasNoOpenPath, isPathOpen, pathResultsOf, stillReachable } from "./disjunction.js";
 import type { CriterionJudge } from "./disjunction.js";
-import { CARVE_OUT_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
+import { CITIZENSHIP_FIELD, DESTINATION_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type {
   AskingRoutes, Band, Contradiction, Criterion, CriterionResult, Dataset, DatasetMeta, FieldDef, OpenRoute,
   FieldOption, Notice,
@@ -537,7 +537,7 @@ function equivalenceKey(dataset: Dataset, field: string, value: string): string 
   // residence permit set aside for one of them; a Turkish passport and a
   // Brazilian one too, on a route whose statement is about Turkish passports
   // alone. Membership is exact, as `bindsReader` reads it.
-  if (field === CARVE_OUT_FIELD)
+  if (field === CITIZENSHIP_FIELD)
     for (const country of dataset.countries)
       for (const route of country.routes)
         for (const s of routeStatements(route)) {
@@ -883,7 +883,7 @@ export function statementSources(s: RouteStatement): ProvenancedText[] {
  * carve-out names passports, and a class is not one.
  */
 export function carveOutFor(s: RouteStatement, profile: Profile): StatementException | undefined {
-  const answer = profile[CARVE_OUT_FIELD];
+  const answer = profile[CITIZENSHIP_FIELD];
   if (answer === undefined || !s.except) return undefined;
   return s.except.citizenship.includes(answer) ? s.except : undefined;
 }
@@ -927,7 +927,7 @@ export function isClosed(r: RouteResult): boolean {
  * not answered, and a route page, are never left out.
  */
 function isAboutOtherPassports(s: RouteStatement, profile: Profile): boolean {
-  const answer = profile[CARVE_OUT_FIELD];
+  const answer = profile[CITIZENSHIP_FIELD];
   if (answer === undefined || !s.onlyFor) return false;
   return !s.onlyFor.citizenship.includes(answer);
 }

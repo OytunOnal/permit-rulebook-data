@@ -318,7 +318,7 @@ export interface StatementException {
  * site that reads it, so the narrowness above is a fact the type system and
  * the validator share rather than a string three files agree on by habit.
  */
-export const CARVE_OUT_FIELD = "citizenship";
+export const CITIZENSHIP_FIELD = "citizenship";
 
 /**
  * The two answers the interview takes before any route is scored, and the two
@@ -434,7 +434,7 @@ export type ScopeValue = (typeof SCOPE_VALUES)[number];
  * what `evaluate` returns, the interview's list of what it asks about, and the
  * site's list of what it offers — and a string spelled out at four call sites
  * is a fact four files agree on by habit. It is the same reason
- * `CARVE_OUT_FIELD` is a constant (s9).
+ * `CITIZENSHIP_FIELD` is a constant (s9).
  */
 export const QUOTED_NOT_SCORED: ScopeValue = "rules-quoted-nothing-asked";
 

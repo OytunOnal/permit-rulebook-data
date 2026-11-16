@@ -11,7 +11,7 @@ import { attainableAnswerErrors } from "./attainable-answers.js";
 import { screenPlaceErrors } from "./screen-place.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
-import { CARVE_OUT_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
+import { CITIZENSHIP_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
 import type { Criterion, Dataset } from "./types.js";
 
 /**
@@ -336,13 +336,13 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
       for (const s of routeStatements(route)) {
         if (!s.except) continue;
         const where = `${path}/statements/${s.id}/except`;
-        if (!vocabularyFields.has(CARVE_OUT_FIELD))
+        if (!vocabularyFields.has(CITIZENSHIP_FIELD))
           errors.push({
             path: where,
-            message: `a carve-out keys on ${CARVE_OUT_FIELD}, which this dataset does not answer from the country vocabulary — nothing here could check the passports it names`,
+            message: `a carve-out keys on ${CITIZENSHIP_FIELD}, which this dataset does not answer from the country vocabulary — nothing here could check the passports it names`,
             keyword: "carveOutFieldAnswerable",
           });
-        checkVocabulary(where, CARVE_OUT_FIELD, s.except.citizenship);
+        checkVocabulary(where, CITIZENSHIP_FIELD, s.except.citizenship);
       }
 
       /**
@@ -351,13 +351,13 @@ function semanticErrors(dataset: Dataset): ValidationError[] {
        * would match no declared passport, and the statement would vanish from
        * every reader who answered — with nothing saying so.
        */
-      const passports = new Set(fieldOptions(dataset, CARVE_OUT_FIELD).map((o) => o.value));
+      const passports = new Set(fieldOptions(dataset, CITIZENSHIP_FIELD).map((o) => o.value));
       for (const s of routeStatements(route))
         for (const v of s.onlyFor?.citizenship ?? [])
           if (!passports.has(v))
             errors.push({
               path: `${path}/statements/${s.id}/onlyFor`,
-              message: `${route.id}: "${s.id}" is only for ${CARVE_OUT_FIELD} "${v}", which the ${CARVE_OUT_FIELD} question does not offer — no declared passport could match it`,
+              message: `${route.id}: "${s.id}" is only for ${CITIZENSHIP_FIELD} "${v}", which the ${CITIZENSHIP_FIELD} question does not offer — no declared passport could match it`,
               keyword: "offeredPassport",
             });
 
