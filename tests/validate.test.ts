@@ -1,10 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { assertValidDataset, validateDataset } from "../src/validate.js";
+import type {
+  Criterion, Dataset, DisjunctionPath, PointsTable, ProvenancedAmount, ProvenancedText,
+} from "../src/types.js";
 import { readJson } from "./read-json.js";
+import { routeOf } from "./route-of.js";
 
-// Untyped, as JSON.parse returns it: the cases edit the raw JSON freely.
-const load = (): any =>
-  readJson("../data/dataset.json");
+/** A fresh parse of the shipped dataset, for a case to break. */
+const load = (): Dataset => readJson<Dataset>("../data/dataset.json");
+
+/** The threshold a criterion states, for a case to break. */
+function thresholdOf(criterion: Criterion | undefined): ProvenancedAmount {
+  if (criterion?.op !== "gte") throw new Error("precondition: the criterion states a threshold");
+  return criterion.threshold;
+}
+
+/** The paths a criterion offers a choice between, for a case to break. */
+function pathsOf(criterion: Criterion | undefined): DisjunctionPath[] {
+  if (criterion?.op !== "any") throw new Error("precondition: the criterion is a choice of paths");
+  return criterion.paths;
+}
 
 describe("boundary validation (scenario step 6)", () => {
   it("the shipped dataset is valid", () => {
@@ -16,7 +31,8 @@ describe("boundary validation (scenario step 6)", () => {
   it("a value stripped of its quote fails, naming the field", () => {
     const data = load();
     // de-blue-card-shortage → salary criterion (last one) → threshold
-    delete data.countries[0].routes[0].criteria.at(-1).threshold.quote;
+    const threshold: Partial<ProvenancedAmount> = thresholdOf(data.countries[0].routes[0].criteria.at(-1));
+    delete threshold.quote;
     const result = validateDataset(data);
     expect(result.ok).toBe(false);
     expect(result.errors.some((e) => e.message.includes("quote"))).toBe(true);
@@ -24,21 +40,23 @@ describe("boundary validation (scenario step 6)", () => {
 
   it("a non-https source is rejected", () => {
     const data = load();
-    data.countries[0].routes[0].criteria.at(-1).threshold.source_url = "http://insecure.example";
+    thresholdOf(data.countries[0].routes[0].criteria.at(-1)).source_url = "http://insecure.example";
     expect(validateDataset(data).ok).toBe(false);
   });
 
   it("assertValidDataset names the deepest offending path", () => {
     const data = load();
-    delete data.countries[0].routes[1].criteria.at(-1).threshold.retrieved_at;
+    const threshold: Partial<ProvenancedAmount> = thresholdOf(data.countries[0].routes[1].criteria.at(-1));
+    delete threshold.retrieved_at;
     expect(() => assertValidDataset(data)).toThrowError(/threshold.*retrieved_at|retrieved_at/);
   });
 
   it("a points table stripped of its source fails", () => {
     const data = load();
-    const ck = data.countries[0].routes.find((r: { id: string }) => r.id === "de-chancenkarte");
-    const anyC = ck.criteria.at(-1);
-    delete anyC.paths[1].criteria[0].table.source_url;
+    const points = pathsOf(routeOf(data, "de-chancenkarte").criteria.at(-1))[1].criteria[0];
+    if (points.op !== "points") throw new Error("precondition: the card's second path is its points table");
+    const table: Partial<PointsTable> = points.table;
+    delete table.source_url;
     expect(validateDataset(data).ok).toBe(false);
   });
 
@@ -53,9 +71,8 @@ describe("boundary validation (scenario step 6)", () => {
 
   it("a restated threshold that drifts from its twin fails (review catch: NL ICT restates HSM amounts)", () => {
     const data = load();
-    const nlIct = data.countries[3].routes.find((r: { id: string }) => r.id === "nl-ict");
-    const anyC = nlIct.criteria.at(-1); // HSM-salary-by-age disjunction
-    anyC.paths[0].criteria[1].threshold.retrieved_at = "2026-01-01"; // one copy updated, twin missed
+    const salaryByAge = pathsOf(routeOf(data, "nl-ict").criteria.at(-1)); // HSM-salary-by-age disjunction
+    thresholdOf(salaryByAge[0].criteria[1]).retrieved_at = "2026-01-01"; // one copy updated, twin missed
     const result = validateDataset(data);
     expect(result.ok).toBe(false);
     expect(result.errors.some((e) => e.keyword === "thresholdConsistency")).toBe(true);
@@ -65,7 +82,8 @@ describe("boundary validation (scenario step 6)", () => {
 describe("s5b — notices and preconditions are data, not prose (schema boundary)", () => {
   it("a notice stripped of its quote fails", () => {
     const data = load();
-    delete data.notices[0].source.quote;
+    const source: Partial<ProvenancedText> = data.notices![0].source;
+    delete source.quote;
     const result = validateDataset(data);
     expect(result.ok).toBe(false);
     expect(result.errors.some((e) => e.message.includes("quote"))).toBe(true);
@@ -73,15 +91,14 @@ describe("s5b — notices and preconditions are data, not prose (schema boundary
 
   it("an empty precondition string fails — every line must say something", () => {
     const data = load();
-    const nl = data.countries[3].routes.find((r: { id: string }) => r.id === "nl-hsm-30plus");
-    nl.preconditions = ["The employer is an IND-recognised sponsor", ""];
+    routeOf(data, "nl-hsm-30plus").preconditions = ["The employer is an IND-recognised sponsor", ""];
     expect(validateDataset(data).ok).toBe(false);
   });
 
   it("preconditions must be strings, not structured objects", () => {
     const data = load();
-    const nl = data.countries[3].routes.find((r: { id: string }) => r.id === "nl-hsm-30plus");
-    nl.preconditions = [{ text: "BIG registration" }];
+    const route: { preconditions?: unknown } = routeOf(data, "nl-hsm-30plus");
+    route.preconditions = [{ text: "BIG registration" }];
     expect(validateDataset(data).ok).toBe(false);
   });
 });
@@ -95,20 +112,20 @@ describe("s5b — notices and preconditions are data, not prose (schema boundary
  * is an attributable one: a reason a gate can read, and a date a human can age.
  */
 describe("an absent quote is a decision, not an essay", () => {
-  const statementOf = (data: any) =>
-    data.countries.flatMap((c: any) => c.routes).find((r: any) => r.id === "es-blue-card").statements[0];
+  const statementOf = (data: Dataset) => routeOf(data, "es-blue-card").statements![0]!;
 
   /**
    * The same statement with its own quote taken off. That caveat stands on a
    * source since 2026-09-07, so a mutation that left the source in place would
    * be refused for carrying BOTH a quote and a declared absence — the wrong
    * rule, and a green that proves nothing about the one under test. Taking the
-   * source off first keeps each case below testing what it says it tests.
+   * source off first keeps each case below testing what it says it tests. Its
+   * `unsourced` takes any value, so a case can write one the type refuses.
    */
-  const unquotedStatementOf = (data: any) => {
-    const s = statementOf(data);
-    delete s.source;
-    return s;
+  const unquotedStatementOf = (data: Dataset): { unsourced?: unknown } => {
+    const statement = statementOf(data);
+    delete statement.source;
+    return statement;
   };
 
   it("prose alone fails, however much of it there is", () => {
@@ -200,6 +217,10 @@ describe("a re-read is recorded like a change", () => {
     return out;
   };
 
+  /** The German general Blue Card's salary threshold, the one the launch read again. */
+  const salaryThresholdOf = (data: Dataset): ProvenancedAmount =>
+    thresholdOf(routeOf(data, "de-blue-card-general").criteria.find((c) => "field" in c && c.field === "salary_eur_year"));
+
   it("every superseded reading declares why, from the closed list, and when it was written", () => {
     for (const { where, live, entry } of historiesOf(load())) {
       expect(entry["retrieved_at"], `${where} has no date`).toMatch(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
@@ -216,34 +237,23 @@ describe("a re-read is recorded like a change", () => {
 
   it("the schema is the gate, not the test: an undeclared reason fails validation", () => {
     const data = load();
-    const threshold = data.countries
-      .flatMap((c: { routes: { id: string; criteria: Record<string, unknown>[] }[] }) => c.routes)
-      .find((r: { id: string }) => r.id === "de-blue-card-general")!
-      .criteria.find((c: Record<string, unknown>) => c["field"] === "salary_eur_year")!["threshold"] as
-      Record<string, unknown>;
-    const history = threshold["history"] as Record<string, unknown>[];
+    const reading: { reason?: unknown } = salaryThresholdOf(data).history![0]!;
     expect(validateDataset(data).ok).toBe(true);
-    history[0]!["reason"] = "because I said so";
+    reading.reason = "because I said so";
     expect(validateDataset(data).ok, "any string passes as a reason").toBe(false);
   });
 
   it("the German Blue Card threshold carries the re-read the launch owed", () => {
-    const data = load();
-    const route = data.countries
-      .flatMap((c: { routes: { id: string; criteria: Record<string, unknown>[] }[] }) => c.routes)
-      .find((r: { id: string }) => r.id === "de-blue-card-general");
-    const threshold = route.criteria
-      .find((c: Record<string, unknown>) => c["field"] === "salary_eur_year")!["threshold"] as
-      Record<string, unknown>;
-    const history = threshold["history"] as Record<string, unknown>[];
+    const threshold = salaryThresholdOf(load());
+    const history = threshold.history!;
     expect(history.length, "the re-read left no trail").toBe(1);
-    expect(history[0]!["amount"], "the re-read invented a movement").toBe(threshold["amount"]);
-    expect(history[0]!["reason"]).toBe("re-read-unchanged");
-    expect(history[0]!["checked_at"]).toBe("2026-09-08");
-    expect((history[0]!["retrieved_at"] as string) < (threshold["retrieved_at"] as string),
-      `${history[0]!["retrieved_at"]} is not before ${threshold["retrieved_at"]}`).toBe(true);
+    expect(history[0]!.amount, "the re-read invented a movement").toBe(threshold.amount);
+    expect(history[0]!.reason).toBe("re-read-unchanged");
+    expect(history[0]!.checked_at).toBe("2026-09-08");
+    expect(history[0]!.retrieved_at < threshold.retrieved_at,
+      `${history[0]!.retrieved_at} is not before ${threshold.retrieved_at}`).toBe(true);
     // The sentence the value stands on is the one that was read again.
-    expect(history[0]!["quote"]).toBe(threshold["quote"]);
-    expect(history[0]!["source_url"]).toBe(threshold["source_url"]);
+    expect(history[0]!.quote).toBe(threshold.quote);
+    expect(history[0]!.source_url).toBe(threshold.source_url);
   });
 });

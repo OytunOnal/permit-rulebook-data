@@ -187,7 +187,7 @@ describe("a statement in the reader's favour is never a requirement", () => {
     // The schema gates the dataset, the type gates the code, and the watch
     // says one of these words about a PDF it found no text in. Three spellings
     // of one fact is three facts to the next reader (review 2026-09-07, S2).
-    const schema = readJson("../schema/ruleset.schema.json") as { $defs: { unsourcedReason: { properties: { reason: { enum: string[] } } } } };
+    const schema = readJson<{ $defs: { unsourcedReason: { properties: { reason: { enum: string[] } } } } }>("../schema/ruleset.schema.json");
     expect(schema.$defs.unsourcedReason.properties.reason.enum).toEqual([...UNSOURCED_REASONS]);
   });
 

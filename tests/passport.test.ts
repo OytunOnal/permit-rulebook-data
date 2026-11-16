@@ -14,8 +14,8 @@ const shippedWatchlist = readJson("../watch/watchlist.json") as Watchlist;
 const shippedState = readJson("../watch/state.json") as WatchState;
 const vocabulary = readJson("../data/countries.json") as CountryVocabulary;
 
-// Untyped, as JSON.parse returns it: the cases edit the raw JSON freely.
-const load = (): any => readJson("../data/dataset.json");
+/** A fresh parse of the shipped dataset, for a case to break. */
+const load = (): Dataset => readJson<Dataset>("../data/dataset.json");
 
 const statusMap = (p: Profile) =>
   Object.fromEntries(evaluate(dataset, p).map((r) => [r.route.id, `${r.status}|${r.gap_max ?? ""}|${r.gap_points ?? ""}`]));
@@ -258,8 +258,9 @@ describe("s5c — validation: a class is a rule, so the boundary enforces it", (
 
   it("a criterion referencing an unknown class fails", () => {
     const data = load();
-    const nl = data.countries.find((c: { code: string }) => c.code === "NL");
-    nl.routes[0].criteria[0].value = "schengen_only";
+    const criterion = data.countries.find((c) => c.code === "NL")!.routes[0].criteria[0];
+    if (criterion.op !== "eq") throw new Error("precondition: the first Dutch route's first criterion asks for one answer");
+    criterion.value = "schengen_only";
     const result = validateDataset(data);
     expect(result.ok).toBe(false);
     expect(result.errors.some((e: { keyword: string }) => e.keyword === "knownCountryValue")).toBe(true);
@@ -267,7 +268,7 @@ describe("s5c — validation: a class is a rule, so the boundary enforces it", (
 
   it("a notice whose `when` value is neither a country nor a class fails", () => {
     const data = load();
-    data.notices[0].when.value = "ankara_agreement";
+    data.notices![0].when.value = "ankara_agreement";
     const result = validateDataset(data);
     expect(result.ok).toBe(false);
     expect(result.errors.some((e: { keyword: string }) => e.keyword === "knownCountryValue")).toBe(true);
