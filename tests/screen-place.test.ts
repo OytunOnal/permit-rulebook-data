@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SCREEN_PLACE_PHRASES } from "../src/index.js";
 import { routeStatements } from "../src/engine.js";
-import { textsCheckedForScreenPlace } from "../src/screen-place.js";
+import { textsCheckedForScreenPlace, type CheckedText } from "../src/screen-place.js";
 import { validateDataset } from "../src/validate.js";
 import type { Dataset } from "../src/types.js";
 import { readJson } from "./read-json.js";
@@ -58,9 +58,14 @@ describe("the dataset check refuses screen-place words", () => {
   });
 
   it("passes the shipped dataset, having read every notice's title and body, every statement's text and every carve-out's sentence", () => {
+    const checked = textsCheckedForScreenPlace(dataset);
+    const heldBy = (holder: CheckedText["holder"]): number => checked.filter((t) => t.holder === holder).length;
     // Three notices, a title and a body each, 112 route statements, and nine
     // carve-outs, a sentence each.
-    expect(textsCheckedForScreenPlace(dataset).length).toBe(3 * 2 + 112 + 9);
+    expect(heldBy("notice")).toBe(3 * 2);
+    expect(heldBy("statement")).toBe(112);
+    expect(heldBy("carve-out")).toBe(9);
+    expect(checked.length).toBe(3 * 2 + 112 + 9);
     expect(validateDataset(dataset).errors).toEqual([]);
   });
 });

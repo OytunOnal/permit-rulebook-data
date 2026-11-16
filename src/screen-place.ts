@@ -29,25 +29,27 @@ export function screenPlacePhrasesIn(text: string): string[] {
   return PHRASE_PATTERNS.filter(({ pattern }) => pattern.test(text)).map(({ phrase }) => phrase);
 }
 
-/** A text the screen-place check reads, and where it is in the dataset. */
+/** A text the screen-place check reads, where it is in the dataset, and what
+ * holds it: a notice, a route statement or a carve-out. */
 export interface CheckedText {
   path: string;
   text: string;
+  holder: "notice" | "statement" | "carve-out";
 }
 
 /** Every text the screen-place check reads: each notice's title and body,
  * each route statement's text, and each carve-out's sentence, which a reader
  * is shown on the result screen and on a route page alike. */
 export function textsCheckedForScreenPlace(dataset: Dataset): CheckedText[] {
-  const notices = (dataset.notices ?? []).flatMap((n) => [
-    { path: `/notices/${n.id}/title`, text: n.title },
-    { path: `/notices/${n.id}/body`, text: n.body },
+  const notices = (dataset.notices ?? []).flatMap((n): CheckedText[] => [
+    { path: `/notices/${n.id}/title`, text: n.title, holder: "notice" },
+    { path: `/notices/${n.id}/body`, text: n.body, holder: "notice" },
   ]);
   const statements = dataset.countries.flatMap((country) => country.routes.flatMap((route) =>
-    routeStatements(route).flatMap((s) => {
+    routeStatements(route).flatMap((s): CheckedText[] => {
       const path = `/countries/${country.code}/routes/${route.id}/statements/${s.id}`;
-      const carveOut = s.except ? [{ path: `${path}/except/text`, text: s.except.text }] : [];
-      return [{ path: `${path}/text`, text: s.text }, ...carveOut];
+      const carveOut: CheckedText[] = s.except ? [{ path: `${path}/except/text`, text: s.except.text, holder: "carve-out" }] : [];
+      return [{ path: `${path}/text`, text: s.text, holder: "statement" }, ...carveOut];
     })));
   return [...notices, ...statements];
 }

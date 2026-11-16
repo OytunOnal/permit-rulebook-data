@@ -15,7 +15,8 @@ export { quoteLanguage, sourceUrls, unmappedSources, QUOTE_LANGUAGES, LANGUAGE_N
 export { QUOTED_NOT_SCORED, DESTINATION_FIELD, SITUATION_FIELD } from "./types.js";
 export { hostKindOf, AUTHORITY_HOSTS, CONSOLIDATED_TEXT_HOSTS } from "./hosts.js";
 export { fillRouteSlots } from "./route-slots.js";
-export { SCREEN_PLACE_PHRASES, screenPlacePhrasesIn } from "./screen-place.js";
+export { SCREEN_PLACE_PHRASES, screenPlacePhrasesIn, textsCheckedForScreenPlace } from "./screen-place.js";
+export type { CheckedText } from "./screen-place.js";
 export type { HostKind } from "./hosts.js";
 export { scopeWords, scopeLine, statedNotAsked, askedByCriterion, countedWords, NUMBER_WORDS, SCOPE_VALUES } from "./scope.js";
 export type { ScopeReader, UnaskedCount } from "./scope.js";
