@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SCREEN_PLACE_PHRASES } from "../src/index.js";
+import { routeStatements } from "../src/engine.js";
 import { textsCheckedForScreenPlace } from "../src/screen-place.js";
 import { validateDataset } from "../src/validate.js";
 import type { Dataset } from "../src/types.js";
@@ -38,6 +39,17 @@ describe("the dataset check refuses screen-place words", () => {
     }
   });
 
+  it("refuses each phrase of the declared set in a carve-out's sentence", () => {
+    // OytunOnal/permit-rulebook#407, ruling 19: a carve-out's sentence is drawn
+    // on the result screen and on a route page alike, so it is held to the same rule.
+    for (const phrase of SCREEN_PLACE_PHRASES) {
+      const inCarveOut = structuredClone(dataset);
+      const sponsor = routeStatements(routeOf(inCarveOut, "nl-hsm-30plus")).find((s) => s.id === "employer-must-be-a-recognised-sponsor")!;
+      sponsor.except!.text = `${sponsor.except!.text} — see the ${phrase}`;
+      expect(refusedPaths(inCarveOut), phrase).toContain("/countries/NL/routes/nl-hsm-30plus/statements/employer-must-be-a-recognised-sponsor/except/text");
+    }
+  });
+
   it("lets a legal test above and a comparison below a wage stand", () => {
     const ds = structuredClone(dataset);
     const statement = routeOf(ds, "nl-ict").statements![0]!;
@@ -45,9 +57,10 @@ describe("the dataset check refuses screen-place words", () => {
     expect(validateDataset(ds).errors).toEqual([]);
   });
 
-  it("passes the shipped dataset, having read every notice's title and body and every statement's text", () => {
-    // Three notices, a title and a body each, and 112 route statements.
-    expect(textsCheckedForScreenPlace(dataset).length).toBe(3 * 2 + 112);
+  it("passes the shipped dataset, having read every notice's title and body, every statement's text and every carve-out's sentence", () => {
+    // Three notices, a title and a body each, 112 route statements, and nine
+    // carve-outs, a sentence each.
+    expect(textsCheckedForScreenPlace(dataset).length).toBe(3 * 2 + 112 + 9);
     expect(validateDataset(dataset).errors).toEqual([]);
   });
 });

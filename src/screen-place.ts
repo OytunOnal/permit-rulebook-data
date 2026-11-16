@@ -35,15 +35,20 @@ export interface CheckedText {
   text: string;
 }
 
-/** Every text the screen-place check reads: each notice's title and body, and
- * each route statement's text. */
+/** Every text the screen-place check reads: each notice's title and body,
+ * each route statement's text, and each carve-out's sentence, which a reader
+ * is shown on the result screen and on a route page alike. */
 export function textsCheckedForScreenPlace(dataset: Dataset): CheckedText[] {
   const notices = (dataset.notices ?? []).flatMap((n) => [
     { path: `/notices/${n.id}/title`, text: n.title },
     { path: `/notices/${n.id}/body`, text: n.body },
   ]);
   const statements = dataset.countries.flatMap((country) => country.routes.flatMap((route) =>
-    routeStatements(route).map((s) => ({ path: `/countries/${country.code}/routes/${route.id}/statements/${s.id}/text`, text: s.text }))));
+    routeStatements(route).flatMap((s) => {
+      const path = `/countries/${country.code}/routes/${route.id}/statements/${s.id}`;
+      const carveOut = s.except ? [{ path: `${path}/except/text`, text: s.except.text }] : [];
+      return [{ path: `${path}/text`, text: s.text }, ...carveOut];
+    })));
   return [...notices, ...statements];
 }
 
