@@ -257,7 +257,7 @@ describe("provenance and meta", () => {
       // optional — additive.
       schema_version: "0.8.6",
       // 2026.11.16: the orientation year's caveat about Turkish passports names
-      // the passports it is about (OytunOnal/permit-rulebook#408).
+      // the only passports it binds (OytunOnal/permit-rulebook#408).
       dataset_version: "2026.11.16",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two

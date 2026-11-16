@@ -22,7 +22,7 @@ const undeclared: Profile = { destination: "nl" };
 
 /**
  * A Passport-only statement: a route statement that names the only passports
- * it is about (OytunOnal/permit-rulebook#407). The IND's orientation-year page
+ * it binds (OytunOnal/permit-rulebook#407). The IND's orientation-year page
  * says "different requirements may apply to Turkish citizens", and a reader who
  * declared another passport has no use for the sentence.
  */
@@ -100,7 +100,7 @@ describe("the dataset check holds a Passport-only statement to the passports the
     }
   });
 
-  it("refuses a statement that names both whom it leaves out and whom it is about", () => {
+  it("refuses a statement that names both whom it leaves out and the only passports it binds", () => {
     // OytunOnal/permit-rulebook#407, ruling 17: a statement carries a carve-out or `bindsOnly`, never both.
     const ds = structuredClone(dataset);
     const sponsor = routeStatements(routeOf(ds, "nl-hsm-30plus")).find((s) => s.id === "employer-must-be-a-recognised-sponsor")!;

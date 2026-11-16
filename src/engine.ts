@@ -535,8 +535,8 @@ function equivalenceKey(dataset: Dataset, field: string, value: string): string 
   // The same holds for a carve-out and a Passport-only statement: a Japanese
   // passport and an Afghan one draw different Dutch cards, a carve-out
   // releasing one of them from the provisional residence permit; a Turkish
-  // passport and a Brazilian one too, on a route whose statement is about
-  // Turkish passports alone. Membership is exact, as `bindsReader` reads it.
+  // passport and a Brazilian one too, on a route whose statement binds only
+  // Turkish passports. Membership is exact, as `bindsReader` reads it.
   if (field === CITIZENSHIP_FIELD) parts.push(...statementKeyParts(dataset, value));
   return parts.join("|");
 }

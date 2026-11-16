@@ -175,7 +175,7 @@ describe("s32 — the dataset says so in its version", () => {
     // precondition names its path; 0.8.5 since ruling 28 of
     // OytunOnal/permit-rulebook#310: an answer a reader can reach by acting;
     // 0.8.6 since OytunOnal/permit-rulebook#408: a statement names the only
-    // passports it is about.
+    // passports it binds.
     expect(datasetMeta(ds).schema_version).toBe("0.8.6");
     // 2026.11.16 since OytunOnal/permit-rulebook#408, the Turkish caveat.
     expect(datasetMeta(ds).dataset_version).toBe("2026.11.16");
