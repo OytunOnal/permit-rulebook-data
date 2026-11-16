@@ -8,7 +8,9 @@ import { routeOf } from "./route-of.js";
 
 const dataset = readJson("../data/dataset.json") as Dataset;
 
+// The route whose caveat the IND writes about Turkish passports alone.
 const ORIENTATION_YEAR = "nl-orientation-year";
+// That caveat: the shipped dataset's one Passport-only statement.
 const TURKISH_CAVEAT = "turkish-citizens-differ";
 
 const turkishCaveat = (): RouteStatement =>
@@ -91,10 +93,10 @@ describe("the dataset check holds a Passport-only statement to the passports the
   });
 
   it("refuses a passport the citizenship question does not offer, a class included", () => {
-    for (const unknown of ["schengen_only", "third_country"]) {
-      const result = validateDataset(withOnlyFor({ citizenship: ["JP", unknown] }));
-      expect(result.ok, unknown).toBe(false);
-      expect(result.errors.map((e) => e.message).join(" "), unknown).toContain(unknown);
+    for (const unoffered of ["schengen_only", "third_country"]) {
+      const result = validateDataset(withOnlyFor({ citizenship: ["JP", unoffered] }));
+      expect(result.ok, unoffered).toBe(false);
+      expect(result.errors.map((e) => e.message).join(" "), unoffered).toContain(unoffered);
     }
   });
 

@@ -314,9 +314,10 @@ export interface StatementException {
 }
 
 /**
- * The one answer a carve-out reads. Named here rather than spelled at each
- * site that reads it, so the narrowness above is a fact the type system and
- * the validator share rather than a string three files agree on by habit.
+ * The one answer a carve-out and a Passport-only statement read. Named here
+ * rather than spelled at each site that reads it, so the narrowness above is a
+ * fact the type system and the validator share rather than a string three
+ * files agree on by habit.
  */
 export const CITIZENSHIP_FIELD = "citizenship";
 

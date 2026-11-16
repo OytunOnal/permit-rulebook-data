@@ -533,10 +533,10 @@ function equivalenceKey(dataset: Dataset, field: string, value: string): string 
     if (n.when.field === field)
       parts.push(satisfies(dataset, field, value, n.when.value !== undefined ? [n.when.value] : (n.when.values ?? [])) ? `n${n.id}` : "-");
   // The same holds for a carve-out and a Passport-only statement: a Japanese
-  // passport and an Afghan one draw different Dutch cards, the provisional
-  // residence permit set aside for one of them; a Turkish passport and a
-  // Brazilian one too, on a route whose statement is about Turkish passports
-  // alone. Membership is exact, as `bindsReader` reads it.
+  // passport and an Afghan one draw different Dutch cards, a carve-out
+  // releasing one of them from the provisional residence permit; a Turkish
+  // passport and a Brazilian one too, on a route whose statement is about
+  // Turkish passports alone. Membership is exact, as `bindsReader` reads it.
   if (field === CITIZENSHIP_FIELD) parts.push(...statementKeyParts(dataset, value));
   return parts.join("|");
 }
@@ -1003,7 +1003,7 @@ export function resultProvenance(r: RouteResult, profile: Profile): ProvenanceEn
   for (const s of routeStatements(r.route)) {
     const except = carveOutFor(s, profile);
     if (except) entries.push({ value: except.source, applied: true });
-    else if (s.source && bindsReader(s, profile)) entries.push({ value: s.source, applied: true });
+    else if (s.source && !isAboutOtherPassports(s, profile)) entries.push({ value: s.source, applied: true });
   }
   return entries;
 }
