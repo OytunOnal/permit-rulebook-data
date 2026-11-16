@@ -29,7 +29,7 @@ const undeclared: Profile = { destination: "nl" };
 describe("a Passport-only statement binds only the passports it names", () => {
   it("binds a Turkish reader and a reader with no passport declared, and not a Brazilian", () => {
     const caveat = turkishCaveat();
-    expect(caveat.onlyFor?.citizenship).toEqual(["TR"]);
+    expect(caveat.bindsOnly?.citizenship).toEqual(["TR"]);
     expect(bindsReader(caveat, turkish)).toBe(true);
     expect(bindsReader(caveat, undeclared)).toBe(true);
     expect(bindsReader(caveat, brazilian)).toBe(false);
@@ -78,34 +78,34 @@ describe("a Passport-only statement binds only the passports it names", () => {
 });
 
 describe("the dataset check holds a Passport-only statement to the passports the interview offers", () => {
-  const withOnlyFor = (onlyFor: unknown): Dataset => {
+  const withBindsOnly = (bindsOnly: unknown): Dataset => {
     const ds = structuredClone(dataset);
-    routeOf(ds, "nl-ict").statements![0].onlyFor = onlyFor as RouteStatement["onlyFor"];
+    routeOf(ds, "nl-ict").statements![0].bindsOnly = bindsOnly as RouteStatement["bindsOnly"];
     return ds;
   };
 
   it("accepts one that names a passport the citizenship question offers", () => {
-    expect(validateDataset(withOnlyFor({ citizenship: ["JP"] })).errors).toEqual([]);
+    expect(validateDataset(withBindsOnly({ citizenship: ["JP"] })).errors).toEqual([]);
   });
 
   it("refuses an empty passport list", () => {
-    expect(validateDataset(withOnlyFor({ citizenship: [] })).ok).toBe(false);
+    expect(validateDataset(withBindsOnly({ citizenship: [] })).ok).toBe(false);
   });
 
   it("refuses a passport the citizenship question does not offer, a class included", () => {
     for (const unoffered of ["schengen_only", "third_country"]) {
-      const result = validateDataset(withOnlyFor({ citizenship: ["JP", unoffered] }));
+      const result = validateDataset(withBindsOnly({ citizenship: ["JP", unoffered] }));
       expect(result.ok, unoffered).toBe(false);
       expect(result.errors.map((e) => e.message).join(" "), unoffered).toContain(unoffered);
     }
   });
 
   it("refuses a statement that names both whom it leaves out and whom it is about", () => {
-    // OytunOnal/permit-rulebook#407, ruling 17: a statement carries a carve-out or `onlyFor`, never both.
+    // OytunOnal/permit-rulebook#407, ruling 17: a statement carries a carve-out or `bindsOnly`, never both.
     const ds = structuredClone(dataset);
     const sponsor = routeStatements(routeOf(ds, "nl-hsm-30plus")).find((s) => s.id === "employer-must-be-a-recognised-sponsor")!;
     expect(sponsor.except).toBeDefined();
-    sponsor.onlyFor = { citizenship: ["JP"] };
+    sponsor.bindsOnly = { citizenship: ["JP"] };
     const result = validateDataset(ds);
     expect(result.ok).toBe(false);
     expect(result.errors.map((e) => e.path)).toContain("/countries/NL/routes/nl-hsm-30plus/statements/employer-must-be-a-recognised-sponsor");

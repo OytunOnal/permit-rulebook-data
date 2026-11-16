@@ -136,9 +136,9 @@ Chrome's own timeout, which no budget of the watch's reaches).
    qualification the source puts on its own answer goes in as a `caveat` — it
    fails nobody. A statement the source says is about certain passports alone
    ("different requirements may apply to Turkish citizens") names them in
-   `onlyFor`: a reader who declared another passport is not shown it, and the
+   `bindsOnly`: a reader who declared another passport is not shown it, and the
    build refuses a passport the citizenship question does not offer, and a
-   statement that carries both `onlyFor` and a carve-out (`except`). A
+   statement that carries both `bindsOnly` and a carve-out (`except`). A
    statement's text, a carve-out's sentence, and a notice's title and body
    never point at a place on the screen — an answer, a question, a result, a
    route or a card "above" or "below": each is drawn on the result screen and

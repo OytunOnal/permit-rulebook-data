@@ -253,7 +253,7 @@ describe("provenance and meta", () => {
       // 0.8.5 since ruling 28 of OytunOnal/permit-rulebook#310: an option may
       // be marked an answer a reader can reach by acting (`is_attainable`),
       // optional — additive. 0.8.6 since OytunOnal/permit-rulebook#408: a
-      // statement may name the only passports it is about (`onlyFor`),
+      // statement may name the only passports it binds (`bindsOnly`),
       // optional — additive.
       schema_version: "0.8.6",
       // 2026.11.16: the orientation year's caveat about Turkish passports names

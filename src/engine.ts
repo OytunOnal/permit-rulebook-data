@@ -548,7 +548,7 @@ function statementKeyParts(dataset: Dataset, passport: string): string[] {
   for (const route of dataset.countries.flatMap((c) => c.routes))
     for (const s of routeStatements(route)) {
       if (s.except) parts.push(s.except.citizenship.includes(passport) ? `x${route.id}/${s.id}` : "-");
-      if (s.onlyFor) parts.push(s.onlyFor.citizenship.includes(passport) ? `o${route.id}/${s.id}` : "-");
+      if (s.bindsOnly) parts.push(s.bindsOnly.citizenship.includes(passport) ? `o${route.id}/${s.id}` : "-");
     }
   return parts;
 }
@@ -932,15 +932,15 @@ export function isClosed(r: RouteResult): boolean {
  * passport it does not name. A silence is not a passport, so a reader who has
  * not answered, and a route page, are never left out.
  */
-function isAboutOtherPassports(s: RouteStatement, profile: Profile): boolean {
+function bindsOnlyOtherPassports(statement: RouteStatement, profile: Profile): boolean {
   const answer = profile[CITIZENSHIP_FIELD];
-  if (answer === undefined || !s.onlyFor) return false;
-  return !s.onlyFor.citizenship.includes(answer);
+  if (answer === undefined || !statement.bindsOnly) return false;
+  return !statement.bindsOnly.citizenship.includes(answer);
 }
 
 /** Whether this statement is one of the conditions this reader is told about. */
 export function bindsReader(s: RouteStatement, profile: Profile): boolean {
-  return carveOutFor(s, profile) === undefined && !isAboutOtherPassports(s, profile);
+  return carveOutFor(s, profile) === undefined && !bindsOnlyOtherPassports(s, profile);
 }
 
 /** All provenanced values a route rests on — what the UI must show, quoted and
@@ -1003,7 +1003,7 @@ export function resultProvenance(r: RouteResult, profile: Profile): ProvenanceEn
   for (const s of routeStatements(r.route)) {
     const except = carveOutFor(s, profile);
     if (except) entries.push({ value: except.source, applied: true });
-    else if (s.source && !isAboutOtherPassports(s, profile)) entries.push({ value: s.source, applied: true });
+    else if (s.source && !bindsOnlyOtherPassports(s, profile)) entries.push({ value: s.source, applied: true });
   }
   return entries;
 }

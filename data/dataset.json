@@ -4969,7 +4969,7 @@
                 "legal_basis": "Dutch immigration service, Residence permit for orientation year — Requirements",
                 "history": []
               },
-              "onlyFor": {
+              "bindsOnly": {
                 "citizenship": [
                   "TR"
                 ]
