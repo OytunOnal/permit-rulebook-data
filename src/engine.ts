@@ -922,7 +922,7 @@ export function isClosed(r: RouteResult): boolean {
  * passport it does not name. A silence is not a passport, so a reader who has
  * not answered, and a route page, are never left out.
  */
-function isPassportOnlyForOthers(s: RouteStatement, profile: Profile): boolean {
+function isAboutOtherPassports(s: RouteStatement, profile: Profile): boolean {
   const answer = profile[CARVE_OUT_FIELD];
   if (answer === undefined || !s.onlyFor) return false;
   return !s.onlyFor.citizenship.includes(answer);
@@ -930,7 +930,7 @@ function isPassportOnlyForOthers(s: RouteStatement, profile: Profile): boolean {
 
 /** Whether this statement is one of the conditions this reader is told about. */
 export function bindsReader(s: RouteStatement, profile: Profile): boolean {
-  return carveOutFor(s, profile) === undefined && !isPassportOnlyForOthers(s, profile);
+  return carveOutFor(s, profile) === undefined && !isAboutOtherPassports(s, profile);
 }
 
 /** All provenanced values a route rests on — what the UI must show, quoted and

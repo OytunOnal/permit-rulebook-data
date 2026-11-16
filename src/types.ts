@@ -270,7 +270,7 @@ export interface RouteStatement {
   except?: StatementException;
   /** The only passports the authority says this statement is about: a
    * Passport-only statement. Its own quote is the source that names them. */
-  onlyFor?: PassportOnly;
+  onlyFor?: OnlyForPassports;
 }
 
 /**
@@ -280,7 +280,7 @@ export interface RouteStatement {
  * reader. It carries no quote of its own, because the statement's quote is the
  * sentence that names the passports.
  */
-export interface PassportOnly {
+export interface OnlyForPassports {
   /** Passport countries, as the `citizenship` field answers them. A class is
    * not a passport. */
   citizenship: string[];
