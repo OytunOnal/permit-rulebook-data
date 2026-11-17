@@ -11,6 +11,7 @@ import { pathWordsErrors } from "./path-words.js";
 import { attainableAnswerErrors } from "./attainable-answers.js";
 import { screenPlaceErrors } from "./screen-place.js";
 import { bindsOnlyErrors } from "./binds-only.js";
+import { oneReadingErrors } from "./one-reading.js";
 import { UNKNOWN_BAND } from "./questions.js";
 import { offenceMessage, quotedWithoutProvenance } from "./prose.js";
 import { CITIZENSHIP_FIELD, QUOTED_NOT_SCORED, SITUATION_FIELD } from "./types.js";
@@ -83,14 +84,17 @@ export function validateDataset(data: unknown): ValidationResult {
  * - no notice or statement text points at a place on the screen
  *   (`screenPlaceErrors`);
  * - a Passport-only statement names only passports the citizenship question
- *   offers, and never stands beside a carve-out (`bindsOnlyErrors`).
+ *   offers, and never stands beside a carve-out (`bindsOnlyErrors`);
+ * - a route quotes each sentence of a page under one legal basis and one read
+ *   date, a shorter quote contained in a longer one included
+ *   (`oneReadingErrors`).
  */
 function semanticErrors(dataset: Dataset): ValidationError[] {
   const errors: ValidationError[] = [
     ...vocabularyErrors(countryVocabulary), ...territoryErrors(countryVocabulary),
     ...unwordedRangeErrors(dataset), ...routeSlotErrors(dataset), ...arrangedOffAPathErrors(dataset),
     ...pathWordsErrors(dataset), ...attainableAnswerErrors(dataset), ...screenPlaceErrors(dataset),
-    ...bindsOnlyErrors(dataset),
+    ...bindsOnlyErrors(dataset), ...oneReadingErrors(dataset),
   ];
 
   /**
