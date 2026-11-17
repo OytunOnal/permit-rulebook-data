@@ -181,8 +181,8 @@ describe("s32 — the dataset says so in its version", () => {
     // read once per route.
     expect(datasetMeta(ds).dataset_version).toBe("2026.11.17");
     // Every quote keeps its date: the decision is which question covers a
-    // sentence already held, not a new read of it. The newest read is #421's
-    // re-read of the French salarié qualifié sentence.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-11-17");
+    // sentence already held, not a new read of it. The newest read is #134's,
+    // since #313, #408 and #421 read nothing at a source.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });
 });

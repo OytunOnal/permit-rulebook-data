@@ -225,8 +225,7 @@ describe("s7 — a carve-out is watched and quote-checked like every other value
   });
 
   it("a fresher carve-out is a fresher dataset", () => {
-    // 2026-11-17 since OytunOnal/permit-rulebook#421: the French salarié
-    // qualifié sentence, read again that day.
-    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-11-17");
+    // 2026-10-21 since #134: the shortage card's IT path, read that day.
+    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-10-21");
   });
 });

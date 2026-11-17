@@ -377,8 +377,8 @@ describe("s25 — the dataset says so in its version, and nothing else moved", (
     expect(datasetMeta(ds).dataset_version).toBe("2026.11.17");
     // Nothing was read at a source by the re-keying: the rules moved against
     // snapshots already held, and every quote keeps its date. The newest read
-    // came later, with #421's re-read of the French salarié qualifié sentence.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-11-17");
+    // came later, with the shortage card's IT path (#134).
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
     expect(validateDataset(clone()).ok).toBe(true);
   });
 

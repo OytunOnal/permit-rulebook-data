@@ -152,9 +152,8 @@ describe("s19 — Talent — chercheur enters the dataset, quoted and not scored
     // OytunOnal/permit-rulebook#310: an answer a reader can reach by acting;
     // 0.8.6 since OytunOnal/permit-rulebook#408: a Passport-only statement.
     expect(datasetMeta(ds).schema_version).toBe("0.8.6");
-    // 2026-11-17 since OytunOnal/permit-rulebook#421: the French salarié
-    // qualifié sentence, read again that day.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-11-17");
+    // 2026-10-21 since #134: the shortage card's IT path, read that day.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });
 });
 

@@ -261,10 +261,11 @@ describe("provenance and meta", () => {
       dataset_version: "2026.11.17",
       // A route statement is a provenanced value like any other, and so is the
       // carve-out beside it, and so is every side of a notice that reports two
-      // authorities disagreeing (s8). The freshest are the French salarié
-      // qualifié sentence's three quotes, read again on 2026-11-17 (#421);
-      // before them, the IT path's four sentences, read on 2026-10-21 (#134).
-      newest_retrieved_at: "2026-11-17",
+      // authorities disagreeing (s8). The freshest are the IT path's four
+      // sentences, read on 2026-10-21 (#134); before them, the two sentences
+      // the free-movement notice gained for its EEA and Swiss readers, read on
+      // 2026-09-17 (s29).
+      newest_retrieved_at: "2026-10-21",
     });
   });
 });

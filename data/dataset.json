@@ -1941,18 +1941,8 @@
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de plus de 3 mois",
-                "retrieved_at": "2026-11-17",
-                "legal_basis": "Fiche F16922 — salarié qualifié",
-                "history": [
-                  {
-                    "retrieved_at": "2026-09-07",
-                    "quote": "Avoir un contrat de travail de plus de 3 mois",
-                    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
-                    "reason": "re-read-unchanged",
-                    "checked_at": "2026-11-17",
-                    "note": "Re-read with the salary threshold, whose longer sentence on the page contains this one, so the two carry one legal basis and one read date (OytunOnal/permit-rulebook#421)."
-                  }
-                ]
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — salarié qualifié"
               }
             },
             {
@@ -2006,7 +1996,7 @@
                 "currency": "EUR",
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de plus de 3 mois qui prévoit une rémunération brute annuelle supérieure ou égale à 39 582 €.",
-                "retrieved_at": "2026-11-17",
+                "retrieved_at": "2026-09-07",
                 "legal_basis": "Fiche F16922 — salarié qualifié",
                 "history": [
                   {
@@ -2016,7 +2006,7 @@
                     "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                     "reason": "re-read-unchanged",
                     "checked_at": "2026-11-17",
-                    "note": "legal_basis said \"CESEDA — carte de séjour talent (fiche F16922)\". The page prints the sentence under \"Salarié qualifié\", the legal basis the route's criterion and statement quoting its first words carry, so all three now carry that one and today's read date (OytunOnal/permit-rulebook#421)."
+                    "note": "legal_basis said \"CESEDA — carte de séjour talent (fiche F16922)\". The page prints the sentence under \"Salarié qualifié\", the legal basis the route's criterion and statement quoting its first words carry. Those two were read on 2026-09-07, the latest reading of the page, so all three carry that legal basis and that read date (OytunOnal/permit-rulebook#421)."
                   }
                 ]
               }
@@ -2037,18 +2027,8 @@
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de plus de 3 mois",
-                "retrieved_at": "2026-11-17",
-                "legal_basis": "Fiche F16922 — salarié qualifié",
-                "history": [
-                  {
-                    "retrieved_at": "2026-09-07",
-                    "quote": "Avoir un contrat de travail de plus de 3 mois",
-                    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
-                    "reason": "re-read-unchanged",
-                    "checked_at": "2026-11-17",
-                    "note": "Re-read with the salary threshold, whose longer sentence on the page contains this one, so the two carry one legal basis and one read date; it carried no legal basis before (OytunOnal/permit-rulebook#421)."
-                  }
-                ]
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — salarié qualifié"
               }
             }
           ]

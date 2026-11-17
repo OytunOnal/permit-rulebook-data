@@ -89,9 +89,9 @@ describe("s23 — the dataset says so in its version", () => {
     // convention keeps one stamp for every change of a day.
     expect(datasetMeta(ds).dataset_version).toBe("2026.11.17");
     // Nothing was read at a source by the copy pass: two of our own sentences
-    // moved. The newest read came later, with #421's re-read of the French
-    // salarié qualifié sentence; #313 read none.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-11-17");
+    // moved. The newest read came later, with #134's IT path; #313 and #421
+    // read none.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });
 });
 
