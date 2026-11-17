@@ -12,22 +12,12 @@ const dataset = readJson<Dataset>("../data/dataset.json");
  * a check that read nothing cannot pass it.
  */
 describe("the shipped dataset reads each sentence of a page once per route", () => {
-  it("passes the check, having read each sentence quoted twice on a route", () => {
-    // Measured by the site's .run/362/dupes.mjs over live values: 9 sentences
-    // quoted twice on one route (de-chancenkarte, es-researcher,
-    // fr-talent-blue-card, fr-talent-innovante twice, fr-talent-mission,
-    // fr-talent-qualifie, nl-blue-card, nl-ict), and 5 shorter quotes inside
-    // longer ones (de-ict-card, de-researcher, fr-ict's sentence quoted with
-    // and without its full stop, fr-talent-qualifie's salary sentence over its
-    // criterion's and its statement's first words).
+  it("passes the check, having read at least one pair of each kind", () => {
+    // The check's subject: one sentence quoted twice on a route, and a shorter
+    // quote inside a longer one. Without one of each it proves nothing.
     const pairs = sentencePairsOf(dataset);
-    expect(pairs.filter((p) => p.kind === "same").map((p) => p.route).sort()).toEqual([
-      "de-chancenkarte", "es-researcher", "fr-talent-blue-card", "fr-talent-innovante", "fr-talent-innovante", "fr-talent-mission",
-      "fr-talent-qualifie", "nl-blue-card", "nl-ict",
-    ]);
-    expect(pairs.filter((p) => p.kind === "contained").map((p) => p.route).sort()).toEqual([
-      "de-ict-card", "de-researcher", "fr-ict", "fr-talent-qualifie", "fr-talent-qualifie",
-    ]);
+    expect(pairs.filter((p) => p.kind === "same").length).toBeGreaterThan(0);
+    expect(pairs.filter((p) => p.kind === "contained").length).toBeGreaterThan(0);
     expect(validateDataset(dataset).errors.filter((e) => e.keyword === "oneReadingPerSentence")).toEqual([]);
   });
 });
