@@ -52,7 +52,8 @@ append-only.
    reading it replaces goes into `history` with its own `retrieved_at`, plus
    two fields the schema requires of every entry written from 2026-09-08:
    `reason`, one of `re-read-unchanged` · `value-changed` · `source-moved` ·
-   `quote-corrected`, and `checked_at`, the day you wrote the entry. Add a
+   `quote-corrected` · `citation-corrected` (the legal basis corrected, the
+   value and its quote unmoved), and `checked_at`, the day you wrote the entry. Add a
    `note` only where those two do not carry it — what moved, or which sentence
    replaced which. Without the reason a superseded entry carrying the same
    figure as the live one reads as a change that never happened, and nothing
