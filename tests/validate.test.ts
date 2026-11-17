@@ -243,6 +243,13 @@ describe("a re-read is recorded like a change", () => {
     expect(validateDataset(data).ok, "any string passes as a reason").toBe(false);
   });
 
+  it("a threshold's reading superseded by a corrected legal basis validates as citation-corrected", () => {
+    const data = load();
+    const reading: { reason?: unknown } = salaryThresholdOf(data).history![0]!;
+    reading.reason = "citation-corrected";
+    expect(validateDataset(data).errors).toEqual([]);
+  });
+
   it("the German Blue Card threshold carries the re-read the launch owed", () => {
     const threshold = salaryThresholdOf(load());
     const history = threshold.history!;

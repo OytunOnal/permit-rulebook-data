@@ -564,9 +564,10 @@
                   "re-read-unchanged",
                   "value-changed",
                   "source-moved",
-                  "quote-corrected"
+                  "quote-corrected",
+                  "citation-corrected"
                 ],
-                "description": "Why this reading was superseded, from the closed list: re-read-unchanged (read again at its source on a new day, same value), value-changed (the authority published a different value), source-moved (the same value, read at a new URL), quote-corrected (the value stood, the sentence quoted for it did not). Required on every entry written from 2026-09-08. Entries older than that carry none: they were written before the list existed, and rewriting history to fit a new field would be the one edit this format forbids."
+                "description": "Why this reading was superseded, from the closed list: re-read-unchanged (read again at its source on a new day, same value), value-changed (the authority published a different value), source-moved (the same value, read at a new URL), quote-corrected (the value stood, the sentence quoted for it did not), citation-corrected (the legal_basis beside the quote was wrong; the number, its quote and its date stand). Required on every entry written from 2026-09-08. Entries older than that carry none: they were written before the list existed, and rewriting history to fit a new field would be the one edit this format forbids."
               },
               "checked_at": {
                 "type": "string",
@@ -647,9 +648,10 @@
                   "re-read-unchanged",
                   "value-changed",
                   "source-moved",
-                  "quote-corrected"
+                  "quote-corrected",
+                  "citation-corrected"
                 ],
-                "description": "Why this reading was superseded, from the closed list: re-read-unchanged (read again at its source on a new day, same value), value-changed (the authority published a different value), source-moved (the same value, read at a new URL), quote-corrected (the value stood, the sentence quoted for it did not). Required on every entry written from 2026-09-08. Entries older than that carry none: they were written before the list existed, and rewriting history to fit a new field would be the one edit this format forbids."
+                "description": "Why this reading was superseded, from the closed list: re-read-unchanged (read again at its source on a new day, same value), value-changed (the authority published a different value), source-moved (the same value, read at a new URL), quote-corrected (the value stood, the sentence quoted for it did not), citation-corrected (the legal_basis beside the quote was wrong; the number, its quote and its date stand). Required on every entry written from 2026-09-08. Entries older than that carry none: they were written before the list existed, and rewriting history to fit a new field would be the one edit this format forbids."
               },
               "checked_at": {
                 "type": "string",

@@ -9,15 +9,16 @@ export interface HistoryWhy<R = HistoryReason> {
   note?: string;
 }
 
-/** The reasons a number's reading can be superseded. */
-export type HistoryReason = "re-read-unchanged" | "value-changed" | "source-moved" | "quote-corrected";
+/** The reasons a number's reading can be superseded. A threshold's legal
+ * basis can be corrected without its number moving, so a number's history
+ * carries `citation-corrected` too. */
+export type HistoryReason = "re-read-unchanged" | "value-changed" | "source-moved" | "quote-corrected" | "citation-corrected";
 
 /**
- * A text's reading can also be superseded by an edit to the RULE that stands on
- * it, or to the citation printed beside it — neither moves the number a
- * threshold's history is about, so only text histories carry them (0.8.1).
+ * A text's reading can also be superseded by an edit to the RULE that stands
+ * on it, which moves no number, so only text histories carry it (0.8.1).
  */
-export type TextHistoryReason = HistoryReason | "rule-rekeyed" | "citation-corrected";
+export type TextHistoryReason = HistoryReason | "rule-rekeyed";
 
 export interface ProvenancedAmount {
   amount: number;
