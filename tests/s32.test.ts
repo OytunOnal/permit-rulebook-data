@@ -177,11 +177,12 @@ describe("s32 — the dataset says so in its version", () => {
     // 0.8.6 since OytunOnal/permit-rulebook#408: a statement names the only
     // passports it binds.
     expect(datasetMeta(ds).schema_version).toBe("0.8.6");
-    // 2026.11.16 since OytunOnal/permit-rulebook#408, the Turkish caveat.
-    expect(datasetMeta(ds).dataset_version).toBe("2026.11.16");
+    // 2026.11.17 since OytunOnal/permit-rulebook#421, each sentence of a page
+    // read once per route.
+    expect(datasetMeta(ds).dataset_version).toBe("2026.11.17");
     // Every quote keeps its date: the decision is which question covers a
     // sentence already held, not a new read of it. The newest read is #134's,
-    // since #313 and #408 read nothing at a source.
+    // since #313, #408 and #421 read nothing at a source.
     expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
   });
 });

@@ -218,7 +218,9 @@ describe("s25 — every rule reads the rung it names", () => {
       }
     const ck = reading(routeOf(ds, "de-chancenkarte"), FIVE)[0] as Extract<Criterion, { op: "points" }>;
     expect(ck.table.history?.length, "the points table: no history line").toBeGreaterThan(0);
-    lines.push(...ck.table.history!);
+    // The table's first line is its re-key; the next corrects its legal basis
+    // to the minimum score's (OytunOnal/permit-rulebook#421), not this slice's.
+    lines.push(ck.table.history![0]!);
     // One re-key line per rule, written today, and the two lines on the
     // Spanish Blue Card's qualification limbs whose citation was corrected
     // the same day. The reason is the decision; the note is not read here.
@@ -369,10 +371,10 @@ describe("s25 — the dataset says so in its version, and nothing else moved", (
     // OytunOnal/permit-rulebook#313's (a path's words and a precondition's
     // path), 0.8.5 ruling 28's of OytunOnal/permit-rulebook#310 (an
     // attainable answer), 0.8.6 OytunOnal/permit-rulebook#408's (a
-    // Passport-only statement), and the day is #408's too — s23's test pins
-    // it. What this case holds is that nothing here undid the item.
+    // Passport-only statement), and the day is OytunOnal/permit-rulebook#421's
+    // — s23's test pins it. What this case holds is that nothing here undid the item.
     expect(datasetMeta(ds).schema_version).toBe("0.8.6");
-    expect(datasetMeta(ds).dataset_version).toBe("2026.11.16");
+    expect(datasetMeta(ds).dataset_version).toBe("2026.11.17");
     // Nothing was read at a source by the re-keying: the rules moved against
     // snapshots already held, and every quote keeps its date. The newest read
     // came later, with the shortage card's IT path (#134).
