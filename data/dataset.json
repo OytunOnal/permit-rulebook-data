@@ -1,6 +1,6 @@
 {
   "schema_version": "0.8.6",
-  "dataset_version": "2026.11.16",
+  "dataset_version": "2026.11.17",
   "fields": [
     {
       "id": "destination",
@@ -1387,7 +1387,8 @@
               "source": {
                 "source_url": "https://www.bamf.de/EN/Themen/MigrationAufenthalt/ZuwandererDrittstaaten/Arbeit/Wissenschaftler/wissenschaftler-node.html",
                 "quote": "concluded a hosting agreement or corresponding contract with a research facility to carry out a research project",
-                "retrieved_at": "2026-09-07"
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Section 18d of the Residence Act"
               }
             },
             {
@@ -1657,7 +1658,7 @@
                         "source_url": "https://www.buzer.de/Anlage_AufenthG.htm",
                         "quote": "Die Mindestpunktzahl beträgt sechs Punkte.",
                         "retrieved_at": "2026-09-02",
-                        "legal_basis": "§ 20b AufenthG + Anlage",
+                        "legal_basis": "Anlage zu § 20a Abs. 3 Nr. 2, § 20b AufenthG",
                         "items": [
                           {
                             "field": "recognition_de",
@@ -1728,6 +1729,14 @@
                             "reason": "rule-rekeyed",
                             "checked_at": "2026-09-17",
                             "note": "s25 (v1.1 critique F2): the experience item read {field: experience, points: {y2in5: 2, y5in7: 3}} before; after, one item with two rows — experience_5y = 2plus for 2 points (§ 20b Abs. 1 Nr. 7) and experience_7y = 5plus for 3 points (Nr. 6) — one item, so the reader scores the higher row and never the sum."
+                          },
+                          {
+                            "retrieved_at": "2026-09-02",
+                            "quote": "Die Mindestpunktzahl beträgt sechs Punkte.",
+                            "source_url": "https://www.buzer.de/Anlage_AufenthG.htm",
+                            "reason": "citation-corrected",
+                            "checked_at": "2026-11-17",
+                            "note": "legal_basis said \"§ 20b AufenthG + Anlage\", beside the same sentence the minimum score quotes as \"Anlage zu § 20a Abs. 3 Nr. 2, § 20b AufenthG\". The page heads the sentence's table \"Anlage (zu § 20a Absatz 3 Nummer 2, § 20b) Tabelle\", so both now carry the minimum score's legal basis (OytunOnal/permit-rulebook#421)."
                           }
                         ]
                       }
@@ -1932,8 +1941,18 @@
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de plus de 3 mois",
-                "retrieved_at": "2026-09-07",
-                "legal_basis": "Fiche F16922 — salarié qualifié"
+                "retrieved_at": "2026-11-17",
+                "legal_basis": "Fiche F16922 — salarié qualifié",
+                "history": [
+                  {
+                    "retrieved_at": "2026-09-07",
+                    "quote": "Avoir un contrat de travail de plus de 3 mois",
+                    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                    "reason": "re-read-unchanged",
+                    "checked_at": "2026-11-17",
+                    "note": "Re-read with the salary threshold, whose longer sentence on the page contains this one, so the two carry one legal basis and one read date (OytunOnal/permit-rulebook#421)."
+                  }
+                ]
               }
             },
             {
@@ -1987,9 +2006,19 @@
                 "currency": "EUR",
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de plus de 3 mois qui prévoit une rémunération brute annuelle supérieure ou égale à 39 582 €.",
-                "retrieved_at": "2026-09-02",
-                "legal_basis": "CESEDA — carte de séjour talent (fiche F16922)",
-                "history": []
+                "retrieved_at": "2026-11-17",
+                "legal_basis": "Fiche F16922 — salarié qualifié",
+                "history": [
+                  {
+                    "amount": 39582,
+                    "retrieved_at": "2026-09-02",
+                    "quote": "Avoir un contrat de travail de plus de 3 mois qui prévoit une rémunération brute annuelle supérieure ou égale à 39 582 €.",
+                    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                    "reason": "re-read-unchanged",
+                    "checked_at": "2026-11-17",
+                    "note": "legal_basis said \"CESEDA — carte de séjour talent (fiche F16922)\". The page prints the sentence under \"Salarié qualifié\", the legal basis the route's criterion and statement quoting its first words carry, so all three now carry that one and today's read date (OytunOnal/permit-rulebook#421)."
+                  }
+                ]
               }
             }
           ],
@@ -2008,7 +2037,18 @@
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de plus de 3 mois",
-                "retrieved_at": "2026-09-07"
+                "retrieved_at": "2026-11-17",
+                "legal_basis": "Fiche F16922 — salarié qualifié",
+                "history": [
+                  {
+                    "retrieved_at": "2026-09-07",
+                    "quote": "Avoir un contrat de travail de plus de 3 mois",
+                    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
+                    "reason": "re-read-unchanged",
+                    "checked_at": "2026-11-17",
+                    "note": "Re-read with the salary threshold, whose longer sentence on the page contains this one, so the two carry one legal basis and one read date; it carried no legal basis before (OytunOnal/permit-rulebook#421)."
+                  }
+                ]
               }
             }
           ]
@@ -2156,7 +2196,8 @@
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir un contrat de travail de 6 mois minimum",
-                "retrieved_at": "2026-09-07"
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — carte bleue européenne"
               }
             }
           ]
@@ -2396,7 +2437,8 @@
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Avoir des fonctions en lien direct avec le projet de recherche et de développement de cette entreprise",
-                "retrieved_at": "2026-09-07"
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — salarié en mission ou entreprise innovante"
               }
             },
             {
@@ -2407,7 +2449,8 @@
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Être recruté dans une jeune entreprise innovante ou une entreprise reconnue innovante par le ministère de l'économie",
-                "retrieved_at": "2026-09-07"
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — entreprise innovante"
               }
             }
           ]
@@ -2522,7 +2565,8 @@
               "source": {
                 "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
                 "quote": "Être salarié d'une entreprise établie à l'étranger et venir en France pour exercer une activité salariée dans le cadre d'une mobilité entre établissements d'une même entreprise ou entre entreprises d'un même groupe (mobilité intragroupe)",
-                "retrieved_at": "2026-09-07"
+                "retrieved_at": "2026-09-07",
+                "legal_basis": "Fiche F16922 — salarié en mission"
               }
             }
           ]
@@ -3362,7 +3406,17 @@
                 "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
                 "quote": "el solicitante de una autorización de residencia para investigación UE deberá presentar un convenio de acogida o contrato de trabajo",
                 "retrieved_at": "2026-09-07",
-                "legal_basis": "Ley 14/2013, art. 72.2"
+                "legal_basis": "Ley 14/2013, art. 72.2.a)",
+                "history": [
+                  {
+                    "retrieved_at": "2026-09-07",
+                    "quote": "el solicitante de una autorización de residencia para investigación UE deberá presentar un convenio de acogida o contrato de trabajo",
+                    "source_url": "https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074",
+                    "reason": "citation-corrected",
+                    "checked_at": "2026-11-17",
+                    "note": "legal_basis said \"Ley 14/2013, art. 72.2\". Art. 72.2 opens \"La autorización de residencia para investigación tendrá dos modalidades:\", and the sentence sits under its letter \"a) Autorización de residencia para investigación UE.\", before \"b) Autorización de residencia para investigación nacional.\" — so 72.2.a), as the route's statement quoting the same sentence already says (OytunOnal/permit-rulebook#421)."
+                  }
+                ]
               }
             },
             {

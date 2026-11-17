@@ -128,10 +128,16 @@ describe("s7 — a carve-out we cannot quote is a carve-out we do not ship", () 
     return ds;
   };
 
+  // "Japan" sits inside the longer sentence nl-ict's MVV carve-out quotes from
+  // the same page, so it carries that carve-out's legal basis and read date:
+  // one sentence of a page is read once on a route.
   const good = {
     citizenship: ["JP"],
     text: "Not required for a Japanese passport.",
-    source: { source_url: "https://ind.nl/en/mvv-exemptions", quote: "Japan", retrieved_at: "2026-09-10" },
+    source: {
+      source_url: "https://ind.nl/en/mvv-exemptions", quote: "Japan", retrieved_at: "2026-09-10",
+      legal_basis: "Dutch immigration service, MVV exemptions — Your nationality is decisive",
+    },
   };
 
   it("accepts one that carries its passports, its words and its quote", () => {
@@ -219,7 +225,8 @@ describe("s7 — a carve-out is watched and quote-checked like every other value
   });
 
   it("a fresher carve-out is a fresher dataset", () => {
-    // 2026-10-21 since #134: the shortage card's IT path, read that day.
-    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-10-21");
+    // 2026-11-17 since OytunOnal/permit-rulebook#421: the French salarié
+    // qualifié sentence, read again that day.
+    expect(datasetMeta(dataset).newest_retrieved_at).toBe("2026-11-17");
   });
 });

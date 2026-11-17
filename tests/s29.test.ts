@@ -207,7 +207,9 @@ describe("s29 — the dataset says so in its version, and the schema did not mov
 
   it("the newest read at a source is stamped with its day", () => {
     // s29's two sentences were the newest, read on 2026-09-17, until #134's
-    // IT path on the shortage card, read on 2026-10-21.
-    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-10-21");
+    // IT path on the shortage card, read on 2026-10-21, and then
+    // OytunOnal/permit-rulebook#421's re-read of the French salarié qualifié
+    // sentence on 2026-11-17.
+    expect(datasetMeta(ds).newest_retrieved_at).toBe("2026-11-17");
   });
 });
