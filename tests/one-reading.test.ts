@@ -36,7 +36,8 @@ function longerThresholdOf(ds: Dataset): ProvenancedAmount {
   return salary.threshold;
 }
 
-const STATEMENT = "/countries/FR/routes/fr-talent-blue-card/statements/employment-contract-of-at-least-six-months/source";
+// The check names the second value of a pair; on fr-talent-blue-card that is its first statement's source.
+const BLUE_CARD_STATEMENT_PATH = "/countries/FR/routes/fr-talent-blue-card/statements/employment-contract-of-at-least-six-months/source";
 
 /**
  * Each sentence of a page is quoted once per route (OytunOnal/permit-rulebook#421,
@@ -49,7 +50,7 @@ describe("the dataset check reads each sentence of a page once per route", () =>
     const [statement, criterion] = statementAndCriterionOf(ds, "fr-talent-blue-card");
     statement.legal_basis = "Fiche F16922 — carte bleue européenne";
     criterion.legal_basis = "CESEDA, art. L421-11";
-    expect(pathsReadTwice(ds)).toContain(STATEMENT);
+    expect(pathsReadTwice(ds)).toContain(BLUE_CARD_STATEMENT_PATH);
   });
 
   it("refuses a route quoting one sentence from one page with two read dates", () => {
@@ -57,7 +58,7 @@ describe("the dataset check reads each sentence of a page once per route", () =>
     const [statement, criterion] = statementAndCriterionOf(ds, "fr-talent-blue-card");
     statement.legal_basis = criterion.legal_basis;
     statement.retrieved_at = "2026-01-01";
-    expect(pathsReadTwice(ds)).toContain(STATEMENT);
+    expect(pathsReadTwice(ds)).toContain(BLUE_CARD_STATEMENT_PATH);
   });
 
   it("refuses a shorter quote contained in a longer one from the same page carrying two legal bases", () => {
