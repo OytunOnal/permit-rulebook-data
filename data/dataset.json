@@ -2004,9 +2004,9 @@
                     "retrieved_at": "2026-09-02",
                     "quote": "Avoir un contrat de travail de plus de 3 mois qui prévoit une rémunération brute annuelle supérieure ou égale à 39 582 €.",
                     "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F16922",
-                    "reason": "re-read-unchanged",
+                    "reason": "citation-corrected",
                     "checked_at": "2026-11-17",
-                    "note": "legal_basis said \"CESEDA — carte de séjour talent (fiche F16922)\". The page prints the sentence under \"Salarié qualifié\", the legal basis the route's criterion and statement quoting its first words carry. Those two were read on 2026-09-07, the latest reading of the page, so all three carry that legal basis and that read date (OytunOnal/permit-rulebook#421)."
+                    "note": "legal_basis said \"CESEDA — carte de séjour talent (fiche F16922)\". The page prints the sentence under \"Salarié qualifié\", so the legal basis was aligned with the one the route's criterion and statement quoting its first words carry. The sentence was not re-read: the read date is taken from the 2026-09-07 reading of the same page, the latest, which those two carry (OytunOnal/permit-rulebook#421)."
                   }
                 ]
               }
