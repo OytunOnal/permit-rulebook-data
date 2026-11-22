@@ -542,11 +542,16 @@
       "history": []
     }
   },
-  "last_run": "2026-11-21",
-  "unread": [],
+  "last_run": "2026-11-22",
+  "unread": [
+    {
+      "id": "wetten-wav-artikel-8",
+      "url": "https://wetten.overheid.nl/BWBR0007149"
+    }
+  ],
   "lapses": {
-    "eur-lex-blue-card-directive": [
-      "2026-11-15"
+    "wetten-wav-artikel-8": [
+      "2026-11-22"
     ]
   }
 }
